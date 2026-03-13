@@ -1,7 +1,7 @@
 ---
+name: cloud-audit
 description: "Audit cloud infrastructure (AWS, GCP, Azure) for misconfigurations, excessive permissions, and security gaps. Use when the user mentions 'cloud security,' 'cloud audit,' 'AWS security,' 'GCP security,' 'Azure security,' 'IAM audit,' 'S3 bucket,' 'cloud misconfiguration,' 'cloud hardening,' or needs to review cloud infrastructure security."
-globs:
-alwaysApply: false
+allowed-tools: Bash, Read, Write, Grep, Glob, WebSearch
 ---
 
 # Cloud Audit — Cloud Infrastructure Security Review

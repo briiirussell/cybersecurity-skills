@@ -1,99 +1,100 @@
-# Cloud Security Audit
+# cloud-audit
 
-> Audit cloud infrastructure (AWS, GCP, Azure) for misconfigurations, excessive permissions, and security gaps.
+> Audit cloud infrastructure (AWS, GCP, Azure) for misconfigurations, excessive permissions, and security gaps. Use when the user mentions 'cloud security,' 'cloud audit,' 'AWS security,' 'GCP security,' 'Azure security,' 'IAM audit,' 'S3 bucket,' 'cloud misconfiguration,' 'cloud hardening,' or needs to review cloud infrastructure security.
 
-## Activation
+# Cloud Audit — Cloud Infrastructure Security Review
 
-Use this instruction set when the task involves: cloud security, cloud audit, AWS security, GCP security, Azure security, IAM audit, S3 bucket, cloud misconfiguration, cloud hardening
+Audit cloud infrastructure configurations for misconfigurations, excessive permissions, public exposure, and compliance gaps. Covers AWS, GCP, and Azure.
 
-## Authorization
+## Scope the Audit
 
-For auditing cloud accounts the user owns or has explicit authorization to assess.
+Identify:
+1. Cloud provider(s) and account(s)
+2. Regions in use
+3. Whether CLI tools are available (`aws`, `gcloud`, `az`) or reviewing IaC files (Terraform, CloudFormation, Pulumi)
 
-## Instructions
+## Audit Categories
 
-You are a cloud security engineer performing a configuration audit.
+### Identity and Access Management
 
-METHODOLOGY:
-Audit systematically through each category. Use CLI tools when available (aws, gcloud, az) or review IaC files (Terraform, CloudFormation, Pulumi).
+**AWS:**
+```bash
+aws iam get-account-summary
+aws iam list-users
+aws iam generate-credential-report && aws iam get-credential-report --output text --query Content | base64 -d
+```
+Check for: root account usage without MFA, access keys older than 90 days, unused credentials, wildcard permissions (`"Action": "*"`), overprivileged roles.
 
-IDENTITY & ACCESS MANAGEMENT:
-AWS:
-- aws iam get-account-summary — overview
-- aws iam list-users — all IAM users
-- aws iam list-user-policies / list-attached-user-policies — per-user policies
-- Check for: root account usage, MFA disabled, unused credentials, wildcard permissions (*)
-- aws iam generate-credential-report && aws iam get-credential-report
-- Check access keys age: rotate if > 90 days
-- Review cross-account roles and trust policies
+**GCP:**
+```bash
+gcloud projects get-iam-policy $PROJECT_ID
+gcloud iam service-accounts list
+```
+Check for: primitive roles (Owner/Editor) on too many principals, unused service accounts, service account keys instead of workload identity.
 
-GCP:
-- gcloud iam roles list / gcloud projects get-iam-policy PROJECT
-- Check for: primitive roles (Owner/Editor on too many principals), unused service accounts
-- Review service account key management
+**Azure:**
+```bash
+az role assignment list --all
+az ad user list
+```
+Check for: excessive Owner/Contributor assignments, guest users with high privileges.
 
-Azure:
-- az role assignment list — all assignments
-- Check for: excessive Owner/Contributor assignments, guest users with high privileges
+**IaC review:** Grep Terraform/CloudFormation files for `"Action": "*"`, `"Resource": "*"`, hardcoded secrets, overly broad trust policies.
 
-IaC Review (Terraform/CloudFormation):
-- Grep for: "Effect": "Allow", "Action": "*", "Resource": "*"
-- Check for hardcoded secrets in IaC files
-- Review security group rules in code
+### Network Security
 
-NETWORK SECURITY:
-- Security groups / firewall rules with 0.0.0.0/0 ingress
-- Unrestricted SSH (port 22) or RDP (port 3389) from internet
-- VPC flow logs enabled?
-- Network ACLs vs security group alignment
-- Public subnets vs private subnets — are databases in public subnets?
-- VPN/Direct Connect configuration
-- DNS security (DNSSEC, private zones)
+Check for:
+- Security groups or firewall rules allowing `0.0.0.0/0` ingress
+- Unrestricted SSH (port 22) or RDP (port 3389) from the internet
+- VPC flow logs disabled
+- Databases in public subnets
+- Missing network segmentation between tiers
 
-STORAGE:
-AWS S3:
-- aws s3api list-buckets
-- aws s3api get-bucket-acl / get-bucket-policy per bucket
-- aws s3api get-public-access-block per bucket and account level
-- Check for: public buckets, missing encryption, no versioning, no lifecycle policies
+### Storage
 
-GCP Cloud Storage:
-- gsutil ls / gsutil iam get gs://bucket
-- Check for allUsers or allAuthenticatedUsers permissions
+**AWS S3:**
+```bash
+aws s3api list-buckets
+aws s3api get-public-access-block --bucket <name>
+aws s3api get-bucket-policy --bucket <name>
+aws s3api get-bucket-encryption --bucket <name>
+```
+Check for: public buckets, missing encryption, no versioning, no lifecycle policies, overly permissive bucket policies.
 
-Azure Blob:
-- az storage account list / az storage container list
-- Check for: anonymous access, shared access signatures scope
+**GCP/Azure:** Equivalent checks for Cloud Storage and Blob Storage — look for `allUsers`/`allAuthenticatedUsers` access or anonymous blob access.
 
-COMPUTE:
-- IMDSv2 enforced? (AWS: HttpTokens = required)
-- Unencrypted EBS/disks
+### Compute
+
+- IMDSv2 enforced? (AWS: `HttpTokens = required`)
+- Unencrypted EBS volumes or disks
 - Public IP addresses on instances that don't need them
-- SSM/OS Login vs direct SSH
-- Patch management and AMI/image age
-- Container security: ECR/GCR scan results, privileged containers
+- Outdated AMIs or images (check patch age)
+- Privileged containers, missing security contexts in Kubernetes
 
-LOGGING & MONITORING:
+### Logging and Monitoring
+
 - CloudTrail / Cloud Audit Logs / Activity Log enabled in all regions
-- Log storage: encrypted, immutable, retained adequately
+- Log storage: encrypted, immutable, adequate retention
 - GuardDuty / Security Command Center / Defender for Cloud enabled
-- Alerting on: root login, IAM changes, security group changes, large data transfers
-- VPC Flow Logs / DNS logs enabled
+- Alerting configured for: root login, IAM changes, security group changes, large data transfers
+- VPC Flow Logs and DNS query logs enabled
 
-SECRETS MANAGEMENT:
-- Hardcoded secrets in code, environment variables, or IaC
-- Secrets Manager / Secret Manager / Key Vault usage
-- KMS key management and rotation
+### Secrets Management
 
-OUTPUT FORMAT:
+- Hardcoded secrets in source code, environment variables, or IaC files
+- Secrets Manager / Key Vault usage for sensitive values
+- KMS key rotation configured
 
+## Output Format
+
+```markdown
 # Cloud Security Audit Report
 ## Account(s): [account ID(s)]
 ## Provider: [AWS/GCP/Azure]
 ## Regions: [audited regions]
 ## Date: [date]
 
-### Executive Summary
+### Summary
 - Total findings: X
 - Critical: X | High: X | Medium: X | Low: X
 
@@ -103,32 +104,34 @@ OUTPUT FORMAT:
 **Resource:** [resource ARN/ID]
 **Region:** [region]
 
-**Issue:**
-[Description of the misconfiguration]
+**Issue:** [What the misconfiguration is]
 
-**Risk:**
-[What an attacker could do with this]
+**Risk:** [What an attacker could do]
 
-**Evidence:**
-[CLI output or IaC snippet showing the issue]
+**Evidence:** [CLI output or IaC snippet]
 
-**Remediation:**
-[Specific fix command or IaC change]
+**Remediation:** [Specific fix command or IaC change]
 
 ---
 
-### Compliance Notes
-[Relevant compliance framework requirements met/not met]
-
 ### Prioritized Action Plan
-1. [Critical fixes — immediate]
-2. [High fixes — this week]
-3. [Medium fixes — this month]
-4. [Low fixes — next quarter]
+1. [Critical — immediate]
+2. [High — this week]
+3. [Medium — this month]
+4. [Low — next quarter]
+```
 
-BOUNDARIES:
-- Only audit accounts/projects the user has access to
+## Boundaries
+
+- Only audit accounts or projects the user has access to
 - Do not attempt to access other accounts or tenants
 - Provide remediation for every finding
-- Note if a finding might impact availability when fixed
-- Flag any evidence of active compromise found during audit
+- Note if a fix might impact availability (e.g., tightening a security group could break connectivity)
+- Flag any evidence of active compromise found during the audit
+- Refuse requests to exploit found misconfigurations on others' infrastructure
+
+## References
+
+- CIS Benchmarks for AWS/GCP/Azure
+- AWS Well-Architected Security Pillar
+- ScoutSuite (multi-cloud auditing tool)

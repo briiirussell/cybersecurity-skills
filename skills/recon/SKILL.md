@@ -1,7 +1,7 @@
 ---
+name: recon
 description: "Perform structured reconnaissance and attack surface enumeration for authorized penetration tests, CTF challenges, and bug bounty programs. Use when the user mentions 'recon,' 'reconnaissance,' 'enumerate,' 'attack surface,' 'subdomain enumeration,' 'port scan,' 'fingerprint,' 'asset discovery,' or needs to map a target's external footprint."
-globs:
-alwaysApply: false
+allowed-tools: Bash, Read, Write, WebSearch, WebFetch
 ---
 
 # Recon — Penetration Testing Reconnaissance

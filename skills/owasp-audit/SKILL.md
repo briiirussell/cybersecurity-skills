@@ -1,7 +1,7 @@
 ---
+name: owasp-audit
 description: "Audit application source code against the OWASP Top 10 vulnerability categories. Use when the user mentions 'OWASP,' 'security audit,' 'code security review,' 'vulnerability audit,' 'find vulnerabilities,' 'secure code review,' 'security review,' or wants to check their codebase for common security weaknesses."
-globs:
-alwaysApply: false
+allowed-tools: Read, Grep, Glob, Bash, Write
 ---
 
 # OWASP Audit — Source Code Security Review

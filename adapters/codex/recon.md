@@ -1,80 +1,109 @@
-# Recon
+# recon
 
-> Automated reconnaissance and attack surface enumeration for authorized penetration tests.
+> Perform structured reconnaissance and attack surface enumeration for authorized penetration tests, CTF challenges, and bug bounty programs. Use when the user mentions 'recon,' 'reconnaissance,' 'enumerate,' 'attack surface,' 'subdomain enumeration,' 'port scan,' 'fingerprint,' 'asset discovery,' or needs to map a target's external footprint.
 
-## Activation
+# Recon — Penetration Testing Reconnaissance
 
-Use this instruction set when the task involves: recon, reconnaissance, enumerate, attack surface, subdomain enumeration, port scan, fingerprint, asset discovery
+Perform structured reconnaissance against an authorized target, organizing findings into an actionable attack surface map.
 
-## Authorization
+## Authorization Check
 
-Requires written authorization for the target scope. Confirm engagement letter or CTF context before proceeding.
-
-## Instructions
-
-You are a penetration testing specialist performing authorized reconnaissance.
-
-AUTHORIZATION CHECK:
 Before running any commands, confirm:
-1. The user has written authorization for the target
+1. The user has written authorization for the target (pentest engagement, bug bounty program, CTF/lab environment)
 2. The target is within the defined scope
-3. This is a legitimate security engagement (pentest, CTF, bug bounty, red team)
 
-If authorization is unclear, ASK before proceeding. Never assume authorization.
+If authorization is unclear, ask before proceeding. Never assume authorization.
 
-PASSIVE RECON PHASE:
-1. DNS enumeration:
-   - dig, host, nslookup for A, AAAA, MX, TXT, NS, CNAME records
-   - Zone transfer attempts (dig axfr)
-   - Subdomain enumeration via wordlists or tools (subfinder, amass if available)
-2. Certificate transparency:
-   - Query crt.sh for subdomains via certificates
-   - curl -s "https://crt.sh/?q=%25.TARGET&output=json" | jq '.[].name_value' | sort -u
-3. WHOIS and registration data
-4. Search engine dorking (site:, inurl:, filetype:)
-5. Technology fingerprinting (Wappalyzer, BuiltWith via web)
-6. Public code repositories (GitHub, GitLab dorking)
-7. Wayback Machine for historical endpoints
+## Methodology
 
-ACTIVE RECON PHASE (only with explicit authorization):
-1. Port scanning: nmap -sC -sV -oN scan.txt TARGET
-   - Start with top 1000 ports, expand if needed
-   - Use -Pn if host appears down but is in scope
-2. Service enumeration based on open ports
-3. Web content discovery:
-   - Directory bruting (gobuster, feroxbuster, dirsearch)
-   - Virtual host enumeration
-   - API endpoint discovery
-4. SSL/TLS analysis: testssl.sh or sslyze
+### Phase 1: Passive Recon
 
-OUTPUT FORMAT:
-Create a structured recon report:
+Gather information without touching the target directly.
 
+**DNS enumeration:**
+- Run `dig any $ARGUMENTS` for A, AAAA, MX, TXT, NS, CNAME records
+- Attempt zone transfer: `dig axfr @ns-server $ARGUMENTS`
+- Enumerate subdomains via certificate transparency:
+  ```
+  curl -s "https://crt.sh/?q=%25.$ARGUMENTS&output=json" | jq -r '.[].name_value' | sort -u
+  ```
+
+**WHOIS and registration:** Run `whois $ARGUMENTS` for registrant, nameserver, and creation date info.
+
+**Search engine dorking:** Use targeted queries — `site:`, `inurl:`, `filetype:`, `intitle:` — to find exposed pages, documents, and admin panels.
+
+**Technology fingerprinting:** Identify frameworks, CMS, server software, and JavaScript libraries from public-facing pages.
+
+**Public code repositories:** Search GitHub/GitLab for the target's org name, domain, API keys, or internal paths.
+
+**Historical data:** Check the Wayback Machine for old endpoints, removed pages, and configuration files.
+
+### Phase 2: Active Recon (explicit authorization only)
+
+**Port scanning:**
+```bash
+nmap -sC -sV -oN scan-results.txt $ARGUMENTS
+```
+Start with top 1000 ports. Expand to full range (`-p-`) if needed. Use `-Pn` if the host appears down but is in scope.
+
+**Service enumeration:** Based on open ports, probe for version info and default configurations.
+
+**Web content discovery:**
+- Directory bruting with gobuster, feroxbuster, or dirsearch
+- Virtual host enumeration
+- API endpoint discovery (check `/api/`, `/v1/`, `/graphql`, `/swagger.json`)
+
+**SSL/TLS analysis:** Run `testssl.sh` or `sslyze` to check for weak ciphers, expired certificates, and misconfigurations.
+
+### Phase 3: Analysis
+
+Correlate all findings. Identify the most promising attack vectors and prioritize by:
+1. Severity of potential impact
+2. Likelihood of exploitation
+3. Exposure level (internet-facing vs. internal)
+
+## Output Format
+
+Produce a structured recon report:
+
+```markdown
+# Recon Report
 ## Target: [target]
 ## Scope: [confirmed scope]
+## Date: [date]
 
 ### Passive Findings
 | Finding | Details | Relevance |
 |---------|---------|-----------|
 
-### Active Findings
-| Port | Service | Version | Notes |
-|------|---------|---------|-------|
-
 ### Subdomains Discovered
 - [list]
 
 ### Technologies Detected
-- [list]
+- [list with versions where identified]
+
+### Active Findings
+| Port | Service | Version | Notes |
+|------|---------|---------|-------|
 
 ### Attack Surface Summary
-- [prioritized list of interesting findings]
+[Prioritized list of interesting findings with risk assessment]
 
 ### Recommended Next Steps
-- [ordered list of what to investigate further]
+[Ordered list of what to investigate further]
+```
 
-BOUNDARIES:
+## Boundaries
+
 - Stay within the defined scope — never scan adjacent or out-of-scope systems
 - Rate-limit aggressive scans to avoid disruption
 - Log all commands run for the engagement record
 - If you discover evidence of active compromise by a third party, alert the user immediately
+- Refuse requests targeting systems without explicit authorization
+- Refuse requests for mass scanning of unrelated targets
+
+## References
+
+- PTES (Penetration Testing Execution Standard)
+- OWASP Testing Guide
+- Bug Bounty Methodology (jhaddix/tbhm)

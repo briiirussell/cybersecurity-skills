@@ -1,6 +1,8 @@
-# osint-recon
-
-> Gather and correlate open source intelligence from public sources for authorized investigations, threat intelligence, and attack surface assessment. Use when the user mentions 'OSINT,' 'open source intelligence,' 'digital footprint,' 'public records,' 'threat intelligence,' 'investigate a domain,' or needs to research a target using publicly available data.
+---
+name: osint-recon
+description: "Gather and correlate open source intelligence from public sources for authorized investigations, threat intelligence, and attack surface assessment. Use when the user mentions 'OSINT,' 'open source intelligence,' 'digital footprint,' 'public records,' 'threat intelligence,' 'investigate a domain,' or needs to research a target using publicly available data."
+allowed-tools: Bash, WebSearch, WebFetch, Read, Write
+---
 
 # OSINT Recon — Open Source Intelligence Gathering
 

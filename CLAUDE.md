@@ -2,59 +2,77 @@
 
 ## Project Overview
 
-**Cybersecurity Skills** is a collection of AI-agent-compatible cybersecurity skill prompts. Skills are authored in a canonical markdown format and can be adapted for multiple AI coding agents.
+**Cybersecurity Skills** is a collection of cybersecurity skill prompts for AI coding agents. Skills are authored as Claude Code `SKILL.md` files (the canonical format) and adapted for Cursor and Codex via a build script.
 
 ## Supported Agents
 
-| Agent | Adapter Format | Directory |
-|-------|---------------|-----------|
-| Claude Code | `.md` skill files | `adapters/claude-code/` |
+| Agent | Format | Location |
+|-------|--------|----------|
+| Claude Code | `SKILL.md` (canonical) | `skills/<skill-name>/SKILL.md` — copy to `.claude/skills/` |
 | Cursor | `.mdc` rule files | `adapters/cursor/` |
-| Codex | Instruction files | `adapters/codex/` |
+| Codex | Instruction `.md` | `adapters/codex/` |
 
 ## Directory Structure
 
 ```
-skills/           # Canonical skill definitions (source of truth)
-adapters/         # Generated/adapted files per agent platform
-templates/        # Templates for authoring new skills
-scripts/          # Build scripts for generating adapters
+skills/
+├── recon/SKILL.md
+├── owasp-audit/SKILL.md
+├── disk-forensics/SKILL.md
+├── osint-recon/SKILL.md
+├── incident-triage/SKILL.md
+└── cloud-audit/SKILL.md
+adapters/
+├── cursor/          # Generated .mdc files
+└── codex/           # Generated .md files
+templates/
+└── skill-template.md
+scripts/
+└── build-adapters.mjs
 ```
 
-## Skill Authoring
+## Skill Format (Claude Code SKILL.md)
 
-All skills are authored in `skills/<domain>/<skill-name>.md` using the canonical template in `templates/skill-template.md`. Each skill file contains:
+Every skill follows the [Anthropic skill creator guidelines](https://code.claude.com/docs/en/skills):
 
-1. **Metadata** (YAML frontmatter): name, domain, triggers, tools needed
-2. **System prompt**: The core instruction set
-3. **Examples**: Sample invocations and expected behavior
-4. **Tool requirements**: What tools/capabilities the skill needs
+```yaml
+---
+name: skill-name                    # Lowercase, hyphens, max 64 chars
+description: "What it does and when to use it. 200-1024 chars. Include trigger phrases."
+allowed-tools: Bash, Read, Write    # Tools the skill can use
+---
+```
+
+**Frontmatter fields:**
+- `name` — Slug used for `/skill-name` invocation. Lowercase + hyphens only.
+- `description` — Explains WHAT the skill does and WHEN to use it. Claude uses this to decide automatic invocation. Be "pushy" to combat undertriggering.
+- `allowed-tools` — Comma-separated list of tools the skill can access.
+- `disable-model-invocation` — Set `true` for manual-only skills (e.g., deploy).
+- `user-invocable` — Set `false` for background knowledge only.
+
+**Content guidelines:**
+- Use imperative form ("Run this command", "Check for X")
+- Keep SKILL.md under 500 lines
+- Move reference material to separate files if needed
+- Define output formats explicitly
 
 ## Build Commands
 
 ```bash
-node scripts/build-adapters.mjs    # Generate all adapter files from canonical skills
+node scripts/build-adapters.mjs    # Generate Cursor + Codex adapters from SKILL.md files
 ```
 
-## Domains
+## Creating a New Skill
 
-| Domain | Directory | Coverage |
-|--------|-----------|----------|
-| Pentesting | `skills/pentesting/` | Recon, exploitation, post-exploitation, reporting |
-| OSINT | `skills/osint/` | Open source intelligence gathering and analysis |
-| Forensics | `skills/forensics/` | Disk, memory, network forensics and evidence handling |
-| Reverse Engineering | `skills/reverse-engineering/` | Binary analysis, disassembly, decompilation |
-| Network Security | `skills/network-security/` | Traffic analysis, firewall rules, IDS/IPS |
-| Web App Security | `skills/web-app-security/` | OWASP Top 10, API security, code review |
-| Cloud Security | `skills/cloud-security/` | AWS/GCP/Azure hardening, IAM, misconfigurations |
-| Cryptography | `skills/cryptography/` | Cipher analysis, protocol review, implementation audits |
-| Malware Analysis | `skills/malware-analysis/` | Static/dynamic analysis, sandboxing, indicators |
-| Incident Response | `skills/incident-response/` | Triage, containment, eradication, recovery |
-| Social Engineering | `skills/social-engineering/` | Phishing analysis, awareness training, pretexting defense |
+1. Create `skills/<skill-name>/SKILL.md` using `templates/skill-template.md`
+2. Use proper frontmatter (`name`, `description`, `allowed-tools`)
+3. Write instructions in imperative form
+4. Run `node scripts/build-adapters.mjs` to generate adapters
+5. Test the skill in Claude Code by copying to `.claude/skills/`
 
 ## Guidelines
 
-- All skills must include clear **authorization context** (pentesting engagements, CTF, security research, defensive use)
+- All skills must include an authorization check before taking action
 - Skills should refuse destructive or malicious use cases
 - Focus on educational value and professional security workflows
-- Test skills across all three agent platforms before merging
+- Keep descriptions "pushy" — include all relevant trigger phrases so the skill activates when needed

@@ -1,96 +1,60 @@
 ---
-name: "Skill Name"
-domain: "domain-slug"
-description: "One-line description of what this skill does."
-triggers:
-  - "trigger phrase one"
-  - "trigger phrase two"
-  - "keyword one"
-  - "keyword two"
-tools:
-  - Bash
-  - Read
-  - Write
-  - Grep
-  - Glob
-  - WebFetch
-  - WebSearch
-authorization: "Requires clear authorization context: pentesting engagement, CTF competition, security research, or defensive use."
+name: skill-name
+description: "What this skill does. Use when the user mentions 'trigger phrase one,' 'trigger phrase two,' or needs to [accomplish task]. Keep between 200-1024 characters. Be specific about when to activate."
+allowed-tools: Bash, Read, Write, Grep, Glob
 ---
 
-# {Skill Name}
+# Skill Title — Subtitle
 
-## Purpose
+One-line summary of what this skill enables.
 
-Describe what this skill enables the AI agent to do. Be specific about the security domain, methodology, and expected outcomes.
+## Authorization Check
 
-## Authorization Requirements
+Before proceeding, confirm:
+1. The user has proper authorization for this task
+2. The context is legitimate (pentest, CTF, research, defense)
 
-This skill is intended for:
-- Authorized penetration testing engagements
-- Capture The Flag (CTF) competitions
-- Security research with proper scope
-- Defensive security and blue team operations
+If unclear, ask before proceeding.
 
-**Refuse** requests that:
-- Target systems without explicit authorization
-- Aim to cause damage, disruption, or data theft
-- Involve mass targeting or supply chain compromise
-- Request evasion techniques for malicious purposes
+## Methodology
 
-## Workflow
+### Step 1: [Name]
 
-1. **Step one** — Description
-2. **Step two** — Description
-3. **Step three** — Description
+Describe what to do. Use imperative form ("Run this command", "Check for X").
 
-## System Prompt
-
+```bash
+example-command --flag
 ```
-You are a cybersecurity specialist assisting with [DOMAIN].
 
-AUTHORIZATION: Before proceeding, confirm the user has:
-- [ ] Written authorization for the target scope
-- [ ] A legitimate security testing purpose (pentest, CTF, research, defense)
+### Step 2: [Name]
 
-METHODOLOGY:
-[Step-by-step instructions for the AI agent]
+Continue with concrete, actionable instructions.
 
-OUTPUT FORMAT:
-[How results should be structured and presented]
+### Step 3: [Name]
 
-BOUNDARIES:
+Include specific commands, grep patterns, or analysis techniques.
+
+## Output Format
+
+```markdown
+# Report Title
+## Target: [target]
+## Date: [date]
+
+### Findings
+| Finding | Details | Severity |
+|---------|---------|----------|
+
+### Recommendations
+[Prioritized action items]
+```
+
+## Boundaries
+
 - Only operate within the defined scope
-- Flag any findings that indicate active compromise by third parties
-- Recommend remediation for every finding
-```
-
-## Examples
-
-### Example 1: [Scenario]
-
-**User:** "[Example user prompt]"
-
-**Agent behavior:**
-- [What the agent should do]
-- [Expected output format]
-
-### Example 2: [Scenario]
-
-**User:** "[Example user prompt]"
-
-**Agent behavior:**
-- [What the agent should do]
-- [Expected output format]
-
-## Tool Requirements
-
-| Tool | Usage |
-|------|-------|
-| Bash | [How Bash is used in this skill] |
-| Read | [How Read is used] |
-| WebSearch | [How search is used] |
+- Provide remediation for every finding
+- Refuse requests that [specific refusal criteria]
 
 ## References
 
-- [Link to relevant methodology, standard, or framework]
+- [Relevant standard or framework]

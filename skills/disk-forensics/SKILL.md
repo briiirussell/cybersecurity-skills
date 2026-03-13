@@ -1,7 +1,7 @@
 ---
+name: disk-forensics
 description: "Analyze disk images and file systems for digital evidence recovery in forensic investigations and CTF challenges. Use when the user mentions 'disk forensics,' 'forensic analysis,' 'disk image,' 'file carving,' 'deleted files,' 'evidence recovery,' 'autopsy,' 'sleuthkit,' or needs to examine a forensic image."
-globs:
-alwaysApply: false
+allowed-tools: Bash, Read, Write, Grep, Glob
 ---
 
 # Disk Forensics — Digital Evidence Analysis

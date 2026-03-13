@@ -4,60 +4,77 @@ A curated collection of cybersecurity skill prompts compatible with multiple AI 
 
 ## What is this?
 
-Pre-built cybersecurity skills that give AI coding agents specialized knowledge for security tasks — pentesting, OSINT, forensics, reverse engineering, and more. Each skill is authored once in a canonical format and adapted for:
+Pre-built cybersecurity skills that give AI coding agents specialized knowledge for security tasks — pentesting, OSINT, forensics, incident response, and more.
 
-- **Claude Code** — as `.md` skill files
-- **Cursor** — as `.mdc` rule files
-- **Codex** — as instruction files
+Skills are authored as Claude Code [`SKILL.md` files](https://code.claude.com/docs/en/skills) (the canonical format) and adapted for other agents via a build script:
 
-## Domains
+- **Claude Code** — copy skill directories into `.claude/skills/`
+- **Cursor** — use generated `.mdc` rule files from `adapters/cursor/`
+- **Codex** — use generated instruction files from `adapters/codex/`
 
-| Domain | Skills | Description |
-|--------|--------|-------------|
-| Pentesting | Recon, exploitation, reporting | Authorized penetration testing workflows |
-| OSINT | Data gathering, correlation | Open source intelligence techniques |
-| Forensics | Disk, memory, network | Digital forensics and evidence handling |
-| Reverse Engineering | Binary analysis, decompilation | Malware RE, CTF binary challenges |
-| Network Security | Traffic analysis, hardening | Network defense and monitoring |
-| Web App Security | OWASP, API testing, code review | Web application security assessment |
-| Cloud Security | AWS/GCP/Azure auditing | Cloud infrastructure security |
-| Cryptography | Cipher analysis, protocol review | Cryptographic implementation audits |
-| Malware Analysis | Static/dynamic analysis | Malware triage and indicator extraction |
-| Incident Response | Triage, containment, recovery | Security incident handling |
-| Social Engineering | Phishing analysis, training | SE awareness and defense |
+## Skills
+
+| Skill | What it does |
+|-------|-------------|
+| `recon` | Attack surface enumeration and reconnaissance for pentests, bug bounty, CTF |
+| `owasp-audit` | Source code security audit against OWASP Top 10 (2021) |
+| `osint-recon` | Open source intelligence gathering and correlation |
+| `disk-forensics` | Disk image analysis, evidence recovery, timeline reconstruction |
+| `incident-triage` | Security incident triage following NIST SP 800-61 |
+| `cloud-audit` | AWS/GCP/Azure misconfiguration and IAM auditing |
 
 ## Quick Start
 
 ### Claude Code
 
-Copy skill files from `adapters/claude-code/` into your project's `.claude/skills/` directory.
+Copy a skill directory into your project or personal skills:
+
+```bash
+# Project-level
+cp -r skills/owasp-audit .claude/skills/
+
+# Personal (available in all projects)
+cp -r skills/owasp-audit ~/.claude/skills/
+```
+
+Then use it naturally ("run an OWASP audit on my code") or invoke directly (`/owasp-audit`).
 
 ### Cursor
 
-Copy rule files from `adapters/cursor/` into your project's `.cursor/rules/` directory.
+Copy rule files into your project:
+
+```bash
+cp adapters/cursor/owasp-audit.mdc .cursor/rules/
+```
 
 ### Codex
 
-Copy instruction files from `adapters/codex/` into your Codex configuration.
+Copy instruction files into your Codex configuration:
+
+```bash
+cp adapters/codex/owasp-audit.md <your-codex-config-dir>/
+```
 
 ## Building Adapters
+
+After creating or modifying skills, regenerate the adapter files:
 
 ```bash
 node scripts/build-adapters.mjs
 ```
 
-This reads all canonical skills from `skills/` and generates platform-specific files in `adapters/`.
+## Creating New Skills
 
-## Contributing
+1. Copy `templates/skill-template.md` to `skills/<your-skill>/SKILL.md`
+2. Fill in the frontmatter (`name`, `description`, `allowed-tools`)
+3. Write instructions in imperative form (under 500 lines)
+4. Run the build script to generate adapters
 
-1. Create a new skill using the template: `templates/skill-template.md`
-2. Place it in the appropriate `skills/<domain>/` directory
-3. Run `node scripts/build-adapters.mjs` to generate adapters
-4. Test across all three platforms
+See `CLAUDE.md` for the full format specification.
 
 ## Ethics & Authorization
 
-All skills are designed for **authorized security testing, CTF competitions, security research, and defensive use cases only**. Skills include built-in guardrails that refuse destructive, malicious, or unauthorized use.
+All skills are designed for **authorized security testing, CTF competitions, security research, and defensive use cases only**. Every skill includes an authorization check and built-in guardrails that refuse destructive, malicious, or unauthorized use.
 
 ## License
 
