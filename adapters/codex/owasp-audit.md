@@ -22,7 +22,8 @@ Work through each category systematically. For each, grep for known vulnerabilit
 - IDOR — user-controlled IDs without ownership verification
 - Missing CSRF protections on state-changing requests
 - Role checks only on the frontend, not enforced server-side
-- Grep for: direct object references, missing auth middleware, user ID from request params
+- Open redirect via post-auth return-to parameter — `?from=`, `?next=`, `?returnTo=`, `?continue=`, `?redirect=` passed unsanitized to `redirect()` / `Response.redirect()`. Restrict to same-origin paths under the expected scope, normalize (`new URL(target, "http://localhost").pathname`) to defeat traversal like `/admin/../foo`
+- Grep for: direct object references, missing auth middleware, user ID from request params, `redirect(.*from`, `redirect(.*next`, `redirect(.*returnTo`
 
 ### A02: Cryptographic Failures
 - Hardcoded secrets, API keys, or passwords in source
@@ -59,8 +60,11 @@ Work through each category systematically. For each, grep for known vulnerabilit
 ### A07: Authentication Failures
 - Weak password policies
 - Session management issues (missing secure/httpOnly flags, no expiry, no rotation)
+- **Credential-as-cookie:** the cookie value *is* the credential (e.g. `cookies.set("admin_token", process.env.ADMIN_PASSWORD)` and equality-checked on read). Even with `httpOnly` and `secure`, this is plaintext-credential storage (CWE-522) and lacks rotation/revocation. Replace with an HMAC-signed expiring token verified via `crypto.subtle.verify` / `crypto.timingSafeEqual`
+- **Non-constant-time credential comparison:** `submitted === expected` for passwords, API keys, or signatures leaks length and prefix-match via timing. Use `crypto.timingSafeEqual` (Node) or `crypto.subtle.verify` (Web Crypto)
 - Missing rate limiting on login (credential stuffing risk)
 - Broken password reset flows
+- Grep for: `cookies.set\(.*process\.env`, `=== .*PASSWORD`, `!== .*SECRET`, `!== .*Bearer.*\${`
 
 ### A08: Data Integrity Failures
 - Unsafe deserialization of user input
