@@ -77,6 +77,16 @@ Work through each category systematically. For each, grep for known vulnerabilit
 - Missing URL validation and allowlisting
 - Grep for: `fetch(`, `axios(`, `http.get(`, `urllib`, `requests.get(` with user input
 
+## Verify Fixes at Runtime
+
+After applying a fix, exercise the affected code path — do not stop at typecheck or build. Modern frameworks have runtime-only failure modes that compile cleanly:
+
+- **Edge / Node split runtimes.** Next.js middleware, Cloudflare Workers, Vercel Edge — Node-only imports (`node:crypto`, `node:fs`) build successfully but throw on first request.
+- **Lazy module loads.** Adapters/plugins loaded via `import()` or runtime DI surface only when the codepath runs.
+- **Environment-variable fallthrough.** `Bearer ${process.env.X}` with X unset becomes a literal that the tests never hit because the test env defines X.
+
+For each shipped fix, run the affected route or job and capture the response. `tsc --noEmit` + build success ≠ fix verified.
+
 ## Report Format
 
 For each finding, document:
@@ -93,6 +103,9 @@ For each finding, document:
 
 **Remediation:**
 [Fixed code snippet with explanation]
+
+**Verification:** [Command run + observed response proving the fix works,
+e.g. `curl /admin → HTTP 307 redirect to login (was HTTP 500 pre-fix)`]
 ```
 
 Produce an executive summary:
