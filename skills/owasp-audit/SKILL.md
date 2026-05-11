@@ -37,7 +37,7 @@ Work through each category systematically. For each, grep for known vulnerabilit
 - **SQL injection:** raw queries with string concatenation, missing parameterized queries
 - **NoSQL injection:** unsanitized user input in MongoDB/Convex queries
 - **Command injection:** `exec()`, `spawn()`, `system()` with user input
-- **XSS:** unescaped user input in HTML, `dangerouslySetInnerHTML`, `v-html`
+- **XSS:** unescaped user input in HTML, `dangerouslySetInnerHTML`, `v-html`. Note the common safe-ish case: `dangerouslySetInnerHTML={{ __html: JSON.stringify(internalObject) }}` for SEO JSON-LD is typically safe *if* the object contains only internal data — flag it if user-editable fields (e.g. CMS-authored descriptions, vendor names) flow into the object
 - **Template injection:** user input in template literals
 - Grep for: `exec(`, `eval(`, `innerHTML`, `dangerouslySetInnerHTML`, `$where`, raw SQL strings
 
@@ -51,7 +51,8 @@ Work through each category systematically. For each, grep for known vulnerabilit
 - Overly permissive CORS policies (`Access-Control-Allow-Origin: *`)
 - Missing HTTP security headers (CSP, HSTS, X-Frame-Options, X-Content-Type-Options)
 - Default credentials or configurations shipped
-- Verbose error messages exposing stack traces or internals
+- Verbose error messages exposing stack traces or internals — including validation libraries echoing schema details (e.g. Zod `err.issues`, Joi error trees) to clients
+- **Runtime-API mismatch.** Code running in Edge / Workers / V8-isolate runtimes can't load Node-only modules. Imports of `node:crypto`, `node:fs`, `node:buffer`, `node:net`, etc. inside Next.js `middleware.ts` / Cloudflare Workers / Vercel Edge functions compile cleanly and fail at first request with `Failed to load external module`. Audit middleware and edge-marked routes for Node-only imports; prefer Web Crypto (`crypto.subtle`) for portable code
 
 ### A06: Vulnerable Components
 - Run `npm audit` (Node), `pip audit` (Python), or equivalent
