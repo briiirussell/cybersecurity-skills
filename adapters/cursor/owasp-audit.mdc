@@ -46,6 +46,16 @@ Work through each category systematically. For each, grep for known vulnerabilit
 - Authentication flows with logic flaws
 - Missing rate limiting on sensitive endpoints (login, password reset, API)
 - Business logic constraints only enforced client-side
+- **Configured-but-not-loaded check.** Before declaring a security middleware (rate-limit, auth, CSRF, throttle) as "already configured," verify the gem/package is actually installed — not just that the initializer file exists. Initializers wrapped in `if defined? Foo` / `if PACKAGE in sys.modules` silently no-op when the package isn't bundled.
+
+  | Stack | Check |
+  |---|---|
+  | Ruby/Rails | `grep -E "^    GEM_NAME " Gemfile.lock` (4-space indent = top-level gems) |
+  | Node | `grep "\"PACKAGE_NAME\":" package-lock.json` or `node -e "require('PACKAGE_NAME')"` |
+  | Python | `pip show PACKAGE_NAME` |
+  | Go | `grep PACKAGE_PATH go.sum` |
+
+  For Rails: also verify the middleware is in the runtime stack — `bundle exec rails middleware | grep -i FOO`.
 
 ### A05: Security Misconfiguration
 - Debug mode enabled in production configs
