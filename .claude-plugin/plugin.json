@@ -1,7 +1,7 @@
 {
   "name": "cybersecurity-skills",
   "description": "Cybersecurity skills for AI agents — code audit, cloud, recon, IR, AI security, and more",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "author": {
     "name": "Bri Russell"
   },

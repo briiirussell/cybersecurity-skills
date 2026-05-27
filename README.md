@@ -1,18 +1,39 @@
 # Cybersecurity Skills for AI Agents
 
-A collection of cybersecurity skills for AI coding agents. Built for developers, security engineers, and red/blue teamers who want their AI assistant to handle real security work — source-code audits, dependency triage, cloud and container review, IAM design, incident response, threat hunting, detection engineering, and governance mapping.
+A collection of cybersecurity skills for AI coding agents. The AI does the heavy lifting; you bring the context about your stack and your priorities.
+
+**Built to be useful at every experience level:**
+
+- **Security engineers and pentesters** running formal audits — concrete grep patterns, OWASP / NIST / ATT&CK alignment, report templates that pass auditor review
+- **Developers** shipping safer code without a dedicated security team to lean on — security work that fits into a normal sprint, plain-English explanations of why each finding matters
+- **Founders, ops folks, and small-team operators** securing a stack they can't afford a CISO for — guided, opinionated playbooks for the most common security work, with the audit skill explaining what it found and why
+- **Red / blue / purple teams** running real engagements — offensive recon, web pentest, threat hunting, detection engineering, SOC operations
+
+You do not need to be a security expert to use these skills. The skills are written so the AI agent can run them end-to-end and explain the findings in language any technical reader can follow. If you can describe what you have and what you want to know about it, the agent can do the work.
 
 Skills are authored as Claude Code [`SKILL.md` files](https://code.claude.com/docs/en/skills) (the canonical format) and built into adapters for Cursor and Codex. Installable via [`npx skills`](https://github.com/vercel-labs/skills) or the Claude Code plugin marketplace.
 
 Built by [Bri Russell](https://github.com/briiirussell). I run real audits with these skills, then bring the gaps I find back into the skill itself — so each version is a little less opinion and a little more evidence.
 
-**Contributions welcome!** Found a gap during an audit, or have a new skill to add? [Open a PR](#contributing) or [open an issue](https://github.com/briiirussell/cybersecurity-skills/issues) — field feedback is the most valuable thing you can send.
+**Contributions welcome!** Field feedback is the most valuable contribution — whether you're a security engineer who hit a gap during an audit, a developer whose AI agent missed something obvious, or a founder who used a skill and got an answer that wasn't quite right. [Open a PR](#contributing) or [open an issue](https://github.com/briiirussell/cybersecurity-skills/issues) — every level of expertise produces useful signal.
+
+## Where to start
+
+Not every skill is for every user on day one. A good starting point by context:
+
+- **Reviewing your own code or product:** start with `owasp-audit` for the source-code sweep, then `api-audit` if you have API endpoints, then `dependency-audit` for the CVE pass
+- **Securing cloud / infrastructure:** start with `cloud-audit` (AWS / GCP / Azure misconfig), then `iam-audit` if you manage identities, then `container-audit` if you run Docker / Kubernetes
+- **Responding to "something happened":** `incident-triage` for the immediate response, `disk-forensics` if you need to analyze a system afterward
+- **Building a security program from scratch:** `csf-mapping` for the governance frame, `threat-modeling` before new features, `breach-patterns` to learn from public incidents
+- **Closing the loop on findings:** `finding-triage` for any single finding from any source — gives you a defensible disposition with the right ticket fields
+
+The offensive skills (`recon`, `osint-recon`, `web-pentest`) require explicit authorization for the target and assume more security context. They open with an authorization check and will refuse anything ambiguous.
 
 ## What are Skills?
 
 Skills are markdown files that give AI agents specialized knowledge and workflows for specific tasks. Drop them into your project and your agent recognizes when you're working on a security task and applies the right methodology — OWASP categories, NIST IR steps, MITRE ATT&CK references, the actual grep patterns that surface the bug.
 
-The goal isn't to replace a security engineer. It's to give the agent enough structure that the first pass is useful, the report format is consistent, and the obvious stuff stops slipping through.
+The goal isn't to replace a security engineer — or to pretend you have one if you don't. It's to give the agent enough structure that the first pass is useful, the report format is consistent, and the obvious stuff stops slipping through. For teams without dedicated security headcount, that closes a real gap. For teams with security engineers, it lets them spend their time on the work the AI can't do.
 
 ## How Skills Work Together
 
