@@ -39,6 +39,14 @@ Work through each category systematically. For each, grep for known vulnerabilit
 
   Never quietly recommend `VERIFY_PEER` without checking that the cert chain at the deployment target is verifiable.
 - Grep for: `password`, `secret`, `api_key`, `private_key`, `MD5`, `SHA1`, `base64`
+- **Include non-source file extensions in the sweep.** Rails `cable.yml` / `database.yml` / `storage.yml`, Kubernetes manifests, and Vercel / Netlify deploy configs routinely contain TLS or cert config that a source-only sweep misses. Concrete sweep for VERIFY_NONE / VERIFY_PEER:
+
+  ```bash
+  grep -rn "VERIFY_NONE\|verify_mode" \
+    --include="*.rb" --include="*.yml" --include="*.yaml" \
+    --include="*.toml" --include="*.json" \
+    .
+  ```
 
 ### A03: Injection
 - **SQL injection:** raw queries with string concatenation, missing parameterized queries
@@ -132,6 +140,17 @@ After applying a fix, exercise the affected code path — do not stop at typeche
 For each shipped fix, run the affected route or job and capture the response. `tsc --noEmit` + build success ≠ fix verified.
 
 ## Report Format
+
+Findings have three possible dispositions:
+
+- **Fixed** — remediation shipped in this PR. Closed pending verification.
+- **Deferred** — remediation acknowledged and scheduled. Specify whether the next deploy is gated on it (release blocker) or not (acceptable risk with calendar fix). Severity does not change because you decided to defer it.
+- **Accepted Risk** — remediation is NOT planned at the current configuration. The report must record:
+  1. **Why the fix doesn't apply** — cost tier, dependency version constraint, deployment topology, vendor limitation
+  2. **Compensating controls** — private network, signed cookies, internal-only routing, etc.
+  3. **Re-evaluation trigger** — what condition (plan upgrade, dependency bump, traffic pattern change) would cause this finding to leave the Accepted Risk lane
+
+An "Accepted Risk" entry without all three fields is a real finding being silently dropped under a different label.
 
 For each finding, document:
 
