@@ -35,14 +35,23 @@ PHP:        composer.json, composer.lock
 - Check container base images and their update status
 - Check IaC tool versions (Terraform, Pulumi, CDK)
 
+**Edge cases in package manifests:**
+- `optionalDependencies` — installed but not audited by default
+- `peerDependencies` — version range may not match what's installed
+- `overrides` / yarn `resolutions` / pnpm `overrides` — check if used to *silence* advisories rather than fix them
+- Monorepos: read every `packages/*/package.json` and `apps/*/package.json`, not just the root
+- `engines` field — older-than-LTS Node makes other audits moot
+
 ### Step 2: Run Automated Audit Tools
 
 Run the appropriate audit command for the project:
 
 ```bash
 # Node.js
-npm audit
-npm audit --json  # For structured output
+npm audit --json                # full structured output
+npm audit --omit=dev --json     # production-only: filters dev/build-time vulns
+# Compare the two — vulns only in dev/build tooling do not ship to users
+# and should be triaged as lower priority. Don't bury this in the report.
 
 # Python
 pip audit          # If pip-audit installed
@@ -71,6 +80,16 @@ trivy image <image>
 trivy fs .
 ```
 
+**Applying fixes — read before you `--force`:**
+
+```bash
+npm audit fix                   # safe: upgrades within stated ranges
+npm audit fix --dry-run --force # ALWAYS dry-run first
+npm audit fix --force           # only after reviewing the dry-run
+```
+
+`npm audit fix --force` can resolve an advisory by DOWNGRADING a package to an older version that doesn't trigger the audit signature. This is almost always wrong (e.g. downgrading `next@16` to `next@9` to "fix" a transitive postcss CVE). Inspect dry-run output for "Will install X@Y, which is a breaking change" — that's the tool trying to downgrade.
+
 **When `npm audit fix` cannot resolve an advisory** (transitive dep pinned by an upstream package):
 
 1. **Determine reachability** — is the vulnerable code path actually invoked in your usage? `npm ls <package>` + reading the parent's source can rule it out as unreachable.
@@ -94,7 +113,10 @@ The framework-specific patterns below cover *evergreen* anti-patterns (mass assi
 - SSRF through image optimization (`next/image` with unrestricted domains)
 - Exposed `.env` files in public directory or client bundle (`NEXT_PUBLIC_` prefix leaking secrets)
 - Middleware auth bypass patterns — check middleware.ts matches all protected routes
-- Server Component / Client Component boundary leaking server-only data
+- Server Component / Client Component boundary leaking server-only data:
+  - Any module reading `process.env.SECRET` or instantiating a DB client should start with `import "server-only";` — fails the build if imported from a Client Component
+  - Grep for: files in `lib/` that touch `process.env.[A-Z_]+` but do NOT import `server-only`
+  - Inverse check: any file with `"use client"` importing from such a module is a leak
 - Outdated `next.config.js` security headers
 
 **Django:**
@@ -119,6 +141,13 @@ The framework-specific patterns below cover *evergreen* anti-patterns (mass assi
 - Missing rate limiting on auth endpoints
 - `eval()` or `Function()` with user input
 - Event loop blocking with synchronous operations
+
+**Serverless / edge runtimes (Vercel, Lambda, Cloud Run, Workers):**
+- **In-memory state ≠ rate limit.** A module-scoped `Map` or `Set` for rate limiting, sessions, or caches is per-instance. Cold starts reset state; load spreads across instances; attackers bypass trivially.
+  - Grep for: `const rateLimitMap = new Map`, `const cache = new Map` in server-action / API-route files
+  - Fix: shared store — Vercel KV, Upstash Ratelimit, Redis, DynamoDB
+- **Unbounded in-memory collections** leak memory under traffic. Cap size and evict (LRU or FIFO).
+- **`x-forwarded-for` trust:** only trustworthy when the edge overwrites it. Behind misconfigured proxy chains it's attacker-spoofable. A fallback to a single `"unknown"` bucket throttles all anonymous traffic together; random-fallback silently disables the limit.
 
 **Spring / Java:**
 - Spring4Shell and related RCE vulnerabilities
@@ -166,9 +195,11 @@ Beyond known CVEs, look for supply chain attack indicators:
 - Packages with known but unpatched vulnerabilities (maintainer unresponsive)
 
 **Lockfile integrity:**
-- Is the lockfile committed to source control?
-- Does CI install from the lockfile (`npm ci` not `npm install`, `pip install --require-hashes`)?
-- Are integrity hashes present and verified?
+- Lockfile committed? `git ls-files | grep -E 'package-lock\.json|yarn\.lock|pnpm-lock\.yaml|Gemfile\.lock|poetry\.lock|composer\.lock|Cargo\.lock|go\.sum'`
+- CI installs from lockfile?
+  - Check `.github/workflows/*.yml`, `.gitlab-ci.yml`, `Jenkinsfile`, `vercel.json`, `netlify.toml`, `Dockerfile`
+  - `npm install` (bad) vs `npm ci` (good); `yarn install` (bad) vs `yarn install --immutable` (good); `pip install -r` (bad) vs `pip install --require-hashes -r` (good)
+- `integrity` hashes present in the lockfile? (modern npm/pnpm yes by default)
 
 ### Step 5: Check Dev Tool and CI/CD Security
 
