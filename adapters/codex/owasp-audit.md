@@ -68,6 +68,15 @@ Work through each category systematically. For each, grep for known vulnerabilit
 - Default credentials or configurations shipped
 - Verbose error messages exposing stack traces or internals — including validation libraries echoing schema details (e.g. Zod `err.issues`, Joi error trees) to clients
 - **Runtime-API mismatch.** Code running in Edge / Workers / V8-isolate runtimes can't load Node-only modules. Imports of `node:crypto`, `node:fs`, `node:buffer`, `node:net`, etc. inside Next.js `middleware.ts` / Cloudflare Workers / Vercel Edge functions compile cleanly and fail at first request with `Failed to load external module`. Audit middleware and edge-marked routes for Node-only imports; prefer Web Crypto (`crypto.subtle`) for portable code
+- **Rails admin-engine mounts.** Grep `config/routes.rb` for engine and dashboard mounts (PgHero, Sidekiq::Web, Flipper UI, Mission Control, Audit1984) and verify the auth middleware in the corresponding initializer applies in *every* environment reachable from the internet — not just production:
+
+  ```bash
+  grep -E "mount .+::(Engine|Web|UI)|mount .+::App" config/routes.rb
+  grep -rn "Rails.env.production?" config/initializers/ | \
+    grep -B1 -A5 "Auth::Basic\|authenticate\|secure_compare"
+  ```
+
+  The README examples for PgHero, Sidekiq::Web, Flipper, and Mission Control all wrap auth in `if Rails.env.production?`, which leaves staging, review apps, and preview deploys serving the admin UI anonymously. Fix shape: switch the guard to `unless Rails.env.local?` (Rails 7.1+ helper for `development || test`), and add a fail-closed check that refuses access when the auth env vars are unset.
 
 ### A06: Vulnerable Components
 - Run `npm audit` (Node), `pip audit` (Python), or equivalent
