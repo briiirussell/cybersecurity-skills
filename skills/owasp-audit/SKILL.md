@@ -53,6 +53,19 @@ Work through each category systematically. For each, grep for known vulnerabilit
 - **NoSQL injection:** unsanitized user input in MongoDB/Convex queries
 - **Command injection:** `exec()`, `spawn()`, `system()` with user input
 - **XSS:** unescaped user input in HTML, `dangerouslySetInnerHTML`, `v-html`. Note the common safe-ish case: `dangerouslySetInnerHTML={{ __html: JSON.stringify(internalObject) }}` for SEO JSON-LD is typically safe *if* the object contains only internal data — flag it if user-editable fields (e.g. CMS-authored descriptions, vendor names) flow into the object
+- **Rails ERB sinks:** `raw()`, `.html_safe`, `<%==`, `sanitize` with a permissive allowlist, and `simple_format` on user input. Grep for these alongside `dangerouslySetInnerHTML` / `v-html`.
+- **Rails JSON-LD breakout:** inside `<script type="application/ld+json">`, do NOT use `j` / `escape_javascript` for field values — `j` emits `\'` and `\$` (valid JS, invalid JSON), so `JSON.parse` fails on any field containing an apostrophe or `$`. Use this idiom instead:
+
+  ```erb
+  <% schema = { "@context" => "https://schema.org",
+                "@type" => "Article",
+                "headline" => @post.title } %>
+  <script type="application/ld+json">
+  <%= json_escape(schema.to_json).html_safe %>
+  </script>
+  ```
+
+  `to_json` handles JSON escaping; `json_escape` covers `<>&\u2028\u2029` against `</script>` breakout. Verify with round-trip: `JSON.parse(json_escape(article.to_json))` equals the source hash.
 - **Template injection:** user input in template literals
 - Grep for: `exec(`, `eval(`, `innerHTML`, `dangerouslySetInnerHTML`, `$where`, raw SQL strings
 
@@ -100,6 +113,7 @@ Work through each category systematically. For each, grep for known vulnerabilit
 - **Non-constant-time credential comparison:** `submitted === expected` for passwords, API keys, or signatures leaks length and prefix-match via timing. Use `crypto.timingSafeEqual` (Node) or `crypto.subtle.verify` (Web Crypto)
 - Missing rate limiting on login (credential stuffing risk)
 - Broken password reset flows
+- **Rails / Devise — `password_length` requires `:validatable`.** `config.password_length` in `config/initializers/devise.rb` is only enforced when the User model includes `:validatable` in its `devise :...` declaration. A model with `devise :database_authenticatable, :registerable, :recoverable, :rememberable` (no `:validatable`) accepts passwords of any length and any email format, regardless of what the initializer says. Grep: `^\s*devise\s+:` in `app/models/`; flag any line where `:validatable` is absent. Adding it on an existing app validates on create+update but does not retro-invalidate existing weak passwords.
 - Grep for: `cookies.set\(.*process\.env`, `=== .*PASSWORD`, `!== .*SECRET`, `!== .*Bearer.*\${`
 
 ### A08: Data Integrity Failures
@@ -167,8 +181,7 @@ For each finding, document:
 **Remediation:**
 [Fixed code snippet with explanation]
 
-**Verification:** [Command run + observed response proving the fix works,
-e.g. `curl /admin → HTTP 307 redirect to login (was HTTP 500 pre-fix)`]
+**Verification:** Concrete adversarial input + the command or code path that proves the fix holds. For XSS: the script-tag breakout payload that no longer breaks out. For open redirects: the off-host URL that now rejects. For password-length: the 1-char password that now fails to save. "The linter says it's fine" is not verification — static analysis has known blind spots for correctness bugs that happen to also be security fixes.
 ```
 
 Produce an executive summary:
