@@ -23,6 +23,12 @@ Work through each category systematically. For each, grep for known vulnerabilit
 - Missing authorization checks on endpoints or routes
 - IDOR — user-controlled IDs without ownership verification
 - **Auth-check ordering.** Verify the authorization check runs *before* any branch that can reveal whether the resource exists, what state it's in, or any other resource-specific metadata. Returning 404 for "not found", 400 for "wrong state", and 401 for "not authenticated" is itself a leak — an attacker enumerates resource IDs and learns states without ever passing the auth gate. Recommended response shape: uniform 404 for everything an unprivileged caller should not see.
+- **Framework RPC surfaces that don't appear as routes.** Server actions and equivalents are publicly-exposed RPCs that file scans miss. Enumerate and audit each one for auth + ownership:
+  - Next.js: every exported function in a file with `'use server'`
+  - Remix / React Router: every `action` / `loader` export
+  - tRPC: every procedure
+  - GraphQL: every resolver
+  - Rails: non-resource controller actions
 - **IDOR via foreign keys in mutation payloads.** Form posts a foreign-key UUID (`categoryId`, `projectId`, `teamId`, `organizationId`) → server validates ownership of the primary record but blindly accepts the FK → ORM relation join later surfaces another tenant's data. Look for `formData.get("<id>")` / `body.<id>` passed straight to insert/update without a preceding `findFirst({ where: { id, userId } })`. For ORM relation joins (Drizzle `with:`, Prisma `include`, ActiveRecord `includes`), trace whether the join target is filtered by the same tenant/ownership predicate as the parent query.
 - Missing CSRF protections on state-changing requests
 - Role checks only on the frontend, not enforced server-side
@@ -56,6 +62,12 @@ Work through each category systematically. For each, grep for known vulnerabilit
 - **Command injection:** `exec()`, `spawn()`, `system()` with user input
 - **XSS:** unescaped user input in HTML, `dangerouslySetInnerHTML`, `v-html`. Note the common safe-ish case: `dangerouslySetInnerHTML={{ __html: JSON.stringify(internalObject) }}` for SEO JSON-LD is typically safe *if* the object contains only internal data — flag it if user-editable fields (e.g. CMS-authored descriptions, vendor names) flow into the object
 - **Rails ERB sinks:** `raw()`, `.html_safe`, `<%==`, `sanitize` with a permissive allowlist, and `simple_format` on user input. Grep for these alongside `dangerouslySetInnerHTML` / `v-html`.
+- **Sanitizer choice.** When remediating an HTML/SVG XSS sink, the fix MUST use a vetted parser-based sanitizer (DOMPurify / isomorphic-dompurify / sanitize-html for JS; bleach for Python). Reject regex-based sanitizers in code review. If unavoidable, a regex sanitizer must:
+  - Treat `[/\s]` (not just `\s`) as the attribute-name separator — HTML accepts `/` between tag name and first attribute: `<img/onerror=…>`
+  - Strip both SVG- and HTML-namespace dangerous elements (`<img>`, `<body>`, `<video>`, `<iframe>`) — HTML elements instantiate even in SVG-rendering contexts
+  - Include a final fallback pass that strips any `on*=` regardless of surrounding context
+  - Be paired with `Content-Security-Policy: script-src-attr 'none'` as a browser-level backstop
+- **Sanitize on write AND on render.** For stored XSS / injection, sanitize at the trust boundary (write to DB) AND at the render boundary (defense in depth). On finding a stored-XSS bug, plan a one-time backfill migration to sanitize existing data — render-only fixes leave poisoned rows that any new render path will re-expose.
 - **Rails JSON-LD breakout:** inside `<script type="application/ld+json">`, do NOT use `j` / `escape_javascript` for field values — `j` emits `\'` and `\$` (valid JS, invalid JSON), so `JSON.parse` fails on any field containing an apostrophe or `$`. Use this idiom instead:
 
   ```erb

@@ -203,8 +203,10 @@ Beyond known CVEs, look for supply chain attack indicators:
 |-----------|---------|--------|--------|
 
 ### Known Vulnerabilities (CVEs)
-| Package | Installed | Vuln | Severity | CVE | Fix Version |
-|---------|-----------|------|----------|-----|-------------|
+| Package | Installed | Vuln | Severity | Where reachable | CVE | Fix Version |
+|---------|-----------|------|----------|-----------------|-----|-------------|
+
+Where reachable values: `runtime` / `build-only` / `dev-only`. Confirm with `npm ls --omit=dev <package>` or inspect the deployment artifact (Vercel function bundle, Docker layer). Build- and dev-only vulnerabilities should not block a release on their own; runtime-reachable ones should.
 
 ### Framework-Specific Issues
 #### [SEVERITY] [Title]
