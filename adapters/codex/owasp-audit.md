@@ -71,6 +71,12 @@ Work through each category systematically. For each, grep for known vulnerabilit
 - Authentication flows with logic flaws
 - Missing rate limiting on sensitive endpoints (login, password reset, API)
 - Business logic constraints only enforced client-side
+- **Multi-tenant webhook signature matching.** When an unauthenticated webhook endpoint identifies its tenant by trying each tenant's secret in turn, every request — including garbage — does O(N) DB lookups + O(N) HMAC computations. Attackers flood with random signatures and amplify CPU/DB load without ever passing auth. Defences (compose them):
+  1. **Signature-shape prefilter** before any DB work — reject signatures that aren't the exact length/charset the provider sends (e.g., `/^[a-f0-9]{64}$/i` for HMAC-SHA256 hex)
+  2. **Hard cap** on per-request signature checks (e.g., `LIMIT 200`)
+  3. **Per-IP rate limit** on the endpoint
+  4. If the provider supports it, **embed the tenant ID in the webhook URL** (`/api/webhooks/foo/<connection_id>`) so lookup is O(1)
+- **Rate-limit key fallback.** If your rate-limit key includes an attacker-controllable or potentially-missing identifier (IP, user-id, session-id), do NOT fall back to a shared constant string when it's absent. Either (a) refuse the request, (b) fall back to a per-resource identifier the attacker can't share (per-email for signup, per-Stripe-customer for billing), or (c) explicitly fail-open and log. A shared `'unknown'`/`'anon'` bucket is a lockout vector — one attacker pinning the bucket locks out every user behind that proxy path.
 - **Configured-but-not-loaded check.** Before declaring a security middleware (rate-limit, auth, CSRF, throttle) as "already configured," verify the gem/package is actually installed — not just that the initializer file exists. Initializers wrapped in `if defined? Foo` / `if PACKAGE in sys.modules` silently no-op when the package isn't bundled.
 
   | Stack | Check |
@@ -98,6 +104,15 @@ Work through each category systematically. For each, grep for known vulnerabilit
   ```
 
   The README examples for PgHero, Sidekiq::Web, Flipper, and Mission Control all wrap auth in `if Rails.env.production?`, which leaves staging, review apps, and preview deploys serving the admin UI anonymously. Fix shape: switch the guard to `unless Rails.env.local?` (Rails 7.1+ helper for `development || test`), and add a fail-closed check that refuses access when the auth env vars are unset.
+- **Source-tree hygiene.** Grep for sync-conflict duplicates and dead code that could let a reviewer fix the canonical file while leaving a vulnerable copy in place:
+
+  ```bash
+  find . \( -name '* 2.*' -o -name '* 3.*' -o -name '*.orig' \
+       -o -name '*~' -o -name '*.bak' \) -not -path '*/node_modules/*'
+  ```
+
+  Treat findings as A05 — the canonical file may be patched while the duplicate retains the vulnerability.
+- **Next.js `headers()` rule merging.** Rules in `next.config.ts` `headers()` match per route and *merge* — a more-specific rule does not override headers it doesn't redeclare. Shipping `frame-ancestors 'none'` + `X-Frame-Options: DENY` in a `/:path*` default plus `frame-ancestors *` in a `/embed` override results in both `frame-ancestors *` and `X-Frame-Options: DENY` on the embed route (contradicting; older browsers may break framing). Verify with `curl -I` against the deployed origin — config inspection alone misses the merge. Either set XFO in every rule or drop it entirely (CSP `frame-ancestors` supersedes on modern browsers).
 
 ### A06: Vulnerable Components
 - Run `npm audit` (Node), `pip audit` (Python), or equivalent
