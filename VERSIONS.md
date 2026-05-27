@@ -4,6 +4,7 @@ Current versions of all skills. Agents can compare against local versions to che
 
 | Skill | Version | Last Updated |
 |-------|---------|--------------|
+| ai-risk-management | 1.0.0 | 2026-05-26 |
 | api-audit | 1.0.0 | 2026-05-26 |
 | breach-patterns | 1.0.0 | 2026-05-26 |
 | cloud-audit | 1.0.0 | 2026-05-26 |
@@ -13,14 +14,19 @@ Current versions of all skills. Agents can compare against local versions to che
 | dependency-audit | 1.1.0 | 2026-05-26 |
 | disk-forensics | 1.0.0 | 2026-05-26 |
 | finding-triage | 1.0.0 | 2026-05-26 |
+| hipaa-audit | 1.0.0 | 2026-05-26 |
 | iam-audit | 1.0.0 | 2026-05-26 |
 | incident-triage | 1.0.0 | 2026-05-26 |
 | mobile-audit | 1.0.0 | 2026-05-26 |
 | osint-recon | 1.0.0 | 2026-05-26 |
 | owasp-audit | 1.1.0 | 2026-05-26 |
+| pci-audit | 1.0.0 | 2026-05-26 |
+| privacy-engineering | 1.0.0 | 2026-05-26 |
 | prompt-injection | 1.0.0 | 2026-05-26 |
 | recon | 1.0.0 | 2026-05-26 |
+| red-team-engagement | 1.0.0 | 2026-05-26 |
 | secrets-audit | 1.0.0 | 2026-05-26 |
+| security-comms | 1.0.0 | 2026-05-26 |
 | siem-detection | 1.0.0 | 2026-05-26 |
 | soc-operations | 1.0.0 | 2026-05-26 |
 | threat-hunting | 1.0.0 | 2026-05-26 |
@@ -29,6 +35,43 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.0.0 | 2026-05-26 |
 
 ## Recent Changes
+
+### 1.3.0 (2026-05-26)
+
+Compliance and governance release. **Six new skills**, taking the catalog from 23 → 29 skills across seven families (added: Compliance & Privacy). Catalog audited end to end before tag: all 29 skills pass mechanical checks; content audit found no fatigue, no pattern reuse, all cross-references resolve.
+
+**New skills:**
+
+- **security-comms** — Translate security work for non-security audiences. Seven audience archetypes (board / executive / engineering leadership / individual engineers / customer success / customers / procurement-legal-compliance), two-mode workflow (draft from technical input / review a draft), six templates (board update, executive memo, customer disclosure draft, post-mortem narrative, audit-findings-for-engineering, sales-engineering FAQ). Closes the gap every other skill produces — namely, the technical output that has to land with a non-security audience.
+- **privacy-engineering** — GDPR / CCPA / CPRA / LGPD / PIPEDA technical implementation. Eight engineering practices (data classification, minimization, lawful basis, consent management, DSAR pipeline with full deletion fan-out across DBs / caches / search / analytics / vendors, vendor / sub-processor management, breach-notification engineering hooks, DPIA inputs). Concrete grep patterns for PII leakage in code and analytics SDK initializations.
+- **ai-risk-management** — NIST AI Risk Management Framework (RMF) 1.0 + EU AI Act. Broader than prompt-injection (which is the security slice). Four-function workflow (Govern / Map / Measure / Manage with inventory as prereq), evaluation categories with concrete tooling per category (Fairlearn, AIF360, What-If Tool, Aequitas, SHAP, LIME, HELM, MMLU), regulatory layer covering EU AI Act risk tiers, US federal patchwork, state laws.
+- **red-team-engagement** — Authorized adversary emulation methodology. Distinct from web-pentest (technique-focused). Multi-week, objective-based, often assumed-breach. Carries the heaviest authorization gating in the catalog: seven required checks before any planning, explicit refusal language, RoE document with twelve specific sections, and a Boundaries section with eight separate refusal categories.
+- **pci-audit** — PCI DSS v4.0 audit. Leads with scope determination (the single most-leveraged variable). Engineering-relevant requirements (Req 3 storage of CHD with PAN regex patterns by brand; Req 4 transmission; Req 6 cross-ref to owasp-audit / api-audit / vuln-research / dependency-audit; Req 7-8 cross-ref iam-audit; Req 10 cross-ref siem-detection; Req 11 cross-ref dependency-audit / web-pentest / red-team-engagement; Req 12 cross-ref incident-triage).
+- **hipaa-audit** — HIPAA Security / Privacy / Breach Notification / HITECH. Three safeguard categories (Administrative / Physical / Technical) with §164.308 / §164.310 / §164.312 citations. 18 identifiers, BA chain-of-liability, minimum-necessary at the query / API level, 60-day breach notification timing by recipient, encryption-as-safe-harbor framing.
+
+**Existing skills updated (back-references added):**
+
+- `incident-triage` — added cross-refs to security-comms (stakeholder / customer notifications), privacy-engineering / hipaa-audit / pci-audit (regulatory clock determination), ai-risk-management (AI-specific incident classes)
+- `finding-triage` — added cross-ref to security-comms (translating dispositions for non-security audiences)
+- `breach-patterns` — added cross-refs to hipaa-audit / pci-audit / privacy-engineering for regulatory implications
+- `prompt-injection` — added cross-ref to ai-risk-management for the broader governance frame
+
+**README:**
+
+- Skill-map diagram expanded from six → seven families with the new Compliance & Privacy family
+- Skills table includes all 29 entries
+- "Where to start" section expanded with new contexts: working under a specific regulation, translating security work upward / outward
+
+**Repo state:**
+
+- 50+ PRs since v1.0.0; 7 PRs in this release cycle (#54–#60)
+- main + development synced
+- Plugin metadata (`marketplace.json`, `plugin.json`) at 1.3.0
+- npx skills and Claude plugin marketplace install paths verified
+
+**Audit pre-release confirmation:**
+
+A comprehensive content + mechanical audit ran before the v1.3.0 tag. Mechanical checks (build, naming, JSON validity, npx enumeration, adapter sync, description length, line count) all clean. Content audit specifically checked for fatigue / pattern-reuse risk after six skills in one stretch — none found. pci-audit and hipaa-audit are demonstrably distinct skills, not the same template with different acronyms. security-comms is the strongest new addition. red-team-engagement carries the heaviest and most appropriate authorization framing in the entire catalog.
 
 ### 1.2.2 (2026-05-26)
 

@@ -8,7 +8,7 @@ allowed-tools: Read, Grep, Glob, Bash, Write, WebSearch
 
 Audit applications that use AI features, LLM integrations, or AI agents for prompt injection, privilege escalation, and authorization bypass vulnerabilities.
 
-Cross-references: `threat-modeling` for design-time AI risk modeling on new AI features (before this skill applies); `owasp-audit` for the XSS / output-rendering patterns that overlap when LLM output reaches the browser (sanitize on render, JSON-LD breakout); `api-audit` for the API surface that LLM tools and MCP servers expose.
+Cross-references: `threat-modeling` for design-time AI risk modeling on new AI features (before this skill applies); `owasp-audit` for the XSS / output-rendering patterns that overlap when LLM output reaches the browser (sanitize on render, JSON-LD breakout); `api-audit` for the API surface that LLM tools and MCP servers expose; `ai-risk-management` for the broader governance frame this skill sits within — prompt injection is the security slice of AI risk; AI RMF covers the rest (fairness, robustness, transparency, drift, lifecycle).
 
 ## Background
 

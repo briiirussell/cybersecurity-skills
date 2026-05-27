@@ -8,7 +8,7 @@ The inverse of `incident-triage`. That skill is "we're on fire, what now." This 
 
 Breaches catalogued here are public, well-documented, and pattern-bearing. Each pattern surfaces a control or check that often falls between OWASP categories — IMDS abuse, supplier credential blast radius, secrets-in-CI, single-sign-on lateral movement, log-tampering pre-breach. These are the controls people add *after* their first incident; reading other people's breaches is cheaper than writing your own.
 
-Cross-references: every audit skill in this repo. Use this skill to surface "have we considered X?" questions, then pivot to the relevant audit skill for the deep dive.
+Cross-references: every audit skill in this repo. Use this skill to surface "have we considered X?" questions, then pivot to the relevant audit skill for the deep dive. When a breach pattern surfaces a regulatory implication — health data exposure, payment card data exposure, PII exposure — also reach for `hipaa-audit`, `pci-audit`, or `privacy-engineering` to understand the regulatory clock and notification obligations that come with that breach class.
 
 ## How to use this skill
 

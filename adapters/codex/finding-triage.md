@@ -13,6 +13,7 @@ This skill works on findings from any source: SAST output, DAST scanner, depende
 Cross-references:
 - `vuln-research` for the technical CVE deep-dive that feeds reachability assessment here
 - `owasp-audit` Three-Disposition rule (the framework this implements per-finding)
+- `security-comms` for translating the disposition writeup into stakeholder-readable language when the finding has to leave the security context
 - Any audit skill — this consumes their findings as input
 
 ## Workflow

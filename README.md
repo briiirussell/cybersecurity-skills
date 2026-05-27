@@ -23,11 +23,13 @@ Not every skill is for every user on day one. A good starting point by context:
 
 - **Reviewing your own code or product:** start with `owasp-audit` for the source-code sweep, then `api-audit` if you have API endpoints, then `dependency-audit` for the CVE pass
 - **Securing cloud / infrastructure:** start with `cloud-audit` (AWS / GCP / Azure misconfig), then `iam-audit` if you manage identities, then `container-audit` if you run Docker / Kubernetes
-- **Responding to "something happened":** `incident-triage` for the immediate response, `disk-forensics` if you need to analyze a system afterward
+- **Responding to "something happened":** `incident-triage` for the immediate response, `disk-forensics` if you need to analyze a system afterward, `security-comms` to draft the stakeholder / customer communications
 - **Building a security program from scratch:** `csf-mapping` for the governance frame, `threat-modeling` before new features, `breach-patterns` to learn from public incidents
+- **Working under a specific regulation:** `privacy-engineering` for GDPR / CCPA / similar privacy laws, `hipaa-audit` for ePHI, `pci-audit` for payment cards, `ai-risk-management` for AI features
 - **Closing the loop on findings:** `finding-triage` for any single finding from any source — gives you a defensible disposition with the right ticket fields
+- **Translating security work upward or outward:** `security-comms` for board / exec / customer / engineering / sales-engineering deliverables
 
-The offensive skills (`recon`, `osint-recon`, `web-pentest`) require explicit authorization for the target and assume more security context. They open with an authorization check and will refuse anything ambiguous.
+The offensive skills (`recon`, `osint-recon`, `web-pentest`, `red-team-engagement`) require explicit authorization for the target and assume more security context. They open with an authorization check and will refuse anything ambiguous. `red-team-engagement` in particular carries the strongest refusal posture in the catalog and will refuse to plan anything against systems the user cannot demonstrate authorization for.
 
 ## What are Skills?
 
@@ -37,44 +39,47 @@ The goal isn't to replace a security engineer — or to pretend you have one if 
 
 ## How Skills Work Together
 
-The skills are organized into six families. Most security work crosses families — an OWASP audit surfaces a dependency question, an incident kicks off an OSINT trail, cloud findings overlap with appsec. Skills cross-reference each other where that's true; `finding-triage` and `csf-mapping` orchestrate across the whole map.
+The skills are organized into seven families. Most security work crosses families — an OWASP audit surfaces a dependency question, an incident kicks off an OSINT trail, cloud findings overlap with appsec, and findings have to be translated for the audience that hears them. Skills cross-reference each other where that's true; `finding-triage`, `security-comms`, and `csf-mapping` orchestrate across the whole map.
 
 ```
-                  ┌────────────────────────────────────────────┐
-                  │            Cybersecurity Skill Map         │
-                  └──────────────────────┬─────────────────────┘
-                                         │
-   ┌──────────────┬──────────────┬───────┴───────┬──────────────┬───────────────┐
-   ▼              ▼              ▼               ▼              ▼               ▼
-┌────────┐  ┌──────────┐  ┌────────────┐  ┌────────────┐  ┌──────────┐  ┌────────────┐
-│ AppSec │  │Offensive │  │  Detect &  │  │  Cloud &   │  │   AI     │  │  Design &  │
-│& Supply│  │ & Recon  │  │  Respond   │  │   Infra    │  │ Security │  │ Governance │
-├────────┤  ├──────────┤  ├────────────┤  ├────────────┤  ├──────────┤  ├────────────┤
-│owasp-  │  │recon     │  │incident-   │  │cloud-      │  │prompt-   │  │threat-     │
-│ audit  │  │osint-    │  │ triage     │  │ audit      │  │ injection│  │ modeling   │
-│api-    │  │ recon    │  │disk-       │  │container-  │  │          │  │vuln-       │
-│ audit  │  │web-      │  │ forensics  │  │ audit      │  │          │  │ research   │
-│depend- │  │ pentest  │  │siem-       │  │iam-audit   │  │          │  │finding-    │
-│ audit  │  │          │  │ detection  │  │            │  │          │  │ triage     │
-│secrets-│  │          │  │soc-        │  │            │  │          │  │csf-mapping │
-│ audit  │  │          │  │ operations │  │            │  │          │  │            │
-│crypto- │  │          │  │threat-     │  │            │  │          │  │            │
-│ audit  │  │          │  │ hunting    │  │            │  │          │  │            │
-│mobile- │  │          │  │breach-     │  │            │  │          │  │            │
-│ audit  │  │          │  │ patterns   │  │            │  │          │  │            │
-└───┬────┘  └────┬─────┘  └─────┬──────┘  └─────┬──────┘  └────┬─────┘  └─────┬──────┘
-    │            │              │               │              │              │
-    └────────────┴───────┬──────┴───────────────┴──────────────┴──────────────┘
-                         │
-        Common crossovers:
-          owasp-audit ↔ api-audit ↔ dependency-audit ↔ vuln-research
-          web-pentest ↔ recon ↔ osint-recon ↔ owasp-audit
-          siem-detection → threat-hunting → incident-triage → disk-forensics
-          cloud-audit ↔ container-audit ↔ iam-audit ↔ secrets-audit
-          threat-modeling → owasp-audit / api-audit (pre-implementation → code)
-          breach-patterns → every audit skill (what to check)
-          finding-triage ← every skill (closes the loop on any finding)
-          csf-mapping ← every skill (rolls evidence into governance frame)
+                    ┌──────────────────────────────────────────┐
+                    │          Cybersecurity Skill Map         │
+                    └──────────────────────┬───────────────────┘
+                                           │
+  ┌──────────┬──────────┬──────────┬───────┴────┬─────────┬──────────┬───────────┐
+  ▼          ▼          ▼          ▼            ▼         ▼          ▼           ▼
+┌──────┐ ┌────────┐ ┌────────┐ ┌────────┐ ┌──────┐ ┌─────────┐ ┌──────────┐
+│AppSec│ │Offens. │ │Detect &│ │Cloud & │ │ AI   │ │Design & │ │Complianc │
+│& Sup │ │& Recon │ │Respond │ │ Infra  │ │Secur.│ │Governnce│ │& Privacy │
+├──────┤ ├────────┤ ├────────┤ ├────────┤ ├──────┤ ├─────────┤ ├──────────┤
+│owasp-│ │recon   │ │incid-  │ │cloud-  │ │promp-│ │threat-  │ │privacy-  │
+│ audit│ │osint-  │ │ triage │ │ audit  │ │ inj. │ │ modeling│ │ engineer-│
+│api-  │ │ recon  │ │disk-   │ │contain-│ │ai-   │ │vuln-    │ │ ing      │
+│ audit│ │web-    │ │ forens.│ │ audit  │ │ risk-│ │ research│ │pci-audit │
+│depen-│ │ pentest│ │siem-   │ │iam-aud-│ │ mgmt │ │finding- │ │hipaa-    │
+│ audit│ │red-    │ │ detect.│ │ it     │ │      │ │ triage  │ │ audit    │
+│secre-│ │ team-  │ │soc-    │ │        │ │      │ │csf-     │ │          │
+│ audit│ │ engage-│ │ ops    │ │        │ │      │ │ mapping │ │          │
+│crypt-│ │ ment   │ │threat- │ │        │ │      │ │security-│ │          │
+│ audit│ │        │ │ hunting│ │        │ │      │ │ comms   │ │          │
+│mobile│ │        │ │breach- │ │        │ │      │ │         │ │          │
+│-audit│ │        │ │patterns│ │        │ │      │ │         │ │          │
+└──┬───┘ └───┬────┘ └───┬────┘ └───┬────┘ └──┬───┘ └────┬────┘ └────┬─────┘
+   │         │          │          │         │           │            │
+   └─────────┴────┬─────┴──────────┴─────────┴───────────┴────────────┘
+                  │
+   Common crossovers:
+     owasp-audit ↔ api-audit ↔ dependency-audit ↔ vuln-research
+     web-pentest ↔ recon ↔ osint-recon ↔ red-team-engagement
+     siem-detection → threat-hunting → incident-triage → disk-forensics
+     cloud-audit ↔ container-audit ↔ iam-audit ↔ secrets-audit
+     threat-modeling → owasp-audit / api-audit (pre-implementation → code)
+     prompt-injection ⇆ ai-risk-management (security slice ⇆ whole lifecycle)
+     privacy-engineering ⇆ hipaa-audit / pci-audit (engineering ⇆ regulatory)
+     breach-patterns → every audit skill (what to check)
+     finding-triage ← every audit skill (closes the loop on any finding)
+     security-comms ← every skill (translates output for non-security audience)
+     csf-mapping ← every skill (rolls evidence into governance frame)
 ```
 
 ## Available Skills
@@ -82,6 +87,7 @@ The skills are organized into six families. Most security work crosses families 
 <!-- SKILLS:START -->
 | Skill | What it does |
 |-------|--------------|
+| [ai-risk-management](skills/ai-risk-management/) | NIST AI Risk Management Framework + EU AI Act — model lifecycle governance, fairness, robustness, transparency, monitoring, third-party model risk. Broader than prompt-injection. |
 | [api-audit](skills/api-audit/) | OWASP API Security Top 10 (2023) — REST / GraphQL / RPC endpoint audit. BOLA, mass assignment, BFLA, rate-limit, GraphQL introspection, webhook signature. |
 | [breach-patterns](skills/breach-patterns/) | Preemptive hardening — read public breach disclosures, extract the audit question each one implies, check your stack. Capital One / LastPass / Okta / Snowflake / MOVEit / Codecov / Equifax / Uber. |
 | [cloud-audit](skills/cloud-audit/) | AWS / GCP / Azure infrastructure misconfiguration, excessive IAM, public exposure, compliance gaps. |
@@ -89,16 +95,21 @@ The skills are organized into six families. Most security work crosses families 
 | [crypto-audit](skills/crypto-audit/) | Cryptography implementation review — algorithm/mode choice, KDF parameters, IV/nonce handling, authenticated encryption, signature verification, randomness, TLS posture, key lifecycle. Deeper than owasp-audit A02. |
 | [csf-mapping](skills/csf-mapping/) | NIST CSF 2.0 posture assessment — Govern / Identify / Protect / Detect / Respond / Recover. Subcategory mapping, current/target tiers, prioritized roadmap. Translates technical findings into governance language. |
 | [dependency-audit](skills/dependency-audit/) | Dependencies, frameworks, runtimes, toolchain — CVEs, security anti-patterns, supply chain risk. |
-| [disk-forensics](skills/disk-forensics/) | Disk image analysis, evidence recovery, timeline reconstruction. |
+| [disk-forensics](skills/disk-forensics/) | Disk image analysis, evidence recovery, timeline reconstruction. Explicit Authorization Check covering lawful basis, chain of custody, privacy scope. |
 | [finding-triage](skills/finding-triage/) | Single-finding disposition workflow — Fixed / Deferred / Accepted Risk / False Positive, with ticket-ready writeup templates and required-field enforcement. Closes the loop on every audit skill. |
+| [hipaa-audit](skills/hipaa-audit/) | HIPAA Security / Privacy / Breach Notification — three safeguard categories, 18 identifiers, BAA chain-of-liability, minimum-necessary, 60-day breach clock, encryption-as-safe-harbor. |
 | [iam-audit](skills/iam-audit/) | Consultant-style IAM — audit / design / migrate. Cloud IAM (AWS/GCP/Azure), identity providers (Okta/Entra/Auth0/Workspace), application authorization (RBAC/ABAC/ReBAC), workload identity, JIT access, break-glass. |
 | [incident-triage](skills/incident-triage/) | Security incident triage following NIST SP 800-61. |
 | [mobile-audit](skills/mobile-audit/) | iOS + Android audit against OWASP MASVS / MASTG — storage, crypto, network, auth, platform IPC, code, resilience. |
 | [osint-recon](skills/osint-recon/) | Open source intelligence gathering and correlation. |
 | [owasp-audit](skills/owasp-audit/) | Source-code audit against OWASP Top 10 (2021) — category checklist, grep patterns, runtime verification, Second-Opinion Pass, three-disposition reporting. |
+| [pci-audit](skills/pci-audit/) | PCI DSS v4.0 — scope determination first, then Req 3 (CHD storage) / 4 (transmission) / 6 (secure SDLC) / 7-8 (access) / 10 (logging) / 11 (testing) / 12 (program). |
+| [privacy-engineering](skills/privacy-engineering/) | GDPR / CCPA / CPRA / LGPD / PIPEDA technical implementation — data classification, minimization, consent, the DSAR pipeline (access / deletion / portability with full vendor fan-out), DPIA inputs. |
 | [prompt-injection](skills/prompt-injection/) | AI features / LLM integrations / agents — prompt injection, privilege escalation, authorization bypass. |
 | [recon](skills/recon/) | Structured attack surface enumeration for authorized pentests, bug bounty, CTF. |
+| [red-team-engagement](skills/red-team-engagement/) | Authorized adversary emulation methodology — distinct from web-pentest. Multi-week, objective-based, assumed-breach. Heaviest authorization framing in the catalog. |
 | [secrets-audit](skills/secrets-audit/) | Find leaked secrets (code, Git history, build artifacts, CI, frontend bundles) + audit secrets-management posture (rotation, scope, workload identity). |
+| [security-comms](skills/security-comms/) | Translate security work for non-security audiences — board, executive, engineering, customer success, customers, legal, procurement. Seven audience archetypes, six templates (incident comms, post-mortem, breach disclosure, etc.). |
 | [siem-detection](skills/siem-detection/) | SIEM detection engineering — log source coverage, Sigma rule authoring, MITRE ATT&CK mapping, FP tuning, detection-as-code. |
 | [soc-operations](skills/soc-operations/) | Build / run / improve a SOC — alert prioritization, runbook authoring, escalation criteria, on-call structure, KPIs (MTTD / MTTR / FP rate), alert-fatigue tuning loop. |
 | [threat-hunting](skills/threat-hunting/) | Proactive, hypothesis-driven adversary detection — PEAK framework, ATT&CK-driven hunt catalog, every hunt produces an artifact (rule, dead-end doc, or coverage gap). |
