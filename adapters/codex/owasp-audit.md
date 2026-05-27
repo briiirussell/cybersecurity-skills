@@ -37,6 +37,7 @@ Work through each category systematically. For each, grep for known vulnerabilit
 - Hardcoded secrets, API keys, or passwords in source
 - Weak hashing (MD5, SHA1 for passwords instead of bcrypt/argon2/scrypt)
 - For bcrypt, also check the cost factor. OWASP 2024 guidance is ≥ 12 (cost 10 ≈ 10ms / 100 hashes/sec/core for an attacker)
+- **Type coercion in cryptographic-verification paths.** Numeric parsing (`parseInt`, `Number`, `parseFloat`) silently produces `NaN` for garbage input, and `NaN` compares as `false` for both `<` and `>`. A timestamp-freshness check `if (Math.abs(now - parsed) > tolerance) return false` *fails to reject* `NaN` — because `NaN > tolerance` is `false`. Grep for: `parseInt|parseFloat|Number\(.*\)` inside `verifySignature` / `validateToken` / signed-cookie / JWT-claim code. Each numeric extraction must be followed by `if (!Number.isFinite(parsed)) return false` before any inequality. Same family: `parseInt('0x123', 10) === 0`, `parseInt('1e10', 10) === 1`, `parseFloat('Infinity') === Infinity`.
 - Sensitive data in logs, URLs, or localStorage
 - Missing encryption at rest or in transit
 - **Before recommending `VERIFY_PEER` for a TLS connection,** identify the cert issuer at the deployment target. Many managed services ship self-signed cert chains at lower tiers (Heroku Redis Mini/Hobby, some ElastiCache configurations, Supabase legacy) — `VERIFY_PEER` fails there without an explicit `ca_file:` pin. When `VERIFY_PEER` is genuinely infeasible, present three remediation options in priority order:
@@ -100,6 +101,19 @@ Work through each category systematically. For each, grep for known vulnerabilit
 - Missing rate limiting on sensitive endpoints (login, password reset, API)
 - Business logic constraints only enforced client-side
 - **Background / fire-and-forget jobs** inherit the caller's auth context but lose the request-scoped guards. Re-check authorization inside the job, not just at enqueue. Grep for: `Promise.all(...).catch(`, `void someAsync(`, `.catch(noop)`, queue `enqueue(` without re-auth in the worker.
+- **Sister-route audit.** When you find a state-machine or immutability guard on one handler (e.g., `WHERE … AND signedAt IS NULL` on `PUT /api/foo/[id]`), grep for every other handler that writes the same table:
+
+  ```bash
+  rg 'update\(\s*tableName\b|\.update\(tableName' --type ts -B1 -A8
+  ```
+
+  Each call site needs the same guard, the same `userId` predicate, and the same conflict-handling (`returning()` + 0-rows check). Common offender: a `POST /:id/send` or `POST /:id/convert` route that ships after the `PUT` was hardened and was never re-audited.
+- **External-resource-create TOCTOU with billing implications.** Any handler that does "SELECT to check, then `provider.create()`, then INSERT to record the new resource ID" can create orphan resources on the provider side under concurrency. Stripe accounts, Auth0 / Clerk users, SendGrid templates, S3 buckets — all bill or count toward quota whether you stored the ID or not. Fix pattern:
+  1. Claim first with `INSERT … ON CONFLICT DO NOTHING` (DB UNIQUE constraint is the lock)
+  2. Call the provider
+  3. Persist with optimistic guard: `UPDATE … SET externalId = ? WHERE externalId IS NULL` and check 0-rows
+  4. On race-loss, clean up the orphan via `provider.delete(id)` best-effort; log on cleanup failure
+- **Worker-queue state transitions need atomic claim.** Any cron / worker polling pending rows must atomically claim each row before processing. `SELECT` + `process()` + `UPDATE` is a race — two workers (or two overlapping cron invocations) both see the same pending row and both call out, causing duplicate delivery. Fix: `UPDATE … SET status='processing' WHERE id=? AND status='pending' RETURNING …` — Postgres `RETURNING` lets you claim and read in one round-trip. If the UPDATE returns 0 rows, someone else got it. Alternative: `SELECT … FOR UPDATE SKIP LOCKED` (Postgres / Cockroach) for higher-throughput queues.
 - **Multi-tenant webhook signature matching.** When an unauthenticated webhook endpoint identifies its tenant by trying each tenant's secret in turn, every request — including garbage — does O(N) DB lookups + O(N) HMAC computations. Attackers flood with random signatures and amplify CPU/DB load without ever passing auth. Defences (compose them):
   1. **Signature-shape prefilter** before any DB work — reject signatures that aren't the exact length/charset the provider sends (e.g., `/^[a-f0-9]{64}$/i` for HMAC-SHA256 hex)
   2. **Hard cap** on per-request signature checks (e.g., `LIMIT 200`)
@@ -195,6 +209,8 @@ Work through each category systematically. For each, grep for known vulnerabilit
 - Unsafe deserialization of user input
 - Missing integrity checks on CI/CD pipelines
 - No lockfile integrity verification (SRI hashes)
+- **External-resource overwrite without state check.** Any handler that creates a provider-side resource (Stripe payment intent, subscription, webhook subscription) and stores the ID on a DB row should check whether a prior resource is still in-flight before overwriting. The old `clientSecret` / token may still be held by the client; on completion, the webhook handler may not find the row because the ID has changed (money lands, DB sits at `processing` forever). Fix: before creating a new resource, retrieve the existing one. If status is non-terminal (`processing`, `requires_payment_method`, `requires_action`) and parameters haven't changed, REUSE it — return the existing clientSecret. Only create a new resource when the prior one is canceled / succeeded or the parameters changed.
+- **External side-effects before durable DB state.** When a handler both writes to the DB and triggers an external side-effect (email, charge, webhook, S3 write), the external call should come *after* the DB write commits. The failure mode of "DB durable, external retried" is recoverable; "external done, DB stale" is not. Fix pattern: reserve-then-act. Issue a conditional UPDATE that flips the row to the post-action state guarded by the pre-action state (`WHERE status='draft'`). If 0 rows, refuse. If 1 row, call the provider. On provider failure, the row already reflects intent — alert and retry. Bonus: this also makes the handler idempotent.
 
 ### A09: Logging & Monitoring Failures
 - Auth events not logged (login, failure, privilege changes)
@@ -203,6 +219,10 @@ Work through each category systematically. For each, grep for known vulnerabilit
 - **Silent error swallowing.** Empty catch blocks hide both bugs and attack signals (rate limiter falling over, deserialization errors, auth failures).
   - Grep for: `catch \{\}`, `catch (_) \{\}`, `catch (_e) \{\}`, `.catch(() => {})`, `.catch(() => null)`, `try { ... } catch { return null }`
   - Fix: at minimum log the error category (`error.name`, status code) without PII
+- **Unauthenticated endpoints sending email from a verified domain to user-supplied addresses.** Any handler reachable without auth that triggers an outbound email — confirmation, password-reset to-be-claimed, invite, "we got your message" — to an attacker-supplied `to:` address, especially with attacker-influenced subject/body, is a phishing vector against your verified sender's deliverability reputation. Defences (pick one):
+  1. Don't auto-confirm — replies happen when a human responds
+  2. Require ownership proof before any reply email (verification link / double opt-in)
+  3. Use a separate, plainly-templated `noreply@` sender with subject/body the attacker can't influence
 
 ### A10: SSRF
 - User-controlled URLs passed to server-side HTTP requests
