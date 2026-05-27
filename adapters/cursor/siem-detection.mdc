@@ -6,9 +6,9 @@ alwaysApply: false
 
 # SIEM Detection — Detection Engineering
 
-Build, audit, and maintain SIEM detection content — the rules that fire alerts. Distinct from `incident-triage` (responds when alerts fire) and from a future `soc-operations` skill (runs the SOC that triages alerts). This skill is the engineering layer: log coverage, rule authoring, tuning, and detection-as-code workflows.
+Build, audit, and maintain SIEM detection content — the rules that fire alerts. Distinct from `incident-triage` (responds when alerts fire) and from `soc-operations` (runs the SOC that triages alerts). This skill is the engineering layer: log coverage, rule authoring, tuning, and detection-as-code workflows.
 
-Cross-references: `incident-triage` for what happens after the alert, `breach-patterns` (coming in this release) for detection ideas pulled from public breach disclosures.
+Cross-references: `incident-triage` for what happens after the alert, `threat-hunting` for proactive hypothesis-driven hunts that often graduate into detection rules, `breach-patterns` for detection ideas pulled from public breach disclosures, `soc-operations` for the alert-triage operations on top of the detections engineered here.
 
 ## Scope
 
@@ -22,8 +22,8 @@ This skill covers:
 
 This skill does NOT cover:
 - Live alert triage (that's `incident-triage`)
-- Building a SOC team or alert escalation criteria (future `soc-operations`)
-- Active threat hunting (future `threat-hunting`)
+- Building a SOC team or alert escalation criteria (`soc-operations`)
+- Active threat hunting (`threat-hunting`)
 
 ## Methodology
 
@@ -63,7 +63,7 @@ Not every threat needs a SIEM rule. Match the detection model to what you're det
 | Known pattern (specific command, specific path) | Signature rule | `powershell.exe -enc <base64>` |
 | Known anomaly (behavior outside baseline) | Statistical detection | Service account suddenly authenticating from new geography |
 | Sequence of events | Correlation rule | Failed logon → success → privilege change in 5 min |
-| Novel / never-seen-before | Threat hunting (see future `threat-hunting`) | Hypothesis-driven SIEM search |
+| Novel / never-seen-before | Threat hunting (see `threat-hunting`) | Hypothesis-driven SIEM search |
 | Insider abuse | UEBA / risk scoring | Cumulative risky behaviors weighted over time |
 
 Signature rules are cheapest to write and easiest to tune; statistical detections need baseline data and produce more false positives in the first month.

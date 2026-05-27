@@ -1,6 +1,6 @@
 # owasp-audit
 
-> Audit application source code against the OWASP Top 10 vulnerability categories. Use when the user mentions 'OWASP,' 'security audit,' 'code security review,' 'vulnerability audit,' 'find vulnerabilities,' 'secure code review,' 'security review,' or wants to check their codebase for common security weaknesses.
+> Audit application source code against the OWASP Top 10 (2021) vulnerability categories — broken access control, cryptographic failures, injection, insecure design, security misconfiguration, vulnerable components, authentication failures, data integrity, logging failures, SSRF. Use when the user mentions 'OWASP,' 'OWASP Top 10,' 'security audit,' 'security review,' 'secure code review,' 'code security review,' 'vulnerability audit,' 'find vulnerabilities,' 'appsec review,' 'application security audit,' 'check for security issues,' 'broken access control,' 'IDOR,' 'SQL injection,' 'XSS,' 'SSRF,' or wants to check their codebase for common security weaknesses.
 
 # OWASP Audit — Source Code Security Review
 

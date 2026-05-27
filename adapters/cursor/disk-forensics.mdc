@@ -1,5 +1,5 @@
 ---
-description: "Analyze disk images and file systems for digital evidence recovery in forensic investigations and CTF challenges. Use when the user mentions 'disk forensics,' 'forensic analysis,' 'disk image,' 'file carving,' 'deleted files,' 'evidence recovery,' 'autopsy,' 'sleuthkit,' or needs to examine a forensic image."
+description: "Analyze disk images, file systems, and memory captures for digital evidence recovery in forensic investigations and CTF challenges. Use when the user mentions 'disk forensics,' 'forensic analysis,' 'disk image,' 'file carving,' 'deleted files,' 'evidence recovery,' 'timeline analysis,' 'memory forensics,' 'volatility,' 'autopsy,' 'sleuthkit,' 'plaso,' 'log2timeline,' 'artifact analysis,' 'chain of custody,' or needs to examine a forensic image."
 globs:
 alwaysApply: false
 ---
@@ -7,6 +7,17 @@ alwaysApply: false
 # Disk Forensics — Digital Evidence Analysis
 
 Analyze disk images and file systems to recover evidence, reconstruct timelines, and identify artifacts.
+
+Cross-references: `incident-triage` for the upstream containment phase that captures the image this skill analyzes — that skill makes the bit-for-bit copy; this skill analyzes it. `breach-patterns` for translating the forensic findings into preemptive controls so the same root cause doesn't recur.
+
+## Authorization Check
+
+Before analyzing any image, confirm:
+1. **Lawful basis** — the user has authorization for this analysis (internal investigation with documented scope, court-ordered work, signed IR engagement, your own system, CTF / lab environment)
+2. **Chain of custody is preserved** — the image and its hashes were captured in a way that survives evidentiary scrutiny, OR the scope is explicitly non-evidentiary (CTF, internal triage where chain-of-custody is not the goal)
+3. **Privacy scope** — the analysis stays within what was authorized; personal data outside the scope is not pulled, analyzed, or reported
+
+If lawful basis is unclear, ask before proceeding. Never analyze an image you cannot confirm the user is authorized to possess.
 
 ## Evidence Handling Principles
 

@@ -8,6 +8,8 @@ allowed-tools: Bash, Read, Write, Grep, Glob, WebSearch
 
 Guide rapid triage and initial response to security incidents. Follow NIST SP 800-61 methodology.
 
+Cross-references: `siem-detection` for the rules that produced the alert this triage is responding to, `disk-forensics` for deeper disk and memory analysis once a host is contained, `breach-patterns` for the post-incident pattern extraction that hardens against recurrence, `soc-operations` for the operational layer above this skill (runbooks, escalation, handoff).
+
 ## Priorities (in order)
 
 1. Preserve human safety

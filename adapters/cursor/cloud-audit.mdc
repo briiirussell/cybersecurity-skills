@@ -8,6 +8,10 @@ alwaysApply: false
 
 Audit cloud infrastructure configurations for misconfigurations, excessive permissions, public exposure, and compliance gaps. Covers AWS, GCP, and Azure.
 
+Cross-references: `iam-audit` for the consultant-style IAM deep-dive (design / audit / migrate across identity providers and federation patterns) — this skill includes an IAM section but stays at the cloud-posture level; for role design, JIT access, workload identity federation, and migration plans, invoke `iam-audit`. `container-audit` for Kubernetes-specific posture sitting on top of cloud. `secrets-audit` for secrets-manager hygiene and rotation.
+
+Findings should use the three-disposition rule (Fixed / Deferred / Accepted Risk) per `owasp-audit`'s Report Format.
+
 ## Scope the Audit
 
 Identify:

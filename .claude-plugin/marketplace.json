@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Cybersecurity skills for AI agents — source-code audits, dependency triage, cloud config review, incident response, OSINT, AI/LLM security",
-    "version": "1.2.1",
+    "version": "1.2.2",
     "repository": "https://github.com/briiirussell/cybersecurity-skills"
   },
   "plugins": [

@@ -6,6 +6,8 @@
 
 Perform structured reconnaissance against an authorized target, organizing findings into an actionable attack surface map.
 
+Cross-references: `osint-recon` for the deeper open-source-intelligence pass (people, organizations, historical data) — this skill is the active/passive target-mapping side, osint-recon is the broader investigative side; they pair naturally. `web-pentest` for the next stage once recon has produced an attack surface map and an authorized target list. `owasp-audit` for source-code review when you have access to the target's code.
+
 ## Authorization Check
 
 Before running any commands, confirm:

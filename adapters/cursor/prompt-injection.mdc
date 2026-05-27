@@ -8,6 +8,8 @@ alwaysApply: false
 
 Audit applications that use AI features, LLM integrations, or AI agents for prompt injection, privilege escalation, and authorization bypass vulnerabilities.
 
+Cross-references: `threat-modeling` for design-time AI risk modeling on new AI features (before this skill applies); `owasp-audit` for the XSS / output-rendering patterns that overlap when LLM output reaches the browser (sanitize on render, JSON-LD breakout); `api-audit` for the API surface that LLM tools and MCP servers expose.
+
 ## Background
 
 Prompt injection is the #1 vulnerability in LLM-integrated applications (OWASP Top 10 for LLMs, LLM01). It occurs when untrusted input influences the instructions an LLM follows, causing it to ignore its system prompt, leak secrets, or take unauthorized actions.
