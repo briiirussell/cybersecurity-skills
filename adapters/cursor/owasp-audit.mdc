@@ -22,6 +22,7 @@ Work through each category systematically. For each, grep for known vulnerabilit
 ### A01: Broken Access Control
 - Missing authorization checks on endpoints or routes
 - IDOR — user-controlled IDs without ownership verification
+- **IDOR via foreign keys in mutation payloads.** Form posts a foreign-key UUID (`categoryId`, `projectId`, `teamId`, `organizationId`) → server validates ownership of the primary record but blindly accepts the FK → ORM relation join later surfaces another tenant's data. Look for `formData.get("<id>")` / `body.<id>` passed straight to insert/update without a preceding `findFirst({ where: { id, userId } })`. For ORM relation joins (Drizzle `with:`, Prisma `include`, ActiveRecord `includes`), trace whether the join target is filtered by the same tenant/ownership predicate as the parent query.
 - Missing CSRF protections on state-changing requests
 - Role checks only on the frontend, not enforced server-side
 - Open redirect via post-auth return-to parameter — `?from=`, `?next=`, `?returnTo=`, `?continue=`, `?redirect=` passed unsanitized to `redirect()` / `Response.redirect()`. Restrict to same-origin paths under the expected scope, normalize (`new URL(target, "http://localhost").pathname`) to defeat traversal like `/admin/../foo`
@@ -115,11 +116,15 @@ Work through each category systematically. For each, grep for known vulnerabilit
 
   Treat findings as A05 — the canonical file may be patched while the duplicate retains the vulnerability.
 - **Next.js `headers()` rule merging.** Rules in `next.config.ts` `headers()` match per route and *merge* — a more-specific rule does not override headers it doesn't redeclare. Shipping `frame-ancestors 'none'` + `X-Frame-Options: DENY` in a `/:path*` default plus `frame-ancestors *` in a `/embed` override results in both `frame-ancestors *` and `X-Frame-Options: DENY` on the embed route (contradicting; older browsers may break framing). Verify with `curl -I` against the deployed origin — config inspection alone misses the merge. Either set XFO in every rule or drop it entirely (CSP `frame-ancestors` supersedes on modern browsers).
+- **Auth middleware that doesn't exempt bearer/HMAC routes.** Cron jobs, Stripe / GitHub webhooks, and any route that authenticates via bearer token or HMAC need to be excluded from session-cookie middleware. Symptom: those routes silently 302 to `/login` on every deploy or scheduled invocation, the route-level signature check never runs, and the integration appears to "work" until it doesn't.
+- **Bearer-token compare with unset env interpolation.** Comparisons that interpolate `process.env.X` without a presence check — `\`Bearer ${process.env.WEBHOOK_TOKEN}\`` — resolve to a literal `"Bearer undefined"` when the env var is missing. An attacker who guesses the env-not-set condition can replay that literal string. Assert presence at module load: `if (!process.env.WEBHOOK_TOKEN) throw new Error(...)`.
+- **API routes returning HTML 302 redirects instead of JSON 401.** Auth middleware that 302s every unauthenticated request to `/login` breaks `fetch` clients (they follow the redirect and consume HTML), obscures auth state in monitoring, and lets attackers learn endpoint existence by 302 vs 404. API routes should return `401 application/json` with a machine-readable body.
 
 ### A06: Vulnerable Components
 - Run `npm audit` (Node), `pip audit` (Python), or equivalent
 - Check lock files for known vulnerable dependency versions
 - Flag dependencies with critical CVEs
+- For the full CVE picture and triage by reachability, invoke `dependency-audit`. A06 here is a one-line sanity check.
 
 ### A07: Authentication Failures
 - Weak password policies
@@ -129,6 +134,11 @@ Work through each category systematically. For each, grep for known vulnerabilit
 - Missing rate limiting on login (credential stuffing risk)
 - Broken password reset flows
 - **Rails / Devise — `password_length` requires `:validatable`.** `config.password_length` in `config/initializers/devise.rb` is only enforced when the User model includes `:validatable` in its `devise :...` declaration. A model with `devise :database_authenticatable, :registerable, :recoverable, :rememberable` (no `:validatable`) accepts passwords of any length and any email format, regardless of what the initializer says. Grep: `^\s*devise\s+:` in `app/models/`; flag any line where `:validatable` is absent. Adding it on an existing app validates on create+update but does not retro-invalidate existing weak passwords.
+- **NextAuth v5 / Auth.js footguns:**
+  - `AUTH_SECRET` unset silently derives a weak dev value — assert presence at module load: `if (!process.env.AUTH_SECRET) throw ...`
+  - Credentials provider `authorize()` has no built-in rate limit — wrap or add upstream limiter; otherwise credential stuffing is trivial
+  - Account-existence enumeration via signup error strings ("email already exists") — return a uniform "check your email" response
+  - JWT strategy + DrizzleAdapter / PrismaAdapter — the adapter is a near no-op in this combination; revocation must be designed in explicitly
 - Grep for: `cookies.set\(.*process\.env`, `=== .*PASSWORD`, `!== .*SECRET`, `!== .*Bearer.*\${`
 
 ### A08: Data Integrity Failures

@@ -71,9 +71,22 @@ trivy image <image>
 trivy fs .
 ```
 
+**When `npm audit fix` cannot resolve an advisory** (transitive dep pinned by an upstream package):
+
+1. **Determine reachability** — is the vulnerable code path actually invoked in your usage? `npm ls <package>` + reading the parent's source can rule it out as unreachable.
+2. **Consider a `package.json` `overrides` pin** to a patched version (test thoroughly — overrides can break the parent).
+3. **Consider swapping the parent provider entirely.**
+4. **If none apply:** document explicitly, track upstream, and note in the audit report rather than silently dropping the finding.
+
 ### Step 3: Research Framework-Specific Known Issues
 
 Beyond CVEs in packages, check for known vulnerability patterns specific to the framework in use. Search for recent advisories and common misconfiguration issues.
+
+For every direct dependency, cross-reference the installed version against:
+- `https://github.com/advisories?ecosystem=npm&query=<package>`
+- `https://github.com/<org>/<repo>/security/advisories`
+
+The framework-specific patterns below cover *evergreen* anti-patterns (mass assignment, debug-in-prod, etc.). Recent CVEs need a fresh check because hardcoded advisory lists rot fast and LLM training data is often 6+ months behind the latest.
 
 **Next.js / React:**
 - Server Actions exposing internal endpoints (pre-14.1.1 middleware bypass CVE-2025-29927)
