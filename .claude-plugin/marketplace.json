@@ -1,0 +1,19 @@
+{
+  "name": "cybersecurity-skills",
+  "owner": {
+    "name": "Bri Russell",
+    "url": "https://github.com/briiirussell"
+  },
+  "metadata": {
+    "description": "Cybersecurity skills for AI agents — source-code audits, dependency triage, cloud config review, incident response, OSINT, AI/LLM security",
+    "version": "1.1.0",
+    "repository": "https://github.com/briiirussell/cybersecurity-skills"
+  },
+  "plugins": [
+    {
+      "name": "cybersecurity-skills",
+      "description": "Cybersecurity skills for AI coding agents: OWASP source-code audit, dependency CVE triage, cloud / IAM / container hardening, recon, OSINT, incident triage, disk forensics, SIEM detection engineering, prompt-injection audit, API security, web pentest, threat modeling, mobile / crypto / secrets audit",
+      "source": "./"
+    }
+  ]
+}
