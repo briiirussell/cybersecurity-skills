@@ -4,16 +4,65 @@ Current versions of all skills. Agents can compare against local versions to che
 
 | Skill | Version | Last Updated |
 |-------|---------|--------------|
+| api-audit | 1.0.0 | 2026-05-26 |
+| breach-patterns | 1.0.0 | 2026-05-26 |
 | cloud-audit | 1.0.0 | 2026-05-26 |
+| container-audit | 1.0.0 | 2026-05-26 |
+| crypto-audit | 1.0.0 | 2026-05-26 |
+| csf-mapping | 1.0.0 | 2026-05-26 |
 | dependency-audit | 1.1.0 | 2026-05-26 |
 | disk-forensics | 1.0.0 | 2026-05-26 |
+| finding-triage | 1.0.0 | 2026-05-26 |
+| iam-audit | 1.0.0 | 2026-05-26 |
 | incident-triage | 1.0.0 | 2026-05-26 |
+| mobile-audit | 1.0.0 | 2026-05-26 |
 | osint-recon | 1.0.0 | 2026-05-26 |
 | owasp-audit | 1.1.0 | 2026-05-26 |
 | prompt-injection | 1.0.0 | 2026-05-26 |
 | recon | 1.0.0 | 2026-05-26 |
+| secrets-audit | 1.0.0 | 2026-05-26 |
+| siem-detection | 1.0.0 | 2026-05-26 |
+| soc-operations | 1.0.0 | 2026-05-26 |
+| threat-hunting | 1.0.0 | 2026-05-26 |
+| threat-modeling | 1.0.0 | 2026-05-26 |
+| vuln-research | 1.0.0 | 2026-05-26 |
+| web-pentest | 1.0.0 | 2026-05-26 |
 
 ## Recent Changes
+
+### 1.2.0 (2026-05-26)
+
+Major expansion. **Fifteen new skills** added, growing the repo from 8 → 23 skills across six families. Repo is now installable via `npx skills` and the Claude Code plugin marketplace.
+
+**New skills:**
+
+- **api-audit** — OWASP API Security Top 10 (2023). BOLA, mass assignment, BFLA, sister-route gaps, GraphQL introspection, webhook signature verification.
+- **breach-patterns** — Preemptive hardening from public breach disclosures. Ten patterns catalogued (Capital One, SolarWinds, LastPass, Okta Lapsus$, Snowflake, MOVEit, Codecov, Twitter insider, Equifax, Uber).
+- **container-audit** — Docker + Kubernetes security. Dockerfile, pod security, RBAC, NetworkPolicy, secrets, image policy, runtime detection.
+- **crypto-audit** — Cryptography implementation review. Deeper than owasp-audit A02 — algorithm/mode choice, KDF parameters, IV/nonce handling, signature verification ordering, randomness, TLS posture, key lifecycle.
+- **csf-mapping** — NIST CSF 2.0 governance frame. Subcategory mapping, current/target tiers, prioritized roadmap. Translates technical findings into board language.
+- **finding-triage** — Single-finding disposition workflow. Closes the loop on every audit skill. Four templates (Fix / Defer / Accept Risk / False Positive) with required-field enforcement.
+- **iam-audit** — Consultant-style IAM. Three modes (audit / design / migrate) covering cloud IAM (AWS/GCP/Azure), identity providers (Okta/Entra/Auth0/Workspace), and application authorization (RBAC/ABAC/ReBAC).
+- **mobile-audit** — iOS + Android against OWASP MASVS / MASTG. Storage, crypto, network (cert pinning), auth (biometrics, OAuth), platform (deeplinks, IPC), code, resilience.
+- **secrets-audit** — Find leaked secrets (code, Git history, build artifacts, CI, frontend bundles) + audit secrets-management posture (rotation, scope, workload identity federation).
+- **siem-detection** — Detection engineering. Log source → ATT&CK coverage mapping, Sigma rule authoring, FP tuning lifecycle, detection-as-code Git+CI workflow.
+- **soc-operations** — Build / run / improve a SOC. Staffing math, runbook structure, escalation criteria, KPIs (MTTD / MTTR / FP rate), alert-fatigue tuning loop.
+- **threat-hunting** — Proactive, hypothesis-driven hunts. PEAK framework, ATT&CK-driven hunt catalog, every hunt produces a rule / dead-end doc / coverage gap.
+- **threat-modeling** — Pre-implementation security design. STRIDE-per-element + abuse cases, Shostack four-question frame, data flow diagrams with trust boundaries.
+- **vuln-research** — CVE deep-dive. Pull canonical sources (NVD / vendor / GHSA / CISA KEV / EPSS), reachability analysis, exploitation availability check, patch / mitigate / accept-risk decision.
+- **web-pentest** — Live web application testing. OWASP WSTG-structured, nine phases from config through business logic. Heavy authorization-check + boundaries because most dual-use skill in the family.
+
+**Distribution:**
+
+- `npx skills add briiirussell/cybersecurity-skills` — works out of the box (vercel-labs/skills)
+- `/plugin marketplace add briiirussell/cybersecurity-skills` — Claude Code plugin marketplace via new `.claude-plugin/` scaffold (marketplace.json + plugin.json)
+
+**README and docs:**
+
+- Updated skill-map diagram showing the six families and cross-references
+- Six install methods documented in priority order (npx, plugin marketplace, manual, Cursor, Codex, submodule)
+
+**Repo health:** main + development synced, all 50 PRs in this release cycle merged, no open issues or PRs.
 
 ### 1.1.0 (2026-05-26)
 
