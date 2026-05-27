@@ -30,6 +30,12 @@ Work through each category systematically. For each, grep for known vulnerabilit
 - Weak hashing (MD5, SHA1 for passwords instead of bcrypt/argon2/scrypt)
 - Sensitive data in logs, URLs, or localStorage
 - Missing encryption at rest or in transit
+- **Before recommending `VERIFY_PEER` for a TLS connection,** identify the cert issuer at the deployment target. Many managed services ship self-signed cert chains at lower tiers (Heroku Redis Mini/Hobby, some ElastiCache configurations, Supabase legacy) — `VERIFY_PEER` fails there without an explicit `ca_file:` pin. When `VERIFY_PEER` is genuinely infeasible, present three remediation options in priority order:
+  1. Upgrade the plan or pin the CA bundle — restores cert verification
+  2. Accept the risk explicitly — leave `VERIFY_NONE` with (a) an in-line comment at every call site, (b) a documented compensating control (private network, internal-only routing), (c) a follow-up issue tracking re-verification conditions
+  3. Restrict the network path — private subnet / VPC peering / no public exposure
+
+  Never quietly recommend `VERIFY_PEER` without checking that the cert chain at the deployment target is verifiable.
 - Grep for: `password`, `secret`, `api_key`, `private_key`, `MD5`, `SHA1`, `base64`
 
 ### A03: Injection
