@@ -22,10 +22,11 @@ Work through each category systematically. For each, grep for known vulnerabilit
 ### A01: Broken Access Control
 - Missing authorization checks on endpoints or routes
 - IDOR — user-controlled IDs without ownership verification
+- **Auth-check ordering.** Verify the authorization check runs *before* any branch that can reveal whether the resource exists, what state it's in, or any other resource-specific metadata. Returning 404 for "not found", 400 for "wrong state", and 401 for "not authenticated" is itself a leak — an attacker enumerates resource IDs and learns states without ever passing the auth gate. Recommended response shape: uniform 404 for everything an unprivileged caller should not see.
 - **IDOR via foreign keys in mutation payloads.** Form posts a foreign-key UUID (`categoryId`, `projectId`, `teamId`, `organizationId`) → server validates ownership of the primary record but blindly accepts the FK → ORM relation join later surfaces another tenant's data. Look for `formData.get("<id>")` / `body.<id>` passed straight to insert/update without a preceding `findFirst({ where: { id, userId } })`. For ORM relation joins (Drizzle `with:`, Prisma `include`, ActiveRecord `includes`), trace whether the join target is filtered by the same tenant/ownership predicate as the parent query.
 - Missing CSRF protections on state-changing requests
 - Role checks only on the frontend, not enforced server-side
-- Open redirect via post-auth return-to parameter — `?from=`, `?next=`, `?returnTo=`, `?continue=`, `?redirect=` passed unsanitized to `redirect()` / `Response.redirect()`. Restrict to same-origin paths under the expected scope, normalize (`new URL(target, "http://localhost").pathname`) to defeat traversal like `/admin/../foo`
+- Open redirect via post-auth return-to parameter — `?from=`, `?next=`, `?returnTo=`, `?continue=`, `?redirect=` passed unsanitized to `redirect()` / `Response.redirect()`. Restrict to same-origin paths under the expected scope, normalize (`new URL(target, "http://localhost").pathname`) to defeat traversal like `/admin/../foo`. Also reject control bytes in the path before redirect: tab/newline/null (`\t`, `\n`, `\0`) — URL parsers strip these and collapse `/\tevil` into protocol-relative `//evil`; null bytes can turn the redirect into a 500. Reject any byte in `[\x00-\x1F\x7F]`, any backslash, and any percent-encoded slash/backslash (`%2f`, `%5c`).
 - Grep for: direct object references, missing auth middleware, user ID from request params, `redirect(.*from`, `redirect(.*next`, `redirect(.*returnTo`
 
 ### A02: Cryptographic Failures
@@ -107,6 +108,10 @@ Work through each category systematically. For each, grep for known vulnerabilit
   ```
 
   The README examples for PgHero, Sidekiq::Web, Flipper, and Mission Control all wrap auth in `if Rails.env.production?`, which leaves staging, review apps, and preview deploys serving the admin UI anonymously. Fix shape: switch the guard to `unless Rails.env.local?` (Rails 7.1+ helper for `development || test`), and add a fail-closed check that refuses access when the auth env vars are unset.
+- **Concurrent-execution races on paid endpoints.** When an endpoint triggers paid downstream work (LLM calls, third-party APIs, scrape jobs), look for `SELECT` followed by a `runX()` call without an intervening atomic claim, and unconditional `UPDATE … SET status='processing'` writes. Two concurrent requests can both pass the read-side check and both run. Fix: conditional `UPDATE … WHERE id = ? AND status = 'pending' RETURNING …`, or a Postgres advisory lock. Charge rate-limit budget only on a successful claim so polling and retries don't burn quota.
+
+(Note: This bullet lives under A05 because the failure manifests as a misconfigured invariant guard. The race pattern itself spans A04 / A05 / A08 depending on framing.)
+
 - **Source-tree hygiene.** Grep for sync-conflict duplicates and dead code that could let a reviewer fix the canonical file while leaving a vulnerable copy in place:
 
   ```bash
@@ -164,6 +169,14 @@ Work through each category systematically. For each, grep for known vulnerabilit
   - Subdomain confusion: `https://allowed.com.evil.com/`
   - Bracketed IPv6 literal: `https://[::1]/`
   - Bare IPv4: `https://127.0.0.1/`
+  - Decimal-integer IPv4: `http://2130706433/` → 127.0.0.1
+  - Hex IPv4: `http://0x7f000001/`
+  - Octal IPv4: `http://0177.0.0.1/`; zero-padded `0010.0.0.1/` → 8.0.0.1 (octal!)
+  - IPv4-mapped IPv6: `http://[::ffff:127.0.0.1]/` → block the whole `::ffff:*` range
+  - Trailing-dot hostname: `http://localhost./`, `http://metadata.google.internal./`
+  - Cloud metadata endpoints: AWS `169.254.169.254`, GCP `metadata.google.internal`, ECS `169.254.170.2`
+  - CGNAT range: `100.64.0.0` – `100.127.255.255`
+  - Link-local IPv6: `fe80::/10`; unique-local IPv6: `fc00::/7`
 - Fetch-time guards: `redirect: "error"` (don't follow attacker-controlled redirects), explicit timeout, no following 3xx into the metadata service
 - Note the TOCTOU between validation and fetch — DNS can resolve differently between the two (DNS rebinding). For high-risk callers, pin the resolved IP and connect by IP with `Host:` header, or use a vetted proxy
 - Grep for: `fetch(`, `axios(`, `http.get(`, `urllib`, `requests.get(` with user input
@@ -177,6 +190,19 @@ After applying a fix, exercise the affected code path — do not stop at typeche
 - **Environment-variable fallthrough.** `Bearer ${process.env.X}` with X unset becomes a literal that the tests never hit because the test env defines X.
 
 For each shipped fix, run the affected route or job and capture the response. `tsc --noEmit` + build success ≠ fix verified.
+
+## Second-Opinion Pass
+
+A single-pass audit reliably catches the categories on the checklist but misses the specific bypasses that aren't *in* the checklist (`localhost.` vs `localhost`, IPv4-mapped IPv6, status-enumeration via ordered 404/400/401, callback-URL control chars, concurrent-execution races on paid endpoints).
+
+After producing the first report AND after applying fixes, run a second pass with explicit adversarial framing ("assume the author is overconfident; find what they missed") — ideally with a different model or agent entirely, to break correlated blind spots. Treat any disagreement with the first pass as the higher-value finding.
+
+Common things to find in the second pass:
+- New attack surface introduced by the fix itself (auth bypass via exempted routes, IDOR introduced by a new query)
+- Comments that became stale during the rewrite
+- Boundary conditions in the new code (env-unset fallthrough, empty input)
+- Documentation drift between the fix and the report
+- **Fixes that configure third-party libraries.** When the fix is a snippet from a library's own docs (auth, crypto, HTTP client, rate-limit middleware), the snippet may be correct *and still not run on your code path*. Before declaring fixed: grep the library at the pinned version, trace from your call site to the code path the config affects. Example: enabling Better Auth's `rateLimit` doesn't help if you call `auth.api.signInEmail(...)` programmatically — that bypasses the HTTP router where the limiter attaches.
 
 ## Report Format
 
