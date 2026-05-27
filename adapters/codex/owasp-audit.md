@@ -45,7 +45,16 @@ Work through each category systematically. For each, grep for known vulnerabilit
   3. Restrict the network path — private subnet / VPC peering / no public exposure
 
   Never quietly recommend `VERIFY_PEER` without checking that the cert chain at the deployment target is verifiable.
-- Grep for: `password`, `secret`, `api_key`, `private_key`, `MD5`, `SHA1`, `base64`
+- Grep for generic secret names AND known provider key prefixes:
+  - Generic: `password`, `secret`, `api_key`, `private_key`, `MD5`, `SHA1`, `base64`
+  - Stripe: `sk_live_`, `sk_test_`, `rk_live_`, `whsec_`
+  - GitHub: `ghp_`, `gho_`, `ghu_`, `ghs_`, `ghr_`
+  - AWS: `AKIA[0-9A-Z]{16}`, `ASIA[0-9A-Z]{16}`
+  - Google Cloud: `AIza[0-9A-Za-z\-_]{35}`, service-account JSON (`"type": "service_account"`)
+  - Slack: `xox[baprs]-`, `xoxe.xoxp-`
+  - OpenAI / Anthropic: `sk-`, `sk-ant-`
+  - Vercel: `vercel_blob_rw_`
+  - Run via `git ls-files | xargs grep -lE 'sk_live|ghp_|AKIA[0-9A-Z]{16}|sk-ant-' 2>/dev/null` so binaries and gitignored files don't pollute output.
 - **Include non-source file extensions in the sweep.** Rails `cable.yml` / `database.yml` / `storage.yml`, Kubernetes manifests, and Vercel / Netlify deploy configs routinely contain TLS or cert config that a source-only sweep misses. Concrete sweep for VERIFY_NONE / VERIFY_PEER:
 
   ```bash
@@ -59,7 +68,10 @@ Work through each category systematically. For each, grep for known vulnerabilit
 - **SQL injection:** raw queries with string concatenation, missing parameterized queries
 - **NoSQL injection:** unsanitized user input in MongoDB/Convex queries
 - **Command injection:** `exec()`, `spawn()`, `system()` with user input
-- **XSS:** unescaped user input in HTML, `dangerouslySetInnerHTML`, `v-html`. Note the common safe-ish case: `dangerouslySetInnerHTML={{ __html: JSON.stringify(internalObject) }}` for SEO JSON-LD is typically safe *if* the object contains only internal data — flag it if user-editable fields (e.g. CMS-authored descriptions, vendor names) flow into the object
+- **XSS:** unescaped user input in HTML, `dangerouslySetInnerHTML`, `v-html`.
+- **Inline-script breakout via `JSON.stringify`.** Any `<script type="application/ld+json">` or `<script>window.__DATA__ = ...</script>` that interpolates server data through `JSON.stringify` is vulnerable — `JSON.stringify` does NOT escape `<`, `>`, `&`, U+2028, or U+2029. A stored title containing `</script><script>alert(1)</script>` will break out. The "internal-only object" framing only saves you when every field is guaranteed never to come from user-editable input.
+  - Grep for: `application/ld+json`, `__html: JSON.stringify`, `window.__` + `JSON.stringify`
+  - Fix: wrap with an escape helper that replaces `<>&\u2028\u2029` with their `\uXXXX` Unicode escapes before injecting.
 - **Rails ERB sinks:** `raw()`, `.html_safe`, `<%==`, `sanitize` with a permissive allowlist, and `simple_format` on user input. Grep for these alongside `dangerouslySetInnerHTML` / `v-html`.
 - **Sanitizer choice.** When remediating an HTML/SVG XSS sink, the fix MUST use a vetted parser-based sanitizer (DOMPurify / isomorphic-dompurify / sanitize-html for JS; bleach for Python). Reject regex-based sanitizers in code review. If unavoidable, a regex sanitizer must:
   - Treat `[/\s]` (not just `\s`) as the attribute-name separator — HTML accepts `/` between tag name and first attribute: `<img/onerror=…>`
@@ -111,6 +123,17 @@ Work through each category systematically. For each, grep for known vulnerabilit
 - Missing HTTP security headers (CSP, HSTS, X-Frame-Options, X-Content-Type-Options)
 - Default credentials or configurations shipped
 - Verbose error messages exposing stack traces or internals — including validation libraries echoing schema details (e.g. Zod `err.issues`, Joi error trees) to clients
+- **Baseline header starter values** (paste-and-tune):
+  | Header | Value |
+  |---|---|
+  | `Strict-Transport-Security` | `max-age=63072000; includeSubDomains; preload` — preload requires verifying every `*.example.com` serves HTTPS first |
+  | `X-Content-Type-Options` | `nosniff` |
+  | `X-Frame-Options` | `DENY` (defence-in-depth alongside CSP `frame-ancestors`) |
+  | `Referrer-Policy` | `strict-origin-when-cross-origin` |
+  | `Permissions-Policy` | `camera=(), microphone=(), geolocation=(), browsing-topics=()` — note `interest-cohort` is the legacy FLoC name (Chrome ≤ 100); current Chrome uses `browsing-topics` |
+  | `Content-Security-Policy` | start with `frame-ancestors 'self'`; full CSP needs per-site script audit (inline `<style>`, JSON-LD, analytics) |
+
+  HSTS preload submission is sticky — removal takes months. Verify before submitting.
 - Where security headers live, by framework:
   - Next.js: `next.config.{js,ts}` `headers()` block; `vercel.json` `headers`
   - Rails: `config/initializers/secure_headers.rb`, `config/application.rb`
@@ -177,6 +200,9 @@ Work through each category systematically. For each, grep for known vulnerabilit
 - Auth events not logged (login, failure, privilege changes)
 - Sensitive data written to logs (passwords, tokens, PII)
 - No alerting on suspicious patterns
+- **Silent error swallowing.** Empty catch blocks hide both bugs and attack signals (rate limiter falling over, deserialization errors, auth failures).
+  - Grep for: `catch \{\}`, `catch (_) \{\}`, `catch (_e) \{\}`, `.catch(() => {})`, `.catch(() => null)`, `try { ... } catch { return null }`
+  - Fix: at minimum log the error category (`error.name`, status code) without PII
 
 ### A10: SSRF
 - User-controlled URLs passed to server-side HTTP requests
@@ -201,6 +227,9 @@ Work through each category systematically. For each, grep for known vulnerabilit
   - Link-local IPv6: `fe80::/10`; unique-local IPv6: `fc00::/7`
 - Fetch-time guards: `redirect: "error"` (don't follow attacker-controlled redirects), explicit timeout, no following 3xx into the metadata service
 - Note the TOCTOU between validation and fetch — DNS can resolve differently between the two (DNS rebinding). For high-risk callers, pin the resolved IP and connect by IP with `Host:` header, or use a vetted proxy
+- **Image-optimizer-as-proxy** (Next.js, Nuxt, SvelteKit): `next.config.{ts,js}` with `images.remotePatterns: [{ hostname: '**' }]`, `domains: ['*']`, or any wildcard entry lets attackers route arbitrary URLs through your CPU/bandwidth.
+  - Grep for: `remotePatterns`, `domains:` in image config
+  - Fix: pin to specific known hostnames; leave empty if all images are local.
 - Grep for: `fetch(`, `axios(`, `http.get(`, `urllib`, `requests.get(` with user input
 
 ## Verify Fixes at Runtime
@@ -212,6 +241,19 @@ After applying a fix, exercise the affected code path — do not stop at typeche
 - **Environment-variable fallthrough.** `Bearer ${process.env.X}` with X unset becomes a literal that the tests never hit because the test env defines X.
 
 For each shipped fix, run the affected route or job and capture the response. `tsc --noEmit` + build success ≠ fix verified.
+
+**For XSS / sanitizer-config fixes**, run the canonical payload set through the configured policy and confirm each is neutralized:
+
+```
+<img src=x onerror=alert(1)>
+<a href="javascript:alert(1)">x</a>
+<a href="data:text/html,<svg onload=alert(1)>">x</a>
+<img srcset="javascript:alert(1) 1x,https://ok.com/a.png 2x">
+<svg><script>alert(1)</script></svg>
+<math><mtext></style><img src=x onerror=alert(1)></math>
+<a href="//evil.com">protocol-relative</a>
+<svg></svg><img/onerror=alert(1) src=x>
+```
 
 ## Second-Opinion Pass
 
@@ -227,6 +269,14 @@ Common things to find in the second pass:
 - **Fixes that configure third-party libraries.** When the fix is a snippet from a library's own docs (auth, crypto, HTTP client, rate-limit middleware), the snippet may be correct *and still not run on your code path*. Before declaring fixed: grep the library at the pinned version, trace from your call site to the code path the config affects. Example: enabling Better Auth's `rateLimit` doesn't help if you call `auth.api.signInEmail(...)` programmatically — that bypasses the HTTP router where the limiter attaches.
 
 ## Report Format
+
+For every OWASP category, document one of three states:
+
+- **Findings** (with severity + remediation)
+- **Clean** — explicitly state "Checked X, found no issues" with what you grepped for
+- **N/A** — explain why the category doesn't apply (e.g. "A07 N/A: no authentication surface in this codebase")
+
+Include an "Items checked and found clean" section in the executive summary. Audit credibility comes from proving you looked, not just from the findings list.
 
 Findings have three possible dispositions:
 
