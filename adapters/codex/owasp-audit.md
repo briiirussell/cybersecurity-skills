@@ -36,6 +36,7 @@ Work through each category systematically. For each, grep for known vulnerabilit
 ### A02: Cryptographic Failures
 - Hardcoded secrets, API keys, or passwords in source
 - Weak hashing (MD5, SHA1 for passwords instead of bcrypt/argon2/scrypt)
+- For bcrypt, also check the cost factor. OWASP 2024 guidance is ≥ 12 (cost 10 ≈ 10ms / 100 hashes/sec/core for an attacker)
 - Sensitive data in logs, URLs, or localStorage
 - Missing encryption at rest or in transit
 - **Before recommending `VERIFY_PEER` for a TLS connection,** identify the cert issuer at the deployment target. Many managed services ship self-signed cert chains at lower tiers (Heroku Redis Mini/Hobby, some ElastiCache configurations, Supabase legacy) — `VERIFY_PEER` fails there without an explicit `ca_file:` pin. When `VERIFY_PEER` is genuinely infeasible, present three remediation options in priority order:
@@ -65,6 +66,7 @@ Work through each category systematically. For each, grep for known vulnerabilit
   - Strip both SVG- and HTML-namespace dangerous elements (`<img>`, `<body>`, `<video>`, `<iframe>`) — HTML elements instantiate even in SVG-rendering contexts
   - Include a final fallback pass that strips any `on*=` regardless of surrounding context
   - Be paired with `Content-Security-Policy: script-src-attr 'none'` as a browser-level backstop
+- **SVG uploads as stored XSS.** SVG files can carry `<script>` / `onload`. Most blob / object storage serves uploads with the declared content-type. Reject `image/svg+xml` in upload allow-lists unless you have a sanitizer (e.g. DOMPurify SVG profile) and serve with `Content-Disposition: attachment`.
 - **Sanitize on write AND on render.** For stored XSS / injection, sanitize at the trust boundary (write to DB) AND at the render boundary (defense in depth). On finding a stored-XSS bug, plan a one-time backfill migration to sanitize existing data — render-only fixes leave poisoned rows that any new render path will re-expose.
 - **Rails JSON-LD breakout:** inside `<script type="application/ld+json">`, do NOT use `j` / `escape_javascript` for field values — `j` emits `\'` and `\$` (valid JS, invalid JSON), so `JSON.parse` fails on any field containing an apostrophe or `$`. Use this idiom instead:
 
@@ -85,6 +87,7 @@ Work through each category systematically. For each, grep for known vulnerabilit
 - Authentication flows with logic flaws
 - Missing rate limiting on sensitive endpoints (login, password reset, API)
 - Business logic constraints only enforced client-side
+- **Background / fire-and-forget jobs** inherit the caller's auth context but lose the request-scoped guards. Re-check authorization inside the job, not just at enqueue. Grep for: `Promise.all(...).catch(`, `void someAsync(`, `.catch(noop)`, queue `enqueue(` without re-auth in the worker.
 - **Multi-tenant webhook signature matching.** When an unauthenticated webhook endpoint identifies its tenant by trying each tenant's secret in turn, every request — including garbage — does O(N) DB lookups + O(N) HMAC computations. Attackers flood with random signatures and amplify CPU/DB load without ever passing auth. Defences (compose them):
   1. **Signature-shape prefilter** before any DB work — reject signatures that aren't the exact length/charset the provider sends (e.g., `/^[a-f0-9]{64}$/i` for HMAC-SHA256 hex)
   2. **Hard cap** on per-request signature checks (e.g., `LIMIT 200`)
@@ -108,6 +111,11 @@ Work through each category systematically. For each, grep for known vulnerabilit
 - Missing HTTP security headers (CSP, HSTS, X-Frame-Options, X-Content-Type-Options)
 - Default credentials or configurations shipped
 - Verbose error messages exposing stack traces or internals — including validation libraries echoing schema details (e.g. Zod `err.issues`, Joi error trees) to clients
+- Where security headers live, by framework:
+  - Next.js: `next.config.{js,ts}` `headers()` block; `vercel.json` `headers`
+  - Rails: `config/initializers/secure_headers.rb`, `config/application.rb`
+  - Express: `app.use(helmet())`
+  - Django: `SECURE_*` settings in `settings.py`
 - **Runtime-API mismatch.** Code running in Edge / Workers / V8-isolate runtimes can't load Node-only modules. Imports of `node:crypto`, `node:fs`, `node:buffer`, `node:net`, etc. inside Next.js `middleware.ts` / Cloudflare Workers / Vercel Edge functions compile cleanly and fail at first request with `Failed to load external module`. Audit middleware and edge-marked routes for Node-only imports; prefer Web Crypto (`crypto.subtle`) for portable code
 - **Rails admin-engine mounts.** Grep `config/routes.rb` for engine and dashboard mounts (PgHero, Sidekiq::Web, Flipper UI, Mission Control, Audit1984) and verify the auth middleware in the corresponding initializer applies in *every* environment reachable from the internet — not just production:
 
@@ -139,6 +147,10 @@ Work through each category systematically. For each, grep for known vulnerabilit
 - Run `npm audit` (Node), `pip audit` (Python), or equivalent
 - Check lock files for known vulnerable dependency versions
 - Flag dependencies with critical CVEs
+- Run `npm audit --omit=dev` alongside `npm audit` and triage by reachability:
+  - Runtime-reachable (in `dependencies`) — must fix
+  - Build-time-only (Vite, esbuild via drizzle-kit, postcss) — usually defer
+  - Dev-only (linters, test libs) — defer
 - For the full CVE picture and triage by reachability, invoke `dependency-audit`. A06 here is a one-line sanity check.
 
 ### A07: Authentication Failures
