@@ -42,6 +42,25 @@ Current versions of all skills. Agents can compare against local versions to che
 
 ## Recent Changes
 
+### 1.23.1 (2026-10-26)
+
+CI now enforces the per-merge versioning rule. Until now it was checked only by hand. Repo tooling only; no skill content changes. Closes #120.
+
+**Added**
+
+- `scripts/check-versions.mjs`, a new **Version check** CI job. On every run it fails when:
+  - `plugin.json` and `marketplace.json` versions differ
+  - `VERSIONS.md` has no `### X.Y.Z (date)` entry for the current version
+  - a skill folder has no `VERSIONS.md` row, or a row has no folder
+  - a row isn't x.y.z
+
+  On a PR (`--base origin/<base branch>`) it also fails when the repo version isn't higher than the base branch's, or when a file under `skills/<name>/` changed and that skill's row wasn't bumped. Generated copies of `shared/` files are exempt, since they follow the `shared/` change. Dependabot PRs skip the bump check.
+- `scripts/test/check-versions.test.mjs`: 7 tests. I also replayed the check against five past releases (v1.19.5, v1.19.6, v1.19.7, v1.20.0, v1.23.0); all pass.
+
+**Changed**
+
+- `CONTRIBUTING.md` PR checklist gains a version-bump item. `CLAUDE.md` and `docs/security-scanning.md` list the new check.
+
 ### 1.23.0 (2026-10-26)
 
 Every skill now has an Authorization section, and the lint fails a skill without one. `CLAUDE.md` always required an authorization check, but only 13 of 35 skills had a heading for it. The others had a line in Boundaries, an inline paragraph, or nothing. Closes #119.
