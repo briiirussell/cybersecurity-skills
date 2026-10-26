@@ -38,9 +38,22 @@ Current versions of all skills. Agents can compare against local versions to che
 | threat-hunting | 1.0.2 | 2026-10-26 |
 | threat-modeling | 1.0.0 | 2026-05-26 |
 | vuln-research | 1.0.0 | 2026-05-26 |
-| web-pentest | 1.0.0 | 2026-05-26 |
+| web-pentest | 1.1.0 | 2026-10-26 |
 
 ## Recent Changes
+
+### 1.17.0 (2026-10-26)
+
+web-pentest gets a combined white-box + black-box mode and a paired-evidence rule for every PoC.
+
+**Changed**
+
+- **web-pentest** (1.1.0)
+  - **New section: "Combined white-box + black-box mode".** When you have both the source and a running instance, build a Target Map linking code handlers to live endpoints, along with their shared auth and config. Prioritization runs both ways: code findings guide live testing, and anomalies seen live decide which code gets read first. The authorization check still applies to the live target. owasp-audit points here. (#76)
+  - **Paired evidence.** A validated finding shows the attack request next to its baseline or control: unauthenticated vs authenticated, benign vs payload, owner vs non-owner. IDOR / BOLA findings must show owner and non-owner requests that are identical except for the token. Single-request PoCs no longer count as validated. (#76)
+  - **Phase 8 (business logic)** is kept and now hands off to `business-logic-testing` for invariants, state-machine abuse and dynamic race proofs. (#74)
+  - The report uses the shared verdicts (`confirmed` / `needs_validation` / `rejected`) and severity calibration. Ideas paraphrased from [Strix](https://github.com/usestrix/strix) (Apache-2.0); its never-refuse posture is not adopted.
+- README: web-pentest row updated.
 
 ### 1.16.0 (2026-10-26)
 

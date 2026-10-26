@@ -49,7 +49,8 @@
       "api-audit",
       "dependency-audit",
       "secrets-audit",
-      "prompt-injection"
+      "prompt-injection",
+      "web-pentest"
     ],
     "coverage.schema.json": [
       "owasp-audit",
@@ -63,7 +64,8 @@
       "business-logic-testing",
       "finding-triage",
       "owasp-audit",
-      "api-audit"
+      "api-audit",
+      "web-pentest"
     ],
     "recon-and-coverage.md": [
       "owasp-audit",
