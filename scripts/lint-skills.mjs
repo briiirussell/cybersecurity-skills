@@ -21,7 +21,7 @@
  *     (the request would be ambiguous between skills; SkillSpector TR2). Keep the
  *     phrase in the skill that owns the work and narrow or drop it in the other.
  *
- * Usage: node scripts/lint-skills.mjs [--quiet]
+ * Usage: node scripts/lint-skills.mjs [--quiet] [--skills-dir <dir>]
  */
 
 import { readFileSync, readdirSync, existsSync, statSync } from "node:fs";
@@ -29,7 +29,9 @@ import { join, dirname, basename, normalize, relative } from "node:path";
 import { checkGrant } from "./grant-check.mjs";
 
 const ROOT = new URL("..", import.meta.url).pathname;
-const SKILLS_DIR = join(ROOT, "skills");
+// --skills-dir <dir> lints another tree (the self-tests in scripts/test/ use it); shared/ still comes from the repo.
+const SKILLS_ARG = process.argv.indexOf("--skills-dir");
+const SKILLS_DIR = SKILLS_ARG > 0 ? process.argv[SKILLS_ARG + 1] : join(ROOT, "skills");
 const QUIET = process.argv.includes("--quiet");
 
 const AUTH_HEADING = /^##\s+.*\bauthori[sz]ation\b/im; // every skill needs one (CLAUDE.md)
