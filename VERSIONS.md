@@ -22,7 +22,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | log-watch | 1.0.0 | 2026-10-26 |
 | mobile-audit | 1.0.0 | 2026-05-26 |
 | osint-recon | 1.0.0 | 2026-05-26 |
-| owasp-audit | 1.1.0 | 2026-05-26 |
+| owasp-audit | 1.2.0 | 2026-10-26 |
 | patch-sweep | 1.0.0 | 2026-10-26 |
 | pci-audit | 1.0.0 | 2026-05-26 |
 | personal-opsec | 1.0.0 | 2026-10-26 |
@@ -41,6 +41,32 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.0.0 | 2026-05-26 |
 
 ## Recent Changes
+
+### 1.12.0 (2026-10-26)
+
+owasp-audit adopts the full audit workflow: recon first, per-finding verification, coverage tracking, machine-readable findings, run profiles and diff mode. Most of these ideas come from a deep dive into [cloudflare/security-audit-skill](https://github.com/cloudflare/security-audit-skill) (MIT) and [Strix](https://github.com/usestrix/strix) (Apache-2.0). Everything is paraphrased and cited.
+
+**Changed**
+
+- **owasp-audit** (1.2.0). New workflow: Scope → Recon → run profile / mode → category checklist → Verify every finding → coverage critic → `findings.json` → report.
+  - **Recon first.** Write a short `architecture.md` covering principals, entry surfaces, trust boundaries with the `file:line` of each control, and sinks. Then build a `coverage.json` ledger per surface × boundary × attack class. "Clean" now requires reviewed paths and a check that was actually run, so "A01 clean" can no longer hide routes nobody read. (#68)
+  - **Verify every finding.** A separate refutation pass re-reads each cited `file:line`, names the strongest control on the path, and returns one verdict:
+    - `confirmed`: carries severity.
+    - `needs_validation`: lists blockers plus a check the owner can run. Replaces the old "Potential" label.
+    - `rejected`: names the control and its location. These are kept so re-runs don't raise them again.
+
+    A "does NOT rule out" list blocks lazy rejections, and moving a verdict up needs a fresh verifier. (#62)
+  - **Severity calibration.** Headers, CORS and cookie flags count as findings only when there's a traced impact. A new "Hardening notes (not findings)" section, and an anti-patterns list (checklist deviations presented as vulns; self-impact presented as crossing a boundary). The A05 `curl -I` checks become needs-validation items. (#63)
+  - **findings.json first.** Write and validate `findings.json` (plus `coverage.json`), then render the markdown from it. Prose never changes a verdict or severity. SARIF export for code scanning. (#64)
+  - **Run profiles and orchestration.** Quick / standard / deep profiles change breadth, never the evidence bar, and the report header names the profile. For large codebases, a coordinator splits the work across subagent hunters (including a Wildcard and an "Obvious things" hunter), with a sequential fallback for agents that can't run subagents. Re-runs carry findings forward by fingerprint and never re-raise a rejected claim. (#77)
+  - **Diff / PR-scoped mode.** In scope: what the change introduces, old weaknesses it newly reaches, helpers it weakens (checked across sibling call sites), controls it removes, and assumptions it breaks. Unrelated old bugs are noted, not filed. The PR description is treated as untrusted. Reports are labeled "diff-scoped (partial)", and there's an optional CI recipe. (#67)
+  - **Inbound webhook patterns**, from a real Codex second-model review (`references/webhooks-and-parsers.md`) (#82):
+    - Multipart field-index amplification: a 78-byte request expanded to about 5 MB of JSON. Comes with a parser-limits table per framework.
+    - Unauthenticated inbound webhooks that trigger paid work. Comes with a provider signature table and the raw-body requirement.
+    - Parser errors thrown outside the error boundary, hiding attack traffic from monitoring.
+  - When both the source and a running instance are available, the skill points to web-pentest's "Combined white-box + black-box mode". A04 race patterns cross-reference `business-logic-testing` for proving them live. (#76, #74)
+  - All existing checklist content is kept. The long tables and payload sets moved to `references/checklist-details.md`. The Second-Opinion Pass is kept as the post-fix review.
+- README: owasp-audit row updated.
 
 ### 1.11.0 (2026-10-26)
 

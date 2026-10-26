@@ -1,23 +1,140 @@
 ---
 name: owasp-audit
-description: "Audit application source code against the OWASP Top 10 (2021) vulnerability categories — broken access control, cryptographic failures, injection, insecure design, security misconfiguration, vulnerable components, authentication failures, data integrity, logging failures, SSRF. Use when the user mentions 'OWASP,' 'OWASP Top 10,' 'security audit,' 'security review,' 'secure code review,' 'code security review,' 'vulnerability audit,' 'find vulnerabilities,' 'appsec review,' 'application security audit,' 'check for security issues,' 'broken access control,' 'IDOR,' 'SQL injection,' 'XSS,' 'SSRF,' or wants to check their codebase for common security weaknesses."
+description: "Audit application source code against the OWASP Top 10 (2021) vulnerability categories — broken access control, cryptographic failures, injection, insecure design, security misconfiguration, vulnerable components, authentication failures, data integrity, logging failures, SSRF — with recon, a coverage ledger, per-finding verification, and a findings.json report. Use when the user mentions 'OWASP,' 'OWASP Top 10,' 'security audit,' 'security review,' 'secure code review,' 'code security review,' 'vulnerability audit,' 'find vulnerabilities,' 'appsec review,' 'application security audit,' 'check for security issues,' 'review this PR for security,' 'pre-merge security check,' 'diff review,' 'broken access control,' 'IDOR,' 'SQL injection,' 'XSS,' 'SSRF,' 'webhook security,' or wants to check their codebase for common security weaknesses."
 allowed-tools: Read, Grep, Glob, Bash, Write
 ---
 
 # OWASP Audit — Source Code Security Review
 
-Perform a systematic security audit of application source code against the OWASP Top 10 (2021).
+Perform a systematic security audit of application source code against the OWASP Top 10 (2021). Every candidate is
+traced, then independently challenged, before it becomes a finding. Coverage is recorded per surface and trust
+boundary, so "clean" means someone actually read the code.
 
-## Scope the Audit
+Cross-references:
+- `api-audit` for a surface-driven pass over every API endpoint (shares the recon, verification, and orchestration references)
+- `web-pentest` "Combined white-box + black-box mode" when you have both the source and a running instance you're authorized to test
+- `business-logic-testing` to prove race conditions and logic flaws dynamically (A04)
+- `dependency-audit` for the full A06 picture; `secrets-audit` for leaked credentials
+- `threat-modeling` for the principal / trust-boundary vocabulary used in recon
+- `finding-triage` to take a single finding from this report to a defensible disposition
 
-1. Identify the project's language, framework, and architecture
-2. Map entry points (routes, API handlers, form processors)
-3. Identify data flows (user input → processing → storage → output)
-4. Locate authentication and authorization boundaries
+## Authorization and Mode
+
+Only audit code the user owns or is authorized to review. Any live check (for example `curl -I` against a deployed
+origin) needs the same authorization for that host and stays non-destructive.
+
+Pick the mode before starting:
+
+- **Guidance** (default): a question, a single file, or "how do I secure X". Answer directly. Findings still follow the
+  verdict rules below. No ledger required.
+- **Full audit**: the user explicitly asks to audit or security-review a codebase, a release, or a PR. Run the full
+  workflow below.
+- **Diff / PR-scoped**: the user wants a branch, PR, or commit range reviewed, or a pre-merge gate. Run the full workflow
+  limited to the change, using [references/diff-review.md](references/diff-review.md).
+
+If it's ambiguous, ask one question: guidance pass or full audit (and which profile)?
+
+## Workflow (full audit)
+
+1. **Scope**: what's in, what's out, mode, and run profile
+2. **Recon**: write `architecture.md` and `coverage.json` before hunting
+3. **Hunt**: work the category checklist unit by unit (subagents for large codebases)
+4. **Verify every finding**: an independent refutation pass gives each candidate one verdict
+5. **Coverage critic**: look for unmapped surfaces and thin coverage
+6. **Write and validate `findings.json`**
+7. **Render the report** from the JSON
+
+Write everything to `security-audit/` at the repo root (ask whether to commit or gitignore it). Re-runs read the prior
+files from there.
+
+### Step 1 — Scope
+
+- Language, framework, runtimes, deploy target
+- In scope / out of scope, with a reason for each exclusion
+- Mode (full or diff) and **run profile**: `quick`, `standard` (default), or `deep`. Profiles change breadth and
+  redundancy, never the evidence bar. See [references/orchestration.md](references/orchestration.md).
+- Prior run? Load the previous `findings.json` and `coverage.json` and carry forward by fingerprint (orchestration.md
+  "Re-runs and carry-forward"). Never re-raise a rejected claim whose control is unchanged.
+
+### Step 2 — Recon (read-only)
+
+Before grepping for vulnerabilities, map the system ([references/recon-and-coverage.md](references/recon-and-coverage.md)):
+
+- Every lower-trust principal (anonymous, user, other tenant, webhook sender, job runner) and the `file:line` where its
+  controls live
+- Entry surfaces: routes, server actions, loaders, tRPC procedures, GraphQL resolvers, webhooks, jobs, cron, uploads
+- Sinks: DB writes/raw queries, exec, filesystem, outbound HTTP, HTML rendering, email, paid third-party calls, redirects
+- What's deployed vs what's in the repo (proxy, CDN, IdP, env). These become `needs_validation` blockers later
+
+Write `architecture.md` (≤ ~1,000 words) and seed `coverage.json` with one `planned` unit per surface × boundary ×
+OWASP category.
+
+### Step 3 — Hunt
+
+Work through the [Audit Checklist](#audit-checklist) **per ledger unit**, not per category in the abstract. For each
+unit, read the entrypoint, follow data to every sink, and record what you checked even when nothing is wrong.
+
+- Large codebase: split units across isolated hunter subagents, unauthenticated surfaces first. Only the coordinator
+  writes `coverage.json` / `findings.json`. Hunter prompt, result shape, and the sequential fallback are in
+  [references/orchestration.md](references/orchestration.md).
+- Source **and** a running app available (and authorized): use `web-pentest` "Combined white-box + black-box mode" so
+  code findings guide live tests and live anomalies prioritize code review.
+- A candidate needs a lower-trust principal, the input they control, the control that should stop them, the boundary
+  crossed, the affected resource, and a concrete result. Missing any of these, it's a hardening note or needs
+  validation, not a finding.
+
+### Step 4 — Verify every finding
+
+Before anything reaches the report, run the per-finding refutation pass in
+[references/verification.md](references/verification.md). One fresh verifier per candidate (a subagent where
+supported; otherwise a separate step that doesn't re-read the hunting notes). It re-reads every cited `file:line`,
+names the strongest control on the path, and returns exactly one verdict:
+
+| Verdict | Bar | Severity |
+|---|---|---|
+| `confirmed` | Complete entrypoint → control → sink → impact trace, or a PoC | Yes, per [references/severity-calibration.md](references/severity-calibration.md) |
+| `needs_validation` | Code supports it; one decisive fact lives outside the code. Requires `blockers[]` + an owner-run `validation_plan` | No |
+| `rejected` | A named control at a named location runs on every reachable path and fails closed | No; kept so re-runs don't re-raise it |
+
+Rules that matter most:
+- "Potential" is retired. Use **Needs validation**, and only with a concrete blocker and plan. It's not a parking place
+  for a hunch.
+- Library trust, a control on a different path, a control at the wrong time, a fail-open control, a safe sibling,
+  missing information, difficulty, "operator-configurable", and "internal" do **not** rule a candidate out.
+- Record `counterevidence` on every verdict. A static-only trace caps `confidence` at medium.
+- An upgrade (higher verdict or severity) needs a **new** verifier.
+- Gaps with no traced impact close as **hardening notes** (not findings, no severity).
+
+### Step 5 — Coverage critic
+
+Before writing the report, run the critic in [references/recon-and-coverage.md](references/recon-and-coverage.md)
+over `architecture.md` + `coverage.json`: unmapped entry points, unchecked sibling paths, `covered` units with thin
+checks, unjustified exclusions, candidates without verdicts. Add missing units and review them (or mark them
+`deferred` with a reason). `covered` requires non-empty `reviewed_paths` and at least one check.
+
+### Step 6 — Write and validate `findings.json`
+
+Write every verdict record to `security-audit/findings.json` (sorted by fingerprint; format in
+[references/findings-format.md](references/findings-format.md)), then validate both files:
+
+```bash
+# <skill-dir> = this skill's folder, e.g. .claude/skills/owasp-audit
+node <skill-dir>/references/validate-findings.mjs security-audit/findings.json
+node <skill-dir>/references/validate-coverage.mjs security-audit/coverage.json
+```
+
+Fix every validation error before writing prose. Fingerprints name the root cause and never include line numbers,
+severity, or verdict. Optional SARIF export for GitHub code scanning: `references/to-sarif.mjs` (see findings-format.md).
+
+### Step 7 — Render the report
+
+Render `report.md` from `findings.json`, `coverage.json`, and `hardening-notes.md` using the [Report Format](#report-format).
+The JSON is the source of truth: prose never changes a verdict, severity, blocker, or demonstrated impact. If they
+disagree, fix the JSON, re-validate, and re-render.
 
 ## Audit Checklist
 
-Work through each category systematically. For each, grep for known vulnerability patterns, then read flagged files for deeper analysis.
+For each unit, grep for the patterns below, then read the flagged files and trace them.
 
 ### A01: Broken Access Control
 - Missing authorization checks on endpoints or routes
@@ -30,13 +147,14 @@ Work through each category systematically. For each, grep for known vulnerabilit
   - GraphQL: every resolver
   - Rails: non-resource controller actions
 - **IDOR via foreign keys in mutation payloads.** Form posts a foreign-key UUID (`categoryId`, `projectId`, `teamId`, `organizationId`) → server validates ownership of the primary record but blindly accepts the FK → ORM relation join later surfaces another tenant's data. Look for `formData.get("<id>")` / `body.<id>` passed straight to insert/update without a preceding `findFirst({ where: { id, userId } })`. For ORM relation joins (Drizzle `with:`, Prisma `include`, ActiveRecord `includes`), trace whether the join target is filtered by the same tenant/ownership predicate as the parent query.
+- **Inbound webhooks authenticate the caller before DB or paid work.** Email, SMS, payment, and git webhooks that identify the account from the payload (`to` address, slug) but never verify the provider's signature over the **raw** body let anyone trigger paid work and create records in another account. Provider signature table and raw-body capture: [references/webhooks-and-parsers.md](references/webhooks-and-parsers.md#2-inbound-webhook-triggers-paid-work-without-authenticating-the-caller-a01--a07). Grep: `inbound`, `parse`, `sendgrid`, `mailgun`, `postmark`, `/api/.*email`, `multer(`, `bodyParser: false`.
 - Missing CSRF protections on state-changing requests
 - Role checks only on the frontend, not enforced server-side
 - Open redirect via post-auth return-to parameter — `?from=`, `?next=`, `?returnTo=`, `?continue=`, `?redirect=` passed unsanitized to `redirect()` / `Response.redirect()`. Restrict to same-origin paths under the expected scope, normalize (`new URL(target, "http://localhost").pathname`) to defeat traversal like `/admin/../foo`. Also reject control bytes in the path before redirect: tab/newline/null (`\t`, `\n`, `\0`) — URL parsers strip these and collapse `/\tevil` into protocol-relative `//evil`; null bytes can turn the redirect into a 500. Reject any byte in `[\x00-\x1F\x7F]`, any backslash, and any percent-encoded slash/backslash (`%2f`, `%5c`).
 - Grep for: direct object references, missing auth middleware, user ID from request params, `redirect(.*from`, `redirect(.*next`, `redirect(.*returnTo`
 
 ### A02: Cryptographic Failures
-- Hardcoded secrets, API keys, or passwords in source
+- Hardcoded secrets, API keys, or passwords in source. Confirm the key type (publishable vs restricted vs secret) and the authority it grants before rating it: a public identifier called a "key" is not a secret.
 - Weak hashing (MD5, SHA1 for passwords instead of bcrypt/argon2/scrypt)
 - For bcrypt, also check the cost factor. OWASP 2024 guidance is ≥ 12 (cost 10 ≈ 10ms / 100 hashes/sec/core for an attacker)
 - **Type coercion in cryptographic-verification paths.** Numeric parsing (`parseInt`, `Number`, `parseFloat`) silently produces `NaN` for garbage input, and `NaN` compares as `false` for both `<` and `>`. A timestamp-freshness check `if (Math.abs(now - parsed) > tolerance) return false` *fails to reject* `NaN` — because `NaN > tolerance` is `false`. Grep for: `parseInt|parseFloat|Number\(.*\)` inside `verifySignature` / `validateToken` / signed-cookie / JWT-claim code. Each numeric extraction must be followed by `if (!Number.isFinite(parsed)) return false` before any inequality. Same family: `parseInt('0x123', 10) === 0`, `parseInt('1e10', 10) === 1`, `parseFloat('Infinity') === Infinity`.
@@ -58,13 +176,11 @@ Work through each category systematically. For each, grep for known vulnerabilit
   - OpenAI / Anthropic: `sk-`, `sk-ant-`
   - Vercel: `vercel_blob_rw_`
   - Run via `git ls-files | xargs grep -lE 'sk_live|ghp_|AKIA[0-9A-Z]{16}|sk-ant-' 2>/dev/null` so binaries and gitignored files don't pollute output.
-- **Include non-source file extensions in the sweep.** Rails `cable.yml` / `database.yml` / `storage.yml`, Kubernetes manifests, and Vercel / Netlify deploy configs routinely contain TLS or cert config that a source-only sweep misses. Concrete sweep for VERIFY_NONE / VERIFY_PEER:
+- **Include non-source file extensions in the sweep.** Rails `cable.yml` / `database.yml` / `storage.yml`, Kubernetes manifests, and Vercel / Netlify deploy configs routinely contain TLS or cert config that a source-only sweep misses:
 
   ```bash
-  grep -rn "VERIFY_NONE\|verify_mode" \
-    --include="*.rb" --include="*.yml" --include="*.yaml" \
-    --include="*.toml" --include="*.json" \
-    .
+  grep -rn "VERIFY_NONE\|verify_mode" --include="*.rb" --include="*.yml" --include="*.yaml" \
+    --include="*.toml" --include="*.json" .
   ```
 
 ### A03: Injection
@@ -74,7 +190,7 @@ Work through each category systematically. For each, grep for known vulnerabilit
 - **XSS:** unescaped user input in HTML, `dangerouslySetInnerHTML`, `v-html`.
 - **Inline-script breakout via `JSON.stringify`.** Any `<script type="application/ld+json">` or `<script>window.__DATA__ = ...</script>` that interpolates server data through `JSON.stringify` is vulnerable — `JSON.stringify` does NOT escape `<`, `>`, `&`, U+2028, or U+2029. A stored title containing `</script><script>alert(1)</script>` will break out. The "internal-only object" framing only saves you when every field is guaranteed never to come from user-editable input.
   - Grep for: `application/ld+json`, `__html: JSON.stringify`, `window.__` + `JSON.stringify`
-  - Fix: wrap with an escape helper that replaces `<>&\u2028\u2029` with their `\uXXXX` Unicode escapes before injecting.
+  - Fix: wrap with an escape helper that replaces `<>&  ` with their `\uXXXX` Unicode escapes before injecting.
 - **Rails ERB sinks:** `raw()`, `.html_safe`, `<%==`, `sanitize` with a permissive allowlist, and `simple_format` on user input. Grep for these alongside `dangerouslySetInnerHTML` / `v-html`.
 - **Sanitizer choice.** When remediating an HTML/SVG XSS sink, the fix MUST use a vetted parser-based sanitizer (DOMPurify / isomorphic-dompurify / sanitize-html for JS; bleach for Python). Reject regex-based sanitizers in code review. If unavoidable, a regex sanitizer must:
   - Treat `[/\s]` (not just `\s`) as the attribute-name separator — HTML accepts `/` between tag name and first attribute: `<img/onerror=…>`
@@ -83,18 +199,7 @@ Work through each category systematically. For each, grep for known vulnerabilit
   - Be paired with `Content-Security-Policy: script-src-attr 'none'` as a browser-level backstop
 - **SVG uploads as stored XSS.** SVG files can carry `<script>` / `onload`. Most blob / object storage serves uploads with the declared content-type. Reject `image/svg+xml` in upload allow-lists unless you have a sanitizer (e.g. DOMPurify SVG profile) and serve with `Content-Disposition: attachment`.
 - **Sanitize on write AND on render.** For stored XSS / injection, sanitize at the trust boundary (write to DB) AND at the render boundary (defense in depth). On finding a stored-XSS bug, plan a one-time backfill migration to sanitize existing data — render-only fixes leave poisoned rows that any new render path will re-expose.
-- **Rails JSON-LD breakout:** inside `<script type="application/ld+json">`, do NOT use `j` / `escape_javascript` for field values — `j` emits `\'` and `\$` (valid JS, invalid JSON), so `JSON.parse` fails on any field containing an apostrophe or `$`. Use this idiom instead:
-
-  ```erb
-  <% schema = { "@context" => "https://schema.org",
-                "@type" => "Article",
-                "headline" => @post.title } %>
-  <script type="application/ld+json">
-  <%= json_escape(schema.to_json).html_safe %>
-  </script>
-  ```
-
-  `to_json` handles JSON escaping; `json_escape` covers `<>&\u2028\u2029` against `</script>` breakout. Verify with round-trip: `JSON.parse(json_escape(article.to_json))` equals the source hash.
+- **Rails JSON-LD breakout:** inside `<script type="application/ld+json">`, do NOT use `j` / `escape_javascript` for field values — it emits `\'` and `\$` (valid JS, invalid JSON). Use `json_escape(schema.to_json).html_safe`; full idiom and round-trip check in [references/checklist-details.md](references/checklist-details.md#a03-rails-json-ld-idiom).
 - **Template injection:** user input in template literals
 - Grep for: `exec(`, `eval(`, `innerHTML`, `dangerouslySetInnerHTML`, `$where`, raw SQL strings
 
@@ -102,6 +207,7 @@ Work through each category systematically. For each, grep for known vulnerabilit
 - Authentication flows with logic flaws
 - Missing rate limiting on sensitive endpoints (login, password reset, API)
 - Business logic constraints only enforced client-side
+- **Request parsers have explicit limits (multipart, urlencoded, JSON depth/size).** A 78-byte multipart request with `x[1000000]=1` parsed into a million-element array (~5 MB of JSON) that the handler stored before validating it. Proxy size caps don't stop amplification. Check `multer`/busboy/formidable `limits`, `.none()` for unused files, `qs`/`body-parser` `parameterLimit`/`depth`, Rack param limits; validate an allowlisted payload before logging or storing. Per-framework table: [references/webhooks-and-parsers.md](references/webhooks-and-parsers.md#1-request-parsers-without-explicit-limits-a04--a05).
 - **Background / fire-and-forget jobs** inherit the caller's auth context but lose the request-scoped guards. Re-check authorization inside the job, not just at enqueue. Grep for: `Promise.all(...).catch(`, `void someAsync(`, `.catch(noop)`, queue `enqueue(` without re-auth in the worker.
 - **Sister-route audit.** When you find a state-machine or immutability guard on one handler (e.g., `WHERE … AND signedAt IS NULL` on `PUT /api/foo/[id]`), grep for every other handler that writes the same table:
 
@@ -116,59 +222,25 @@ Work through each category systematically. For each, grep for known vulnerabilit
   3. Persist with optimistic guard: `UPDATE … SET externalId = ? WHERE externalId IS NULL` and check 0-rows
   4. On race-loss, clean up the orphan via `provider.delete(id)` best-effort; log on cleanup failure
 - **Worker-queue state transitions need atomic claim.** Any cron / worker polling pending rows must atomically claim each row before processing. `SELECT` + `process()` + `UPDATE` is a race — two workers (or two overlapping cron invocations) both see the same pending row and both call out, causing duplicate delivery. Fix: `UPDATE … SET status='processing' WHERE id=? AND status='pending' RETURNING …` — Postgres `RETURNING` lets you claim and read in one round-trip. If the UPDATE returns 0 rows, someone else got it. Alternative: `SELECT … FOR UPDATE SKIP LOCKED` (Postgres / Cockroach) for higher-throughput queues.
+- **Race patterns need proof.** A static read of a check-then-act race is a `confirmed` finding only with a complete trace; to demonstrate it (parallel requests, double-spend, limit overrun) against an authorized running instance, use `business-logic-testing`.
 - **Multi-tenant webhook signature matching.** When an unauthenticated webhook endpoint identifies its tenant by trying each tenant's secret in turn, every request — including garbage — does O(N) DB lookups + O(N) HMAC computations. Attackers flood with random signatures and amplify CPU/DB load without ever passing auth. Defences (compose them):
   1. **Signature-shape prefilter** before any DB work — reject signatures that aren't the exact length/charset the provider sends (e.g., `/^[a-f0-9]{64}$/i` for HMAC-SHA256 hex)
   2. **Hard cap** on per-request signature checks (e.g., `LIMIT 200`)
   3. **Per-IP rate limit** on the endpoint
   4. If the provider supports it, **embed the tenant ID in the webhook URL** (`/api/webhooks/foo/<connection_id>`) so lookup is O(1)
 - **Rate-limit key fallback.** If your rate-limit key includes an attacker-controllable or potentially-missing identifier (IP, user-id, session-id), do NOT fall back to a shared constant string when it's absent. Either (a) refuse the request, (b) fall back to a per-resource identifier the attacker can't share (per-email for signup, per-Stripe-customer for billing), or (c) explicitly fail-open and log. A shared `'unknown'`/`'anon'` bucket is a lockout vector — one attacker pinning the bucket locks out every user behind that proxy path.
-- **Configured-but-not-loaded check.** Before declaring a security middleware (rate-limit, auth, CSRF, throttle) as "already configured," verify the gem/package is actually installed — not just that the initializer file exists. Initializers wrapped in `if defined? Foo` / `if PACKAGE in sys.modules` silently no-op when the package isn't bundled.
-
-  | Stack | Check |
-  |---|---|
-  | Ruby/Rails | `grep -E "^    GEM_NAME " Gemfile.lock` (4-space indent = top-level gems) |
-  | Node | `grep "\"PACKAGE_NAME\":" package-lock.json` or `node -e "require('PACKAGE_NAME')"` |
-  | Python | `pip show PACKAGE_NAME` |
-  | Go | `grep PACKAGE_PATH go.sum` |
-
-  For Rails: also verify the middleware is in the runtime stack — `bundle exec rails middleware | grep -i FOO`.
+- **Configured-but-not-loaded check.** Before declaring a security middleware (rate-limit, auth, CSRF, throttle) as "already configured," verify the gem/package is actually installed — not just that the initializer file exists. Initializers wrapped in `if defined? Foo` / `if PACKAGE in sys.modules` silently no-op when the package isn't bundled. Per-stack commands: [references/checklist-details.md](references/checklist-details.md#a04-configured-but-not-loaded-check).
 
 ### A05: Security Misconfiguration
 - Debug mode enabled in production configs
-- Overly permissive CORS policies (`Access-Control-Allow-Origin: *`)
-- Missing HTTP security headers (CSP, HSTS, X-Frame-Options, X-Content-Type-Options)
+- Overly permissive CORS policies (`Access-Control-Allow-Origin: *`). A finding only when credentials are allowed or a sensitive, non-public response is readable cross-origin; otherwise a hardening note.
+- **Missing HTTP security headers** (CSP, HSTS, X-Frame-Options, X-Content-Type-Options) are **hardening notes**, not findings, unless you trace an impact (e.g. missing `frame-ancestors` on a page with a one-click sensitive action → clickjacking; missing CSP where a confirmed XSS sink exists). Baseline values and where headers live per framework: [references/checklist-details.md](references/checklist-details.md#a05-security-header-baseline-for-fixes-and-hardening-notes).
+- **Deployed headers are a `needs_validation` item.** Config shows intent; proxies, CDNs, and platform defaults change what's actually sent. Unless you ran it against an origin you're authorized to probe, record a blocker ("headers actually served at `/embed`") and an owner-run check: `curl -sI https://<origin>/<path> | grep -iE 'content-security-policy|x-frame-options|strict-transport'`, with the expected output for confirmed vs rejected.
 - Default credentials or configurations shipped
 - Verbose error messages exposing stack traces or internals — including validation libraries echoing schema details (e.g. Zod `err.issues`, Joi error trees) to clients
-- **Baseline header starter values** (paste-and-tune):
-  | Header | Value |
-  |---|---|
-  | `Strict-Transport-Security` | `max-age=63072000; includeSubDomains; preload` — preload requires verifying every `*.example.com` serves HTTPS first |
-  | `X-Content-Type-Options` | `nosniff` |
-  | `X-Frame-Options` | `DENY` (defence-in-depth alongside CSP `frame-ancestors`) |
-  | `Referrer-Policy` | `strict-origin-when-cross-origin` |
-  | `Permissions-Policy` | `camera=(), microphone=(), geolocation=(), browsing-topics=()` — note `interest-cohort` is the legacy FLoC name (Chrome ≤ 100); current Chrome uses `browsing-topics` |
-  | `Content-Security-Policy` | start with `frame-ancestors 'self'`; full CSP needs per-site script audit (inline `<style>`, JSON-LD, analytics) |
-
-  HSTS preload submission is sticky — removal takes months. Verify before submitting.
-- Where security headers live, by framework:
-  - Next.js: `next.config.{js,ts}` `headers()` block; `vercel.json` `headers`
-  - Rails: `config/initializers/secure_headers.rb`, `config/application.rb`
-  - Express: `app.use(helmet())`
-  - Django: `SECURE_*` settings in `settings.py`
 - **Runtime-API mismatch.** Code running in Edge / Workers / V8-isolate runtimes can't load Node-only modules. Imports of `node:crypto`, `node:fs`, `node:buffer`, `node:net`, etc. inside Next.js `middleware.ts` / Cloudflare Workers / Vercel Edge functions compile cleanly and fail at first request with `Failed to load external module`. Audit middleware and edge-marked routes for Node-only imports; prefer Web Crypto (`crypto.subtle`) for portable code
-- **Rails admin-engine mounts.** Grep `config/routes.rb` for engine and dashboard mounts (PgHero, Sidekiq::Web, Flipper UI, Mission Control, Audit1984) and verify the auth middleware in the corresponding initializer applies in *every* environment reachable from the internet — not just production:
-
-  ```bash
-  grep -E "mount .+::(Engine|Web|UI)|mount .+::App" config/routes.rb
-  grep -rn "Rails.env.production?" config/initializers/ | \
-    grep -B1 -A5 "Auth::Basic\|authenticate\|secure_compare"
-  ```
-
-  The README examples for PgHero, Sidekiq::Web, Flipper, and Mission Control all wrap auth in `if Rails.env.production?`, which leaves staging, review apps, and preview deploys serving the admin UI anonymously. Fix shape: switch the guard to `unless Rails.env.local?` (Rails 7.1+ helper for `development || test`), and add a fail-closed check that refuses access when the auth env vars are unset.
-- **Concurrent-execution races on paid endpoints.** When an endpoint triggers paid downstream work (LLM calls, third-party APIs, scrape jobs), look for `SELECT` followed by a `runX()` call without an intervening atomic claim, and unconditional `UPDATE … SET status='processing'` writes. Two concurrent requests can both pass the read-side check and both run. Fix: conditional `UPDATE … WHERE id = ? AND status = 'pending' RETURNING …`, or a Postgres advisory lock. Charge rate-limit budget only on a successful claim so polling and retries don't burn quota.
-
-(Note: This bullet lives under A05 because the failure manifests as a misconfigured invariant guard. The race pattern itself spans A04 / A05 / A08 depending on framing.)
-
+- **Rails admin-engine mounts.** Grep `config/routes.rb` for engine and dashboard mounts (PgHero, Sidekiq::Web, Flipper UI, Mission Control, Audit1984) and verify the auth middleware in the corresponding initializer applies in *every* environment reachable from the internet — not just production. The upstream README examples wrap auth in `if Rails.env.production?`, leaving staging, review apps, and preview deploys anonymous. Fix: `unless Rails.env.local?` plus a fail-closed check when auth env vars are unset. Grep commands: [references/checklist-details.md](references/checklist-details.md#a05-rails-admin-engine-mounts).
+- **Concurrent-execution races on paid endpoints.** When an endpoint triggers paid downstream work (LLM calls, third-party APIs, scrape jobs), look for `SELECT` followed by a `runX()` call without an intervening atomic claim, and unconditional `UPDATE … SET status='processing'` writes. Two concurrent requests can both pass the read-side check and both run. Fix: conditional `UPDATE … WHERE id = ? AND status = 'pending' RETURNING …`, or a Postgres advisory lock. Charge rate-limit budget only on a successful claim so polling and retries don't burn quota. (Listed under A05 because the failure manifests as a misconfigured invariant guard; the race spans A04 / A05 / A08. Prove it dynamically with `business-logic-testing`.)
 - **Source-tree hygiene.** Grep for sync-conflict duplicates and dead code that could let a reviewer fix the canonical file while leaving a vulnerable copy in place:
 
   ```bash
@@ -177,7 +249,7 @@ Work through each category systematically. For each, grep for known vulnerabilit
   ```
 
   Treat findings as A05 — the canonical file may be patched while the duplicate retains the vulnerability.
-- **Next.js `headers()` rule merging.** Rules in `next.config.ts` `headers()` match per route and *merge* — a more-specific rule does not override headers it doesn't redeclare. Shipping `frame-ancestors 'none'` + `X-Frame-Options: DENY` in a `/:path*` default plus `frame-ancestors *` in a `/embed` override results in both `frame-ancestors *` and `X-Frame-Options: DENY` on the embed route (contradicting; older browsers may break framing). Verify with `curl -I` against the deployed origin — config inspection alone misses the merge. Either set XFO in every rule or drop it entirely (CSP `frame-ancestors` supersedes on modern browsers).
+- **Next.js `headers()` rule merging.** Rules in `next.config.ts` `headers()` match per route and *merge* — a more-specific rule does not override headers it doesn't redeclare. Shipping `frame-ancestors 'none'` + `X-Frame-Options: DENY` in a `/:path*` default plus `frame-ancestors *` in a `/embed` override results in both `frame-ancestors *` and `X-Frame-Options: DENY` on the embed route (contradicting; older browsers may break framing). Config inspection alone misses the merge, so this is `needs_validation` until someone runs `curl -sI https://<origin>/embed` against the deployed origin. Fix: set XFO in every rule or drop it entirely (CSP `frame-ancestors` supersedes on modern browsers).
 - **Auth middleware that doesn't exempt bearer/HMAC routes.** Cron jobs, Stripe / GitHub webhooks, and any route that authenticates via bearer token or HMAC need to be excluded from session-cookie middleware. Symptom: those routes silently 302 to `/login` on every deploy or scheduled invocation, the route-level signature check never runs, and the integration appears to "work" until it doesn't.
 - **Bearer-token compare with unset env interpolation.** Comparisons that interpolate `process.env.X` without a presence check — `\`Bearer ${process.env.WEBHOOK_TOKEN}\`` — resolve to a literal `"Bearer undefined"` when the env var is missing. An attacker who guesses the env-not-set condition can replay that literal string. Assert presence at module load: `if (!process.env.WEBHOOK_TOKEN) throw new Error(...)`.
 - **API routes returning HTML 302 redirects instead of JSON 401.** Auth middleware that 302s every unauthenticated request to `/login` breaks `fetch` clients (they follow the redirect and consume HTML), obscures auth state in monitoring, and lets attackers learn endpoint existence by 302 vs 404. API routes should return `401 application/json` with a machine-readable body.
@@ -194,9 +266,10 @@ Work through each category systematically. For each, grep for known vulnerabilit
 
 ### A07: Authentication Failures
 - Weak password policies
-- Session management issues (missing secure/httpOnly flags, no expiry, no rotation)
+- Session management issues (missing secure/httpOnly flags, no expiry, no rotation). Cookie-flag gaps are findings only with a traced impact (e.g. a session cookie readable by a confirmed XSS); otherwise hardening notes.
 - **Credential-as-cookie:** the cookie value *is* the credential (e.g. `cookies.set("admin_token", process.env.ADMIN_PASSWORD)` and equality-checked on read). Even with `httpOnly` and `secure`, this is plaintext-credential storage (CWE-522) and lacks rotation/revocation. Replace with an HMAC-signed expiring token verified via `crypto.subtle.verify` / `crypto.timingSafeEqual`
 - **Non-constant-time credential comparison:** `submitted === expected` for passwords, API keys, or signatures leaks length and prefix-match via timing. Use `crypto.timingSafeEqual` (Node) or `crypto.subtle.verify` (Web Crypto)
+- **Unauthenticated inbound webhooks** that trust a payload field to pick the account: see A01 and [references/webhooks-and-parsers.md](references/webhooks-and-parsers.md).
 - Missing rate limiting on login (credential stuffing risk)
 - Broken password reset flows
 - **Rails / Devise — `password_length` requires `:validatable`.** `config.password_length` in `config/initializers/devise.rb` is only enforced when the User model includes `:validatable` in its `devise :...` declaration. A model with `devise :database_authenticatable, :registerable, :recoverable, :rememberable` (no `:validatable`) accepts passwords of any length and any email format, regardless of what the initializer says. Grep: `^\s*devise\s+:` in `app/models/`; flag any line where `:validatable` is absent. Adding it on an existing app validates on create+update but does not retro-invalidate existing weak passwords.
@@ -221,6 +294,7 @@ Work through each category systematically. For each, grep for known vulnerabilit
 - **Silent error swallowing.** Empty catch blocks hide both bugs and attack signals (rate limiter falling over, deserialization errors, auth failures).
   - Grep for: `catch \{\}`, `catch (_) \{\}`, `catch (_e) \{\}`, `.catch(() => {})`, `.catch(() => null)`, `try { ... } catch { return null }`
   - Fix: at minimum log the error category (`error.name`, status code) without PII
+- **Parsing and middleware run inside the error boundary that reports to monitoring.** `await runMiddleware(req, res, upload.any())` above the handler's `try` means a missing multipart boundary or oversized field becomes a generic framework 500 and the handler's Sentry capture never runs, so malformed traffic and attacks are invisible. Check the method first, wrap parsing, map parser errors to 400/413 with structured logging, keep 5xx for real failures. Detail: [references/webhooks-and-parsers.md](references/webhooks-and-parsers.md#3-parser-errors-thrown-outside-the-error-boundary-a09).
 - **Unauthenticated endpoints sending email from a verified domain to user-supplied addresses.** Any handler reachable without auth that triggers an outbound email — confirmation, password-reset to-be-claimed, invite, "we got your message" — to an attacker-supplied `to:` address, especially with attacker-influenced subject/body, is a phishing vector against your verified sender's deliverability reputation. Defences (pick one):
   1. Don't auto-confirm — replies happen when a human responds
   2. Require ownership proof before any reply email (verification link / double opt-in)
@@ -229,30 +303,26 @@ Work through each category systematically. For each, grep for known vulnerabilit
 ### A10: SSRF
 - User-controlled URLs passed to server-side HTTP requests
 - Missing URL validation and allowlisting
-- Allow-lists that only check hostname — a real allow-list must reject **all** of these:
-  - Wrong scheme: `http://allowed.com/` (when only `https:` is expected)
-  - Embedded credentials: `https://user:pass@allowed.com/`
-  - `@`-host trick: `https://allowed.com@evil.com/` (hostname resolves to `evil.com`)
-  - Non-default ports: `https://allowed.com:8443/`
-  - Punycode/IDN spoof: `https://аllowed.com/` (Cyrillic а) or `xn--llowed-pdc.com`
-  - Trailing dot: `https://allowed.com./` (DNS-equivalent, often missed by string compare)
-  - Subdomain confusion: `https://allowed.com.evil.com/`
-  - Bracketed IPv6 literal: `https://[::1]/`
-  - Bare IPv4: `https://127.0.0.1/`
-  - Decimal-integer IPv4: `http://2130706433/` → 127.0.0.1
-  - Hex IPv4: `http://0x7f000001/`
-  - Octal IPv4: `http://0177.0.0.1/`; zero-padded `0010.0.0.1/` → 8.0.0.1 (octal!)
-  - IPv4-mapped IPv6: `http://[::ffff:127.0.0.1]/` → block the whole `::ffff:*` range
-  - Trailing-dot hostname: `http://localhost./`, `http://metadata.google.internal./`
-  - Cloud metadata endpoints: AWS `169.254.169.254`, GCP `metadata.google.internal`, ECS `169.254.170.2`
-  - CGNAT range: `100.64.0.0` – `100.127.255.255`
-  - Link-local IPv6: `fe80::/10`; unique-local IPv6: `fc00::/7`
+- Allow-lists that only check hostname. A real allow-list rejects wrong schemes, embedded credentials, `@`-host tricks, non-default ports, punycode/IDN spoofs, trailing dots, subdomain confusion, IPv6 literals, decimal/hex/octal IPv4, IPv4-mapped IPv6, cloud metadata endpoints, CGNAT, and link-local/unique-local IPv6. Full test set: [references/checklist-details.md](references/checklist-details.md#a10-ssrf-allow-list-bypass-set).
 - Fetch-time guards: `redirect: "error"` (don't follow attacker-controlled redirects), explicit timeout, no following 3xx into the metadata service
 - Note the TOCTOU between validation and fetch — DNS can resolve differently between the two (DNS rebinding). For high-risk callers, pin the resolved IP and connect by IP with `Host:` header, or use a vetted proxy
 - **Image-optimizer-as-proxy** (Next.js, Nuxt, SvelteKit): `next.config.{ts,js}` with `images.remotePatterns: [{ hostname: '**' }]`, `domains: ['*']`, or any wildcard entry lets attackers route arbitrary URLs through your CPU/bandwidth.
   - Grep for: `remotePatterns`, `domains:` in image config
   - Fix: pin to specific known hostnames; leave empty if all images are local.
 - Grep for: `fetch(`, `axios(`, `http.get(`, `urllib`, `requests.get(` with user input
+
+## Anti-patterns
+
+Don't report these as findings:
+
+- **Checklist deviations presented as vulnerabilities.** "No CSP", "bcrypt cost 10", "`VERIFY_NONE` present": a flag is not a finding until you trace the impact. Without one, it's a hardening note.
+- **Same-principal "self-impact."** A user who can corrupt only their own data, or self-XSS that needs the victim to paste a payload, doesn't cross a trust boundary.
+- **Public identifiers treated as secrets.** Publishable keys, client IDs, and Firebase/Maps browser keys are meant to ship. Check the key type and the authority it grants.
+- **"Could matter if chained"** with unproven links. Each link in the chain needs its own evidence, or the chain is needs_validation at best.
+- **Severity on a needs_validation item**, or "Potential" used as a catch-all.
+- **Issues that already require admin, shell, or physical access** rated high or critical.
+- **Rejecting with "the framework handles it"** without naming the control and location (see verification.md "What does NOT rule out a candidate").
+- **Category-level "clean"** without per-unit `reviewed_paths` and checks.
 
 ## Verify Fixes at Runtime
 
@@ -262,26 +332,16 @@ After applying a fix, exercise the affected code path — do not stop at typeche
 - **Lazy module loads.** Adapters/plugins loaded via `import()` or runtime DI surface only when the codepath runs.
 - **Environment-variable fallthrough.** `Bearer ${process.env.X}` with X unset becomes a literal that the tests never hit because the test env defines X.
 
-For each shipped fix, run the affected route or job and capture the response. `tsc --noEmit` + build success ≠ fix verified.
+For each shipped fix, run the affected route or job and capture the response. `tsc --noEmit` + build success ≠ fix verified. For XSS / sanitizer-config fixes, run the canonical payload set in [references/checklist-details.md](references/checklist-details.md#fix-verification-xss--sanitizer-payload-set) through the configured policy and confirm each is neutralized. A fixed finding stays in `findings.json` with disposition `Fixed`; re-runs re-verify it.
 
-**For XSS / sanitizer-config fixes**, run the canonical payload set through the configured policy and confirm each is neutralized:
+## Second-Opinion Pass (post-fix review)
 
-```
-<img src=x onerror=alert(1)>
-<a href="javascript:alert(1)">x</a>
-<a href="data:text/html,<svg onload=alert(1)>">x</a>
-<img srcset="javascript:alert(1) 1x,https://ok.com/a.png 2x">
-<svg><script>alert(1)</script></svg>
-<math><mtext></style><img src=x onerror=alert(1)></math>
-<a href="//evil.com">protocol-relative</a>
-<svg></svg><img/onerror=alert(1) src=x>
-```
+The per-finding verification in Step 4 challenges each candidate. This pass is different: it runs **after fixes ship**
+and reviews the fixes themselves and anything the checklist doesn't name (`localhost.` vs `localhost`, IPv4-mapped
+IPv6, status-enumeration via ordered 404/400/401, callback-URL control chars, concurrent-execution races on paid
+endpoints).
 
-## Second-Opinion Pass
-
-A single-pass audit reliably catches the categories on the checklist but misses the specific bypasses that aren't *in* the checklist (`localhost.` vs `localhost`, IPv4-mapped IPv6, status-enumeration via ordered 404/400/401, callback-URL control chars, concurrent-execution races on paid endpoints).
-
-After producing the first report AND after applying fixes, run a second pass with explicit adversarial framing ("assume the author is overconfident; find what they missed") — ideally with a different model or agent entirely, to break correlated blind spots. Treat any disagreement with the first pass as the higher-value finding.
+After applying fixes, run a pass with explicit adversarial framing ("assume the author is overconfident; find what they missed") — ideally with a different model or agent entirely, to break correlated blind spots. Treat any disagreement as a new candidate and send it through Step 4.
 
 Common things to find in the second pass:
 - New attack surface introduced by the fix itself (auth bypass via exempted routes, IDOR introduced by a new query)
@@ -292,74 +352,85 @@ Common things to find in the second pass:
 
 ## Report Format
 
-For every OWASP category, document one of three states:
-
-- **Findings** (with severity + remediation)
-- **Clean** — explicitly state "Checked X, found no issues" with what you grepped for
-- **N/A** — explain why the category doesn't apply (e.g. "A07 N/A: no authentication surface in this codebase")
-
-Include an "Items checked and found clean" section in the executive summary. Audit credibility comes from proving you looked, not just from the findings list.
-
-Findings have three possible dispositions:
-
-- **Fixed** — remediation shipped in this PR. Closed pending verification.
-- **Deferred** — remediation acknowledged and scheduled. Specify whether the next deploy is gated on it (release blocker) or not (acceptable risk with calendar fix). Severity does not change because you decided to defer it.
-- **Accepted Risk** — remediation is NOT planned at the current configuration. The report must record:
-  1. **Why the fix doesn't apply** — cost tier, dependency version constraint, deployment topology, vendor limitation
-  2. **Compensating controls** — private network, signed cookies, internal-only routing, etc.
-  3. **Re-evaluation trigger** — what condition (plan upgrade, dependency bump, traffic pattern change) would cause this finding to leave the Accepted Risk lane
-
-An "Accepted Risk" entry without all three fields is a real finding being silently dropped under a different label.
-
-For each finding, document:
-
-```markdown
-#### [SEVERITY] A0X: [Title]
-**File:** `path/to/file.ts:42`
-**CWE:** CWE-XXX
-
-**Description:** [What the vulnerability is and why it matters]
-
-**Vulnerable Code:**
-[code snippet]
-
-**Remediation:**
-[Fixed code snippet with explanation]
-
-**Verification:** Concrete adversarial input + the command or code path that proves the fix holds. For XSS: the script-tag breakout payload that no longer breaks out. For open redirects: the off-host URL that now rejects. For password-length: the 1-char password that now fails to save. "The linter says it's fine" is not verification — static analysis has known blind spots for correctness bugs that happen to also be security fixes.
-```
-
-Produce an executive summary:
+Render from `findings.json` + `coverage.json` + `hardening-notes.md`. Never hand-edit a verdict or severity in prose.
 
 ```markdown
 # Security Audit Report
-## Project: [name]
-## Stack: [technologies]
-## Date: [date]
+## Project: [name]   ## Stack: [technologies]   ## Date: [date]
+## Mode: full | diff-scoped (partial) — base [sha] → head [sha]
+## Profile: quick | standard | deep   ## Coverage: complete | partial ([N] units deferred/blocked)
+## Prior run: [date / commit, or "none"] — carried forward: [N], re-verified: [N]
 
 ### Summary
-- Total findings: X
-- Critical: X | High: X | Medium: X | Low: X | Info: X
+- Confirmed: X (Critical X | High X | Medium X | Low X)
+- Needs validation: X   Rejected: X   Hardening notes: X
+- Units: X covered, X not applicable, X deferred, X out of scope
 
-### Findings
-[Individual findings as above]
-
+### Confirmed findings
+### Needs validation
+### Hardening notes (not findings)
+### Rejected (do not re-raise)
+### Items checked and found clean
+### Deferred / out of scope
 ### Prioritized Remediation Plan
-1. [Critical fixes — immediate]
-2. [High fixes — this week]
-3. [Medium/Low — scheduled]
+1. [Critical — immediate]  2. [High — this week]  3. [Medium/Low — scheduled]  4. [Owner-run validation checks]
 ```
+
+If coverage is partial or the run is diff-scoped, say so in the header **and** in the first summary line. A partial
+audit never claims the codebase is clean.
+
+**Confirmed findings**, one block each:
+
+```markdown
+#### [SEVERITY] A0X: [Title]  `fingerprint`
+**File:** `path/to/file.ts:42`   **CWE:** CWE-XXX   **Confidence:** high | medium | low
+**Trace:** entrypoint `file:line` → propagation `file:line` → sink `file:line`
+**Conditions:** [authentication_level, network_routing, …]
+**Description:** [What the vulnerability is, the boundary crossed, the concrete result]
+**Counterevidence:** [Strongest control the verifier found and why it doesn't stop the attack]
+**Vulnerable Code:** [snippet]
+**Remediation:** [Fixed code snippet with explanation]
+**Verification:** [Concrete adversarial input + the command or code path that proves the fix holds]
+**Disposition:** Fixed | Deferred | Accepted Risk | Mitigated (platform/config) | Requires major migration
+```
+
+Verification examples: for XSS, the script-tag breakout payload that no longer breaks out; for open redirects, the off-host URL that now rejects; for password length, the 1-char password that now fails to save. "The linter says it's fine" is not verification.
+
+**Needs validation**, one block each: title, location, what the code shows, **Blockers** (each the one external fact
+that decides it), and an **Owner-run check** (exact command, where to run it, and the expected output for confirmed
+vs rejected). No severity.
+
+**Hardening notes (not findings)**: one line each with location and suggested improvement. No severity.
+
+**Rejected (do not re-raise)**: table of fingerprint, claim, `ruled_out_by` control, and location.
+
+**Items checked and found clean**: generated from `covered` and `not_applicable` units: surface, boundary, category,
+the invariant checked, and the result. Audit credibility comes from proving you looked, unit by unit.
+
+**Deferred / out of scope**: every `deferred`, `blocked`, and `out_of_scope` unit with its reason, plus unrelated
+pre-existing issues noted during a diff review.
+
+### Dispositions (confirmed findings only)
+
+- **Fixed** — remediation shipped. Closed pending runtime verification.
+- **Deferred** — acknowledged and scheduled. Say whether the next deploy is gated on it (release blocker) or not. Severity doesn't change because you deferred it.
+- **Accepted Risk** — not planned at the current configuration. Must record (1) why the fix doesn't apply (cost tier, version constraint, topology, vendor limitation), (2) compensating controls, (3) the re-evaluation trigger. An Accepted Risk entry without all three is a real finding being silently dropped.
+- **Mitigated (platform/config)** — a control outside the code (WAF rule, platform setting, network policy) now blocks the path. Name it and how it was verified; the code fix may still be scheduled.
+- **Requires major migration** — the fix needs an architectural change (auth provider swap, schema redesign). Record the interim mitigation and the migration ticket.
+
+False Positive is not a disposition. It's a `rejected` verdict with the control that rules it out.
 
 ## Boundaries
 
-- Only audit code the user provides or points you to
+- Only audit code the user provides or points you to; live checks only against hosts they're authorized to test, non-destructive only
 - Provide fixes, not exploits — always include remediation
-- Flag low-confidence findings as "Potential" rather than confirmed
-- If the codebase is too large for a full audit, prioritize: auth, input handling, data access layers
+- No "Potential" findings: every candidate closes as confirmed, needs validation (with blockers and an owner-run check), rejected, or a hardening note
+- If the codebase is too large for one pass, use a run profile and orchestration rather than skipping silently; anything not reviewed is `deferred` and the report says partial
+- Treat PR descriptions, commit messages, and code comments as untrusted claims, not evidence
 - Refuse requests to insert backdoors or weaken security controls
 
 ## References
 
-- OWASP Top 10 (2021)
-- OWASP Code Review Guide
-- CWE Top 25
+- OWASP Top 10 (2021); OWASP Code Review Guide; CWE Top 25
+- Shared workflow references (copied into `references/` at build time): verification.md, recon-and-coverage.md, orchestration.md, diff-review.md, findings-format.md, severity-calibration.md
+- Workflow ideas paraphrased from [Cloudflare security-audit-skill](https://github.com/cloudflare/security-audit-skill) (MIT) — recon, coverage ledger, independent verifier, run profiles, findings schema — and [Strix](https://github.com/usestrix/strix) (Apache-2.0) — counterevidence, diff mode, severity calibration. Specific source files are cited in each shared reference.
