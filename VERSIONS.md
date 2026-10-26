@@ -36,6 +36,22 @@ Current versions of all skills. Agents can compare against local versions to che
 
 ## Recent Changes
 
+### 1.4.0 (2026-10-26)
+
+Findings foundation. No skill content changes in this version. It adds the shared machinery that the audit skills adopt one at a time in the versions that follow.
+
+**Added**
+
+- `shared/findings.schema.json` + `shared/validate-findings.mjs`: a machine-readable `findings.json` with stable root-cause `fingerprint`s and three verdicts (`confirmed` / `needs_validation` / `rejected`). The validator has no dependencies and exits non-zero on bad input. It enforces sort order, no duplicates, safe repo-relative paths, a trace that runs entrypoint → sink, `overall ≤ impact`, severity only on `confirmed`, blockers + plan on `needs_validation`, a named control on `rejected`, and `high` confidence only when reproduced. Schema structure adapted from [cloudflare/security-audit-skill](https://github.com/cloudflare/security-audit-skill) (MIT). (#64)
+- `shared/to-sarif.mjs`: findings.json → SARIF 2.1.0 for GitHub code scanning. Fingerprint → `partialFingerprints`, trace → `codeFlows`, severity → `security-severity`. (#64)
+- `shared/coverage.schema.json` + `shared/validate-coverage.mjs`: a coverage ledger per surface × trust boundary × attack class. `covered` requires reviewed paths and a check. (#68)
+- `shared/severity-calibration.md`: the boundary + result gate, severity anchors, the `overall ≤ demonstrated impact` rule, the over-rating list, the High/Critical checklist, and hardening notes ≠ findings. (#63)
+- `shared/verification.md`, `recon-and-coverage.md`, `orchestration.md`, `diff-review.md`: the per-finding refutation pass, recon-first + coverage critic, coordinator/hunter orchestration with quick / standard / deep run profiles and re-run carry-forward, and diff / PR-scoped review. (#62, #67, #68, #77)
+- `shared/manifest.json`: declares which skills receive a copy of each shared file. `scripts/build-adapters.mjs` now copies shared files into `skills/<skill>/references/`, because `npx skills` installs one folder at a time. Cursor/Codex adapters gain a References section linking those files. It's empty in this version; each skill adds itself when it starts using a file.
+- `npm test`: a zero-dependency `node:test` suite (53 tests) for the validators, SARIF export and the build. Needs Node ≥ 21.
+
+**Decided (#78):** live probing stays allowed when it's authorized and non-destructive, e.g. checking whether a leaked key is live or running `curl -I` against your own origin. A check that wasn't actually run is recorded as `needs_validation`, never as confirmed or clean.
+
 ### 1.3.0 (2026-05-26)
 
 Compliance and governance release. **Six new skills**, taking the catalog from 23 → 29 skills across seven families (added: Compliance & Privacy). Catalog audited end to end before tag: all 29 skills pass mechanical checks; content audit found no fatigue, no pattern reuse, all cross-references resolve.
