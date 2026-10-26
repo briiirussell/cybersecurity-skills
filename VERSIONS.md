@@ -23,7 +23,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | mobile-audit | 1.0.1 | 2026-10-26 |
 | osint-recon | 1.0.1 | 2026-10-26 |
 | owasp-audit | 1.2.1 | 2026-10-26 |
-| patch-sweep | 1.0.1 | 2026-10-26 |
+| patch-sweep | 1.0.2 | 2026-10-26 |
 | pci-audit | 1.0.1 | 2026-10-26 |
 | personal-opsec | 1.0.0 | 2026-10-26 |
 | privacy-engineering | 1.0.2 | 2026-10-26 |
@@ -41,6 +41,16 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.1.2 | 2026-10-26 |
 
 ## Recent Changes
+
+### 1.19.7 (2026-10-26)
+
+Security fix for patch-sweep's `allowed-tools`. Claude Code permission rules match by prefix, so `Bash(heroku apps:*)`, `Bash(heroku releases:*)` and `Bash(heroku stack:*)` also pre-approved `heroku apps:destroy`, `heroku releases:rollback` and `heroku stack:set` with no prompt. The skill never runs any of them; the grants were broader than the inventory commands it documents. Missed in the 1.19.2 tightening. Closes #111.
+
+**Fixed**
+
+- **patch-sweep** (1.0.2): the three heroku wildcards are replaced with rules for exactly the read-only commands the skill uses: `heroku apps --all --json` (exact), `heroku apps:info`, `heroku domains -a`, `heroku releases -a`, `heroku releases:info`, `heroku pipelines:info`. `heroku stack` is dropped; the stack comes from `apps:info`. The Authorization note now explains why `heroku releases -a:*` is used and `heroku releases:*` is not. The vercel, gh and git grants were rechecked; none prefix-matches a write.
+
+If you run patch-sweep, `heroku domains`, `heroku releases` and `heroku stack` without `-a`, and any rollback or destroy, now ask for approval.
 
 ### 1.19.6 (2026-10-26)
 

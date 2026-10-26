@@ -1,7 +1,7 @@
 ---
 name: patch-sweep
 description: "Respond to a CVE wave across a whole portfolio of apps at once: inventory every repo and the platform project and domain it actually serves, find the real production branch, spot stale manual deploys, decide which apps are affected, mitigate, patch, ship, and confirm production. Use when the user mentions 'patch sweep,' 'patch all my apps,' 'fleet-wide CVE,' 'are any of my apps affected,' 'Next.js RCE across all projects,' 'Rails CVE on all our Heroku apps,' 'patch every repo,' 'CVE wave,' 'security release across the fleet,' 'which of our sites run the vulnerable version,' 'mass dependency update,' or has more than a handful of apps to patch against the same advisories."
-allowed-tools: Read, Grep, Glob, Bash(gh repo list:*), Bash(gh repo view:*), Bash(git log:*), Bash(git ls-remote:*), Bash(vercel project ls:*), Bash(vercel project inspect:*), Bash(vercel ls:*), Bash(vercel inspect:*), Bash(vercel domains ls:*), Bash(heroku apps:*), Bash(heroku releases:*), Bash(heroku stack:*)
+allowed-tools: Read, Grep, Glob, Bash(gh repo list:*), Bash(gh repo view:*), Bash(git log:*), Bash(git ls-remote:*), Bash(vercel project ls:*), Bash(vercel project inspect:*), Bash(vercel ls:*), Bash(vercel inspect:*), Bash(vercel domains ls:*), Bash(heroku apps --all --json), Bash(heroku apps:info:*), Bash(heroku domains -a:*), Bash(heroku releases -a:*), Bash(heroku releases:info:*), Bash(heroku pipelines:info:*)
 ---
 
 # Patch Sweep — Fleet-Wide CVE Response
@@ -29,7 +29,7 @@ Ask the user, and write the answers at the top of the board:
 
 Refuse to: push to or merge into a repo the user doesn't own without that owner's explicit approval in the user's own message; deploy to a platform account the user doesn't control; delete projects, domains, or deployments as part of the sweep (that's an owner decision, recorded as an action); disable deployment protection, branch protection, or CI checks to make a patch land faster.
 
-The listed `allowed-tools` are read-only inventory commands. Every merge, `vercel deploy`, `git push`, `heroku config:set`, and `gh api -X PUT` prompts on purpose.
+The listed `allowed-tools` are read-only inventory commands, scoped so no grant prefix-matches a write (`heroku releases -a:*`, never `heroku releases:*`, which would also match `releases:rollback`). Every merge, `vercel deploy`, `git push`, `heroku config:set`, and `gh api -X PUT` prompts on purpose.
 
 ## Step 1 — Inventory and mapping
 
