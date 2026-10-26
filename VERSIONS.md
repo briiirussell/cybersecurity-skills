@@ -5,7 +5,35 @@ Current versions of all skills. Agents can compare against local versions to che
 | Skill | Version | Last Updated |
 |-------|---------|--------------|
 | agent-supply-chain-audit | 1.0.1 | 2026-10-26 |
-| ai-risk-management | 1.0.1 | 2026-10-26 |
+| ai-risk-management | 1.0.2
+api-audit=1.1.1
+breach-patterns=1.0.2
+cloud-audit=1.1.1
+container-audit=1.0.1
+crypto-audit=1.0.1
+csf-mapping=1.0.1
+dependency-audit=1.2.1
+disk-forensics=1.0.1
+finding-triage=1.1.1
+hipaa-audit=1.0.1
+iam-audit=1.0.2
+incident-triage=1.0.4
+mobile-audit=1.0.1
+osint-recon=1.0.1
+owasp-audit=1.2.1
+pci-audit=1.0.1
+privacy-engineering=1.0.1
+prompt-injection=1.1.1
+recon=1.0.1
+red-team-engagement=1.0.1
+secrets-audit=1.1.1
+security-comms=1.0.1
+siem-detection=1.0.2
+soc-operations=1.0.2
+threat-hunting=1.0.3
+threat-modeling=1.0.1
+vuln-research=1.0.1
+web-pentest=1.1.1 | 2026-10-26 |
 | api-audit | 1.1.0 | 2026-10-26 |
 | breach-patterns | 1.0.1 | 2026-10-26 |
 | business-logic-testing | 1.0.0 | 2026-10-26 |
@@ -41,6 +69,29 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.1.0 | 2026-10-26 |
 
 ## Recent Changes
+
+### 1.19.0 (2026-10-26)
+
+**Heads up: this may change how skills feel to use.** `allowed-tools` in a Claude Code skill lists tools that run **without a permission prompt** while the skill is active. It is not an access list or a ceiling. Before this version, 26 of 29 skills pre-approved plain `Bash`, 24 pre-approved `Write`, and 5 paired `Bash` with `WebFetch`. That last combination gives attacker-controlled web content a path to the shell with no prompt in between. Nothing is removed from what a skill *can* do. Commands that used to run silently now ask first, unless they're read-only and listed below. If you relied on the old pre-approvals for unattended runs, add the specific commands to your own permission settings. Credit: NVIDIA [SkillSpector](https://github.com/NVIDIA/SkillSpector) rule LP3. (#65)
+
+**Changed**
+
+- **No skill pairs `WebFetch` with unscoped `Bash` anymore.** `recon` and `osint-recon` keep only `whois` / `dig`. `vuln-research` keeps only read-only package queries (`npm ls`, `pip show`, `bundle info`, `go list`). `breach-patterns` and `web-pentest` pre-approve no shell at all; every active test against a target prompts.
+- **Bash removed** (the skill runs no commands, or its commands hit a live target and should prompt): ai-risk-management, api-audit, breach-patterns, crypto-audit, csf-mapping, finding-triage, hipaa-audit, mobile-audit, pci-audit, privacy-engineering, prompt-injection, red-team-engagement, siem-detection, threat-hunting, web-pentest.
+- **Bash scoped to read-only commands:**
+  - cloud-audit and iam-audit: documented `aws` / `gcloud` / `az` read calls
+  - container-audit: `trivy image|config`, `kube-bench run`
+  - dependency-audit: exact `npm audit` / `pnpm audit --prod` rules so `audit fix` always prompts; plus `npm ls`, `pnpm why`, `yarn why`, `yarn npm audit`, `osv-scanner scan`, `govulncheck`, `bundle audit`, `composer audit`, `dotnet list package`, `trivy fs|image`
+  - disk-forensics: `file`, `sha256sum`, `fdisk -l`, `mmls`, `fsstat`, `fls`, `icat`, `strings`
+  - incident-triage: `ps`, `netstat`, `lsof`, `who`
+  - owasp-audit: exact `npm audit` rules
+  - secrets-audit: `trufflehog git`
+- **`Write` dropped everywhere** except the skills whose main output is a file: siem-detection (rule files), scanner-pipeline (plan + workflow) and log-watch (plan). Edits still work; they just prompt.
+- The new 1.5.0–1.10.0 skills already shipped with scoped grants. agent-supply-chain-audit only pre-approves `skillspector scan --no-llm`, because LLM mode sends file contents to a provider.
+- `CLAUDE.md` and `templates/skill-template.md` now describe `allowed-tools` correctly. The template default is `Read, Grep, Glob`.
+- Note: the Cursor and Codex adapters carry no tool restrictions at all. Those agents use their own permission settings.
+
+All 29 pre-existing skills get a patch bump. The full before → after table with a reason per skill ships in `docs/security-scanning.md` in 1.19.1.
 
 ### 1.18.0 (2026-10-26)
 

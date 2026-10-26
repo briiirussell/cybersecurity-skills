@@ -1,7 +1,7 @@
 ---
 name: security-comms
 description: "Translate technical security work into the language of non-security audiences — board, executives, engineering, customer success, customers, legal, procurement, sales. Covers incident communication, post-mortem narrative, audit-findings-for-stakeholders, risk justification, security spend justification, and customer-facing breach disclosure. Use when the user mentions 'security comms,' 'communicate this finding,' 'explain to my boss,' 'board update,' 'executive summary,' 'incident communication,' 'breach notification,' 'customer disclosure,' 'security memo,' 'post-mortem narrative,' 'risk justification,' 'why this matters to the business,' 'translate this finding,' 'stakeholder update,' or has technical security work that needs to land with a non-security audience."
-allowed-tools: Read, Write, WebSearch
+allowed-tools: Read, WebSearch
 ---
 
 # Security Comms — Translating Security Work for Non-Security Audiences

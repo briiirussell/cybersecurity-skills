@@ -1,7 +1,7 @@
 ---
 name: container-audit
 description: "Audit container images, Dockerfiles, and Kubernetes manifests for misconfigurations, excessive privileges, exposed secrets, and runtime risks. Use when the user mentions 'container security,' 'Docker security,' 'Dockerfile audit,' 'Kubernetes security,' 'K8s security,' 'pod security,' 'container hardening,' 'kubectl audit,' 'image scanning,' 'distroless,' 'rootless containers,' 'pod security policy,' 'pod security standards,' 'PSS,' 'network policy,' 'OPA Gatekeeper,' 'Kyverno,' 'runtime security,' or needs to review container or orchestration security."
-allowed-tools: Bash, Read, Write, Grep, Glob, WebSearch
+allowed-tools: Read, Grep, Glob, WebSearch, Bash(trivy image:*), Bash(trivy config:*), Bash(kube-bench run:*)
 ---
 
 # Container Audit — Docker & Kubernetes Security Review
