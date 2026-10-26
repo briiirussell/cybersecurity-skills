@@ -50,7 +50,7 @@ test("every existing SKILL.md parses with name = folder and a description", () =
 test("references section links each file on GitHub", () => {
   assert.equal(buildReferencesSection("a", []), "");
   const s = buildReferencesSection("finding-triage", ["findings-format.md", "severity-calibration.md"]);
-  assert.match(s, /## References/);
+  assert.match(s, /## Reference files/);
   assert.match(s, /\(https:\/\/github\.com\/briiirussell\/cybersecurity-skills\/blob\/main\/skills\/finding-triage\/references\/severity-calibration\.md\)/);
 });
 

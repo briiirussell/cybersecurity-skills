@@ -23,6 +23,7 @@ Not every skill is for every user on day one. A good starting point by context:
 
 - **Reviewing your own code or product:** start with `owasp-audit` for the source-code sweep, then `api-audit` if you have API endpoints, then `dependency-audit` for the CVE pass
 - **A CVE wave just dropped and you run many apps:** `patch-sweep` to work out which apps are affected and ship fixes across the fleet, with `dependency-audit` for each project
+- **Want deterministic scanners in CI instead of asking an agent to "hack" your app:** `scanner-pipeline` picks the tools per layer, wires them into CI, and routes findings to `finding-triage`
 - **Securing cloud / infrastructure:** start with `cloud-audit` (AWS / GCP / Azure misconfig), then `iam-audit` if you manage identities, then `container-audit` if you run Docker / Kubernetes
 - **Responding to "something happened":** `incident-triage` for the immediate response, `disk-forensics` if you need to analyze a system afterward, `security-comms` to draft the stakeholder / customer communications
 - **Building a security program from scratch:** `csf-mapping` for the governance frame, `threat-modeling` before new features, `breach-patterns` to learn from public incidents
@@ -68,6 +69,10 @@ The skills are organized into seven families. Most security work crosses familie
 │-audit│ │-testing│ │patterns│ │        │ │      │ │         │ │          │
 │patch-│ │        │ │        │ │        │ │      │ │         │ │          │
 │ sweep│ │        │ │        │ │        │ │      │ │         │ │          │
+│scan- │ │        │ │        │ │        │ │      │ │         │ │          │
+│ner-  │ │        │ │        │ │        │ │      │ │         │ │          │
+│pipe- │ │        │ │        │ │        │ │      │ │         │ │          │
+│line  │ │        │ │        │ │        │ │      │ │         │ │          │
 └──┬───┘ └───┬────┘ └───┬────┘ └───┬────┘ └──┬───┘ └────┬────┘ └────┬─────┘
    │         │          │          │         │           │            │
    └─────────┴────┬─────┴──────────┴─────────┴───────────┴────────────┘
@@ -83,6 +88,7 @@ The skills are organized into seven families. Most security work crosses familie
      agent-supply-chain-audit ⇆ dependency-audit / secrets-audit (agent extensions are supply chain too)
      owasp-audit (source-side race patterns) → business-logic-testing (prove it live) ← web-pentest
      dependency-audit (one project) → patch-sweep (the whole fleet)
+     scanner-pipeline → finding-triage → fix agents (tools find it, agents fix it)
      breach-patterns → every audit skill (what to check)
      finding-triage ← every audit skill (closes the loop on any finding)
      security-comms ← every skill (translates output for non-security audience)
@@ -118,6 +124,7 @@ The skills are organized into seven families. Most security work crosses familie
 | [prompt-injection](skills/prompt-injection/) | AI features / LLM integrations / agents — prompt injection, privilege escalation, authorization bypass. |
 | [recon](skills/recon/) | Structured attack surface enumeration for authorized pentests, bug bounty, CTF. |
 | [red-team-engagement](skills/red-team-engagement/) | Authorized adversary emulation methodology — distinct from web-pentest. Multi-week, objective-based, assumed-breach. Heaviest authorization framing in the catalog. |
+| [scanner-pipeline](skills/scanner-pipeline/) | Set up and run real scanners per layer (gitleaks / trufflehog, semgrep, osv-scanner, trivy / checkov, Supabase advisors, ZAP / nuclei on domains you own), normalize to SARIF or findings.json, dedupe, suppress with reason + expiry, schedule in CI, and hand one finding at a time to fix agents. Works across a fleet of repos. |
 | [secrets-audit](skills/secrets-audit/) | Find leaked secrets (code, Git history, build artifacts, CI, frontend bundles) + audit secrets-management posture (rotation, scope, workload identity). |
 | [security-comms](skills/security-comms/) | Translate security work for non-security audiences — board, executive, engineering, customer success, customers, legal, procurement. Seven audience archetypes, six templates (incident comms, post-mortem, breach disclosure, etc.). |
 | [siem-detection](skills/siem-detection/) | SIEM detection engineering — log source coverage, Sigma rule authoring, MITRE ATT&CK mapping, FP tuning, detection-as-code. |

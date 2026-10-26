@@ -300,7 +300,7 @@ Write the machine-readable findings first, validate them, then render the markdo
 - [references/locations.md](references/locations.md), [references/content-checks.md](references/content-checks.md),
   [references/findings-format.md](references/findings-format.md), [references/severity-calibration.md](references/severity-calibration.md)
 
-## References
+## Reference files
 
 This skill links to supporting files under `references/`. They are not inlined in this adapter; open them on GitHub (or in `skills/agent-supply-chain-audit/references/` if you have the repo checked out):
 

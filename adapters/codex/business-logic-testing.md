@@ -159,7 +159,7 @@ Report with the shared findings vocabulary; see [references/findings-format.md](
 - PortSwigger Web Security Academy — race conditions (single-packet attack) and business-logic labs.
 - OWASP Web Security Testing Guide (WSTG) — Business Logic Testing section.
 
-## References
+## Reference files
 
 This skill links to supporting files under `references/`. They are not inlined in this adapter; open them on GitHub (or in `skills/business-logic-testing/references/` if you have the repo checked out):
 

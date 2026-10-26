@@ -3,19 +3,23 @@
   "files": {
     "findings.schema.json": [
       "agent-supply-chain-audit",
-      "business-logic-testing"
+      "business-logic-testing",
+      "scanner-pipeline"
     ],
     "validate-findings.mjs": [
       "agent-supply-chain-audit",
-      "business-logic-testing"
+      "business-logic-testing",
+      "scanner-pipeline"
     ],
     "to-sarif.mjs": [
       "agent-supply-chain-audit",
-      "business-logic-testing"
+      "business-logic-testing",
+      "scanner-pipeline"
     ],
     "findings-format.md": [
       "agent-supply-chain-audit",
-      "business-logic-testing"
+      "business-logic-testing",
+      "scanner-pipeline"
     ],
     "severity-calibration.md": [
       "agent-supply-chain-audit",

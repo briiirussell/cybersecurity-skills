@@ -1,0 +1,154 @@
+# Reusable security scan: gitleaks + osv-scanner + semgrep, SARIF to code scanning.
+#
+# Copy to .github/workflows/security-scan.yml. Other repos can call it with:
+#   jobs:
+#     security:
+#       uses: <owner>/<repo>/.github/workflows/security-scan.yml@<full-commit-sha>
+#       permissions: { contents: read, security-events: write, actions: read }
+#
+# Every Action is pinned to a full commit SHA and every container image to a digest.
+# Pins were looked up from the upstream release tags on 2026-10-26:
+#   actions/checkout v7.0.1                      3d3c42e5aac5ba805825da76410c181273ba90b1
+#   actions/upload-artifact v7.0.2               cf430e030ddbb5b0abf93d22962f4752f3646cd9
+#   github/codeql-action/upload-sarif v4.39.1    9b3254085494b55a0f7c4c2b3d2d52cc712ce370
+#   google/osv-scanner-action v2.7.0             b1d267aea5211fa648d9d442fa64b90dbdcbdd36
+#   ghcr.io/gitleaks/gitleaks:v8.30.1            sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
+#   semgrep/semgrep:1.182.0                      sha256:4a34048c04fef049f71665047f074cffb00cc3d89482f965a5cd151d589237af
+# Re-verify before adopting:  gh api repos/<owner>/<repo>/commits/<tag> --jq .sha
+# Keep them current with Dependabot (package-ecosystem: github-actions) or Renovate, not by switching to tags.
+
+name: security-scan
+
+on:
+  pull_request:
+  schedule:
+    - cron: "17 6 * * 1" # weekly full scan, Monday 06:17 UTC
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      upload-sarif:
+        description: "Upload SARIF to GitHub code scanning (needs public repo or GitHub Advanced Security)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-scan-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write # SARIF upload
+      actions: read # required by upload-sarif on private repos
+    env:
+      FULL_SCAN: ${{ github.event_name != 'pull_request' }}
+      # inputs.upload-sarif is empty unless this file runs via workflow_call
+      UPLOAD_SARIF: ${{ format('{0}', inputs.upload-sarif) != 'false' }}
+    steps:
+      - name: Checkout (full history for secret scanning)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Prepare output dir
+        run: mkdir -p .security/out
+
+      # --- Secrets: full history on schedule, PR commits only on pull_request ---
+      - name: gitleaks
+        id: gitleaks
+        continue-on-error: true
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          LOG_OPTS=""
+          if [ "$FULL_SCAN" != "true" ] && [ -n "$BASE_SHA" ]; then
+            LOG_OPTS="--log-opts=${BASE_SHA}..HEAD"
+          fi
+          # the image sets git safe.directory '*', so the bind-mounted repo is readable
+          docker run --rm -v "$PWD:/repo" -w /repo \
+            ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f \
+            git /repo --redact $LOG_OPTS \
+            --report-format sarif --report-path /repo/.security/out/gitleaks.sarif
+
+      # --- Dependencies: every lockfile in one pass ---
+      - name: osv-scanner
+        id: osv
+        continue-on-error: true
+        uses: google/osv-scanner-action/osv-scanner-action@b1d267aea5211fa648d9d442fa64b90dbdcbdd36 # v2.7.0
+        with:
+          scan-args: |-
+            --format=sarif
+            --output=.security/out/osv.sarif
+            --recursive
+            ./
+
+      # --- Code: diff-aware on PRs, full on schedule ---
+      - name: semgrep
+        id: semgrep
+        continue-on-error: true
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          CONFIGS="--config p/default"
+          [ -d .semgrep ] && CONFIGS="$CONFIGS --config .semgrep/"
+          BASELINE=""
+          if [ "$FULL_SCAN" != "true" ] && [ -n "$BASE_SHA" ]; then
+            BASELINE="--baseline-commit $BASE_SHA"
+          fi
+          docker run --rm -v "$PWD:/src" -w /src \
+            semgrep/semgrep@sha256:4a34048c04fef049f71665047f074cffb00cc3d89482f965a5cd151d589237af \
+            semgrep scan $CONFIGS $BASELINE --metrics=off --error \
+            --sarif --output .security/out/semgrep.sarif
+
+      # --- Results ---
+      - name: Keep SARIF as an artifact (always, for repos without code scanning)
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: security-sarif
+          path: .security/out/*.sarif
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Upload gitleaks SARIF
+        if: always() && env.UPLOAD_SARIF == 'true' && hashFiles('.security/out/gitleaks.sarif') != ''
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+        with:
+          sarif_file: .security/out/gitleaks.sarif
+          category: gitleaks
+
+      - name: Upload osv-scanner SARIF
+        if: always() && env.UPLOAD_SARIF == 'true' && hashFiles('.security/out/osv.sarif') != ''
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+        with:
+          sarif_file: .security/out/osv.sarif
+          category: osv-scanner
+
+      - name: Upload semgrep SARIF
+        if: always() && env.UPLOAD_SARIF == 'true' && hashFiles('.security/out/semgrep.sarif') != ''
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+        with:
+          sarif_file: .security/out/semgrep.sarif
+          category: semgrep
+
+      # Fail the job if any scanner reported findings or errored. Fix the finding;
+      # don't edit this workflow or the scanner config to make it pass.
+      - name: Gate
+        if: always()
+        run: |
+          status=0
+          for s in "gitleaks:${{ steps.gitleaks.outcome }}" "osv-scanner:${{ steps.osv.outcome }}" "semgrep:${{ steps.semgrep.outcome }}"; do
+            echo "$s"
+            case "$s" in *:failure) status=1 ;; esac
+          done
+          exit $status
