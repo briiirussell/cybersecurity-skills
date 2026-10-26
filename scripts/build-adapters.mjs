@@ -10,7 +10,7 @@
  * 2. Reads skills/<skill-name>/SKILL.md and generates:
  *    - adapters/cursor/<skill-name>.mdc  (Cursor rules format)
  *    - adapters/codex/<skill-name>.md    (Codex instructions format)
- *    Each adapter gets a "References" section linking every skills/<skill>/references/* file on GitHub,
+ *    Each adapter gets a "Reference files" section linking every skills/<skill>/references/* file on GitHub,
  *    because Cursor/Codex only receive the SKILL.md body.
  *
  * Claude Code adapter is not needed — the canonical SKILL.md files
@@ -171,9 +171,17 @@ export function syncSharedReferences({ log = console.log, warn = console.warn } 
 function listReferences(skill) {
   const refDir = join(skill.dir, "references");
   if (!existsSync(refDir)) return [];
-  return readdirSync(refDir)
-    .filter((f) => !f.startsWith(".") && statSync(join(refDir, f)).isFile())
-    .sort();
+  const out = [];
+  const walk = (dir, prefix) => {
+    for (const f of readdirSync(dir)) {
+      if (f.startsWith(".")) continue;
+      const full = join(dir, f);
+      if (statSync(full).isDirectory()) walk(full, `${prefix}${f}/`);
+      else out.push(`${prefix}${f}`);
+    }
+  };
+  walk(refDir, "");
+  return out.sort();
 }
 
 // ---------------------------------------------------------------------------
@@ -184,7 +192,7 @@ function listReferences(skill) {
 export function buildReferencesSection(skillName, refs) {
   if (refs.length === 0) return "";
   const items = refs.map((f) => `- [references/${f}](${REPO_BLOB}/skills/${skillName}/references/${f})`).join("\n");
-  return `\n\n## References
+  return `\n\n## Reference files
 
 This skill links to supporting files under \`references/\`. They are not inlined in this adapter; open them on GitHub (or in \`skills/${skillName}/references/\` if you have the repo checked out):
 

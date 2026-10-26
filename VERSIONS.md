@@ -28,6 +28,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | prompt-injection | 1.0.0 | 2026-05-26 |
 | recon | 1.0.0 | 2026-05-26 |
 | red-team-engagement | 1.0.0 | 2026-05-26 |
+| scanner-pipeline | 1.0.0 | 2026-10-26 |
 | secrets-audit | 1.0.0 | 2026-05-26 |
 | security-comms | 1.0.0 | 2026-05-26 |
 | siem-detection | 1.0.0 | 2026-05-26 |
@@ -38,6 +39,36 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.0.0 | 2026-05-26 |
 
 ## Recent Changes
+
+### 1.8.0 (2026-10-26)
+
+New skill: **scanner-pipeline**. The idea: stop asking an agent to hack your own app. Have it set up real scanners for each layer, then pass their findings to agents to fix.
+
+**Added**
+
+- **scanner-pipeline** (1.0.0).
+  - **Pick tools by stack and layer:**
+    - secrets: gitleaks, trufflehog
+    - code: semgrep, codeql
+    - dependencies: osv-scanner (one multi-ecosystem pass is preferred over per-package-manager audits), pip-audit, bundle-audit, govulncheck
+    - infrastructure: trivy, checkov
+    - Supabase advisors for apps backed by Supabase
+    - live app: ZAP baseline, then nuclei, and only on domains the user owns and names
+  - **Secrets in full git history.** A verified live secret is P0: rotate it before cleaning history, and never print the value.
+  - **Normalize findings** to SARIF or the shared `findings.json`, dedupe across tools, and keep a suppression file where every entry needs a reason and an expiry.
+  - **Fleet mode** across `gh repo list`, skipping forks and archived repos, with a roll-up board.
+  - **CI template** in `references/security-scan.yml`, with actions pinned to commit SHAs and images pinned to digests: gitleaks, osv-scanner and semgrep on PRs, a weekly full scan, and SARIF upload.
+  - **A semgrep rule** in `references/semgrep/supabase-rls.yml` for always-true RLS policies (`x = x`, `using (true)`). It's based on a real bug that exposed 472k email bodies.
+  - **Hand-off:** findings go to `finding-triage`, each fix agent gets one finding, the same tool is re-run to confirm the fix, and the agent never edits scanner config to make a finding disappear.
+  - Live scanners (nuclei, ZAP) are deliberately not pre-approved and always prompt. (#84)
+
+**Fixed**
+
+- `build-adapters.mjs`: files in nested `references/` folders are now listed in the Cursor/Codex adapters. The appended section is renamed "Reference files" so it no longer clashes with a skill's own "References" heading.
+
+**Changed**
+
+- README: added to AppSec & Supply Chain, the skill table, crossovers, and Where to start.
 
 ### 1.7.0 (2026-10-26)
 
