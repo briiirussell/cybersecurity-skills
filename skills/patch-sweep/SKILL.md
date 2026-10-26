@@ -1,7 +1,7 @@
 ---
 name: patch-sweep
 description: "Respond to a CVE wave across a whole portfolio of apps at once: inventory every repo and the platform project and domain it actually serves, find the real production branch, spot stale manual deploys, decide which apps are affected, mitigate, patch, ship, and confirm production. Use when the user mentions 'patch sweep,' 'patch all my apps,' 'fleet-wide CVE,' 'are any of my apps affected,' 'Next.js RCE across all projects,' 'Rails CVE on all our Heroku apps,' 'patch every repo,' 'CVE wave,' 'security release across the fleet,' 'which of our sites run the vulnerable version,' 'mass dependency update,' or has more than a handful of apps to patch against the same advisories."
-allowed-tools: Read, Grep, Glob, Bash(gh repo list:*), Bash(gh repo view:*), Bash(git log:*), Bash(git branch:*), Bash(git ls-remote:*), Bash(vercel project ls:*), Bash(vercel project inspect:*), Bash(vercel ls:*), Bash(vercel inspect:*), Bash(vercel domains ls:*), Bash(heroku apps:*), Bash(heroku releases:*), Bash(heroku stack:*)
+allowed-tools: Read, Grep, Glob, Bash(gh repo list:*), Bash(gh repo view:*), Bash(git log:*), Bash(git ls-remote:*), Bash(vercel project ls:*), Bash(vercel project inspect:*), Bash(vercel ls:*), Bash(vercel inspect:*), Bash(vercel domains ls:*), Bash(heroku apps:*), Bash(heroku releases:*), Bash(heroku stack:*)
 ---
 
 # Patch Sweep — Fleet-Wide CVE Response

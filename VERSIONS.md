@@ -23,14 +23,14 @@ Current versions of all skills. Agents can compare against local versions to che
 | mobile-audit | 1.0.1 | 2026-10-26 |
 | osint-recon | 1.0.1 | 2026-10-26 |
 | owasp-audit | 1.2.1 | 2026-10-26 |
-| patch-sweep | 1.0.0 | 2026-10-26 |
+| patch-sweep | 1.0.1 | 2026-10-26 |
 | pci-audit | 1.0.1 | 2026-10-26 |
 | personal-opsec | 1.0.0 | 2026-10-26 |
 | privacy-engineering | 1.0.1 | 2026-10-26 |
 | prompt-injection | 1.1.1 | 2026-10-26 |
 | recon | 1.0.1 | 2026-10-26 |
 | red-team-engagement | 1.0.1 | 2026-10-26 |
-| scanner-pipeline | 1.0.0 | 2026-10-26 |
+| scanner-pipeline | 1.0.1 | 2026-10-26 |
 | secrets-audit | 1.1.1 | 2026-10-26 |
 | security-comms | 1.0.1 | 2026-10-26 |
 | siem-detection | 1.0.2 | 2026-10-26 |
@@ -41,6 +41,19 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.1.1 | 2026-10-26 |
 
 ## Recent Changes
+
+### 1.19.2 (2026-10-26)
+
+Tightens two pre-approvals that were broader than they looked. Found in the 1.19.1 SkillSpector triage. (#65)
+
+**Fixed**
+
+- **patch-sweep** (1.0.1): removed `Bash(git branch:*)`. The prefix also matched `git branch -D` / `-m`, and the skill never needed it. Branch inspection goes through `git ls-remote` and `git log`, which are still pre-approved.
+- **scanner-pipeline** (1.0.1):
+  - `osv-scanner:*` is narrowed to `osv-scanner scan:*`, so `osv-scanner fix` (which rewrites lockfiles) now prompts.
+  - `trivy:*` is narrowed to `trivy fs` / `image` / `config`.
+  - `semgrep` and `pip-audit` are no longer pre-approved. Both have a file-rewriting flag (`--autofix` / `--fix`), and a prefix rule can't exclude a trailing flag, so they now prompt each time.
+- `docs/security-scanning.md`: table rows updated to match.
 
 ### 1.19.1 (2026-10-26)
 
