@@ -34,7 +34,9 @@ scripts/
 └── test/                    # node:test suites + fixtures (run with npm test)
 package.json                 # npm test / npm run build — no dependencies, Node >= 21
 .github/
-├── workflows/ci.yml   # lint, adapter drift, tests, SkillSpector
+├── workflows/ci.yml   # lint, versions, plugin validate, adapter drift, tests, SkillSpector (+ weekly on main)
+├── workflows/links.yml  # weekly link check; opens a broken-links issue
+├── dependabot.yml     # weekly grouped bumps for the pinned actions
 └── scripts/           # SkillSpector baseline splitter + SARIF merge
 .skillspector-baseline.yaml
 docs/

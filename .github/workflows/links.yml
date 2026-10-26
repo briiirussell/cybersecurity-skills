@@ -1,0 +1,63 @@
+name: Links
+
+# Weekly check of every link in the docs and skills. External sites change without
+# telling us, so this runs on a schedule instead of blocking PRs. Broken links open
+# (or update) one issue labelled `broken-links`; a clean run closes it.
+on:
+  schedule:
+    - cron: "17 6 * * 1" # Mondays 06:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: links
+  cancel-in-progress: true
+
+jobs:
+  links:
+    name: Link check
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      issues: write # open / update / close the broken-links issue
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check links (lychee, internal anchors included)
+        id: lychee
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        with:
+          lycheeVersion: v0.24.2
+          fail: false
+          output: lychee/out.md
+          # 403 / 429: sites that block CI runners or rate-limit; they aren't broken links.
+          args: >-
+            --no-progress --include-fragments --max-concurrency 16 --timeout 20 --max-retries 2
+            --accept '200..=299,403,429'
+            'README.md' 'CONTRIBUTING.md' 'docs/**/*.md' 'shared/*.md'
+            'skills/*/SKILL.md' 'skills/*/references/*.md'
+      - name: Open, update or close the broken-links issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXIT_CODE: ${{ steps.lychee.outputs.exit_code }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh label create broken-links --color d73a4a --description "Found by the weekly link check" --force >/dev/null
+          existing=$(gh issue list --label broken-links --state open --json number --jq '.[0].number // empty')
+          if [ "$EXIT_CODE" = "0" ]; then
+            if [ -n "$existing" ]; then
+              gh issue close "$existing" --comment "All links pass as of $RUN_URL."
+            fi
+            exit 0
+          fi
+          { echo "The weekly link check found broken links ($RUN_URL)."; echo; cat lychee/out.md; } > body.md
+          if [ -n "$existing" ]; then
+            gh issue edit "$existing" --body-file body.md
+            gh issue comment "$existing" --body "Still failing: $RUN_URL"
+          else
+            gh issue create --title "Broken links found by the weekly link check" --label broken-links --body-file body.md
+          fi

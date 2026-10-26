@@ -21,11 +21,17 @@ The lint also **fails** when two skills claim the same single-quoted trigger phr
 Run the lint locally before you push:
 
 ```bash
-node scripts/lint-skills.mjs
-node .github/scripts/skillspector-baseline.mjs --check
-npm test
-node scripts/build-adapters.mjs && git status --short adapters/ skills/
+npm run check   # lint, baseline check, version check, adapter drift, tests
 ```
+
+### Scheduled checks
+
+Some problems arrive without a PR, so two things run every Monday:
+
+- **CI on `main`** (`ci.yml` `schedule`). The full workflow runs, including SkillSpector and the code-scanning upload, so a new upstream rule or a drifted pin shows up within a week.
+- **Link check** (`.github/workflows/links.yml`). [lychee](https://github.com/lycheeverse/lychee) checks every link in the README, docs, `shared/` and skills, internal anchors included. 403 and 429 count as OK, because some sites block CI runners or rate-limit them. A failing run opens one issue labelled `broken-links`, or updates it if it's already open. The next clean run closes it. The check doesn't block PRs, since external sites break on their own schedule. Run it on demand from the Actions tab (`workflow_dispatch`).
+
+[Dependabot](../.github/dependabot.yml) opens one grouped PR a week against `development` for the SHA-pinned actions. Those PRs skip the version-bump check, and the pin changes ship with the next versioned release. Dependabot doesn't see the SkillSpector commit (`SKILLSPECTOR_REF`) or the Claude Code CLI version (`CLAUDE_CODE_VERSION`) in `ci.yml`; bump those by hand, deliberately.
 
 ## SkillSpector
 
