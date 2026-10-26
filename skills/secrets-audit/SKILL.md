@@ -1,6 +1,6 @@
 ---
 name: secrets-audit
-description: "Find leaked secrets in source code, Git history, build artifacts, and infrastructure — and audit the secrets-management posture preventing future leaks. Use when the user mentions 'secrets audit,' 'secret scanning,' 'leaked credentials,' 'API key in code,' 'gitleaks,' 'trufflehog,' 'git history scan,' 'secrets management,' 'vault audit,' 'rotation policy,' 'AWS Secrets Manager,' 'HashiCorp Vault,' 'Doppler,' '1Password Secrets Automation,' 'sealed-secrets,' 'External Secrets Operator,' or needs to find or prevent credential exposure."
+description: "Find leaked secrets in source code, Git history, build artifacts, and infrastructure — and audit the secrets-management posture preventing future leaks. Use when the user mentions 'secrets audit,' 'secret scanning,' 'leaked credentials,' 'API key in code,' 'gitleaks,' 'trufflehog,' 'git history scan,' 'secrets management,' 'vault audit,' 'rotation policy,' 'AWS Secrets Manager,' 'HashiCorp Vault,' 'Doppler,' '1Password Secrets Automation,' 'sealed-secrets,' 'External Secrets Operator,' 'secrets in MCP config,' 'API key in Claude transcript,' 'is this key public,' or needs to find or prevent credential exposure."
 allowed-tools: Bash, Read, Write, Grep, Glob, WebSearch
 ---
 
@@ -10,7 +10,7 @@ Two halves: (1) find secrets that have already leaked into source, history, or a
 
 Most secret leaks aren't "we forgot to redact" — they're "we never had a system, so every developer made up their own approach." This skill covers both the cleanup and the prevention.
 
-Cross-references: `dependency-audit` (CI-related secrets risk in build-time exposure), `iam-audit` (workload identity federation as the alternative to long-lived keys), `owasp-audit` A02 (in-source secret patterns).
+Cross-references: `dependency-audit` (CI-related secrets risk in build-time exposure), `iam-audit` (workload identity federation as the alternative to long-lived keys), `owasp-audit` A02 (in-source secret patterns), `agent-supply-chain-audit` (the skills, hooks, and MCP servers that sit next to these agent configs and can read them), `incident-triage` and `threat-hunting` (the exfiltration-collector domains below as egress indicators), `scanner-pipeline` (gitleaks / trufflehog across full history and a whole fleet of repos, on a schedule), `personal-opsec` (the operator's own machine, where agent tokens and pasted secrets actually live).
 
 ## Part 1 — Find leaked secrets
 
@@ -52,6 +52,33 @@ For full repo coverage, use `git ls-files` to scope to tracked files and avoid `
 ```bash
 git ls-files | xargs grep -lE 'sk_live_|ghp_|AKIA[A-Z0-9]{16}|sk-ant-|AIza[A-Za-z0-9_-]{35}' 2>/dev/null
 ```
+
+**Running these inside an AI agent session?** Every match the agent prints is written into that session's transcript
+(see the agent section below), which creates a new copy of the secret. List files (`-l`) or counts (`-c`), or mask the
+value to prefix + last 4 when you need to tell keys apart:
+
+```bash
+rg -o -r '$1…$2' '(sk_live_|rk_live_|sk-ant-|ghp_|github_pat_|AKIA|xox[baprs]-|AIza)[A-Za-z0-9_-]{8,}([A-Za-z0-9]{4})' .
+```
+
+### Confirm the key type before rating it
+
+A prefix match tells you the provider, not the authority. Several providers issue keys that are public by design, and
+the same prefix can cover both. Before rating, establish what kind of key it is and what it can do — the severity
+follows the authority, not the match ([references/severity-calibration.md](references/severity-calibration.md)).
+
+| Provider | Publishable (meant for clients) | Restricted / scoped | Secret (full authority) |
+|---|---|---|---|
+| Google | `AIza…` browser / Maps / Firebase keys — fine when application restrictions (referrer, app, IP) and API restrictions are set | Same `AIza…` prefix with API restrictions; check which APIs it can call in Cloud Console → Credentials | An unrestricted `AIza…` key on a project with billable or data-bearing APIs enabled (Maps, Generative Language / Gemini) acts like a secret; service-account JSON always is |
+| Stripe | `pk_live_` / `pk_test_` — public, not a finding | `rk_live_` — rate by the permissions set on that key in the Dashboard | `sk_live_` — full account; `sk_test_` is test-mode only (lower); `whsec_` lets an attacker forge webhooks, rate by what the handler does |
+| Supabase | `anon` JWT / `sb_publishable_…` — public; exposure is about RLS, which is an authorization finding (`owasp-audit` / `api-audit`), not a secret | — | `service_role` JWT / `sb_secret_…` — bypasses RLS entirely |
+| Firebase | Web config (`apiKey`, `authDomain`, `projectId`, `appId`) — identifiers, not secrets; the risk lives in Security Rules and App Check | — | Admin SDK service-account JSON, CI deploy tokens |
+| Others | Mapbox `pk.`, Algolia search-only key, Sentry DSN, PostHog `phc_` | — | Mapbox `sk.`, Algolia admin key, PostHog `phx_` personal key |
+
+Decode a Supabase key's JWT payload locally (the middle segment, base64) to read its `role` — that doesn't use the key.
+A publishable key with correct restrictions is `rejected` (name the restriction and where it's configured). A
+publishable key missing its restrictions is a finding only when you can trace the abuse (billing, quota exhaustion,
+data the enabled API returns); otherwise it's a hardening note.
 
 ### Tooling
 
@@ -100,18 +127,82 @@ Secrets leak in places that aren't `.env` files:
 - **Documentation** — README.md examples with real keys instead of placeholders
 - **Slack / Notion / Linear** — pasted in a DM "to test," never rotated
 - **Browser localStorage / cookies** — captured in shared screenshots or session replays
+- **AI coding agent configs and transcripts** — see below; now one of the most common places keys sit in plaintext
+
+### AI coding agent configs and transcripts
+
+Agents need tokens for their MCP servers and helpers, and developers paste keys into chat to "just test it". Both end
+up in plaintext files that are rarely gitignored deliberately and are often synced or backed up.
+
+| Location | What leaks |
+|---|---|
+| `.mcp.json`, `~/.claude.json` (user and per-project `mcpServers`) | `env` and `headers` blocks with literal tokens |
+| `.cursor/mcp.json`, `~/.cursor/mcp.json`, `.vscode/mcp.json` | Same, for Cursor and VS Code / Copilot |
+| `~/Library/Application Support/Claude/claude_desktop_config.json` (Windows `%APPDATA%\Claude\`) | Claude Desktop MCP `env` blocks |
+| `.claude/settings.json`, `.claude/settings.local.json`, `~/.claude/settings.json` | `env` blocks; `apiKeyHelper` / `awsCredentialExport` commands that print a credential (and run a shell command — see `agent-supply-chain-audit`) |
+| `~/.codex/config.toml`, `~/.codex/auth.json` | `[mcp_servers.<name>.env]` tables; the Codex login / API key |
+| `~/.gemini/settings.json`, `.gemini/settings.json`, `.gemini/.env`, `~/.gemini/.env` | `mcpServers` `env`; Gemini API keys |
+| `~/.claude/projects/**/*.jsonl` (plus `~/.claude/history.jsonl`, shell snapshots, file history where present) | Session transcripts: every pasted key, every `cat .env`, every secret a tool printed |
+| `~/.codex/sessions/**/*.jsonl`, `~/.codex/history.jsonl`, `~/.gemini/tmp/` | Codex and Gemini session logs and checkpoints |
+| Cursor / VS Code `User/workspaceStorage/*/state.vscdb` and chat-session folders | Chat history in SQLite / JSON |
+| Dotfiles repos and backups (Time Machine, iCloud, a `~/.claude` checked into `dotfiles`) | Copies of all of the above |
+
+```bash
+# MCP env / headers: any value that isn't a ${VAR} reference is a literal secret candidate
+rg -n -A10 '"(env|headers)"\s*:' .mcp.json .cursor/mcp.json .vscode/mcp.json ~/.claude.json ~/.cursor/mcp.json \
+  ~/.gemini/settings.json "$HOME/Library/Application Support/Claude/claude_desktop_config.json" 2>/dev/null \
+  | rg -o -r '$1$2 = <literal>' '^(\S+?[:-]\d+[:-]).*?"([A-Za-z0-9_]+)"\s*:\s*"[^"$]{12,}"'   # key names only, values masked
+rg -n '\[mcp_servers\.[^]]+\.env\]|^\s*env\s*=\s*\{' ~/.codex/config.toml   # then read the table in an editor, not into the session
+# Agent settings: env blocks and credential helpers
+rg -n '"(env|apiKeyHelper|awsCredentialExport|awsAuthRefresh|otelHeadersHelper)"\s*:' \
+  .claude/settings.json .claude/settings.local.json ~/.claude/settings.json
+# Transcripts and logs: counts per file only — printing a match copies it into this session's transcript
+rg -c -e 'sk-ant-' -e 'sk_live_' -e 'rk_live_' -e 'ghp_' -e 'github_pat_' -e 'AKIA[A-Z0-9]{16}' -e 'xox[baprs]-' \
+  -e 'AIza[A-Za-z0-9_-]{35}' -e '-----BEGIN [A-Z ]*PRIVATE KEY' -e 'service_role' \
+  ~/.claude/projects ~/.claude/history.jsonl ~/.codex/sessions ~/.gemini/tmp 2>/dev/null
+rg -a -c -e 'sk-ant-' -e 'sk_live_' -e 'ghp_' -e 'AKIA[A-Z0-9]{16}' \
+  "$HOME/Library/Application Support/Cursor/User/workspaceStorage" 2>/dev/null
+# Are any of these tracked?
+git ls-files | rg '(^|/)(\.mcp\.json|mcp\.json|mcp_config\.json|settings\.local\.json|claude_desktop_config\.json|auth\.json|\.env)$'
+```
+
+For a key found in a transcript: rotate it (the transcript is a copy you can't recall from backups), then delete or scrub
+the session file. Shorten retention where the agent supports it (Claude Code `cleanupPeriodDays`).
+
+### Exfiltration collectors — egress indicators
+
+Malicious skills, hooks, and packages ship stolen secrets to free collectors and tunnels. Seeing one of these in a
+config, hook command, skill, bundled script, or package is a strong candidate for exfiltration; seeing one in egress
+logs or DNS is an indicator for `incident-triage` (scope a live incident) and `threat-hunting` (sweep for it). Some
+have legitimate uses — a team Slack webhook in CI notifications — so confirm what is sent.
+
+| Kind | Domains / URL shapes |
+|---|---|
+| Chat webhooks | `discord.com/api/webhooks/`, `discordapp.com/api/webhooks/`, `api.telegram.org/bot`, `hooks.slack.com/services/` (and `/workflows/`, `/triggers/`) |
+| Request collectors | `webhook.site`, `requestbin` / `*.m.pipedream.net`, `requestcatcher.com`, `beeceptor.com`, `pipedream.net` |
+| OAST / interaction | `interact.sh`, `*.oast.pro` / `.live` / `.site` / `.online` / `.fun` / `.me`, `burpcollaborator.net`, `oastify.com` |
+| Tunnels | `*.ngrok.io`, `*.ngrok-free.app`, `*.ngrok.app`, `*.trycloudflare.com`, `loca.lt`, `serveo.net` |
+| Paste / drop | `pastebin.com`, `transfer.sh`, `paste.ee`, `0x0.st` |
+
+```bash
+rg -n -i 'discord(app)?\.com/api/webhooks|api\.telegram\.org/bot|hooks\.slack\.com/(services|workflows|triggers)|webhook\.site|requestbin|pipedream\.net|requestcatcher\.com|beeceptor\.com|interact\.sh|oast\.(pro|live|site|online|fun|me)|burpcollaborator\.net|oastify\.com|ngrok(-free)?\.(io|app|dev)|trycloudflare\.com|loca\.lt|serveo\.net|pastebin\.com|transfer\.sh|paste\.ee|0x0\.st' .
+```
+
+A Slack or Discord webhook URL is itself a secret (anyone holding it can post to that channel) — report it under both
+headings.
 
 ### Triaging a found secret
 
 When you find a leaked secret:
 
-1. **Verify it's live** — use the provider's verification (`aws sts get-caller-identity`, `stripe balance retrieve`, `curl -H "Authorization: Bearer $TOKEN" ...`) — don't assume; some leaked keys are already revoked or were sandbox-only
-2. **Determine exposure window** — first commit it appeared in, when the repo went public, when CI logs were retained from
-3. **Determine blast radius** — what does this key access? What can be done with it? IAM permissions, Stripe live vs test, GitHub `repo` vs `admin:org`
-4. **Rotate immediately** — generate a new key, deploy it, then revoke the old one (revoke-first breaks prod)
-5. **Audit for use** — provider audit logs (CloudTrail, GitHub audit log, Stripe events) for any activity from the leaked credential
-6. **Then clean** — remove from current code, then optionally history-rewrite (low priority once rotated)
-7. **Document** — incident report, even if rotation was clean; recurrence patterns surface trends
+1. **Identify the key type** — publishable, restricted, or secret, and what it can reach (see "Confirm the key type before rating it")
+2. **Verify it's live** — use the provider's verification (`aws sts get-caller-identity`, `stripe balance retrieve`, `curl -H "Authorization: Bearer $TOKEN" ...`) — don't assume; some leaked keys are already revoked or were sandbox-only
+3. **Determine exposure window** — first commit it appeared in, when the repo went public, when CI logs were retained from
+4. **Determine blast radius** — what does this key access? What can be done with it? IAM permissions, Stripe live vs test, GitHub `repo` vs `admin:org`
+5. **Rotate immediately** — generate a new key, deploy it, then revoke the old one (revoke-first breaks prod)
+6. **Audit for use** — provider audit logs (CloudTrail, GitHub audit log, Stripe events) for any activity from the leaked credential
+7. **Then clean** — remove from current code, then optionally history-rewrite (low priority once rotated)
+8. **Document** — incident report, even if rotation was clean; recurrence patterns surface trends
 
 ## Part 2 — Audit secrets-management posture
 
@@ -138,6 +229,7 @@ When you find a leaked secret:
 
 - **No secrets in Git history** (run gitleaks --all)
 - **No `.env` committed** — `.gitignore` covers `.env*` (with care for `.env.example`)
+- **Agent configs in `.gitignore`, or `${ENV}` references only** — `.mcp.json`, `.cursor/mcp.json`, `.vscode/mcp.json`, `.claude/settings.local.json`, `.gemini/.env` are either untracked (`git check-ignore -v <file>`) or hold only variable references (`${VAR}` in Claude Code `.mcp.json`, `${env:VAR}` in Cursor, `${input:…}` prompts in VS Code); agent transcript retention is set and transcripts aren't in dotfile repos or unencrypted backups
 - **Secrets fetched at runtime, not embedded at build** — image rebuild is not required to rotate
 - **IAM scoped to the secret** — service A can read secret A, not secret B
 - **Rotation cadence** — defined per secret class (admin: 30d, service: 90d, customer-shared: per breach response)
@@ -159,14 +251,37 @@ When you find a leaked secret:
 
 ## Output Format
 
+Write `findings.json` first, validate it, then render the markdown report from it — the prose never changes a verdict
+or severity. Record shape and the validate / SARIF-export commands are in
+[references/findings-format.md](references/findings-format.md); run
+`node references/validate-findings.mjs findings.json` ([references/validate-findings.mjs](references/validate-findings.mjs)) and fix every error before writing prose.
+
+- **Never put a secret value in `findings.json`** (or the report). Redact to prefix + last 4 — `sk_live_…9f2c` — in
+  titles and evidence descriptions. The fingerprint names provider, key type, file, and last 4, e.g.
+  `secrets-audit:stripe-sk_live:config/payments.ts:last4-9f2c` (no line numbers).
+- `skill: "secrets-audit"`. `confirmed` = verified live (`reproduced: true` when you made the provider check) or a
+  secret-class key whose authority you established; severity follows the key type and blast radius. `needs_validation`
+  = can't verify without the owner (blockers + the exact check they should run). `rejected` = revoked, placeholder, or
+  publishable with correct restrictions — `ruled_out_by` names the control and where it's configured.
+- Locations are repo-relative. A key that exists only in history uses the path as it was, with the commit in the
+  evidence description. Keys found in user-level agent files (`~/.claude`, `~/.codex`, …) go in a separate
+  `findings.user.json` with paths relative to `$HOME`.
+
 ```markdown
 # Secrets Audit Report
 ## Scope: [repos / environments / managers covered]
 ## Date: [date]
 
 ### Live leaked secrets found
-| Provider | Location | First seen (commit / date) | Verified live? | Rotation status |
-|---|---|---|---|---|
+| Provider | Key type (publishable / restricted / secret) | Redacted value | Location | First seen (commit / date) | Verified live? | Rotation status |
+|---|---|---|---|---|---|---|
+
+### Needs validation
+| Provider | Location | Blocker | Check for the owner to run |
+|---|---|---|---|
+
+### Hardening notes (not findings)
+- [e.g. publishable key without referrer restriction and no traced abuse; transcript retention unset]
 
 ### Secrets-management posture
 | Category | Status | Notes |
@@ -177,7 +292,7 @@ When you find a leaked secret:
 |---|---|---|---|
 ```
 
-Disposition rule (Fixed / Deferred / Accepted Risk) per `owasp-audit`.
+Dispositions for confirmed findings: Fixed / Deferred / Accepted Risk / Mitigated (platform/config) / Requires major migration (see `owasp-audit`). A rotated-and-revoked key is Fixed even if history still holds it.
 
 ## Boundaries
 
@@ -197,3 +312,4 @@ Disposition rule (Fixed / Deferred / Accepted Risk) per `owasp-audit`.
 - HashiCorp Vault Architecture / Best Practices
 - AWS Secrets Manager Best Practices
 - "Twelve-Factor App" — Config principles
+- NVIDIA SkillSpector (Apache-2.0) — agent-config access (AS2) and command-running settings keys (BH4) rules, and its credential-exfiltration webhook signatures: [repo](https://github.com/NVIDIA/SkillSpector)

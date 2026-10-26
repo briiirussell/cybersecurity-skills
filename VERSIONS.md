@@ -18,7 +18,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | finding-triage | 1.1.0 | 2026-10-26 |
 | hipaa-audit | 1.0.0 | 2026-05-26 |
 | iam-audit | 1.0.1 | 2026-10-26 |
-| incident-triage | 1.0.2 | 2026-10-26 |
+| incident-triage | 1.0.3 | 2026-10-26 |
 | log-watch | 1.0.0 | 2026-10-26 |
 | mobile-audit | 1.0.0 | 2026-05-26 |
 | osint-recon | 1.0.0 | 2026-05-26 |
@@ -31,16 +31,37 @@ Current versions of all skills. Agents can compare against local versions to che
 | recon | 1.0.0 | 2026-05-26 |
 | red-team-engagement | 1.0.0 | 2026-05-26 |
 | scanner-pipeline | 1.0.0 | 2026-10-26 |
-| secrets-audit | 1.0.0 | 2026-05-26 |
+| secrets-audit | 1.1.0 | 2026-10-26 |
 | security-comms | 1.0.0 | 2026-05-26 |
 | siem-detection | 1.0.1 | 2026-10-26 |
 | soc-operations | 1.0.1 | 2026-10-26 |
-| threat-hunting | 1.0.1 | 2026-10-26 |
+| threat-hunting | 1.0.2 | 2026-10-26 |
 | threat-modeling | 1.0.0 | 2026-05-26 |
 | vuln-research | 1.0.0 | 2026-05-26 |
 | web-pentest | 1.0.0 | 2026-05-26 |
 
 ## Recent Changes
+
+### 1.15.0 (2026-10-26)
+
+secrets-audit now covers AI agent configs and transcripts, which have become one of the most common places secrets leak. It also checks key type before rating a find.
+
+**Changed**
+
+- **secrets-audit** (1.1.0)
+  - **AI agent locations** (#73):
+    - `env` blocks in `.mcp.json`, `.cursor/mcp.json` and `claude_desktop_config.json`
+    - `.claude/settings.local.json`, including `apiKeyHelper`, which runs a shell command
+    - agent session transcripts such as `~/.claude/projects/**/*.jsonl`, where secrets get pasted
+    - the Cursor, Codex and Gemini equivalents
+
+    The transcript greps only list files, count matches or mask values, so running them from an agent doesn't copy secrets into a fresh transcript. New checklist item: agent configs are gitignored or contain only `${ENV}` references.
+  - **Exfiltration collectors as egress indicators:** Discord, Telegram and Slack webhooks, webhook.site, requestbin / pipedream, ngrok, interactsh and similar. Cross-referenced from incident-triage and threat-hunting. (#73)
+  - **Key-type check before rating.** Publishable, restricted and secret keys are different findings (Google `AIza…` browser keys, Stripe `pk_` / `rk_` / `sk_`, Supabase anon vs service_role, Firebase config). A public identifier called a key is not a secret. (#63)
+  - **findings.json** is written and validated, with secret values redacted to prefix + last 4. (#64)
+  - Cross-references to `agent-supply-chain-audit`, `scanner-pipeline` and `personal-opsec`.
+- `incident-triage` (1.0.3), `threat-hunting` (1.0.2): cross-references to secrets-audit's collector-domain list for egress checks.
+- README: secrets-audit row updated.
 
 ### 1.14.0 (2026-10-26)
 
