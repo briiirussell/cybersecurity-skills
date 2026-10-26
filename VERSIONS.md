@@ -19,7 +19,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | hipaa-audit | 1.0.1 | 2026-10-26 |
 | iam-audit | 1.0.2 | 2026-10-26 |
 | incident-triage | 1.0.4 | 2026-10-26 |
-| log-watch | 1.0.0 | 2026-10-26 |
+| log-watch | 1.0.1 | 2026-10-26 |
 | mobile-audit | 1.0.1 | 2026-10-26 |
 | osint-recon | 1.0.1 | 2026-10-26 |
 | owasp-audit | 1.2.1 | 2026-10-26 |
@@ -30,7 +30,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | prompt-injection | 1.1.2 | 2026-10-26 |
 | recon | 1.0.1 | 2026-10-26 |
 | red-team-engagement | 1.0.1 | 2026-10-26 |
-| scanner-pipeline | 1.0.1 | 2026-10-26 |
+| scanner-pipeline | 1.0.2 | 2026-10-26 |
 | secrets-audit | 1.1.1 | 2026-10-26 |
 | security-comms | 1.0.2 | 2026-10-26 |
 | siem-detection | 1.0.2 | 2026-10-26 |
@@ -41,6 +41,17 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.1.2 | 2026-10-26 |
 
 ## Recent Changes
+
+### 1.19.10 (2026-10-26)
+
+Example cleanup. Two skill examples used the maintainer's own name as the person who added a suppression. Both now use a neutral placeholder. Closes #114.
+
+**Fixed**
+
+- **log-watch** (1.0.1): the suppression example's `"added_by": "brianna"` is now `"added_by": "jdoe"`. The OWASP LLM Top 10 reference now names the 2025 list (`LLM01:2025`), matching 1.19.8.
+- **scanner-pipeline** (1.0.2): the baseline-entry example's `owner: "@bri"` is now `owner: "@jdoe"`. Found while checking the whole repo for personal names.
+
+The Claude pricing table in log-watch stays as written. It is already dated, framed as assumptions, and says to re-check the pricing page before quoting.
 
 ### 1.19.9 (2026-10-26)
 

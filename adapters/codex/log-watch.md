@@ -135,7 +135,7 @@ State (one small table or object — the only thing the watcher writes):
   }],
   "suppressions": [{
     "match": {"detection": "D4", "ip": "198.51.100.10"}, "reason": "weekly ZAP scan",
-    "added_by": "brianna", "expires": "2026-11-30T00:00:00Z"
+    "added_by": "jdoe", "expires": "2026-11-30T00:00:00Z"
   }]
 }
 ```
@@ -248,7 +248,7 @@ Optional scaffold: a GitHub Actions workflow plus a single-file Python runner wi
 - Vercel CLI `logs` and Cron Jobs docs
 - Stripe API: List events; PagerDuty Events API v2; Pushover Message API
 - Anthropic pricing page (re-check before quoting costs)
-- OWASP Top 10 for LLM Applications — LLM01 Prompt Injection
+- OWASP Top 10 for LLM Applications 2025 — LLM01:2025 Prompt Injection
 
 ## Reference files
 
