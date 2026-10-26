@@ -6,12 +6,12 @@ Current versions of all skills. Agents can compare against local versions to che
 |-------|---------|--------------|
 | agent-supply-chain-audit | 1.0.1 | 2026-10-26 |
 | ai-risk-management | 1.0.3 | 2026-10-26 |
-| api-audit | 1.1.1 | 2026-10-26 |
-| breach-patterns | 1.0.2 | 2026-10-26 |
-| business-logic-testing | 1.0.0 | 2026-10-26 |
+| api-audit | 1.1.2 | 2026-10-26 |
+| breach-patterns | 1.0.3 | 2026-10-26 |
+| business-logic-testing | 1.0.1 | 2026-10-26 |
 | cloud-audit | 1.1.1 | 2026-10-26 |
 | container-audit | 1.0.1 | 2026-10-26 |
-| crypto-audit | 1.0.1 | 2026-10-26 |
+| crypto-audit | 1.0.2 | 2026-10-26 |
 | csf-mapping | 1.0.1 | 2026-10-26 |
 | dependency-audit | 1.2.1 | 2026-10-26 |
 | disk-forensics | 1.0.1 | 2026-10-26 |
@@ -22,7 +22,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | log-watch | 1.0.1 | 2026-10-26 |
 | mobile-audit | 1.0.1 | 2026-10-26 |
 | osint-recon | 1.0.1 | 2026-10-26 |
-| owasp-audit | 1.2.1 | 2026-10-26 |
+| owasp-audit | 1.3.0 | 2026-10-26 |
 | patch-sweep | 1.0.2 | 2026-10-26 |
 | pci-audit | 1.0.2 | 2026-10-26 |
 | personal-opsec | 1.0.0 | 2026-10-26 |
@@ -36,11 +36,38 @@ Current versions of all skills. Agents can compare against local versions to che
 | siem-detection | 1.0.2 | 2026-10-26 |
 | soc-operations | 1.0.3 | 2026-10-26 |
 | threat-hunting | 1.0.3 | 2026-10-26 |
-| threat-modeling | 1.0.2 | 2026-10-26 |
+| threat-modeling | 1.0.3 | 2026-10-26 |
 | vuln-research | 1.0.1 | 2026-10-26 |
-| web-pentest | 1.1.2 | 2026-10-26 |
+| web-pentest | 1.1.3 | 2026-10-26 |
 
 ## Recent Changes
+
+### 1.20.0 (2026-10-26)
+
+owasp-audit now audits against the **OWASP Top 10:2025** ([owasp.org/Top10/2025](https://owasp.org/Top10/2025/)). The checklist is reordered to the new numbering and gains two categories. Every check from the 2021 version is kept and moved to its 2025 home. Closes #115.
+
+**Heads-up:** category IDs in owasp-audit output change. Findings and coverage units are now tagged `A01:2025` … `A10:2025`. If you compare against a 2021-tagged report, use the mapping at the top of the Audit Checklist:
+- SSRF, 2021's A10, is now part of A01.
+- Crypto A02 → A04, Injection A03 → A05, Insecure Design A04 → A06, Misconfiguration A05 → A02, Vulnerable Components A06 → A03.
+- A07–A09 keep their numbers.
+
+**Changed**
+
+- **owasp-audit** (1.3.0):
+  - **A03 Software Supply Chain Failures** replaces Vulnerable Components. It keeps the `npm audit` reachability triage and takes the CI/CD-integrity and lockfile-integrity checks from A08. It adds Subresource Integrity for CDN scripts, install-time code and dependency confusion (handed to `dependency-audit`), and a grep for workflow actions pinned to a branch or tag instead of a SHA.
+  - **A10 Mishandling of Exceptional Conditions** is new:
+    - fail-open `catch` blocks around authorization and signature checks, and policy or IdP outages that default to allow
+    - silent error swallowing and parser errors outside the error boundary (moved from A09)
+    - NaN and missing-value comparisons that fail open
+    - partial failures that leave inconsistent state
+    - one bad request crashing a shared worker
+  - **A09** is renamed Security Logging and *Alerting* Failures. It notes that error paths hidden from monitoring are also A10.
+  - **SSRF** is now a subsection of A01, with the full allow-list bypass set.
+  - The description, intro, report template (`A0X:2025`) and References name the 2025 list.
+  - `references/checklist-details.md` and `references/webhooks-and-parsers.md` headings and anchors are renumbered. Every in-skill link was updated and checked.
+- Cross-references to owasp-audit category numbers updated (PATCH each): **api-audit** (1.1.2), **breach-patterns** (1.0.3), **crypto-audit** (1.0.2), **business-logic-testing** (1.0.1), **threat-modeling** (1.0.3), **web-pentest** (1.1.3).
+- `shared/findings-format.md`, `shared/coverage.schema.json` and `shared/orchestration.md`: examples use `A01:2025` and 2025 numbering. Example text only; no schema rule changed, and 2021-tagged findings still validate.
+- README: owasp-audit row says OWASP Top 10:2025.
 
 ### 1.19.11 (2026-10-26)
 
@@ -51,7 +78,7 @@ The lint now fails any `allowed-tools` Bash grant that would pre-approve a write
 - `scripts/grant-check.mjs`: checks each `Bash(...)` rule. It fails when the rule:
   - is unscoped
   - names a write verb (`delete`, `rollback`, `set`, `push`, `--fix`, ...), matched as whole segments so `get-credential-report`, `--prefix` and `assignment` don't trip it
-  - is a wildcard whose prefix also matches a known destructive command (about 150 entries across heroku, vercel, gh, git, package managers, and cloud and infra CLIs)
+  - is a wildcard whose prefix also matches a known destructive command (125 entries across heroku, vercel, gh, git, package managers, and cloud and infra CLIs)
   - is a wildcard on a bare multi-command CLI (`git:*`, `vercel:*`, `aws:*`)
   - is a wildcard on a tool that rewrites source files with a flag (`semgrep:*`, `eslint:*`, `terraform fmt:*`)
 - `scripts/test/grant-check.test.mjs`: 8 tests. The 1.19.6 heroku grants and the earlier `git branch:*` and `npm audit:*` grants all fail. Their replacements pass. Every shipped skill's grants pass.

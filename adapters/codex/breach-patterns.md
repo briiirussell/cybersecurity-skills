@@ -29,7 +29,7 @@ The output is a "breach-pattern coverage" document — not a fixed report, an ev
 
 **Check:**
 - IMDSv2 enforced on every EC2 launch template (`MetadataOptions.HttpTokens: required`) — see `cloud-audit`
-- SSRF defences on every URL-taking endpoint — see `owasp-audit` A10 bypass matrix (especially the cloud metadata endpoints row: `169.254.169.254`, `metadata.google.internal`, `169.254.170.2`)
+- SSRF defences on every URL-taking endpoint — see `owasp-audit` A01 SSRF bypass matrix (especially the cloud metadata endpoints row: `169.254.169.254`, `metadata.google.internal`, `169.254.170.2`)
 - WAF rules log + alert on metadata-endpoint patterns
 
 ## Pattern 2 — Supplier credential blast radius (SolarWinds, 2020)

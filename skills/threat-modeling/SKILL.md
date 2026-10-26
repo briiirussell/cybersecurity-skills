@@ -130,7 +130,7 @@ Mitigations should be specific:
 - **Repudiation → audit logs** — immutable append-only logs, separate logging account, alerting on log-tampering attempts
 - **Information disclosure → minimum exposure** — least-privilege IAM, data classification, encryption at rest and in transit, DTOs not whole records (see `api-audit` API3)
 - **Denial of service → resource limits** — rate limits, quotas, query depth limits, billing alarms, circuit breakers
-- **Elevation of privilege → authorization checks** — centralized `can(user, action, resource)`, deny-by-default, sister-route audit (see `owasp-audit` A04 sister-route)
+- **Elevation of privilege → authorization checks** — centralized `can(user, action, resource)`, deny-by-default, sister-route audit (see `owasp-audit` A06 sister-route)
 
 ## Step 4 — Did we do a good job?
 

@@ -1,8 +1,8 @@
 # Inbound Webhooks and Request Parsers
 
-Detail for three `owasp-audit` checklist items (A04, A01/A07, A09). They came from a second-model review of a real
+Detail for three `owasp-audit` checklist items (A06, A01/A07, A10). They came from a second-model review of a real
 Next.js pages-router app's email-ingest endpoint (SendGrid Inbound Parse, parsed with multer). The multi-tenant HMAC
-fan-out pattern in A04 is a different class. These three cover multipart parsing and webhooks that trigger paid work
+fan-out pattern in A06 is a different class. These three cover multipart parsing and webhooks that trigger paid work
 without authenticating the caller.
 
 Find candidate endpoints first:
@@ -15,7 +15,7 @@ rg -n "/api/.*(email|inbound|parse|hook)" -g '!node_modules'
 grep -rnEi "inbound|webhook|multer\(|busboy|formidable|bodyParser: *false" --include='*.ts' --include='*.js' --include='*.rb' --include='*.py' . | grep -v node_modules
 ```
 
-## 1. Request parsers without explicit limits (A04 / A05)
+## 1. Request parsers without explicit limits (A06 / A02)
 
 **Pattern.** A parser runs with library defaults (or no limits at all), and the parsed body is logged or stored before
 it's validated.
@@ -91,7 +91,7 @@ email headers, forwarding, and support tickets.
   raw body before the parser runs. In Next.js pages router that's `export const config = { api: { bodyParser: false } }`
   plus reading the raw buffer, then parsing from the buffer. Once a parser has re-serialized the body, the signature
   can't be checked.
-- Timestamps are checked for freshness (replay), with `Number.isFinite` before any comparison (see A02 type coercion).
+- Timestamps are checked for freshness (replay), with `Number.isFinite` before any comparison (see A04 type coercion).
 - Comparison is constant-time.
 - A missing signing secret fails closed at startup, not open at request time.
 
@@ -114,7 +114,7 @@ rotate it, and treat the endpoint as low-trust anyway: still cap and rate-limit 
 amplification against a metered provider and record injection into another account cross a real boundary. "The
 endpoint has no signature but only writes a log line" is usually a hardening note.
 
-## 3. Parser errors thrown outside the error boundary (A09)
+## 3. Parser errors thrown outside the error boundary (A10 / A09)
 
 **Pattern.** Body parsing or middleware runs **above** the handler's `try`:
 
@@ -144,7 +144,7 @@ response is 400/413 and that the monitoring sink (or a local logger stub) record
 
 ## Cross-references
 
-- `owasp-audit` A04 multi-tenant webhook signature matching (O(N) secret fan-out)
-- `owasp-audit` A05 auth middleware that doesn't exempt bearer/HMAC routes
+- `owasp-audit` A06 multi-tenant webhook signature matching (O(N) secret fan-out)
+- `owasp-audit` A02 auth middleware that doesn't exempt bearer/HMAC routes
 - `api-audit` API4 (unrestricted resource consumption) for rate and cost limits
 - `business-logic-testing` for proving cost-amplification and race effects against a running instance
