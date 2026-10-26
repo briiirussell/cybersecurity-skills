@@ -62,9 +62,9 @@ The skills are organized into seven families. Most security work crosses familie
 │secre-│ │ team-  │ │soc-    │ │        │ │supply│ │csf-     │ │          │
 │ audit│ │ engage-│ │ ops    │ │        │ │-chain│ │ mapping │ │          │
 │crypt-│ │ ment   │ │threat- │ │        │ │-audit│ │security-│ │          │
-│ audit│ │        │ │ hunting│ │        │ │      │ │ comms   │ │          │
-│mobile│ │        │ │breach- │ │        │ │      │ │         │ │          │
-│-audit│ │        │ │patterns│ │        │ │      │ │         │ │          │
+│ audit│ │business│ │ hunting│ │        │ │      │ │ comms   │ │          │
+│mobile│ │-logic- │ │breach- │ │        │ │      │ │         │ │          │
+│-audit│ │-testing│ │patterns│ │        │ │      │ │         │ │          │
 └──┬───┘ └───┬────┘ └───┬────┘ └───┬────┘ └──┬───┘ └────┬────┘ └────┬─────┘
    │         │          │          │         │           │            │
    └─────────┴────┬─────┴──────────┴─────────┴───────────┴────────────┘
@@ -78,6 +78,7 @@ The skills are organized into seven families. Most security work crosses familie
      prompt-injection ⇆ ai-risk-management (security slice ⇆ whole lifecycle)
      privacy-engineering ⇆ hipaa-audit / pci-audit (engineering ⇆ regulatory)
      agent-supply-chain-audit ⇆ dependency-audit / secrets-audit (agent extensions are supply chain too)
+     owasp-audit (source-side race patterns) → business-logic-testing (prove it live) ← web-pentest
      breach-patterns → every audit skill (what to check)
      finding-triage ← every audit skill (closes the loop on any finding)
      security-comms ← every skill (translates output for non-security audience)
@@ -93,6 +94,7 @@ The skills are organized into seven families. Most security work crosses familie
 | [ai-risk-management](skills/ai-risk-management/) | NIST AI Risk Management Framework + EU AI Act — model lifecycle governance, fairness, robustness, transparency, monitoring, third-party model risk. Broader than prompt-injection. |
 | [api-audit](skills/api-audit/) | OWASP API Security Top 10 (2023) — REST / GraphQL / RPC endpoint audit. BOLA, mass assignment, BFLA, rate-limit, GraphQL introspection, webhook signature. |
 | [breach-patterns](skills/breach-patterns/) | Preemptive hardening — read public breach disclosures, extract the audit question each one implies, check your stack. Capital One / LastPass / Okta / Snowflake / MOVEit / Codecov / Equifax / Uber. |
+| [business-logic-testing](skills/business-logic-testing/) | The bugs scanners can't find — invariant-first testing (conservation of value, uniqueness, monotonicity, exclusivity), Actor × Action × Resource matrix, state-machine abuse, limit-slicing, and race conditions proven dynamically (HTTP/2 single-packet, idempotency-key scope, cache-before-commit). Explicit written scope required for money flows. |
 | [cloud-audit](skills/cloud-audit/) | AWS / GCP / Azure infrastructure misconfiguration, excessive IAM, public exposure, compliance gaps. |
 | [container-audit](skills/container-audit/) | Docker + Kubernetes audit. Dockerfile, base images, pod security, RBAC, NetworkPolicy, secrets, image policy, runtime. |
 | [crypto-audit](skills/crypto-audit/) | Cryptography implementation review — algorithm/mode choice, KDF parameters, IV/nonce handling, authenticated encryption, signature verification, randomness, TLS posture, key lifecycle. Deeper than owasp-audit A02. |
