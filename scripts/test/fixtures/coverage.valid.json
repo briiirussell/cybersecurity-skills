@@ -1,0 +1,35 @@
+[
+  {
+    "id": "orders-refund-idor",
+    "surface": "POST /api/orders/:id/refund",
+    "boundary": "user A -> user B",
+    "owasp_category": "API1:2023",
+    "status": "candidate",
+    "reviewed_paths": ["src/routes/orders.ts", "src/services/**"],
+    "checks": [{ "invariant": "refund requires order ownership", "method": "code read", "result": "no owner predicate" }],
+    "finding_fingerprints": ["api-audit/CWE-639/src/routes/orders.ts/refundOrder"],
+    "unresolved": []
+  },
+  {
+    "id": "search-sqli",
+    "surface": "GET /api/search",
+    "boundary": "anonymous -> database",
+    "owasp_category": "A03:2021",
+    "status": "covered",
+    "reviewed_paths": ["src/db/search.ts"],
+    "checks": [{ "invariant": "no user input in SQL text", "method": "trace + grep", "result": "holds (allow-list)" }],
+    "finding_fingerprints": ["owasp-audit/CWE-89/src/db/search.ts/searchProducts"],
+    "unresolved": []
+  },
+  {
+    "id": "webhooks",
+    "surface": "POST /webhooks/stripe",
+    "boundary": "internet -> app",
+    "owasp_category": null,
+    "status": "blocked",
+    "reviewed_paths": [],
+    "checks": [],
+    "finding_fingerprints": [],
+    "unresolved": ["Signing secret configuration lives in the deploy platform"]
+  }
+]

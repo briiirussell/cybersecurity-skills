@@ -1,0 +1,84 @@
+{
+  "$comment": "Maps each file in shared/ to the skills that receive a copy at skills/<skill>/references/<file>. scripts/build-adapters.mjs reads this. Copies are generated: edit shared/, never the copies. Each skill adds itself here in the release that starts linking a file.",
+  "files": {
+    "findings.schema.json": [
+      "agent-supply-chain-audit",
+      "business-logic-testing",
+      "scanner-pipeline",
+      "finding-triage",
+      "owasp-audit",
+      "api-audit",
+      "dependency-audit",
+      "secrets-audit"
+    ],
+    "validate-findings.mjs": [
+      "agent-supply-chain-audit",
+      "business-logic-testing",
+      "scanner-pipeline",
+      "finding-triage",
+      "owasp-audit",
+      "api-audit",
+      "dependency-audit",
+      "secrets-audit"
+    ],
+    "to-sarif.mjs": [
+      "agent-supply-chain-audit",
+      "business-logic-testing",
+      "scanner-pipeline",
+      "finding-triage",
+      "owasp-audit",
+      "api-audit",
+      "dependency-audit",
+      "secrets-audit"
+    ],
+    "findings-format.md": [
+      "agent-supply-chain-audit",
+      "business-logic-testing",
+      "scanner-pipeline",
+      "finding-triage",
+      "owasp-audit",
+      "api-audit",
+      "dependency-audit",
+      "secrets-audit"
+    ],
+    "severity-calibration.md": [
+      "agent-supply-chain-audit",
+      "business-logic-testing",
+      "finding-triage",
+      "owasp-audit",
+      "api-audit",
+      "dependency-audit",
+      "secrets-audit",
+      "prompt-injection",
+      "web-pentest"
+    ],
+    "coverage.schema.json": [
+      "owasp-audit",
+      "api-audit"
+    ],
+    "validate-coverage.mjs": [
+      "owasp-audit",
+      "api-audit"
+    ],
+    "verification.md": [
+      "business-logic-testing",
+      "finding-triage",
+      "owasp-audit",
+      "api-audit",
+      "web-pentest"
+    ],
+    "recon-and-coverage.md": [
+      "owasp-audit",
+      "api-audit"
+    ],
+    "orchestration.md": [
+      "owasp-audit",
+      "api-audit"
+    ],
+    "diff-review.md": [
+      "owasp-audit",
+      "api-audit",
+      "dependency-audit"
+    ]
+  }
+}

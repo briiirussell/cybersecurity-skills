@@ -1,0 +1,24 @@
+[
+  {
+    "id": "a",
+    "surface": "GET /x",
+    "boundary": "anon -> app",
+    "owasp_category": "A01:2021",
+    "status": "covered",
+    "reviewed_paths": [],
+    "checks": [],
+    "finding_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "id": "a",
+    "surface": "GET /y",
+    "boundary": "anon -> app",
+    "owasp_category": "A01:2021",
+    "status": "done",
+    "reviewed_paths": ["../outside"],
+    "checks": [{ "invariant": "x", "method": "y" }],
+    "finding_fingerprints": ["does/not/exist"],
+    "unresolved": []
+  }
+]

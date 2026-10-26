@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/briiirussell/cybersecurity-skills/blob/main/shared/coverage.schema.json",
+  "title": "cybersecurity-skills coverage.json",
+  "description": "An array of coverage units: one per attack surface x trust boundary x category the audit planned to review. Records what was reviewed, how, and what is still open, so 'no findings' can be told apart from 'not looked at'. validate-coverage.mjs enforces the cross-field rules (unique ids, safe paths, status-specific requirements, optional fingerprint cross-check against findings.json) and is authoritative. The coverage-ledger idea is adapted from cloudflare/security-audit-skill (MIT, Copyright (c) Cloudflare, Inc.).",
+  "type": "array",
+  "items": { "$ref": "#/$defs/unit" },
+
+  "$defs": {
+    "unit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "surface", "boundary", "owasp_category", "status", "reviewed_paths", "checks", "finding_fingerprints", "unresolved"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,199}$" },
+        "surface": { "$ref": "#/$defs/text", "description": "The attack surface, e.g. 'POST /api/orders/:id/refund' or 'webhook receiver'." },
+        "boundary": { "$ref": "#/$defs/text", "description": "The trust boundary crossed, e.g. 'anonymous -> authenticated user', 'tenant A -> tenant B'." },
+        "owasp_category": {
+          "description": "OWASP category id (e.g. 'A01:2021', 'API1:2023'), or null when the unit is not OWASP-mapped.",
+          "oneOf": [{ "$ref": "#/$defs/text" }, { "type": "null" }]
+        },
+        "status": {
+          "enum": ["planned", "in_progress", "blocked", "covered", "candidate", "deferred", "out_of_scope", "not_applicable"],
+          "description": "covered: requires >= 1 reviewed path and >= 1 check. candidate: requires >= 1 finding fingerprint. blocked: requires >= 1 unresolved item."
+        },
+        "reviewed_paths": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "description": "Repo-relative path or glob. No leading slash, drive letter, ~, backslash or '..' segment." }
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["invariant", "method", "result"],
+            "properties": {
+              "invariant": { "$ref": "#/$defs/text", "description": "The property that must hold, e.g. 'refund requires order ownership'." },
+              "method": { "$ref": "#/$defs/text", "description": "How it was checked: code read, grep, test, request." },
+              "result": { "$ref": "#/$defs/text", "description": "What was observed." }
+            }
+          }
+        },
+        "finding_fingerprints": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Fingerprints of findings.json records raised from this unit (any verdict)."
+        },
+        "unresolved": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/text" },
+          "description": "Open questions or blockers left on this unit."
+        }
+      }
+    },
+    "text": { "type": "string", "minLength": 1, "pattern": "\\S" }
+  }
+}

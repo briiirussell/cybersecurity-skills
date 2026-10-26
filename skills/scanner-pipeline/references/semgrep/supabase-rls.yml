@@ -1,0 +1,58 @@
+# Custom semgrep rules for Supabase / Postgres migrations.
+# Generic mode: semgrep has no first-class SQL parser, so these match text.
+# Run: semgrep scan --config path/to/supabase-rls.yml supabase/migrations/
+rules:
+  - id: rls-policy-self-comparison
+    languages: [generic]
+    paths:
+      include:
+        - "*.sql"
+    message: >-
+      RLS policy compares a column with itself ($1 = $1), which is always true
+      (except for NULLs), so the policy grants access to every row. You probably
+      meant to compare the row's column with an outer table or auth.uid().
+    severity: ERROR
+    metadata:
+      cwe: "CWE-285: Improper Authorization"
+      category: security
+      confidence: HIGH
+    patterns:
+      - pattern-inside: |
+          create policy ... ;
+      - pattern-regex: (?i)\b([a-z_][a-z0-9_]*\.[a-z_][a-z0-9_]*)\s*=\s*\1\b
+
+  - id: rls-policy-literal-true
+    languages: [generic]
+    paths:
+      include:
+        - "*.sql"
+    message: >-
+      RLS policy uses a literal true expression. Every row is visible or
+      writable to the roles the policy applies to. Confirm this is intended
+      (e.g., a public read-only table) and scope it to the right role.
+    severity: WARNING
+    metadata:
+      cwe: "CWE-285: Improper Authorization"
+      category: security
+      confidence: MEDIUM
+    patterns:
+      - pattern-inside: |
+          create policy ... ;
+      - pattern-regex: (?i)\b(using|with\s+check)\s*\(\s*(true|1\s*=\s*1)\s*\)
+
+  - id: table-created-without-rls
+    languages: [generic]
+    paths:
+      include:
+        - "*.sql"
+    message: >-
+      Table created in the public schema. Supabase exposes public tables through
+      the Data API with the anon key; make sure a later statement runs
+      `alter table ... enable row level security`. Confirm against the live
+      database with the security advisor (rls_disabled_in_public).
+    severity: INFO
+    metadata:
+      cwe: "CWE-862: Missing Authorization"
+      category: security
+      confidence: LOW
+    pattern-regex: (?i)create\s+table\s+(if\s+not\s+exists\s+)?(public\.)?[a-z_][a-z0-9_]*\s*\(

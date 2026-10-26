@@ -1,0 +1,125 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [development, main]
+  push:
+    branches: [development, main]
+  workflow_dispatch:
+
+# Least privilege by default; only the SkillSpector job can write code-scanning results.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22" # package.json engines: node >=21 (node --test globs)
+  # NVIDIA/SkillSpector v2.13.1. Bump deliberately: exact behaviour and rule ids change between releases.
+  SKILLSPECTOR_REF: f3b25697d76256998ca9d42c198d256258d4c035
+
+jobs:
+  lint:
+    name: Skill lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Lint SKILL.md frontmatter, size, cross-references and links
+        run: node scripts/lint-skills.mjs
+      - name: Validate SkillSpector baseline
+        run: node .github/scripts/skillspector-baseline.mjs --check
+
+  adapters:
+    name: Adapter drift
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Rebuild adapters and shared reference copies
+        run: node scripts/build-adapters.mjs
+      - name: Fail if generated files are stale
+        run: |
+          if ! git diff --exit-code -- adapters/ skills/ || [ -n "$(git status --porcelain -- adapters/ skills/)" ]; then
+            git status --short -- adapters/ skills/
+            echo "::error::Generated files are out of date. Run 'node scripts/build-adapters.mjs' and commit the result."
+            exit 1
+          fi
+
+  tests:
+    name: Validator tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Run node:test suites (npm test)
+        run: npm test
+
+  skillspector:
+    name: SkillSpector scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+      - name: Install SkillSpector (pinned commit)
+        run: uv tool install "git+https://github.com/NVIDIA/SkillSpector.git@${SKILLSPECTOR_REF}"
+      - name: Scan each skill against the baseline
+        # SkillSpector rejects --baseline on recursive multi-skill scans, so scan each skill
+        # on its own with that skill's slice of .skillspector-baseline.yaml.
+        run: |
+          mkdir -p sarif baselines
+          failed=()
+          for dir in skills/*/; do
+            skill="$(basename "$dir")"
+            [ -f "$dir/SKILL.md" ] || continue
+            node .github/scripts/skillspector-baseline.mjs "$skill" > "baselines/$skill.json"
+            set +e
+            skillspector scan "$dir" --no-llm \
+              --baseline "baselines/$skill.json" \
+              --fail-on-findings \
+              --format sarif -o "sarif/$skill.sarif"
+            rc=$?
+            set -e
+            if [ "$rc" -ne 0 ]; then
+              failed+=("$skill (exit $rc)")
+              # Re-run for a readable report of the active findings in the log.
+              skillspector scan "$dir" --no-llm --baseline "baselines/$skill.json" || true
+            fi
+          done
+          node .github/scripts/merge-sarif.mjs sarif skillspector.sarif
+          if [ "${#failed[@]}" -gt 0 ]; then
+            printf '::error::SkillSpector found unbaselined findings in: %s\n' "${failed[*]}"
+            echo "Triage each finding; fix it, or add a narrow rule with a reason to .skillspector-baseline.yaml."
+            exit 1
+          fi
+      - name: Upload SARIF to code scanning
+        if: always() && hashFiles('skillspector.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+        with:
+          sarif_file: skillspector.sarif

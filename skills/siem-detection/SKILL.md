@@ -1,14 +1,14 @@
 ---
 name: siem-detection
 description: "Engineer and audit SIEM detection rules — log source coverage, Sigma / KQL / SPL / Elastic query authoring, MITRE ATT&CK mapping, false-positive tuning, and detection-as-code workflows. Use when the user mentions 'SIEM,' 'detection engineering,' 'detection rules,' 'Sigma,' 'KQL,' 'SPL,' 'Splunk,' 'Sentinel,' 'Elastic,' 'Wazuh,' 'Chronicle,' 'detection-as-code,' 'MITRE ATT&CK mapping,' 'log coverage,' 'alert tuning,' 'use case development,' or needs help building or improving security detections."
-allowed-tools: Read, Write, Bash, Grep, Glob, WebSearch
+allowed-tools: Read, Write, Grep, Glob, WebSearch
 ---
 
 # SIEM Detection — Detection Engineering
 
 Build, audit, and maintain SIEM detection content — the rules that fire alerts. Distinct from `incident-triage` (responds when alerts fire) and from `soc-operations` (runs the SOC that triages alerts). This skill is the engineering layer: log coverage, rule authoring, tuning, and detection-as-code workflows.
 
-Cross-references: `incident-triage` for what happens after the alert, `threat-hunting` for proactive hypothesis-driven hunts that often graduate into detection rules, `breach-patterns` for detection ideas pulled from public breach disclosures, `soc-operations` for the alert-triage operations on top of the detections engineered here.
+Cross-references: `incident-triage` for what happens after the alert, `threat-hunting` for proactive hypothesis-driven hunts that often graduate into detection rules, `breach-patterns` for detection ideas pulled from public breach disclosures, `soc-operations` for the alert-triage operations on top of the detections engineered here, `log-watch` for small teams that don't run a SIEM yet (a scheduled agent over the logs they already have — the on-ramp to this skill).
 
 ## Scope
 

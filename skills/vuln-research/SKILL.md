@@ -1,7 +1,7 @@
 ---
 name: vuln-research
 description: "Research a specific CVE or vulnerability disclosure end-to-end — what version is affected, is your code reachable, is there a public PoC, is there a patch, what's the exposure window, what's the mitigation if you can't patch immediately. Use when the user mentions 'CVE,' 'vulnerability research,' 'is this CVE relevant,' 'zero-day,' 'CISA KEV,' 'GitHub Security Advisory,' 'reachability analysis,' 'patch analysis,' 'exploit availability,' 'EPSS,' 'CVSS,' or 'should we drop everything and patch this.'"
-allowed-tools: Read, Grep, Glob, Bash, WebSearch, WebFetch
+allowed-tools: Read, Grep, Glob, WebSearch, WebFetch, Bash(npm ls:*), Bash(pip show:*), Bash(bundle info:*), Bash(go list:*)
 ---
 
 # Vuln Research — CVE Deep-Dive and Applicability Assessment

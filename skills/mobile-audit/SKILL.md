@@ -1,7 +1,7 @@
 ---
 name: mobile-audit
 description: "Audit iOS and Android mobile applications against OWASP MASVS / MASTG — insecure storage, weak crypto, certificate pinning, deeplinks, IPC, jailbreak/root detection, reverse-engineering resistance. Use when the user mentions 'mobile security,' 'iOS security,' 'Android security,' 'mobile audit,' 'mobile pentest,' 'MASVS,' 'MASTG,' 'certificate pinning,' 'jailbreak detection,' 'root detection,' 'deeplink,' 'URL scheme,' 'app transport security,' 'keychain,' 'keystore,' 'mobile reverse engineering,' or has a mobile app to review."
-allowed-tools: Bash, Read, Write, Grep, Glob, WebSearch
+allowed-tools: Read, Grep, Glob, WebSearch
 ---
 
 # Mobile Audit — iOS & Android Application Security Review

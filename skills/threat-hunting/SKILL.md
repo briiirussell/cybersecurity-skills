@@ -1,7 +1,7 @@
 ---
 name: threat-hunting
 description: "Conduct proactive, hypothesis-driven threat hunts — search SIEM / EDR / logs for adversaries who haven't tripped an alert yet. ATT&CK-driven, hypothesis-based methodology. Use when the user mentions 'threat hunting,' 'proactive hunt,' 'TaHiTI,' 'PEAK framework,' 'MITRE ATT&CK hunt,' 'hypothesis-driven hunt,' 'hunt hypothesis,' 'living off the land,' 'LOLBins,' 'beaconing,' 'lateral movement detection,' 'data staging,' 'persistence hunting,' or wants to find threats that have evaded existing detections."
-allowed-tools: Read, Write, Bash, Grep, Glob, WebSearch
+allowed-tools: Read, Grep, Glob, WebSearch
 ---
 
 # Threat Hunting — Proactive Adversary Detection
@@ -10,7 +10,7 @@ Hunt for adversaries who are already inside but haven't tripped an alert. Distin
 
 Hunting is hypothesis-driven, not browse-driven. "Let's look around the SIEM" is not hunting; "let's check for the specific pattern of T1059.001 (PowerShell) being launched by Office processes" is.
 
-Cross-references: `siem-detection` (queries you write here often graduate to detection rules), `incident-triage` (what to do if a hunt confirms a finding), `breach-patterns` (a rich source of hunt hypotheses), `disk-forensics` (deeper analysis on confirmed hits).
+Cross-references: `siem-detection` (queries you write here often graduate to detection rules), `incident-triage` (what to do if a hunt confirms a finding), `breach-patterns` (a rich source of hunt hypotheses), `disk-forensics` (deeper analysis on confirmed hits), `agent-supply-chain-audit` (hunting for malicious or rug-pulled AI coding-agent extensions on developer machines), `secrets-audit` (its exfiltration-collector domain list is a ready-made egress hunt: DNS / proxy hits to webhook.site, requestbin, ngrok, or chat webhooks from servers or CI runners).
 
 ## Methodology — PEAK framework
 

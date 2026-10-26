@@ -1,0 +1,13 @@
+{
+  "name": "cybersecurity-skills",
+  "private": true,
+  "type": "module",
+  "description": "Repo tooling only (adapter build, findings/coverage validators, tests). No dependencies.",
+  "scripts": {
+    "build": "node scripts/build-adapters.mjs",
+    "test": "node --test \"scripts/test/*.test.mjs\""
+  },
+  "engines": {
+    "node": ">=21"
+  }
+}

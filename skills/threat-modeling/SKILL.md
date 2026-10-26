@@ -1,7 +1,7 @@
 ---
 name: threat-modeling
 description: "Run a structured threat-modeling session for a new feature, system, or architecture — STRIDE, attack trees, data flow diagrams, abuse cases. Use when the user mentions 'threat model,' 'threat modeling,' 'STRIDE,' 'attack tree,' 'abuse case,' 'data flow diagram,' 'DFD,' 'security architecture review,' 'security review,' 'design review,' 'pre-implementation security,' 'shift left,' 'what could go wrong,' or needs strategic security thinking before code is written."
-allowed-tools: Read, Write, Grep, Glob, WebSearch
+allowed-tools: Read, Grep, Glob, WebSearch
 ---
 
 # Threat Modeling — Pre-Implementation Security Design

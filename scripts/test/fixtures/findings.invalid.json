@@ -1,0 +1,30 @@
+[
+  {
+    "fingerprint": "owasp-audit/CWE-79/src/views/profile.tsx:42",
+    "verdict": "needs_validation",
+    "skill": "owasp-audit",
+    "title": "Possible stored XSS in bio",
+    "location": { "file": "/home/dev/app/src/views/profile.tsx", "line": 0 },
+    "trace": [
+      { "kind": "sink", "file": "src/views/profile.tsx", "line": 42, "description": "dangerouslySetInnerHTML" }
+    ],
+    "evidence": [],
+    "counterevidence": "none checked",
+    "confidence": "medium",
+    "severity": { "likelihood": { "score": "high", "reason": "x" }, "impact": { "score": "medium", "reason": "y" }, "overall": "high" },
+    "blockers": [],
+    "validation_plan": ""
+  },
+  {
+    "fingerprint": "api-audit/CWE-284/../secrets/admin",
+    "verdict": "rejected",
+    "skill": "api-audit",
+    "title": "Admin route reachable",
+    "location": { "file": "src/admin.ts", "line": 3 },
+    "trace": [],
+    "evidence": [],
+    "counterevidence": "Admin router mounted behind requireAdmin.",
+    "confidence": "low",
+    "note": "extra field"
+  }
+]

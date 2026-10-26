@@ -1,7 +1,7 @@
 ---
 name: breach-patterns
 description: "Learn from public breach disclosures — extract the audit question each one implies and check your own stack. Capital One IMDS abuse, LastPass vault exfiltration, Okta Lapsus$, Snowflake credential reuse, MOVEit, SolarWinds, Equifax, Target POS, Codecov, Uber, Twilio — what would you check now if your boss said 'could that happen to us?' Use when the user mentions 'breach analysis,' 'lessons learned,' 'security postmortem,' 'breach patterns,' 'breach lessons,' 'has this happened to us,' 'apply breach lessons,' 'preempt breaches,' 'security retrospective,' 'real-world security incidents,' or wants to harden against known attacker playbooks."
-allowed-tools: Read, Grep, Glob, Bash, WebSearch, WebFetch
+allowed-tools: Read, Grep, Glob, WebSearch, WebFetch
 ---
 
 # Breach Patterns — Preemptive Hardening from Public Breach Disclosures
@@ -10,7 +10,7 @@ The inverse of `incident-triage`. That skill is "we're on fire, what now." This 
 
 Breaches catalogued here are public, well-documented, and pattern-bearing. Each pattern surfaces a control or check that often falls between OWASP categories — IMDS abuse, supplier credential blast radius, secrets-in-CI, single-sign-on lateral movement, log-tampering pre-breach. These are the controls people add *after* their first incident; reading other people's breaches is cheaper than writing your own.
 
-Cross-references: every audit skill in this repo. Use this skill to surface "have we considered X?" questions, then pivot to the relevant audit skill for the deep dive. When a breach pattern surfaces a regulatory implication — health data exposure, payment card data exposure, PII exposure — also reach for `hipaa-audit`, `pci-audit`, or `privacy-engineering` to understand the regulatory clock and notification obligations that come with that breach class.
+Cross-references: every audit skill in this repo. Use this skill to surface "have we considered X?" questions, then pivot to the relevant audit skill for the deep dive. When a breach pattern surfaces a regulatory implication — health data exposure, payment card data exposure, PII exposure — also reach for `hipaa-audit`, `pci-audit`, or `privacy-engineering` to understand the regulatory clock and notification obligations that come with that breach class. When the pattern started with one person's account (a phished founder, a SIM-swapped admin, a developer laptop), run `personal-opsec` on the people who hold the keys.
 
 ## How to use this skill
 

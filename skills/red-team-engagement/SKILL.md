@@ -1,7 +1,7 @@
 ---
 name: red-team-engagement
 description: "Plan, scope, and execute an authorized red-team engagement — distinct from a penetration test. Covers engagement methodology, assumed-breach scenarios, ATT&CK emulation plans, rules of engagement, deconfliction with the blue team, post-engagement debriefs, and the program-level work that makes red teams actually improve defenses. Use when the user mentions 'red team,' 'red team engagement,' 'red teaming,' 'adversary emulation,' 'ATT&CK emulation,' 'assumed breach,' 'purple team exercise,' 'tabletop with technical execution,' 'red team scope,' 'rules of engagement,' 'red team RoE,' 'deconfliction,' 'red team debrief,' or wants to design or run a red-team engagement against systems with authorization."
-allowed-tools: Read, Write, Bash, Grep, Glob, WebSearch
+allowed-tools: Read, Grep, Glob, WebSearch
 ---
 
 # Red Team Engagement — Authorized Adversary Emulation

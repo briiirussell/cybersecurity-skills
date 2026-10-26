@@ -1,7 +1,9 @@
 ---
 name: skill-name
 description: "What this skill does. Use when the user mentions 'trigger phrase one,' 'trigger phrase two,' or needs to [accomplish task]. Keep between 200-1024 characters. Be specific about when to activate."
-allowed-tools: Bash, Read, Write, Grep, Glob
+allowed-tools: Read, Grep, Glob
+# allowed-tools = tools pre-approved to run WITHOUT a permission prompt (not an access list).
+# Add only scoped, read-only Bash, e.g. Bash(trivy fs:*). Never WebFetch + unscoped Bash. Write only if the main output is a file.
 ---
 
 # Skill Title — Subtitle

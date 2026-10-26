@@ -16,19 +16,28 @@
 
 ```
 skills/
-├── recon/SKILL.md
-├── owasp-audit/SKILL.md
-├── disk-forensics/SKILL.md
-├── osint-recon/SKILL.md
-├── incident-triage/SKILL.md
-└── cloud-audit/SKILL.md
+└── <skill-name>/
+    ├── SKILL.md             # Canonical skill (35 skills)
+    └── references/          # Skill-specific references + GENERATED copies of shared/ files
+shared/                      # Source of truth for files several skills need (findings schema,
+│                            # validators, to-sarif, severity calibration, verification, ...)
+└── manifest.json            # Which skills get a copy of each file in skills/<skill>/references/
 adapters/
-├── cursor/          # Generated .mdc files
-└── codex/           # Generated .md files
+├── cursor/                  # Generated .mdc files
+└── codex/                   # Generated .md files
 templates/
 └── skill-template.md
 scripts/
-└── build-adapters.mjs
+├── build-adapters.mjs       # Adapters + manifest-driven shared/ copies
+├── lint-skills.mjs
+└── test/                    # node:test suites + fixtures (run with npm test)
+package.json                 # npm test / npm run build — no dependencies, Node >= 21
+.github/
+├── workflows/ci.yml   # lint, adapter drift, tests, SkillSpector
+└── scripts/           # SkillSpector baseline splitter + SARIF merge
+.skillspector-baseline.yaml
+docs/
+└── security-scanning.md
 ```
 
 ## Skill Format (Claude Code SKILL.md)
@@ -39,14 +48,14 @@ Every skill follows the [Anthropic skill creator guidelines](https://code.claude
 ---
 name: skill-name                    # Lowercase, hyphens, max 64 chars
 description: "What it does and when to use it. 200-1024 chars. Include trigger phrases."
-allowed-tools: Bash, Read, Write    # Tools the skill can use
+allowed-tools: Read, Grep, Glob     # Pre-approved: run WITHOUT a permission prompt
 ---
 ```
 
 **Frontmatter fields:**
 - `name` — Slug used for `/skill-name` invocation. Lowercase + hyphens only.
 - `description` — Explains WHAT the skill does and WHEN to use it. Claude uses this to decide automatic invocation. Be "pushy" to combat undertriggering.
-- `allowed-tools` — Comma-separated list of tools the skill can access.
+- `allowed-tools` — Tools that run **without a permission prompt** while the skill is active (the invoking turn). It is a pre-approval, **not** an access list or ceiling: unlisted tools stay callable and go through the user's normal permission settings. Default `Read, Grep, Glob`. Add `Bash` only scoped to a read-only command prefix (`Bash(trivy fs:*)`, `Bash(dig:*)`); use exact rules where a wildcard would also match a destructive sub-mode (`Bash(npm audit --json)`, not `Bash(npm audit:*)`). Never pre-approve active scanning, exploitation, history rewrites, or state changes. Never pair `WebFetch` with unscoped `Bash` (the lint fails it). Add `Write` only when the skill's main output is a file. Cursor/Codex adapters drop this field entirely. See `docs/security-scanning.md`.
 - `disable-model-invocation` — Set `true` for manual-only skills (e.g., deploy).
 - `user-invocable` — Set `false` for background knowledge only.
 
@@ -59,16 +68,25 @@ allowed-tools: Bash, Read, Write    # Tools the skill can use
 ## Build Commands
 
 ```bash
-node scripts/build-adapters.mjs    # Generate Cursor + Codex adapters from SKILL.md files
+node scripts/build-adapters.mjs    # Generate Cursor + Codex adapters and copy shared/ files into skills/*/references/ (also: npm run build)
+node scripts/lint-skills.mjs       # Frontmatter, size, cross-reference, link and allowed-tools lint (CI runs this)
+npm test                           # node:test suites in scripts/test/ — validators, to-sarif, build (CI runs this; Node >= 21)
+node .github/scripts/skillspector-baseline.mjs --check   # Validate .skillspector-baseline.yaml
 ```
+
+**Shared files:** edit the file in `shared/`, then run `node scripts/build-adapters.mjs` and commit the regenerated copies. Never hand-edit `skills/<skill>/references/<shared file>`; the build overwrites it and CI fails on drift. To give a skill a copy, add the skill to that file's list in `shared/manifest.json`.
+
+CI (`.github/workflows/ci.yml`) also fails on stale adapters and on SkillSpector findings not covered by `.skillspector-baseline.yaml`.
 
 ## Creating a New Skill
 
 1. Create `skills/<skill-name>/SKILL.md` using `templates/skill-template.md`
 2. Use proper frontmatter (`name`, `description`, `allowed-tools`)
 3. Write instructions in imperative form
-4. Run `node scripts/build-adapters.mjs` to generate adapters
-5. Test the skill in Claude Code by copying to `.claude/skills/`
+4. If the skill links a shared file (`references/findings.schema.json`, `references/verification.md`, ...), add it to `shared/manifest.json`
+5. Run `node scripts/build-adapters.mjs` to generate adapters and shared copies
+6. Run `node scripts/lint-skills.mjs` and `npm test`
+7. Test the skill in Claude Code by copying to `.claude/skills/`
 
 ## Guidelines
 

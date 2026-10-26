@@ -1,7 +1,7 @@
 ---
 name: soc-operations
 description: "Build, run, and improve a Security Operations Center — alert prioritization, runbook authoring, escalation criteria, on-call structure, alert tuning workflow, MTTD / MTTR / fidelity KPIs, analyst tiering, and shift handoffs. Use when the user mentions 'SOC,' 'security operations,' 'SOC analyst,' 'alert triage workflow,' 'runbook,' 'escalation,' 'on-call,' 'SOC tiering,' 'tier 1 / tier 2,' 'MTTD,' 'MTTR,' 'alert fatigue,' 'alert tuning,' 'shift handoff,' 'SOAR,' or wants to design or improve a security operations team."
-allowed-tools: Read, Write, Grep, Glob, WebSearch
+allowed-tools: Read, Grep, Glob, WebSearch
 ---
 
 # SOC Operations — Building and Running a Security Operations Center
@@ -13,7 +13,7 @@ Three modes:
 - **Run** — daily operations for an existing SOC
 - **Improve** — analyzing an existing SOC's metrics and fixing the broken parts
 
-Cross-references: `siem-detection` (the rules that feed alerts to the SOC), `incident-triage` (the playbook for confirmed incidents), `threat-hunting` (proactive work between alert triage), `breach-patterns` (what attacks the SOC should be ready for).
+Cross-references: `siem-detection` (the rules that feed alerts to the SOC), `incident-triage` (the playbook for confirmed incidents), `threat-hunting` (proactive work between alert triage), `breach-patterns` (what attacks the SOC should be ready for), `log-watch` (the no-SIEM, no-SOC starting point for small teams — this skill is where they graduate to).
 
 ## Mode 1 — Build a SOC
 

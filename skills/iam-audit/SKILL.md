@@ -1,7 +1,7 @@
 ---
 name: iam-audit
 description: "Audit, design, and migrate Identity and Access Management — cloud provider IAM (AWS, GCP, Azure), identity providers (Okta, Entra ID / Azure AD, Auth0, Google Workspace), application authorization (RBAC, ABAC, ReBAC), and federated identity. Use when the user mentions 'IAM,' 'identity,' 'access management,' 'least privilege,' 'role design,' 'SSO,' 'SAML,' 'OIDC,' 'OAuth,' 'JIT access,' 'just-in-time access,' 'break-glass,' 'service accounts,' 'RBAC,' 'ABAC,' 'privilege creep,' 'role explosion,' 'identity governance,' 'IAM strategy,' 'identity migration,' 'Okta,' 'Entra ID,' 'Azure AD,' 'Auth0,' 'Cognito,' or needs identity consultant-level guidance."
-allowed-tools: Bash, Read, Write, Grep, Glob, WebSearch
+allowed-tools: Read, Grep, Glob, WebSearch, Bash(aws accessanalyzer list-findings:*), Bash(aws iam get-account-authorization-details:*), Bash(gcloud asset analyze-iam-policy:*), Bash(gcloud policy-intelligence query-activity:*), Bash(az role assignment list:*)
 ---
 
 # IAM Audit — Identity & Access Management Review and Design
@@ -13,7 +13,7 @@ Three modes — pick the one that matches the engagement:
 - **Design** — greenfield IAM for a new project or new identity provider
 - **Migrate** — consolidate multiple identity providers, federate access, move to SSO
 
-Cross-references: `cloud-audit` for the cloud-provider audit (broader than IAM), `container-audit` for K8s RBAC and ServiceAccounts (orchestration-layer identity).
+Cross-references: `cloud-audit` for the cloud-provider audit (broader than IAM), `container-audit` for K8s RBAC and ServiceAccounts (orchestration-layer identity), `personal-opsec` for the individual operator's own accounts — hardware-key MFA, recovery paths, SIM-swap protection — which org IAM doesn't reach.
 
 ## Mode 1 — Audit existing IAM
 

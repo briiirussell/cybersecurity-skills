@@ -1,0 +1,175 @@
+# Verification — Per-Finding Refutation Pass
+
+Shared reference for audit skills (`owasp-audit`, `api-audit`, `business-logic-testing`, `web-pentest`) and for
+`finding-triage`. Every candidate finding goes through this pass **before** it reaches `findings.json` or a report.
+The goal is to try to disprove the candidate, then close it with one of three verdicts.
+
+The pass works because the person checking a finding is not the person who found it. Someone who wrote the candidate
+tends to re-read their own reasoning instead of the code. A verifier that only sees the claim and the cited lines
+reads the code.
+
+## When to run it
+
+- After the checklist / hunting phase, once per candidate. Don't batch several candidates into one verifier: a
+  verifier that rejects one candidate tends to wave the next one through.
+- Again whenever a verdict would move **up** (rejected → needs_validation, needs_validation → confirmed, or a
+  severity increase) or the evidence changes materially. **An upgrade needs a new, independent verifier.** The verifier
+  that produced the lower verdict does not get to overturn itself.
+- On re-runs, for every carried-forward confirmed finding whose code changed (see `orchestration.md` where present).
+
+A downgrade (confirmed → needs_validation, or a lower severity) can be applied directly. Record why.
+
+## How to run it
+
+**With subagents** (Claude Code `Task`/Agent tool, or any platform that can spawn an isolated agent): spawn one fresh
+verifier per candidate. Give it **only**:
+
+1. The candidate record: title, claimed location, `trace[]`, `evidence[]`, and the claimed impact
+2. Read access to the repository
+3. The verdict definitions and the "does NOT rule out" list below
+4. The record shape it must return (see `findings-format.md` where present)
+
+Do **not** pass the hunter's reasoning, chat history, or the rest of the report.
+
+**Without subagents** (single-context agents, Cursor, Codex): run the pass as a separate, explicit step after hunting
+is finished. For each candidate, start from the cited `file:line` and re-derive the path from scratch. Don't re-read
+your own earlier notes about the candidate until you have written down a verdict.
+
+### Verifier prompt (template)
+
+Adapt this to the platform. Keep the substance.
+
+```text
+You are verifying a security finding that someone else wrote. Assume it is wrong until the code proves otherwise.
+Your job is to refute it.
+
+Candidate:
+<candidate record: title, location, trace[], evidence[], claimed impact>
+
+Do this:
+1. Open every file:line cited in trace[] and evidence[]. Confirm each line says what the candidate claims.
+   If a cited line does not exist or says something else, note it.
+2. Walk the path from the entrypoint to the sink. At each hop, list every control that could stop the attack:
+   middleware, auth/ownership checks, validation, type coercion, framework escaping, database constraints,
+   platform config in the repo.
+3. Name the STRONGEST control you found. For that control, decide: does it run on EVERY path an attacker can reach
+   before the sink, at the right time, and fail closed?
+4. Decide whether the claimed impact actually follows. Who is the lower-trust principal, what boundary is crossed,
+   and what concrete result occurs?
+5. Return exactly one verdict: confirmed | needs_validation | rejected, with the fields listed for that verdict.
+   Fill `counterevidence` with what you tried and what you found, even when the verdict is confirmed.
+```
+
+## The three verdicts
+
+| Verdict | Bar | Required fields | Severity? |
+|---|---|---|---|
+| `confirmed` | A complete trace from attacker-controlled entrypoint → (missing or bypassable control) → sink → concrete impact, **or** a working proof-of-concept against an environment you're authorized to test | `trace[]` (entrypoint first, sink last), `evidence[]`, `counterevidence`, `confidence`, `severity`, `conditions[]` | Yes |
+| `needs_validation` | The code supports the claim, but **one decisive fact lives outside the code**: proxy or CDN behaviour, IdP settings, deploy-time env, a managed-service default, the headers a deployed origin actually sends | `blockers[]` (each names the exact unknown fact), `validation_plan` (a check the owner can run), `counterevidence`, `confidence` | **No.** Severity is assigned only after the blocker resolves to confirmed |
+| `rejected` | A **specific named control, at a specific location**, runs on **every** path an attacker can reach before the sink and fails closed | `ruled_out_by {control, location}`, `counterevidence` | No |
+
+### confirmed
+
+- The trace has to be complete. "User input reaches `exec()`" is not a trace until you show where the input enters,
+  each hop, and why nothing on the way stops it.
+- `confidence` is honest. **A static-only trace caps at `medium`.** `high` needs a reproduced PoC, a failing test, or
+  equivalent runtime evidence, recorded as `"reproduced": true` (the validator rejects `high` without it). Missing deployment evidence lowers confidence; it does not lower the severity floor of
+  what the code demonstrably does.
+- Severity follows [severity-calibration.md](severity-calibration.md): likelihood × impact, and `overall ≤ impact`. If you can't state the
+  concrete damage, the severity is lower than it feels.
+- Record `conditions[]` that limit exploitation (`authentication_level`, `authorization_role`, `user_interaction`,
+  `system_configuration`, `network_routing`, `environmental_dependency`, `data_state`, `timing_dependency`,
+  `third_party_dependency`).
+
+### needs_validation
+
+This replaces the old "Potential" label. It is **not** a parking place for a hunch. Use it only when the code really does
+support the claim and a single external fact decides it.
+
+- Each `blockers[]` entry names one fact: "Whether Vercel strips `x-forwarded-host` before it reaches the app",
+  not "deployment config unknown".
+- `validation_plan` is a check the **owner** can run, local and/or against their deployment, with the expected result
+  for each outcome. Example:
+
+  ```text
+  Run against your production origin:  curl -sI https://app.example.com/embed | grep -iE 'x-frame-options|content-security-policy'
+  If both `frame-ancestors *` and `X-Frame-Options: DENY` appear → confirmed (contradictory framing policy).
+  If only one appears → rejected; ruled out by the deployed header set.
+  ```
+
+- If you can't write a blocker and a plan, the candidate is either confirmed (you already know enough) or it's a
+  hardening note or a rejected claim. It isn't needs_validation.
+
+### rejected
+
+- Name the control and where it lives: `ruled_out_by: { control: "requireOrgMember() guard", location:
+  "src/server/trpc.ts:41" }`. "Looks safe" or "framework handles it" is not a rejection.
+- The control must sit on **every** reachable path, run **before** the sink, and **fail closed**.
+- Keep rejected records in `findings.json`. Re-runs read them so the same claim isn't raised again. A rejection
+  suppresses **only that exact claim** (same fingerprint). A sibling path or a changed control is a new candidate.
+
+## What does NOT rule out a candidate
+
+None of these is a reason to reject. Each one is a reason to keep looking:
+
+- **General trust in a library or framework** ("Prisma parameterizes", "React escapes") without checking that this call
+  site uses the safe API. Raw-query escape hatches and `dangerouslySetInnerHTML` exist for a reason.
+- **A control on a different path.** The REST route checks ownership. The server action that writes the same table
+  doesn't.
+- **A control that runs at the wrong time.** Validation after the side effect, auth checked at enqueue but not in the
+  worker, a signature verified after the body was already stored.
+- **A control that can fail open.** Unset env var interpolation, `catch {}` around the check, a rate limiter that
+  allows on Redis error, a feature flag defaulting to off.
+- **A safe sibling.** Three handlers use the guard. That says nothing about the fourth.
+- **Missing information.** "I couldn't find where this is called" is a blocker or an unresolved coverage item. It isn't
+  a rejection.
+- **Difficulty.** "Requires guessing a UUID" or "requires a race" lowers likelihood. It doesn't remove the finding.
+- **The setting is operator-configurable.** If the shipped default is unsafe, the default is the finding.
+- **"It's internal."** Internal services get reached through SSRF, compromised neighbours, and misrouted ingress.
+  Record the network assumption as a `network_routing` condition instead.
+- **Tests pass.** Tests check intended behaviour, not adversarial input.
+
+## Hardening notes are not verdicts
+
+If the verifier finds the gap is real but there's **no traced impact** (Layer A already stops the attack and Layer B is
+missing; a missing header with no exploit path; a checklist deviation), close the candidate as a **Hardening note**. It
+goes in the report's "Hardening notes (not findings)" section with no severity. It gets no `findings.json` record.
+Keep hardening notes in a short list next to the JSON (for example `hardening-notes.md` in the audit output directory)
+so the report can render them. The coverage unit that produced the note can still be `covered`.
+
+If a hardening note later picks up a traced impact (say, a missing CSP turns out to matter because a stored XSS sink
+exists), it becomes a new candidate and goes through this pass.
+
+## Live probing
+
+Live checks stay allowed **when authorized**. For example, `curl -I` against the user's own deployed origin, or
+confirming that a leaked key is live as part of secrets triage. The rules:
+
+1. The authorization check of the consuming skill applies to the live target, not just the source. Only probe hosts
+   the user owns or is authorized to test, and only with non-destructive requests (`HEAD`/`GET`, no state changes, no
+   real customer credentials).
+2. **A check you describe but don't run is a `needs_validation` item.** Write the exact command into
+   `validation_plan`. Don't mark it confirmed or rejected on the strength of what the config file "should" produce.
+3. A check you actually ran becomes evidence. Record the command, timestamp, and relevant response lines in
+   `evidence[]` / `counterevidence`, then close the verdict normally.
+4. For paired evidence (baseline request next to attack request), see `web-pentest`.
+
+## Output of the pass
+
+For each candidate, one record with the verdict-specific fields above, ready to be written to `findings.json`. The
+consuming skill writes `findings.json`, validates it (`validate-findings.mjs` where present), and renders the report
+from it. Prose never changes a verdict, severity, blocker, or demonstrated impact. If the report and the JSON disagree,
+the JSON wins and the report is regenerated.
+
+## Sources
+
+Paraphrased and adapted, not copied:
+
+- Cloudflare security-audit-skill (MIT): [VALIDATION-AND-REPORTING.md](https://github.com/cloudflare/security-audit-skill/blob/main/skills/security-audit/VALIDATION-AND-REPORTING.md)
+  (candidate verifier, re-verification for upgrades), [HUNTING.md](https://github.com/cloudflare/security-audit-skill/blob/main/skills/security-audit/HUNTING.md)
+  (candidate gate), [README](https://github.com/cloudflare/security-audit-skill) (independent verifier principle)
+- Strix (Apache-2.0): [analysis/counterevidence.md](https://github.com/usestrix/strix/blob/main/strix/skills/analysis/counterevidence.md)
+  (what does and doesn't rule out a claim), [tools/reporting/tool.py](https://github.com/usestrix/strix/blob/main/strix/tools/reporting/tool.py)
+  (required counterevidence and confidence fields)
+- This repo's decision on live probing (issue #78): kept, when authorized, and recorded as needs_validation unless run.
+  This deliberately departs from Cloudflare's no-live-probing rule.

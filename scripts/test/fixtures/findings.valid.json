@@ -1,0 +1,123 @@
+[
+  {
+    "fingerprint": "api-audit/CWE-639/src/routes/orders.ts/refundOrder",
+    "verdict": "confirmed",
+    "skill": "api-audit",
+    "title": "Refund endpoint lets any authenticated user refund another user's order (IDOR)",
+    "cwe": "CWE-639",
+    "owasp_category": "API1:2023",
+    "location": {
+      "file": "src/routes/orders.ts",
+      "line": 88
+    },
+    "trace": [
+      {
+        "kind": "entrypoint",
+        "file": "src/routes/orders.ts",
+        "line": 84,
+        "description": "POST /api/orders/:id/refund reads :id from the path"
+      },
+      {
+        "kind": "propagation",
+        "file": "src/services/orders.ts",
+        "line": 41,
+        "description": "id passed to findOrder() with no owner filter"
+      },
+      {
+        "kind": "sink",
+        "file": "src/services/payments.ts",
+        "line": 17,
+        "description": "stripe.refunds.create() issues the refund"
+      }
+    ],
+    "evidence": [
+      {
+        "file": "src/services/orders.ts",
+        "line": 41,
+        "description": "Query is WHERE id = $1 with no user_id predicate"
+      }
+    ],
+    "counterevidence": "Checked requireAuth middleware (authenticates only) and the orders policy file; no ownership check on this route. Sibling GET /orders/:id does check ownership.",
+    "confidence": "high",
+    "reproduced": true,
+    "severity": {
+      "likelihood": {
+        "score": "high",
+        "reason": "Any signed-up user can call it; order ids are sequential"
+      },
+      "impact": {
+        "score": "high",
+        "reason": "Refunds another customer's payment; direct financial loss"
+      },
+      "overall": "high"
+    },
+    "conditions": [
+      {
+        "kind": "authentication_level",
+        "description": "Attacker needs any user account (open signup)"
+      }
+    ],
+    "disposition": "Deferred"
+  },
+  {
+    "fingerprint": "owasp-audit/CWE-89/src/db/search.ts/searchProducts",
+    "verdict": "rejected",
+    "skill": "owasp-audit",
+    "title": "String-built SQL in product search",
+    "cwe": "CWE-89",
+    "location": {
+      "file": "src/db/search.ts",
+      "line": 30
+    },
+    "trace": [],
+    "evidence": [
+      {
+        "file": "src/db/search.ts",
+        "line": 30,
+        "description": "ORDER BY column interpolated into SQL"
+      }
+    ],
+    "counterevidence": "Column comes from a fixed enum map; user input never reaches the template literal.",
+    "confidence": "high",
+    "ruled_out_by": {
+      "control": "SORT_COLUMNS allow-list lookup; unknown keys throw before the query is built",
+      "location": {
+        "file": "src/db/search.ts",
+        "line": 22
+      }
+    }
+  },
+  {
+    "fingerprint": "owasp-audit/CWE-918/src/lib/fetch-preview.ts/fetchPreview",
+    "verdict": "needs_validation",
+    "skill": "owasp-audit",
+    "title": "Link-preview fetcher may reach internal metadata endpoint (SSRF)",
+    "cwe": "CWE-918",
+    "owasp_category": "A10:2021",
+    "location": {
+      "file": "src/lib/fetch-preview.ts",
+      "line": 12
+    },
+    "trace": [
+      {
+        "kind": "entrypoint",
+        "file": "src/routes/preview.ts",
+        "line": 5,
+        "description": "GET /preview?url= takes a user URL"
+      },
+      {
+        "kind": "sink",
+        "file": "src/lib/fetch-preview.ts",
+        "line": 12,
+        "description": "fetch(url) with no allow-list"
+      }
+    ],
+    "evidence": [],
+    "counterevidence": "No allow-list in code. Egress may be filtered by the platform; not visible in the repo.",
+    "confidence": "medium",
+    "blockers": [
+      "Whether the production egress proxy blocks 169.254.169.254 and RFC 1918 ranges"
+    ],
+    "validation_plan": "From a staging instance, request /preview?url=http://169.254.169.254/latest/meta-data/ and confirm the response is blocked."
+  }
+]
