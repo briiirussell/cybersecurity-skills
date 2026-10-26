@@ -71,6 +71,7 @@ allowed-tools: Read, Grep, Glob     # Pre-approved: run WITHOUT a permission pro
 ```bash
 node scripts/build-adapters.mjs    # Generate Cursor + Codex adapters and copy shared/ files into skills/*/references/ (also: npm run build)
 node scripts/lint-skills.mjs       # Frontmatter, size, cross-reference, link and allowed-tools lint (CI runs this)
+node scripts/check-versions.mjs --base origin/development   # Versions in sync + bumped vs the base (CI runs this on PRs)
 npm test                           # node:test suites in scripts/test/ — validators, to-sarif, build (CI runs this; Node >= 21)
 node .github/scripts/skillspector-baseline.mjs --check   # Validate .skillspector-baseline.yaml
 ```

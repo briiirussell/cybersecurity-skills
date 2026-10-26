@@ -37,6 +37,28 @@ jobs:
       - name: Validate SkillSpector baseline
         run: node .github/scripts/skillspector-baseline.mjs --check
 
+  versions:
+    name: Version check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0 # the base branch is needed to compare versions
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Versions in sync (plugin.json, marketplace.json, VERSIONS.md)
+        if: github.event_name != 'pull_request'
+        run: node scripts/check-versions.mjs
+      - name: Versions in sync and bumped against the base branch
+        # Dependabot's action-pin bumps don't carry a repo version; they ride along with the next one.
+        if: github.event_name == 'pull_request' && github.event.pull_request.user.login != 'dependabot[bot]'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: node scripts/check-versions.mjs --base "origin/$BASE_REF"
+
   adapters:
     name: Adapter drift
     runs-on: ubuntu-latest
