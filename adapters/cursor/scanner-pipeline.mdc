@@ -134,7 +134,7 @@ Keep every tool's evidence on the merged record; the fix agent needs it.
 - fingerprint: dep:npm:next:CVE-2026-XXXXX
   tool: osv-scanner
   reason: "Static export; no server runtime. Advisory requires Server Actions."
-  owner: "@bri"
+  owner: "@jdoe"
   added: 2026-10-26
   expires: 2027-01-24      # max 90 days; expired entries resurface the finding
 ```

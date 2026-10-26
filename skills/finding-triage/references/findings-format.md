@@ -55,7 +55,7 @@ Common to all three shapes:
 | `skill` | string | The skill that produced it, e.g. `owasp-audit` |
 | `title` | string | One line, specific |
 | `cwe` | string, optional | `CWE-639` |
-| `owasp_category` | string, optional | `A01:2021`, `API1:2023` |
+| `owasp_category` | string, optional | `A01:2025`, `API1:2023` |
 | `location` | `{file, line}` | Primary location. `file` is repo-relative, `line` ≥ 1 |
 | `trace[]` | `{kind, file, line, description}` | `kind` ∈ `entrypoint` \| `propagation` \| `sink`. A non-empty trace starts with `entrypoint`, ends with `sink`, and has neither in the middle. `confirmed` needs ≥ 2 steps; the others may be `[]` |
 | `evidence[]` | `{file, line, description}` | `confirmed` needs ≥ 1 |

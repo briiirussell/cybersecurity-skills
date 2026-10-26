@@ -8,7 +8,7 @@ Every PR into `development` or `main`, and every push to either branch, runs [`.
 
 | Job | Command | Fails when |
 |---|---|---|
-| Skill lint | `node scripts/lint-skills.mjs` | `name` ≠ folder; description outside 200–1024 chars; `SKILL.md` ≥ 500 lines; a cross-referenced skill has no folder; a relative link doesn't resolve; two skills share a trigger phrase; `allowed-tools` pairs `WebFetch` with unscoped `Bash` |
+| Skill lint | `node scripts/lint-skills.mjs` | `name` ≠ folder; description outside 200–1024 chars; `SKILL.md` ≥ 500 lines; a cross-referenced skill has no folder; a relative link doesn't resolve; two skills share a trigger phrase; `allowed-tools` pairs `WebFetch` with unscoped `Bash`; a `Bash` grant would pre-approve a write (see below) |
 | Baseline check | `node .github/scripts/skillspector-baseline.mjs --check` | a baseline rule lacks `id`, `path`, `message` or `reason`, or names a skill that doesn't exist |
 | Adapter drift | `node scripts/build-adapters.mjs`, then `git diff --exit-code adapters/ skills/` | generated adapters or the `shared/` → `skills/*/references/` copies are stale |
 | Tests | `npm test` (`node --test "scripts/test/*.test.mjs"`, Node ≥ 21) | a validator, `to-sarif` or build test fails |
@@ -86,6 +86,14 @@ Rules for this repo:
 - Add `Bash` only scoped to a specific, read-only command prefix, e.g. `Bash(trivy fs:*)` or `Bash(dig:*)`. For commands with a destructive sub-mode, use exact rules with no wildcard, e.g. `Bash(npm audit --json)` rather than `Bash(npm audit:*)`, which would also match `npm audit fix --force`. Claude Code already runs `grep`, `cat`, `ls`, `stat` and read-only `git` without a prompt, so those don't need grants.
 - Never pre-approve active scanning or exploitation against a target (`nmap`, `curl`, `sqlmap`, `testssl.sh`, `ffuf`), history rewrites (`git filter-repo`, `bfg`), live-credential checks, or anything that changes state. Those should prompt every time, so the user confirms the target and authorization.
 - Never pair `WebFetch` with unscoped `Bash`. The lint enforces this.
+- The lint also fails any `Bash` grant that would pre-approve a write (`scripts/grant-check.mjs`, since v1.19.11):
+  - unscoped `Bash`
+  - a write verb in the rule itself (`delete`, `rollback`, `set`, `--fix`, ...)
+  - a prefix that also matches a known destructive command. `Bash(heroku releases:*)` also matches `heroku releases:rollback`, so use `Bash(heroku releases -a:*)`.
+  - a wildcard on a bare multi-command CLI (`git:*`, `vercel:*`, `aws:*`)
+  - a wildcard on a tool that rewrites source files with a flag (`semgrep:*` allows `semgrep --autofix`)
+
+  When a skill starts using a new CLI, add its destructive subcommands to `DESTRUCTIVE_COMMANDS` in that file. Report-file flags (`--output`, `--report-path`) aren't checked; nearly every scanner has one, and they write a new report rather than change the project.
 - Add `Write` only if the skill's main output is a file it has to write.
 
 ### v1.4 changes (potentially breaking)

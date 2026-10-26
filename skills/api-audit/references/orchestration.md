@@ -56,7 +56,7 @@ Architecture (verbatim): <architecture.md>
 
 Your units: <list of coverage unit ids with surface, boundary, category>
 
-Attack classes for these units: <the relevant checklist blocks from the consuming skill, e.g. owasp-audit A01 + A04>
+Attack classes for these units: <the relevant checklist blocks from the consuming skill, e.g. owasp-audit A01 + A06>
 
 Exclusions (do not report): <out_of_scope units with reasons; prior rejected fingerprints with ruled_out_by>
 

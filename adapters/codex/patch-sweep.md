@@ -27,7 +27,7 @@ Ask the user, and write the answers at the top of the board:
 
 Refuse to: push to or merge into a repo the user doesn't own without that owner's explicit approval in the user's own message; deploy to a platform account the user doesn't control; delete projects, domains, or deployments as part of the sweep (that's an owner decision, recorded as an action); disable deployment protection, branch protection, or CI checks to make a patch land faster.
 
-The listed `allowed-tools` are read-only inventory commands. Every merge, `vercel deploy`, `git push`, `heroku config:set`, and `gh api -X PUT` prompts on purpose.
+The listed `allowed-tools` are read-only inventory commands, scoped so no grant prefix-matches a write (`heroku releases -a:*`, never `heroku releases:*`, which would also match `releases:rollback`). Every merge, `vercel deploy`, `git push`, `heroku config:set`, and `gh api -X PUT` prompts on purpose.
 
 ## Step 1 — Inventory and mapping
 

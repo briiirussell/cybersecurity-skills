@@ -3,7 +3,7 @@
 Long tables, payload sets, and code idioms moved out of `owasp-audit` SKILL.md to keep it under the line cap. Each
 section is linked from the checklist item it supports.
 
-## A03: Rails JSON-LD idiom
+## A05: Rails JSON-LD idiom
 
 Inside `<script type="application/ld+json">`, do NOT use `j` / `escape_javascript` for field values. `j` emits `\'`
 and `\$`, which are valid JS but invalid JSON, so `JSON.parse` fails on any field containing an apostrophe or `$`. Use
@@ -21,7 +21,7 @@ this instead:
 `to_json` handles JSON escaping; `json_escape` covers `<>&  ` against `</script>` breakout. Verify with a
 round-trip: `JSON.parse(json_escape(article.to_json))` equals the source hash.
 
-## A04: Configured-but-not-loaded check
+## A06: Configured-but-not-loaded check
 
 Before declaring a security middleware (rate-limit, auth, CSRF, throttle) "already configured," verify the package is
 actually installed, not just that the initializer exists. Initializers wrapped in `if defined? Foo` /
@@ -36,9 +36,9 @@ actually installed, not just that the initializer exists. Initializers wrapped i
 
 For Rails, also verify the middleware is in the runtime stack: `bundle exec rails middleware | grep -i FOO`.
 
-## A05: Security header baseline (for fixes and hardening notes)
+## A02: Security header baseline (for fixes and hardening notes)
 
-Missing headers are **hardening notes** unless you trace an impact (see SKILL.md A05). When recommending values,
+Missing headers are **hardening notes** unless you trace an impact (see SKILL.md A02). When recommending values,
 start here and tune:
 
 | Header | Value |
@@ -62,7 +62,7 @@ Config only tells you what the app intends to send. Proxies, CDNs, and platform 
 headers. The deployed header set is a `needs_validation` item with an owner-run `curl -sI https://<origin>/<path>`
 check unless you actually ran it against an origin you're authorized to probe.
 
-## A05: Rails admin-engine mounts
+## A02: Rails admin-engine mounts
 
 ```bash
 grep -E "mount .+::(Engine|Web|UI)|mount .+::App" config/routes.rb
@@ -75,7 +75,7 @@ which leaves staging, review apps, and preview deploys serving the admin UI anon
 `unless Rails.env.local?` (Rails 7.1+ helper for `development || test`), and add a fail-closed check that refuses
 access when the auth env vars are unset.
 
-## A10: SSRF allow-list bypass set
+## A01: SSRF allow-list bypass set
 
 A real allow-list must reject **all** of these:
 

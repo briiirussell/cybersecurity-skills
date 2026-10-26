@@ -5,42 +5,165 @@ Current versions of all skills. Agents can compare against local versions to che
 | Skill | Version | Last Updated |
 |-------|---------|--------------|
 | agent-supply-chain-audit | 1.0.1 | 2026-10-26 |
-| ai-risk-management | 1.0.3 | 2026-10-26 |
-| api-audit | 1.1.1 | 2026-10-26 |
-| breach-patterns | 1.0.2 | 2026-10-26 |
-| business-logic-testing | 1.0.0 | 2026-10-26 |
+| ai-risk-management | 1.1.0 | 2026-10-26 |
+| api-audit | 1.1.2 | 2026-10-26 |
+| breach-patterns | 1.0.3 | 2026-10-26 |
+| business-logic-testing | 1.0.1 | 2026-10-26 |
 | cloud-audit | 1.1.1 | 2026-10-26 |
 | container-audit | 1.0.1 | 2026-10-26 |
-| crypto-audit | 1.0.1 | 2026-10-26 |
+| crypto-audit | 1.0.2 | 2026-10-26 |
 | csf-mapping | 1.0.1 | 2026-10-26 |
 | dependency-audit | 1.2.1 | 2026-10-26 |
 | disk-forensics | 1.0.1 | 2026-10-26 |
 | finding-triage | 1.1.1 | 2026-10-26 |
 | hipaa-audit | 1.0.1 | 2026-10-26 |
 | iam-audit | 1.0.2 | 2026-10-26 |
-| incident-triage | 1.0.4 | 2026-10-26 |
-| log-watch | 1.0.0 | 2026-10-26 |
+| incident-triage | 1.1.0 | 2026-10-26 |
+| log-watch | 1.0.1 | 2026-10-26 |
 | mobile-audit | 1.0.1 | 2026-10-26 |
 | osint-recon | 1.0.1 | 2026-10-26 |
-| owasp-audit | 1.2.1 | 2026-10-26 |
-| patch-sweep | 1.0.1 | 2026-10-26 |
-| pci-audit | 1.0.1 | 2026-10-26 |
+| owasp-audit | 1.3.0 | 2026-10-26 |
+| patch-sweep | 1.0.2 | 2026-10-26 |
+| pci-audit | 1.0.2 | 2026-10-26 |
 | personal-opsec | 1.0.0 | 2026-10-26 |
 | privacy-engineering | 1.0.2 | 2026-10-26 |
-| prompt-injection | 1.1.1 | 2026-10-26 |
+| prompt-injection | 1.1.2 | 2026-10-26 |
 | recon | 1.0.1 | 2026-10-26 |
 | red-team-engagement | 1.0.1 | 2026-10-26 |
-| scanner-pipeline | 1.0.1 | 2026-10-26 |
+| scanner-pipeline | 1.0.2 | 2026-10-26 |
 | secrets-audit | 1.1.1 | 2026-10-26 |
 | security-comms | 1.0.2 | 2026-10-26 |
 | siem-detection | 1.0.2 | 2026-10-26 |
 | soc-operations | 1.0.3 | 2026-10-26 |
 | threat-hunting | 1.0.3 | 2026-10-26 |
-| threat-modeling | 1.0.2 | 2026-10-26 |
+| threat-modeling | 1.0.3 | 2026-10-26 |
 | vuln-research | 1.0.1 | 2026-10-26 |
-| web-pentest | 1.1.2 | 2026-10-26 |
+| web-pentest | 1.1.3 | 2026-10-26 |
 
 ## Recent Changes
+
+### 1.22.0 (2026-10-26)
+
+incident-triage moves from NIST SP 800-61 Rev. 2 (2012) to **Rev. 3** (April 2025), which `soc-operations` already cited. Rev. 3 drops the four-phase lifecycle and becomes a CSF 2.0 Community Profile, so the methodology changes, not just the citation. Closes #117.
+
+**Changed**
+
+- **incident-triage** (1.1.0):
+  - **Structure:** each step names the CSF 2.0 outcomes it produces (DE.AE, RS.MA, RS.MI, RS.AN, RS.CO, RC.RP, ID.IM), so the report maps onto the organization's CSF profile (`csf-mapping`). The intro explains the Rev. 3 model: Govern, Identify and Protect are preparation; Detect, Respond and Recover are response.
+  - **New Authorization section.** Only read-only listings are pre-approved. Every containment action needs the incident lead's go-ahead, with its blast radius named. Systems out of scope are reported, never touched.
+  - **Step 1 is now "Declare, validate and prioritize".** Confirm against a second source, record the declaration time (clocks often start at discovery), start the IR plan's third parties (including notifying the cyber insurer before outside responders are engaged), and apply escalation criteria.
+  - **Containment** covers revoking credentials and tokens, plus coordinated containment so an attacker who is still active doesn't pivot.
+  - **Evidence preservation** adds hashing at collection, provenance, an action log, and copying cloud and SaaS logs before retention rotates them.
+  - **Analysis** adds a magnitude estimate: known / suspected / ruled out, each with its evidence.
+  - **New Step 6, notification clocks:** GDPR 72h, NIS2 24h/72h/1 month, HIPAA 60 days, SEC 8-K Item 1.05 four business days after materiality, PCI, state laws and contracts. Hands off to `security-comms` and the privacy and compliance skills.
+  - **New Step 7, handoff:** eradication, recovery criteria and lessons learned.
+  - **Report:** scope table, action log with approver, notification-clock table, insurer escalation and a handoff section.
+  - **Description:** names Rev. 3. It narrows 'triage' to 'incident triage' and 'breach' to 'we've been breached' (overlaps with `finding-triage` and `breach-patterns`), and adds 'active incident', 'ransomware' and 'contain the incident'.
+
+### 1.21.0 (2026-10-26)
+
+ai-risk-management's regulatory section is brought up to date. It listed Executive Order 14110 as current, but it was rescinded on 20 January 2025. The EU AI Act section stopped at "phasing in through 2026". Closes #116.
+
+**Changed**
+
+- **ai-risk-management** (1.1.0):
+  - **EU AI Act:**
+    - A date table: prohibitions and AI literacy from 2 Feb 2025, general-purpose AI model obligations from 2 Aug 2025, Article 50 transparency from 2 Aug 2026.
+    - High-risk obligations moved by the 2026 Digital Omnibus on AI: Annex III to 2 Dec 2027 and Annex I products to 2 Aug 2028. Both are marked "(verify)" against EUR-Lex.
+    - New GPAI obligations tier and Code of Practice. The prohibited list now matches Article 5.
+  - **US:**
+    - EO 14110 is marked rescinded.
+    - Current federal policy: EO 14179, America's AI Action Plan (July 2025), and the 11 December 2025 order directing agencies to challenge state AI laws.
+    - A note to cite the AI RMF revision actually used.
+    - State laws, each with its status: the Colorado AI Act's 30 June 2026 date is marked "(verify)", plus NYC LL 144, Illinois BIPA, and California AB 2013 and SB 942.
+  - The section opens with "Status as of October 2026" and says to re-check items marked (verify). The report's regulatory-mapping table gains "Status as of" and "Applies from" columns. References add the GPAI Code of Practice and the US policy documents.
+
+### 1.20.0 (2026-10-26)
+
+owasp-audit now audits against the **OWASP Top 10:2025** ([owasp.org/Top10/2025](https://owasp.org/Top10/2025/)). The checklist is reordered to the new numbering and gains two categories. Every check from the 2021 version is kept and moved to its 2025 home. Closes #115.
+
+**Heads-up:** category IDs in owasp-audit output change. Findings and coverage units are now tagged `A01:2025` … `A10:2025`. If you compare against a 2021-tagged report, use the mapping at the top of the Audit Checklist:
+- SSRF, 2021's A10, is now part of A01.
+- Crypto A02 → A04, Injection A03 → A05, Insecure Design A04 → A06, Misconfiguration A05 → A02, Vulnerable Components A06 → A03.
+- A07–A09 keep their numbers.
+
+**Changed**
+
+- **owasp-audit** (1.3.0):
+  - **A03 Software Supply Chain Failures** replaces Vulnerable Components. It keeps the `npm audit` reachability triage and takes the CI/CD-integrity and lockfile-integrity checks from A08. It adds Subresource Integrity for CDN scripts, install-time code and dependency confusion (handed to `dependency-audit`), and a grep for workflow actions pinned to a branch or tag instead of a SHA.
+  - **A10 Mishandling of Exceptional Conditions** is new:
+    - fail-open `catch` blocks around authorization and signature checks, and policy or IdP outages that default to allow
+    - silent error swallowing and parser errors outside the error boundary (moved from A09)
+    - NaN and missing-value comparisons that fail open
+    - partial failures that leave inconsistent state
+    - one bad request crashing a shared worker
+  - **A09** is renamed Security Logging and *Alerting* Failures. It notes that error paths hidden from monitoring are also A10.
+  - **SSRF** is now a subsection of A01, with the full allow-list bypass set.
+  - The description, intro, report template (`A0X:2025`) and References name the 2025 list.
+  - `references/checklist-details.md` and `references/webhooks-and-parsers.md` headings and anchors are renumbered. Every in-skill link was updated and checked.
+- Cross-references to owasp-audit category numbers updated (PATCH each): **api-audit** (1.1.2), **breach-patterns** (1.0.3), **crypto-audit** (1.0.2), **business-logic-testing** (1.0.1), **threat-modeling** (1.0.3), **web-pentest** (1.1.3).
+- `shared/findings-format.md`, `shared/coverage.schema.json` and `shared/orchestration.md`: examples use `A01:2025` and 2025 numbering. Example text only; no schema rule changed, and 2021-tagged findings still validate.
+- README: owasp-audit row says OWASP Top 10:2025.
+
+### 1.19.11 (2026-10-26)
+
+The lint now fails any `allowed-tools` Bash grant that would pre-approve a write. This rule would have caught the heroku grants fixed in 1.19.7. Repo tooling only; no skill content changes. Closes #118.
+
+**Added**
+
+- `scripts/grant-check.mjs`: checks each `Bash(...)` rule. It fails when the rule:
+  - is unscoped
+  - names a write verb (`delete`, `rollback`, `set`, `push`, `--fix`, ...), matched as whole segments so `get-credential-report`, `--prefix` and `assignment` don't trip it
+  - is a wildcard whose prefix also matches a known destructive command (125 entries across heroku, vercel, gh, git, package managers, and cloud and infra CLIs)
+  - is a wildcard on a bare multi-command CLI (`git:*`, `vercel:*`, `aws:*`)
+  - is a wildcard on a tool that rewrites source files with a flag (`semgrep:*`, `eslint:*`, `terraform fmt:*`)
+- `scripts/test/grant-check.test.mjs`: 8 tests. The 1.19.6 heroku grants and the earlier `git branch:*` and `npm audit:*` grants all fail. Their replacements pass. Every shipped skill's grants pass.
+
+**Changed**
+
+- `scripts/lint-skills.mjs` runs the check on every skill.
+- `docs/security-scanning.md`, `CONTRIBUTING.md` and `CLAUDE.md` describe the rule. They also say where to add a new CLI's destructive subcommands. Report-file flags (`--output`, `--report-path`) are out of scope on purpose. `bundle audit update` is left out because it only refreshes bundler-audit's own advisory database.
+
+### 1.19.10 (2026-10-26)
+
+Example cleanup. Two skill examples used the maintainer's own name as the person who added a suppression. Both now use a neutral placeholder. Closes #114.
+
+**Fixed**
+
+- **log-watch** (1.0.1): the suppression example's `"added_by": "brianna"` is now `"added_by": "jdoe"`. The OWASP LLM Top 10 reference now names the 2025 list (`LLM01:2025`), matching 1.19.8.
+- **scanner-pipeline** (1.0.2): the baseline-entry example's `owner: "@bri"` is now `owner: "@jdoe"`. Found while checking the whole repo for personal names.
+
+The Claude pricing table in log-watch stays as written. It is already dated, framed as assumptions, and says to re-check the pricing page before quoting.
+
+### 1.19.9 (2026-10-26)
+
+pci-audit now targets PCI DSS v4.0.1. The skill said "PCI DSS v4.0 (effective March 2025)", but v4.0 was retired on 31 December 2024; v4.0.1 is the only active version. Closes #113.
+
+**Fixed**
+
+- **pci-audit** (1.0.2):
+  - The description, intro, report header and references now name v4.0.1. A version note says that the requirements v4.0 marked "future-dated" became mandatory on 31 March 2025, so assess against all of them.
+  - MFA for all access into the CDE now cites Req 8.4.2 and says it is mandatory, not "new".
+  - The internal-network encryption line cited Req 4.2.1.1, which is the trusted keys and certificates inventory. It now says Req 4.2.1 mandates strong cryptography only over open, public networks, so encrypting internal links is defense in depth.
+- README: pci-audit row says v4.0.1.
+
+### 1.19.8 (2026-10-26)
+
+Citation fix for prompt-injection. Its References cited "LLM08: Excessive Agency", which is the 2023 numbering. In the OWASP Top 10 for LLM Applications 2025, Excessive Agency is **LLM06** and LLM08 is Vector and Embedding Weaknesses. Closes #112.
+
+**Fixed**
+
+- **prompt-injection** (1.1.2): both LLM Top 10 citations now name the 2025 list. References cite LLM01:2025 Prompt Injection, LLM05:2025 Improper Output Handling (Step 4), LLM06:2025 Excessive Agency, and LLM08:2025 Vector and Embedding Weaknesses (the RAG and memory checks). A note covers the 2023 numbering that older reports use, plus a link to the list. `agent-supply-chain-audit` and `personal-opsec` already used 2025 IDs. `log-watch`'s citation, which has no year, is fixed in 1.19.10.
+
+### 1.19.7 (2026-10-26)
+
+Security fix for patch-sweep's `allowed-tools`. Claude Code permission rules match by prefix, so `Bash(heroku apps:*)`, `Bash(heroku releases:*)` and `Bash(heroku stack:*)` also pre-approved `heroku apps:destroy`, `heroku releases:rollback` and `heroku stack:set` with no prompt. The skill never runs any of them; the grants were broader than the inventory commands it documents. Missed in the 1.19.2 tightening. Closes #111.
+
+**Fixed**
+
+- **patch-sweep** (1.0.2): the three heroku wildcards are replaced with rules for exactly the read-only commands the skill uses: `heroku apps --all --json` (exact), `heroku apps:info`, `heroku domains -a`, `heroku releases -a`, `heroku releases:info`, `heroku pipelines:info`. `heroku stack` is dropped; the stack comes from `apps:info`. The Authorization note now explains why `heroku releases -a:*` is used and `heroku releases:*` is not. The vercel, gh and git grants were rechecked; none prefix-matches a write.
+
+If you run patch-sweep, `heroku domains`, `heroku releases` and `heroku stack` without `-a`, and any rollback or destroy, now ask for approval.
 
 ### 1.19.6 (2026-10-26)
 

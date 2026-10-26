@@ -106,7 +106,7 @@ The #1 API vulnerability by exploitation frequency. Every endpoint that accepts 
 ### API7: Server-Side Request Forgery (SSRF)
 
 - User-controlled URLs passed to server-side fetch — webhook URLs, image-fetch, SSO callback, PDF render, OG-scrape, link unfurling
-- Allow-list checks only the hostname — see `owasp-audit` A10 for the full bypass matrix (9+ patterns including IPv4-mapped IPv6, trailing-dot, cloud metadata, encoded IPs)
+- Allow-list checks only the hostname — see `owasp-audit` A01 SSRF for the full bypass matrix (9+ patterns including IPv4-mapped IPv6, trailing-dot, cloud metadata, encoded IPs)
 - `redirect: "follow"` (default) on fetches with user-controlled URLs lets an attacker bounce through a 302 into the metadata service
 - Webhook delivery from your domain to attacker URL — your server's IP is now their proxy
 
@@ -116,7 +116,7 @@ The #1 API vulnerability by exploitation frequency. Every endpoint that accepts 
 - CORS reflection of the `Origin` header without an allow-list — any origin gets allowed
 - Verbose error responses leaking stack traces, query strings, internal IDs
 - Default OpenAPI / GraphQL introspection exposed in production with full schema
-- Missing security headers — see `owasp-audit` A05 for the full baseline values
+- Missing security headers — see `owasp-audit` A02 for the full baseline values
 - HTTP-only flag missing on session cookies
 
 ### API9: Improper Inventory Management
@@ -153,7 +153,7 @@ The authorization bugs almost always live in a resolver that assumed something e
 
 ## Webhook handler-specific
 
-- Signature verification missing or bypassable (see `owasp-audit` A02 type-coercion + A04 multi-tenant signature N-way matching)
+- Signature verification missing or bypassable (see `owasp-audit` A04 type-coercion + A06 multi-tenant signature N-way matching)
 - Replay attack — no timestamp tolerance or nonce check
 - Endpoint exists at a predictable path (`/webhooks/stripe`) without IP allow-list or signature
 

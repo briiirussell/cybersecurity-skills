@@ -1,16 +1,16 @@
 ---
 name: crypto-audit
-description: "Audit cryptography implementation — algorithm choice, key sizes, KDF parameters, IV/nonce handling, signature verification, randomness, TLS configuration, and key rotation. Deeper than owasp-audit A02. Use when the user mentions 'crypto review,' 'cryptography audit,' 'encryption review,' 'KDF,' 'PBKDF2,' 'Argon2,' 'bcrypt cost,' 'IV reuse,' 'nonce reuse,' 'AES mode,' 'AES-GCM,' 'AES-ECB,' 'signature verification,' 'TLS configuration,' 'cipher suites,' 'key rotation,' 'libsodium,' 'BoringSSL,' or 'is this crypto right.'"
+description: "Audit cryptography implementation — algorithm choice, key sizes, KDF parameters, IV/nonce handling, signature verification, randomness, TLS configuration, and key rotation. Deeper than owasp-audit A04. Use when the user mentions 'crypto review,' 'cryptography audit,' 'encryption review,' 'KDF,' 'PBKDF2,' 'Argon2,' 'bcrypt cost,' 'IV reuse,' 'nonce reuse,' 'AES mode,' 'AES-GCM,' 'AES-ECB,' 'signature verification,' 'TLS configuration,' 'cipher suites,' 'key rotation,' 'libsodium,' 'BoringSSL,' or 'is this crypto right.'"
 allowed-tools: Read, Grep, Glob, WebSearch
 ---
 
 # Crypto Audit — Cryptography Implementation Review
 
-Audit how cryptography is implemented in an application — algorithm choices, parameters, modes, and the implementation patterns that turn good primitives into broken systems. Deeper than `owasp-audit` A02 (which catches the obvious "MD5 password" and "VERIFY_NONE" cases). This skill is for the subtler implementation review.
+Audit how cryptography is implemented in an application — algorithm choices, parameters, modes, and the implementation patterns that turn good primitives into broken systems. Deeper than `owasp-audit` A04 Cryptographic Failures (which catches the obvious "MD5 password" and "VERIFY_NONE" cases). This skill is for the subtler implementation review.
 
 Most crypto failures are not "they used MD5." Most failures are: right primitive, wrong mode (ECB instead of GCM), right algorithm, wrong parameter (PBKDF2 with 1,000 iterations in 2026), right library, wrong call order (init the cipher after the data was loaded).
 
-Cross-references: `owasp-audit` A02 (baseline) + A07 (timing-safe comparison), `secrets-audit` (key storage), `iam-audit` (KMS / HSM patterns).
+Cross-references: `owasp-audit` A04 (baseline) + A07 (timing-safe comparison), `secrets-audit` (key storage), `iam-audit` (KMS / HSM patterns).
 
 ## Don't roll your own
 
@@ -60,7 +60,7 @@ Wrong IV / nonce handling is one of the top three sources of "the crypto looks r
 - **Webhook signatures:** verify the signature BEFORE doing anything else with the body. Many implementations parse-then-verify, leaving a JSON-parsing attack surface
 - Constant-time comparison for the signature byte string
 - Timestamp tolerance window — accept signatures from within ± 5 minutes (Stripe, GitHub, Slack all do this), not "forever" (replay attack)
-- See `owasp-audit` A02 type-coercion in signature paths (`parseInt → NaN`)
+- See `owasp-audit` A04 type-coercion in signature paths (`parseInt → NaN`)
 - Grep for: `jwt.decode` (without subsequent `verify`), `alg: 'none'`, `verify.*sig` without `timingSafeEqual` nearby
 
 ### Randomness
@@ -75,7 +75,7 @@ Wrong IV / nonce handling is one of the top three sources of "the crypto looks r
 
 - **Versions:** TLS 1.3 preferred, TLS 1.2 minimum, refuse TLS 1.0 / 1.1 / SSLv3 / SSLv2
 - **Cipher suites (TLS 1.2):** ECDHE only, AEAD ciphers only (AES-GCM, ChaCha20-Poly1305). Reject CBC, RC4, NULL, EXPORT, anonymous
-- **Certificate validation:** `VERIFY_PEER`, full chain, hostname check enabled (see `owasp-audit` A02 for managed-service caveat)
+- **Certificate validation:** `VERIFY_PEER`, full chain, hostname check enabled (see `owasp-audit` A04 for managed-service caveat)
 - **Certificate pinning:** for high-trust connections (mobile apps to your backend, sensitive internal services); pair with backup pin (rotation)
 - **HSTS preload:** verified every subdomain serves HTTPS first; preload submission is sticky (months to remove)
 - **OCSP stapling** for performance and privacy

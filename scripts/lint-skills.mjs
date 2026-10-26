@@ -9,6 +9,10 @@
  *   - `description` outside 200–1024 characters
  *   - SKILL.md is 500 lines or longer
  *   - `allowed-tools` pre-approves WebFetch together with unscoped Bash
+ *   - a Bash grant pre-approves a write: unscoped Bash, a write verb in the rule, a prefix
+ *     that also matches a destructive subcommand (`heroku releases:*` → `releases:rollback`),
+ *     a wildcard on a bare multi-command CLI, or a wildcard on a source-rewriting tool
+ *     (see scripts/grant-check.mjs)
  *   - a backticked skill name in a cross-reference context does not resolve to skills/<name>/
  *   - a relative markdown link does not resolve (links to shared copies under
  *     references/ are allowed even before the build has copied them)
@@ -21,6 +25,7 @@
 
 import { readFileSync, readdirSync, existsSync, statSync } from "node:fs";
 import { join, dirname, basename, normalize, relative } from "node:path";
+import { checkGrant } from "./grant-check.mjs";
 
 const ROOT = new URL("..", import.meta.url).pathname;
 const SKILLS_DIR = join(ROOT, "skills");
@@ -193,6 +198,9 @@ function lintSkill(name) {
     const tools = parseAllowedTools(meta["allowed-tools"]);
     if (tools.includes("WebFetch") && tools.some(isUnscopedBash))
       err(file, "allowed-tools pre-approves WebFetch together with unscoped Bash; scope Bash, e.g. Bash(dig:*)");
+    for (const tool of tools)
+      for (const reason of checkGrant(tool))
+        err(file, `allowed-tools ${tool}: ${reason}. Use an exact rule or a narrower read-only prefix`);
   }
 
   // Body checks run on prose only (fenced code removed).
