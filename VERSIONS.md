@@ -5,7 +5,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | Skill | Version | Last Updated |
 |-------|---------|--------------|
 | agent-supply-chain-audit | 1.0.1 | 2026-10-26 |
-| ai-risk-management | 1.0.3 | 2026-10-26 |
+| ai-risk-management | 1.1.0 | 2026-10-26 |
 | api-audit | 1.1.2 | 2026-10-26 |
 | breach-patterns | 1.0.3 | 2026-10-26 |
 | business-logic-testing | 1.0.1 | 2026-10-26 |
@@ -41,6 +41,24 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.1.3 | 2026-10-26 |
 
 ## Recent Changes
+
+### 1.21.0 (2026-10-26)
+
+ai-risk-management's regulatory section is brought up to date. It listed Executive Order 14110 as current, but it was rescinded on 20 January 2025. The EU AI Act section stopped at "phasing in through 2026". Closes #116.
+
+**Changed**
+
+- **ai-risk-management** (1.1.0):
+  - **EU AI Act:**
+    - A date table: prohibitions and AI literacy from 2 Feb 2025, general-purpose AI model obligations from 2 Aug 2025, Article 50 transparency from 2 Aug 2026.
+    - High-risk obligations moved by the 2026 Digital Omnibus on AI: Annex III to 2 Dec 2027 and Annex I products to 2 Aug 2028. Both are marked "(verify)" against EUR-Lex.
+    - New GPAI obligations tier and Code of Practice. The prohibited list now matches Article 5.
+  - **US:**
+    - EO 14110 is marked rescinded.
+    - Current federal policy: EO 14179, America's AI Action Plan (July 2025), and the 11 December 2025 order directing agencies to challenge state AI laws.
+    - A note to cite the AI RMF revision actually used.
+    - State laws, each with its status: the Colorado AI Act's 30 June 2026 date is marked "(verify)", plus NYC LL 144, Illinois BIPA, and California AB 2013 and SB 942.
+  - The section opens with "Status as of October 2026" and says to re-check items marked (verify). The report's regulatory-mapping table gains "Status as of" and "Applies from" columns. References add the GPAI Code of Practice and the US policy documents.
 
 ### 1.20.0 (2026-10-26)
 
