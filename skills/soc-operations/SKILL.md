@@ -1,6 +1,6 @@
 ---
 name: soc-operations
-description: "Build, run, and improve a Security Operations Center — alert prioritization, runbook authoring, escalation criteria, on-call structure, alert tuning workflow, MTTD / MTTR / fidelity KPIs, analyst tiering, and shift handoffs. Use when the user mentions 'SOC,' 'security operations,' 'SOC analyst,' 'alert triage workflow,' 'runbook,' 'escalation,' 'on-call,' 'SOC tiering,' 'tier 1 / tier 2,' 'MTTD,' 'MTTR,' 'alert fatigue,' 'alert tuning,' 'shift handoff,' 'SOAR,' or wants to design or improve a security operations team."
+description: "Build, run, and improve a Security Operations Center — alert prioritization, runbook authoring, escalation criteria, on-call structure, alert tuning workflow, MTTD / MTTR / fidelity KPIs, analyst tiering, and shift handoffs. Use when the user mentions 'SOC,' 'security operations,' 'SOC analyst,' 'alert triage workflow,' 'runbook,' 'escalation,' 'on-call,' 'SOC tiering,' 'tier 1 / tier 2,' 'MTTD,' 'MTTR,' 'alert fatigue,' 'shift handoff,' 'SOAR,' or wants to design or improve a security operations team."
 allowed-tools: Read, Grep, Glob, WebSearch
 ---
 
