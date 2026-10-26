@@ -5,68 +5,40 @@ Current versions of all skills. Agents can compare against local versions to che
 | Skill | Version | Last Updated |
 |-------|---------|--------------|
 | agent-supply-chain-audit | 1.0.1 | 2026-10-26 |
-| ai-risk-management | 1.0.2
-api-audit=1.1.1
-breach-patterns=1.0.2
-cloud-audit=1.1.1
-container-audit=1.0.1
-crypto-audit=1.0.1
-csf-mapping=1.0.1
-dependency-audit=1.2.1
-disk-forensics=1.0.1
-finding-triage=1.1.1
-hipaa-audit=1.0.1
-iam-audit=1.0.2
-incident-triage=1.0.4
-mobile-audit=1.0.1
-osint-recon=1.0.1
-owasp-audit=1.2.1
-pci-audit=1.0.1
-privacy-engineering=1.0.1
-prompt-injection=1.1.1
-recon=1.0.1
-red-team-engagement=1.0.1
-secrets-audit=1.1.1
-security-comms=1.0.1
-siem-detection=1.0.2
-soc-operations=1.0.2
-threat-hunting=1.0.3
-threat-modeling=1.0.1
-vuln-research=1.0.1
-web-pentest=1.1.1 | 2026-10-26 |
-| api-audit | 1.1.0 | 2026-10-26 |
-| breach-patterns | 1.0.1 | 2026-10-26 |
+| ai-risk-management | 1.0.2 | 2026-10-26 |
+| api-audit | 1.1.1 | 2026-10-26 |
+| breach-patterns | 1.0.2 | 2026-10-26 |
 | business-logic-testing | 1.0.0 | 2026-10-26 |
-| cloud-audit | 1.1.0 | 2026-10-26 |
-| container-audit | 1.0.0 | 2026-05-26 |
-| crypto-audit | 1.0.0 | 2026-05-26 |
-| csf-mapping | 1.0.0 | 2026-05-26 |
-| dependency-audit | 1.2.0 | 2026-10-26 |
-| disk-forensics | 1.0.0 | 2026-05-26 |
-| finding-triage | 1.1.0 | 2026-10-26 |
-| hipaa-audit | 1.0.0 | 2026-05-26 |
-| iam-audit | 1.0.1 | 2026-10-26 |
-| incident-triage | 1.0.3 | 2026-10-26 |
+| cloud-audit | 1.1.1 | 2026-10-26 |
+| container-audit | 1.0.1 | 2026-10-26 |
+| crypto-audit | 1.0.1 | 2026-10-26 |
+| csf-mapping | 1.0.1 | 2026-10-26 |
+| dependency-audit | 1.2.1 | 2026-10-26 |
+| disk-forensics | 1.0.1 | 2026-10-26 |
+| finding-triage | 1.1.1 | 2026-10-26 |
+| hipaa-audit | 1.0.1 | 2026-10-26 |
+| iam-audit | 1.0.2 | 2026-10-26 |
+| incident-triage | 1.0.4 | 2026-10-26 |
 | log-watch | 1.0.0 | 2026-10-26 |
-| mobile-audit | 1.0.0 | 2026-05-26 |
-| osint-recon | 1.0.0 | 2026-05-26 |
-| owasp-audit | 1.2.0 | 2026-10-26 |
+| mobile-audit | 1.0.1 | 2026-10-26 |
+| osint-recon | 1.0.1 | 2026-10-26 |
+| owasp-audit | 1.2.1 | 2026-10-26 |
 | patch-sweep | 1.0.0 | 2026-10-26 |
-| pci-audit | 1.0.0 | 2026-05-26 |
+| pci-audit | 1.0.1 | 2026-10-26 |
 | personal-opsec | 1.0.0 | 2026-10-26 |
-| privacy-engineering | 1.0.0 | 2026-05-26 |
-| prompt-injection | 1.1.0 | 2026-10-26 |
-| recon | 1.0.0 | 2026-05-26 |
-| red-team-engagement | 1.0.0 | 2026-05-26 |
+| privacy-engineering | 1.0.1 | 2026-10-26 |
+| prompt-injection | 1.1.1 | 2026-10-26 |
+| recon | 1.0.1 | 2026-10-26 |
+| red-team-engagement | 1.0.1 | 2026-10-26 |
 | scanner-pipeline | 1.0.0 | 2026-10-26 |
-| secrets-audit | 1.1.0 | 2026-10-26 |
-| security-comms | 1.0.0 | 2026-05-26 |
-| siem-detection | 1.0.1 | 2026-10-26 |
-| soc-operations | 1.0.1 | 2026-10-26 |
-| threat-hunting | 1.0.2 | 2026-10-26 |
-| threat-modeling | 1.0.0 | 2026-05-26 |
-| vuln-research | 1.0.0 | 2026-05-26 |
-| web-pentest | 1.1.0 | 2026-10-26 |
+| secrets-audit | 1.1.1 | 2026-10-26 |
+| security-comms | 1.0.1 | 2026-10-26 |
+| siem-detection | 1.0.2 | 2026-10-26 |
+| soc-operations | 1.0.2 | 2026-10-26 |
+| threat-hunting | 1.0.3 | 2026-10-26 |
+| threat-modeling | 1.0.1 | 2026-10-26 |
+| vuln-research | 1.0.1 | 2026-10-26 |
+| web-pentest | 1.1.1 | 2026-10-26 |
 
 ## Recent Changes
 
