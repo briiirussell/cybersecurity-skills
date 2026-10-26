@@ -39,14 +39,14 @@ Every skill follows the [Anthropic skill creator guidelines](https://code.claude
 ---
 name: skill-name                    # Lowercase, hyphens, max 64 chars
 description: "What it does and when to use it. 200-1024 chars. Include trigger phrases."
-allowed-tools: Bash, Read, Write    # Tools the skill can use
+allowed-tools: Read, Grep, Glob     # Pre-approved: run WITHOUT a permission prompt
 ---
 ```
 
 **Frontmatter fields:**
 - `name` — Slug used for `/skill-name` invocation. Lowercase + hyphens only.
 - `description` — Explains WHAT the skill does and WHEN to use it. Claude uses this to decide automatic invocation. Be "pushy" to combat undertriggering.
-- `allowed-tools` — Comma-separated list of tools the skill can access.
+- `allowed-tools` — Tools that run **without a permission prompt** while the skill is active. It is a pre-approval, **not** an access list or ceiling: unlisted tools stay callable and go through the user's normal permission settings. Default `Read, Grep, Glob`. Add `Bash` only scoped to a read-only command prefix (`Bash(trivy fs:*)`, `Bash(dig:*)`); use exact rules where a wildcard would also match a destructive sub-mode (`Bash(npm audit --json)`, not `Bash(npm audit:*)`). Never pre-approve active scanning, exploitation, history rewrites, or state changes. Never pair `WebFetch` with unscoped `Bash`. Add `Write` only when the skill's main output is a file. Cursor/Codex adapters drop this field entirely.
 - `disable-model-invocation` — Set `true` for manual-only skills (e.g., deploy).
 - `user-invocable` — Set `false` for background knowledge only.
 

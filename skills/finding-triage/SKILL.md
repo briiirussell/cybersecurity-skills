@@ -1,7 +1,7 @@
 ---
 name: finding-triage
 description: "Triage a single security finding — from a scanner, audit, advisory, report, or a findings.json record — to a defensible disposition with calibrated severity, a mitigation plan, false-positive justification, or accepted-risk writeup. Use when the user mentions 'triage this finding,' 'is this a real vulnerability,' 'mitigation plan,' 'false positive,' 'accept this risk,' 'compensating controls,' 'risk justification,' 'security ticket,' 'CVSS this,' 'what severity is this,' 'is this really high,' 'severity calibration,' 'needs validation,' 'hardening note,' 'findings.json,' 'should we fix this,' 'disposition,' 'sign off on,' or has a single security finding and needs to decide what to do."
-allowed-tools: Read, Grep, Glob, Bash, WebSearch
+allowed-tools: Read, Grep, Glob, WebSearch
 ---
 
 # Finding Triage — Single-Finding Disposition with Defensible Justification

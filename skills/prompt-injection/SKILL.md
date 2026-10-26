@@ -1,7 +1,7 @@
 ---
 name: prompt-injection
 description: "Audit applications for AI prompt injection, agent security, and LLM permission boundary vulnerabilities. Use when the user mentions 'prompt injection,' 'LLM security,' 'AI security,' 'jailbreak,' 'indirect prompt injection,' 'prompt leaking,' 'AI red team,' 'LLM vulnerabilities,' 'AI input validation,' 'system prompt extraction,' 'agent security,' 'MCP security,' 'AI permissions,' 'AI privilege escalation,' or needs to secure any application with AI features, AI agents, or LLM integrations."
-allowed-tools: Read, Grep, Glob, Bash, Write, WebSearch
+allowed-tools: Read, Grep, Glob, WebSearch
 ---
 
 # Prompt Injection — AI/LLM Security Audit

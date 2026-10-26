@@ -1,7 +1,7 @@
 ---
 name: cloud-audit
 description: "Audit cloud infrastructure (AWS, GCP, Azure) and PaaS deployment platforms (Vercel, Netlify, Heroku, Render, Railway, Fly) for misconfigurations, excessive permissions, stale or manual production deploys, and security gaps. Use when the user mentions 'cloud security,' 'cloud audit,' 'AWS security,' 'GCP security,' 'Azure security,' 'IAM audit,' 'S3 bucket,' 'cloud misconfiguration,' 'cloud hardening,' 'Vercel security,' 'Heroku audit,' 'Render audit,' 'PaaS security,' 'is production built from main,' 'old vercel.app still live,' 'preview deployments exposed,' 'Supabase RLS,' or needs to review cloud or deployment-platform security."
-allowed-tools: Bash, Read, Write, Grep, Glob, WebSearch
+allowed-tools: Read, Grep, Glob, WebSearch, Bash(aws iam get-account-summary:*), Bash(aws iam list-users:*), Bash(aws iam get-credential-report:*), Bash(aws s3api list-buckets:*), Bash(aws s3api get-public-access-block:*), Bash(aws s3api get-bucket-policy:*), Bash(aws s3api get-bucket-encryption:*), Bash(gcloud projects get-iam-policy:*), Bash(gcloud iam service-accounts list:*), Bash(az role assignment list:*), Bash(az ad user list:*)
 ---
 
 # Cloud Audit — Cloud Infrastructure Security Review

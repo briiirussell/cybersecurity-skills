@@ -1,7 +1,7 @@
 ---
 name: incident-triage
 description: "Guide rapid triage and initial response to security incidents following NIST SP 800-61 methodology. Use when the user mentions 'incident response,' 'security incident,' 'triage,' 'we've been hacked,' 'breach,' 'compromised,' 'malware detected,' 'suspicious activity,' 'IOC,' 'indicators of compromise,' or needs help handling a security event."
-allowed-tools: Bash, Read, Write, Grep, Glob, WebSearch
+allowed-tools: Read, Grep, Glob, WebSearch, Bash(ps:*), Bash(netstat:*), Bash(lsof:*), Bash(who:*)
 ---
 
 # Incident Triage — Security Incident Response
