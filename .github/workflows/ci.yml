@@ -5,6 +5,9 @@ on:
     branches: [development, main]
   push:
     branches: [development, main]
+  # Weekly on main, so new SkillSpector rules and upstream drift show up without waiting for a PR.
+  schedule:
+    - cron: "41 6 * * 1" # Mondays 06:41 UTC
   workflow_dispatch:
 
 # Least privilege by default; only the SkillSpector job can write code-scanning results.

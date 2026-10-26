@@ -42,6 +42,20 @@ Current versions of all skills. Agents can compare against local versions to che
 
 ## Recent Changes
 
+### 1.23.3 (2026-10-26)
+
+Weekly checks for problems that show up without a PR: broken external links, new SkillSpector rules, and outdated action pins. Repo tooling only; no skill content changes. Closes #122.
+
+**Added**
+
+- `.github/workflows/links.yml`: every Monday, lychee (pinned action and binary) checks every link in the README, `CONTRIBUTING.md`, docs, `shared/` and skills, internal `#anchors` included. 403 and 429 count as OK, since some sites block or rate-limit CI runners. A failing run opens or updates one `broken-links` issue, and the next clean run closes it. It runs on a schedule rather than on PRs because external sites break on their own timeline. It can also be run on demand. A local run against v1.23.2 found 373 links and 0 errors.
+- `.github/dependabot.yml`: one grouped PR a week against `development` for the SHA-pinned GitHub Actions. Those PRs skip the version-bump check (#120).
+
+**Changed**
+
+- `ci.yml` also runs every Monday on `main` (the full workflow, including SkillSpector and the code-scanning upload).
+- `docs/security-scanning.md` has a new "Scheduled checks" section. It notes that `SKILLSPECTOR_REF` and `CLAUDE_CODE_VERSION` are still bumped by hand. `CLAUDE.md` lists the new files.
+
 ### 1.23.2 (2026-10-26)
 
 CI now runs Claude Code's own plugin validator, and the repo's checkers get self-tests, so none of them can quietly stop catching problems. Repo tooling plus one README line; no skill content changes. Closes #121.

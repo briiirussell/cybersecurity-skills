@@ -1,0 +1,15 @@
+# Keeps the SHA-pinned GitHub Actions current. Dependabot PRs skip the version-bump
+# check in CI; the pin changes ride along with the next versioned release.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: development
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: "ci"
