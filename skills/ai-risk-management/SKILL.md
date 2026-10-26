@@ -8,7 +8,7 @@ allowed-tools: Read, Grep, Glob, WebSearch
 
 `prompt-injection` covers the AI security slice — attackers manipulating LLM inputs. This skill covers everything else risk-related about deploying AI / ML systems: governance, fairness, robustness, transparency, monitoring, incident response specific to AI failures, third-party model risk, and compliance with the emerging AI regulatory landscape.
 
-The framing is NIST AI RMF 1.0 (released 2023) — the most widely-adopted voluntary framework — plus the regulatory layer (EU AI Act, US executive orders, sector-specific guidance). Use this skill when you are deploying AI features beyond a chatbot wrapper, when a regulator asks "how do you govern your AI," or when something has gone wrong with an AI system in production.
+The framing is NIST AI RMF 1.0 (released 2023) — the most widely-adopted voluntary framework — plus the regulatory layer (EU AI Act, US federal policy and state laws, sector-specific guidance). Use this skill when you are deploying AI features beyond a chatbot wrapper, when a regulator asks "how do you govern your AI," or when something has gone wrong with an AI system in production.
 
 Cross-references: `prompt-injection` for prompt-injection / LLM-specific security attacks; `threat-modeling` for design-time AI risk modeling; `incident-triage` and `breach-patterns` for AI-related incident response patterns; `csf-mapping` for the broader governance frame that AI RMF sits within.
 
@@ -133,22 +133,43 @@ The persistent layer that makes the above work over time.
 
 ## Regulatory layer (high level — counsel determines specifics)
 
-### EU AI Act (in force 2024, enforcement phasing in through 2026)
+Status as of **October 2026**. Regulatory dates move; state the "as of" date in the report and re-check anything marked (verify) against the primary source before relying on it.
+
+### EU AI Act (Regulation (EU) 2024/1689)
 
 Risk-tiered framework:
 
-- **Prohibited** — social scoring by governments, certain biometric categorization, manipulative AI. Do not deploy
-- **High-risk** — employment / education / credit / law enforcement / critical infrastructure / certain public services. Required: risk management system, data governance, technical documentation, transparency, human oversight, accuracy / robustness, registration in EU database, conformity assessment
-- **Limited risk** — chatbots, deepfakes. Required: transparency (tell users they are interacting with AI; label AI-generated content)
-- **Minimal risk** — most current AI applications. Voluntary codes of conduct
+- **Prohibited** — social scoring, manipulative or exploitative AI, untargeted facial-image scraping, emotion recognition at work and school, certain biometric categorization and real-time remote biometric ID. Do not deploy
+- **High-risk** — Annex III uses (employment, education, credit, essential services, law enforcement, migration, critical infrastructure) and AI in Annex I regulated products. Required: risk management system, data governance, technical documentation, logging, transparency, human oversight, accuracy / robustness / cybersecurity, registration in the EU database, conformity assessment
+- **Transparency (Article 50)** — chatbots, deepfakes, AI-generated content. Tell users they are interacting with AI; mark synthetic content in a machine-readable way
+- **General-purpose AI (GPAI) models** — providers keep technical documentation, publish a training-content summary, and have a copyright policy; models with systemic risk add evaluations, adversarial testing, incident reporting, and cybersecurity. The GPAI Code of Practice is the usual way to show compliance
+- **Minimal risk** — most AI applications. Voluntary codes of conduct
+
+Timeline:
+
+| Date | What applies |
+|---|---|
+| 1 Aug 2024 | Entry into force |
+| 2 Feb 2025 | Prohibited practices; AI literacy duty for providers and deployers |
+| 2 Aug 2025 | GPAI model obligations; governance and penalties |
+| 2 Aug 2026 | Article 50 transparency obligations; most remaining provisions |
+| 2 Dec 2027 | Annex III high-risk obligations — moved from 2 Aug 2026 by the 2026 Digital Omnibus on AI (verify against EUR-Lex) |
+| 2 Aug 2028 | High-risk AI in Annex I products — moved from 2 Aug 2027 by the same amendment (verify) |
+
+The Omnibus also changed other details (a grace period for machine-readable marking on systems already on the market, new prohibited categories). Check the consolidated text on EUR-Lex rather than summaries.
 
 ### US (federal patchwork)
 
-- Executive Order 14110 (2023) — AI safety, model reporting, NIST guidance development
+- **Executive Order 14110 (2023) was rescinded on 20 January 2025.** Don't cite it as current. Federal policy since then: EO 14179 (January 2025) and America's AI Action Plan (July 2025), which favor deregulation, and an EO of 11 December 2025 directing agencies to challenge state AI laws seen as burdensome (it names Colorado's) through an AI Litigation Task Force. Its effect on any given state law is contested and may be in litigation (verify)
+- The Action Plan directed NIST to revise the AI RMF. Cite the revision you actually used
 - FTC enforcement under unfair / deceptive practices authority — particularly for AI claims and AI used in pricing / hiring / housing
 - EEOC enforcement for employment AI
 - Sector-specific (HUD for housing, CFPB for credit, FDA for medical AI)
-- State laws (Colorado AI Act, NYC bias audit for AEDT, Illinois BIPA for biometrics, California AB-2013 / SB-942)
+- State laws — still in force unless a court or the legislature says otherwise:
+  - Colorado AI Act (SB 24-205) — effective date pushed to 30 June 2026, with amendments expected; confirm the current text and date with the General Assembly (verify)
+  - NYC Local Law 144 bias audits for automated employment decision tools
+  - Illinois BIPA for biometrics
+  - California AB 2013 (training-data transparency) and SB 942 (AI content provenance)
 
 ### Standards (voluntary but referenced)
 
@@ -191,8 +212,10 @@ Risk-tiered framework:
 - [ ] Decommissioning plans exist
 
 ### Regulatory mapping (if applicable)
-| Regulation | Status | Action items |
-|------------|--------|--------------|
+Status as of: [date]
+
+| Regulation | Status | Applies from | Action items |
+|------------|--------|--------------|--------------|
 
 ### References / evidence
 [Links to model cards, eval reports, audit logs]
@@ -212,7 +235,9 @@ Disposition rule (Fixed / Deferred / Accepted Risk) per `owasp-audit`. AI accept
 
 - **NIST AI RMF 1.0** — `nist.gov/itl/ai-risk-management-framework` (foundational)
 - **NIST AI RMF Generative AI Profile** — addendum specific to generative AI
-- **EU AI Act** — `artificialintelligenceact.eu` (community-maintained guide) and official text via EUR-Lex
+- **EU AI Act** — Regulation (EU) 2024/1689 and the 2026 Digital Omnibus amendment, consolidated text via EUR-Lex; `artificialintelligenceact.eu` (community-maintained guide)
+- **GPAI Code of Practice** — EU AI Office, for general-purpose AI model providers
+- **America's AI Action Plan** (July 2025) and the 11 December 2025 EO on state AI laws — `whitehouse.gov`
 - **NIST AI 100-1, 100-2** — companion documents
 - **ISO/IEC 42001** — AI management system standard
 - **OECD AI Principles** — international reference
