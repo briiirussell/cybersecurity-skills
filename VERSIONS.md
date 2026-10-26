@@ -27,7 +27,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | pci-audit | 1.0.1 | 2026-10-26 |
 | personal-opsec | 1.0.0 | 2026-10-26 |
 | privacy-engineering | 1.0.2 | 2026-10-26 |
-| prompt-injection | 1.1.1 | 2026-10-26 |
+| prompt-injection | 1.1.2 | 2026-10-26 |
 | recon | 1.0.1 | 2026-10-26 |
 | red-team-engagement | 1.0.1 | 2026-10-26 |
 | scanner-pipeline | 1.0.1 | 2026-10-26 |
@@ -41,6 +41,14 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.1.2 | 2026-10-26 |
 
 ## Recent Changes
+
+### 1.19.8 (2026-10-26)
+
+Citation fix for prompt-injection. Its References cited "LLM08: Excessive Agency", which is the 2023 numbering. In the OWASP Top 10 for LLM Applications 2025, Excessive Agency is **LLM06** and LLM08 is Vector and Embedding Weaknesses. Closes #112.
+
+**Fixed**
+
+- **prompt-injection** (1.1.2): both LLM Top 10 citations now name the 2025 list. References cite LLM01:2025 Prompt Injection, LLM05:2025 Improper Output Handling (Step 4), LLM06:2025 Excessive Agency, and LLM08:2025 Vector and Embedding Weaknesses (the RAG and memory checks). A note covers the 2023 numbering that older reports use, plus a link to the list. `agent-supply-chain-audit` and `personal-opsec` already used 2025 IDs. `log-watch`'s citation, which has no year, is fixed in 1.19.10.
 
 ### 1.19.7 (2026-10-26)
 
