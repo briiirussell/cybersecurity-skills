@@ -15,7 +15,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | csf-mapping | 1.0.0 | 2026-05-26 |
 | dependency-audit | 1.1.0 | 2026-05-26 |
 | disk-forensics | 1.0.0 | 2026-05-26 |
-| finding-triage | 1.0.0 | 2026-05-26 |
+| finding-triage | 1.1.0 | 2026-10-26 |
 | hipaa-audit | 1.0.0 | 2026-05-26 |
 | iam-audit | 1.0.1 | 2026-10-26 |
 | incident-triage | 1.0.2 | 2026-10-26 |
@@ -41,6 +41,27 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.0.0 | 2026-05-26 |
 
 ## Recent Changes
+
+### 1.11.0 (2026-10-26)
+
+finding-triage gets severity calibration and structured input. This is the first skill to adopt the shared findings foundation from 1.4.0.
+
+**Changed**
+
+- **finding-triage** (1.1.0)
+  - **Step 2: the boundary + result gate.** A finding must name six things: the lower-trust principal, the input it controls, the intended control, the boundary crossed, the affected principal or resource, and a concrete observed result. Missing any one makes it a hardening note or a needs-validation item. (#63)
+  - **Step 3: severity calibration.**
+    - Severity anchors: high fully defeats an explicit control with real consequences; medium only weakens one.
+    - `overall ≤ demonstrated impact`.
+    - An over-rating list: self-XSS, missing headers, a lone open redirect, "could matter if chained", anything that already needs admin.
+    - A High/Critical acceptance checklist.
+    - The SLA column is kept separate from severity.
+    - Full detail in `references/severity-calibration.md`. (#63)
+  - **Defense-in-depth is no longer Low.** A gap where another layer already stops the attack is now a **Hardening note**, outside the findings list. (#63)
+  - **Verdict vocabulary:** accepts `confirmed` / `needs_validation` / `rejected` from any audit skill. Severity applies only to `confirmed`. (#62)
+  - **Structured input:** accepts a `findings.json` record by fingerprint, using the shared schema and validator now shipped in `references/`. (#64)
+  - **New dispositions:** `Mitigated (platform/config)` and `Requires major migration`, alongside Fixed / Deferred / Accepted Risk / False Positive. These came from the October 2026 field sweep (#81).
+- README: finding-triage row updated.
 
 ### 1.10.0 (2026-10-26)
 
