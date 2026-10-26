@@ -4,7 +4,8 @@ Current versions of all skills. Agents can compare against local versions to che
 
 | Skill | Version | Last Updated |
 |-------|---------|--------------|
-| ai-risk-management | 1.0.0 | 2026-05-26 |
+| agent-supply-chain-audit | 1.0.0 | 2026-10-26 |
+| ai-risk-management | 1.0.1 | 2026-10-26 |
 | api-audit | 1.0.0 | 2026-05-26 |
 | breach-patterns | 1.0.0 | 2026-05-26 |
 | cloud-audit | 1.0.0 | 2026-05-26 |
@@ -16,7 +17,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | finding-triage | 1.0.0 | 2026-05-26 |
 | hipaa-audit | 1.0.0 | 2026-05-26 |
 | iam-audit | 1.0.0 | 2026-05-26 |
-| incident-triage | 1.0.0 | 2026-05-26 |
+| incident-triage | 1.0.1 | 2026-10-26 |
 | mobile-audit | 1.0.0 | 2026-05-26 |
 | osint-recon | 1.0.0 | 2026-05-26 |
 | owasp-audit | 1.1.0 | 2026-05-26 |
@@ -29,12 +30,32 @@ Current versions of all skills. Agents can compare against local versions to che
 | security-comms | 1.0.0 | 2026-05-26 |
 | siem-detection | 1.0.0 | 2026-05-26 |
 | soc-operations | 1.0.0 | 2026-05-26 |
-| threat-hunting | 1.0.0 | 2026-05-26 |
+| threat-hunting | 1.0.1 | 2026-10-26 |
 | threat-modeling | 1.0.0 | 2026-05-26 |
 | vuln-research | 1.0.0 | 2026-05-26 |
 | web-pentest | 1.0.0 | 2026-05-26 |
 
 ## Recent Changes
+
+### 1.5.0 (2026-10-26)
+
+New skill: **agent-supply-chain-audit**. Coding-agent extensions are now a supply-chain surface that runs with your privileges and almost no review. NVIDIA's SkillSpector cites research finding vulnerabilities in about a quarter of 31k published skills, with about 5% likely malicious.
+
+**Added**
+
+- **agent-supply-chain-audit** (1.0.0). Audits the skills, plugins, marketplaces, hooks, settings, MCP servers, and instruction files (`CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.cursor/rules`, `copilot-instructions.md`) that Claude Code, Cursor, Codex, Gemini CLI and Copilot load, at both project and user level.
+  - Inventory with source and pin for every extension.
+  - Content checks, each with a grep and the matching SkillSpector rule ID: hidden instructions, invisible Unicode, agent snooping, exfiltration wording, anti-refusal language, `curl | bash`, shipped `.pyc` files, persistence writes.
+  - Hooks and settings review: `defaultMode`, `permissions.allow`, `apiKeyHelper`, hooks that call out to the network.
+  - MCP pinning and tool-definition diffing to catch rug pulls.
+  - Optional SkillSpector pass. Only `--no-llm` is pre-approved, because LLM mode sends file contents to a provider.
+  - Read-only. Output is an inventory table plus findings in the shared `findings.json` format, with a SAFE / CAUTION / DO NOT INSTALL verdict per item. (#66)
+
+**Changed**
+
+- `ai-risk-management` (1.0.1): new "AI coding agents and extensions" row in the AI inventory, pointing to agent-supply-chain-audit.
+- `incident-triage` (1.0.1), `threat-hunting` (1.0.1): cross-references to agent-supply-chain-audit.
+- README: added to the AI Security family, the skill table, crossovers, and Where to start.
 
 ### 1.4.0 (2026-10-26)
 

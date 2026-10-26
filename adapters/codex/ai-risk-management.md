@@ -37,6 +37,7 @@ Before assessment, build the inventory. Most organizations underestimate how muc
 | **Embedded AI in products you ship** | Suggested responses, smart defaults, AI sorting / ranking |
 | **AI in HR / hiring** | Resume screening, candidate matching, performance evaluation — high regulatory exposure |
 | **AI in customer-facing decisions** | Pricing, eligibility, content moderation, ad targeting — high regulatory exposure |
+| **AI coding agents and extensions** | Claude Code, Cursor, Codex, Gemini CLI, Copilot — and the skills, plugins, hooks, MCP servers, and `CLAUDE.md` / `AGENTS.md` files they load with developer privileges; audit with `agent-supply-chain-audit` |
 
 For each, record: vendor (if any), training data source, deployment context, who it affects, the decision it informs, how decisions are reviewed.
 
