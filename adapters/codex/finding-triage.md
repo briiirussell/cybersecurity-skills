@@ -1,20 +1,51 @@
 # finding-triage
 
-> Triage a single security finding — from a scanner, audit, advisory, or report — to a defensible disposition with a mitigation plan, false-positive justification, or accepted-risk writeup. Use when the user mentions 'triage this finding,' 'is this a real vulnerability,' 'mitigation plan,' 'false positive,' 'accept this risk,' 'compensating controls,' 'risk justification,' 'security ticket,' 'CVSS this,' 'should we fix this,' 'disposition,' 'sign off on,' or has a single security finding and needs to decide what to do.
+> Triage a single security finding — from a scanner, audit, advisory, report, or a findings.json record — to a defensible disposition with calibrated severity, a mitigation plan, false-positive justification, or accepted-risk writeup. Use when the user mentions 'triage this finding,' 'is this a real vulnerability,' 'mitigation plan,' 'false positive,' 'accept this risk,' 'compensating controls,' 'risk justification,' 'security ticket,' 'CVSS this,' 'what severity is this,' 'is this really high,' 'severity calibration,' 'needs validation,' 'hardening note,' 'findings.json,' 'should we fix this,' 'disposition,' 'sign off on,' or has a single security finding and needs to decide what to do.
 
 # Finding Triage — Single-Finding Disposition with Defensible Justification
 
 Every other skill in this repo *generates* findings. This skill *closes the loop* — for a single finding, walk through whether it's real, what severity it deserves in your context, and what to do about it. Output is a complete ticket-ready writeup with the right fields, the right justification, and an audit trail that survives a regulator reading it six months later.
 
-The dispositions match `owasp-audit`'s Three-Disposition rule: **Fixed**, **Deferred**, or **Accepted Risk**. False positive is a fourth — but it isn't a disposition for a real finding, it's a determination that there *is* no finding.
+A confirmed finding ends in one of five **dispositions**: **Fixed**, **Deferred**, **Accepted Risk**, **Mitigated (platform/config)**, or **Requires major migration**. **False Positive** isn't a disposition for a real finding — it's a determination that there *is* no finding. A gap with no traced impact ends as a **Hardening note**: not a finding, no severity.
 
-This skill works on findings from any source: SAST output, DAST scanner, dependency advisory, manual audit, threat-hunt hit, pentest report, vendor disclosure, internal red-team writeup, bug bounty submission.
+This skill works on findings from any source: SAST output, DAST scanner, dependency advisory, manual audit, threat-hunt hit, pentest report, vendor disclosure, internal red-team writeup, bug bounty submission — or a structured record from another skill's `findings.json`.
 
 Cross-references:
 - `vuln-research` for the technical CVE deep-dive that feeds reachability assessment here
-- `owasp-audit` Three-Disposition rule (the framework this implements per-finding)
+- `owasp-audit` / `api-audit` disposition rule (the framework this implements per-finding) and their per-finding verification pass ([references/verification.md](references/verification.md))
+- `scanner-pipeline` for bulk scanner output — triage the survivors here, one at a time
 - `security-comms` for translating the disposition writeup into stakeholder-readable language when the finding has to leave the security context
 - Any audit skill — this consumes their findings as input
+- [references/severity-calibration.md](references/severity-calibration.md) — the full severity rules this skill summarizes
+- [references/findings-format.md](references/findings-format.md) — the `findings.json` record format
+
+## Authorization
+
+Confirm the user owns or is authorized to triage this finding and the system it lives in. Triage reads code, configs and sometimes runs a reproduction — only do that against systems in scope. If a reproduction would touch production or someone else's system, stop and get explicit approval first.
+
+## Input
+
+Accept the finding in whatever form it arrives. Two forms get special handling.
+
+**A `findings.json` record.** If the user points at a `findings.json` (from `owasp-audit`, `api-audit`, `dependency-audit`, `secrets-audit`, `scanner-pipeline`, `business-logic-testing`, or `agent-supply-chain-audit`), ask for the **fingerprint**, or list the records and let them pick. Validate the file first:
+
+```bash
+node references/validate-findings.mjs findings.json
+```
+
+Then use the record's fields directly instead of re-deriving them: `location`, `trace[]` (entrypoint → sink), `evidence[]`, `counterevidence`, `conditions[]`, and `severity` if present. The format is in [references/findings-format.md](references/findings-format.md).
+
+**A verdict.** Findings from this repo's audit skills arrive with one of three verdicts. Start triage according to the verdict:
+
+| Verdict | What it means | Where triage starts |
+|---|---|---|
+| `confirmed` | Full trace or PoC; has a severity | Step 2 (re-check), then Step 3 (re-calibrate severity), then Step 4 |
+| `needs_validation` | Code supports it, but a decisive fact lives outside the code. Has `blockers[]` + `validation_plan`, **no severity** | Run or hand off the validation plan. Resolve every blocker before rating. Result: `confirmed` (go to Step 3) or `rejected` (False Positive template). Don't assign a severity while blockers are open |
+| `rejected` | A named control (`ruled_out_by`) runs on every reachable path | Verify the control still exists at `ruled_out_by.location` and still runs on every path. If yes, write it up as False Positive. If it moved or was removed, re-open as a candidate |
+
+The old "Potential" label is retired; treat anything still labelled that way as `needs_validation` and ask for the blocker.
+
+When triage changes a record, write the result back to the record — `verdict`, `severity`, `disposition` — so the JSON stays the source of truth. Re-run the validator after editing. Changing the verdict upward (to `confirmed`, or to a higher severity) needs fresh evidence, not just a different opinion.
 
 ## Workflow
 
@@ -44,18 +75,38 @@ Half of automated-scanner findings are false positives by volume. The triage:
 | Is there a public PoC, or has anyone confirmed this in the wild? | Severity stays / rises | Severity may drop |
 | Are existing controls (WAF, auth, network segmentation) preventing exploitation? | Severity drops; controls become the mitigation | Severity stays |
 
+**Boundary + result gate.** A finding must name all six of these. Write them down:
+
+1. **Lower-trust principal** — who starts it (anonymous client, any signed-up user, tenant B)
+2. **Accepted input** — what they control and where it enters
+3. **Intended control** — what is supposed to stop them
+4. **Boundary crossed** — which trust line the input gets across (user A → user B, anon → authenticated)
+5. **Affected principal or resource** — who or what gets hurt
+6. **Concrete result** — what was observed, or what the traced code does at the sink
+
+Missing one? Then it isn't a finding yet:
+- No boundary crossed, or the victim is the attacker (self-XSS) → **Hardening note** or nothing
+- No intended control that the result defeats (a checklist deviation) → **Hardening note**
+- The deciding fact is outside the code (proxy, IdP, deploy flag) → **Needs validation**, with that fact as the blocker
+- No concrete result → keep tracing, or drop it
+
 **Common false-positive patterns:**
 - SAST flag on test files or dead code
 - Dependency scanner flag on package in `devDependencies` only — runtime-unreachable (see `dependency-audit` reachability column)
 - DAST flag on a path that returns 404 in your real environment but was confused by SPA routing
 - Outdated advisory — vendor silently fixed it before the CVE; your version contains the fix
 - Pattern match on code that *looks* vulnerable but is inside a function never invoked
+- A "leaked key" that is a publishable identifier (Stripe `pk_…`, Firebase web config, Supabase `anon`). Check what the key can do before rating it — see [references/severity-calibration.md](references/severity-calibration.md) §6
+
+**A false positive must name the control.** "Looks fine" isn't a determination. Name the specific control and where it runs (file:line, config key), and confirm it runs on every path an attacker can reach before the sink. A control on a different path, a library you trust generically, or "it's internal" doesn't rule anything out.
 
 **Document a false-positive determination as carefully as a real finding.** If a future scanner or auditor flags the same thing, the prior false-positive note saves them the work.
 
 ### Step 3 — Contextual severity
 
-The scanner's CVSS or severity rating is a starting point, not the answer. Adjust for your context.
+The scanner's CVSS or severity rating is a starting point, not the answer. Rate **likelihood** and **impact** separately, each with a one-line reason, then pick an overall.
+
+**Rule: overall severity ≤ demonstrated impact.** High likelihood of a low-impact bug is a low finding. If you can't state the concrete damage, the severity is lower than it feels.
 
 **Factors that increase severity beyond the rating:**
 - Vulnerable endpoint is internet-facing, not internal
@@ -72,28 +123,71 @@ The scanner's CVSS or severity rating is a starting point, not the answer. Adjus
 - Authentication preconditions are hard in your app (closed signup, MFA, employee-only)
 - Component is dev-only or build-only, not runtime-reachable
 
-**Severity scale (use the one your org uses; here's a common one):**
+**Severity anchors:**
 
-| Level | Definition |
+| Level | Anchor |
 |---|---|
-| **Critical** | Pre-auth or trivially exploitable; immediate data loss / RCE / takeover; patch within 24-72 hours |
-| **High** | Auth required but minimal privilege; or post-auth path to significant impact; patch within 1-2 weeks |
-| **Medium** | Requires meaningful privilege or chain; realistic but not trivial; patch within 30 days |
-| **Low** | Defense-in-depth; hard to chain; patch within 90 days |
-| **Info** | Hardening or hygiene; documented behavior; patch when convenient |
+| **Critical** | Fully defeats a core control with broad, severe consequences and little or no precondition — pre-auth RCE, takeover of any account, cross-tenant access to all data, leaked production secret with write authority |
+| **High** | **Fully defeats an explicit security control, with real consequences** — IDOR reading or changing another user's data, privilege escalation, SSRF to cloud credentials |
+| **Medium** | **Weakens a control** without fully defeating it, or defeats one with limited consequences |
+| **Low** | A real boundary crossing with minor consequences, or one needing unlikely preconditions |
+
+The High/Medium question: *does it fully defeat the control, and can you name the damage?* Both yes → High is on the table. Otherwise Medium or lower.
+
+**Defense-in-depth is not Low.** A gap with no traced impact — if layer A already prevents the attack, the missing layer B — is a **Hardening note**: no severity, no SLA, reported separately (Step 4).
+
+**Usually NOT High or Critical** — rate these up only with a traced, specific, severe consequence:
+- Self-XSS
+- Clickjacking on non-sensitive actions
+- Missing security headers, cookie flags, TLS nits
+- An open redirect on its own
+- "Could matter if chained" when the other links are unproven
+- Anything that already requires admin, shell, or physical access
+- Session weaknesses that require the attacker to already hold a victim's secret — getting that secret isn't free
+
+**High/Critical acceptance checklist.** All six, or it isn't High:
+1. A realistic, in-scope path (the code runs in the deployed product)
+2. An attacker position that can actually be obtained
+3. Impact demonstrated, not asserted
+4. Counterevidence searched for and found nothing limiting
+5. Concrete reachability evidence (`file:line` trace or request/response)
+6. Defensible in a client debrief — *would serious triage accept this as High?*
+
+If a check fails, **downgrade rather than delete.** The finding stays, at the level you can defend.
+
+**Missing deployment evidence lowers confidence, not the severity floor.** If you can't see whether production has the WAF rule, either make it `needs_validation` with that as the blocker, or keep the traced severity with lower confidence. Don't silently rate a traced High as Low because production is out of view.
+
+**SLA is separate from severity.** Severity describes the bug; the remediation deadline is your org's policy for that severity. Keep them in separate columns, and use your org's SLAs if it has them. A common default:
+
+| Severity | Remediation SLA (default) |
+|---|---|
+| Critical | 24–72 hours |
+| High | 1–2 weeks |
+| Medium | 30 days |
+| Low | 90 days |
+| Hardening note | No SLA — backlog, fix when convenient |
+
+Full rules, examples and the publishable-vs-secret key table: [references/severity-calibration.md](references/severity-calibration.md).
 
 ### Step 4 — Pick the disposition
 
 | Disposition | When to choose | Required fields |
 |---|---|---|
-| **Fix now** (synonym: **Fixed**) | Patch / mitigation deployable within the severity's SLA | Fix description, deploy plan, verification method |
-| **Defer** | Severity warrants action, but operational constraints make immediate fix infeasible | Reason for deferral, new deadline, who owns, alerting if conditions change before deadline |
-| **Accept risk** | Fix isn't planned at current configuration | (1) Why fix doesn't apply, (2) Compensating controls, (3) Re-evaluation trigger |
-| **False positive** | Not actually a vulnerability | Evidence for the determination, scanner rule ID to suppress (with care) |
+| **Fix now** (recorded as **Fixed**) | Patch / mitigation deployable within the severity's SLA | Fix description, deploy plan, verification method |
+| **Defer** (**Deferred**) | Severity warrants action, but operational constraints make immediate fix infeasible | Reason for deferral, new deadline, who owns, alerting if conditions change before deadline |
+| **Accept risk** (**Accepted Risk**) | Fix isn't planned at current configuration | (1) Why fix doesn't apply, (2) Compensating controls, (3) Re-evaluation trigger |
+| **Mitigated (platform/config)** | The code is unchanged but a platform or configuration control now blocks the path (WAF rule, egress policy, IdP setting, feature flag off, network policy) | The control, where it's configured, evidence it's active, what would remove it, owner of that config |
+| **Requires major migration** | The real fix is an architectural change — framework or major-version upgrade, auth model rework, data-model change — that can't land in the SLA | Migration scope, interim mitigation, target milestone, owner, re-evaluation date |
+| **False positive** | Not actually a vulnerability (verdict `rejected`) | Evidence for the determination, the named control + location, scanner rule ID to suppress (with care) |
+| **Hardening note** | No traced impact — not a finding | One line: what's missing, why it would help, effort. No severity, no SLA |
 
 **On Defer:** severity does NOT change because you decided to defer. Recording a "High deferred to Q3" is honest; downgrading a High to Medium because Q3 is far away is risk-laundering.
 
 **On Accept Risk:** all three fields are required. An "Accepted Risk" without all three is a real finding being silently dropped. The re-evaluation trigger is the most-skipped field — name a specific condition (plan upgrade, dependency bump, traffic pattern change, audit anniversary).
+
+**On Mitigated (platform/config):** the vulnerability is still in the code. If someone removes the WAF rule or flips the flag, it's back. Record what would undo the mitigation, and prefer a code fix eventually. Impact doesn't change. You may re-score likelihood, but only with evidence the control is active on every path, and say so in the likelihood reason.
+
+**On Requires major migration:** this isn't a polite Accept Risk. It needs an interim mitigation now and a dated milestone, and the finding stays open until the migration ships.
 
 ### Step 5 — Write the disposition
 
@@ -103,13 +197,17 @@ Produce a ticket-ready writeup. Use one of these templates depending on disposit
 
 ```markdown
 ## Finding: [Title]
-**Source:** [scanner / audit / advisory]
-**Severity:** [contextual] (Scanner reported: [original])
+**Source:** [scanner / audit / advisory]  **Fingerprint:** [if from findings.json]
+**Severity:** [contextual] (Scanner reported: [original])  **SLA:** [date]
+**Likelihood / Impact:** [score — reason] / [score — reason]
 **CWE / CVE:** [if applicable]
 **Location:** [file:line / endpoint / resource]
 
 ### What
 [Plain-English description — what the issue is]
+
+### Boundary + result
+[Principal → input → control defeated → boundary → affected resource → observed result]
 
 ### Why this severity
 [Contextual reasoning — what the scanner missed, what your environment adds]
@@ -174,6 +272,47 @@ Produce a ticket-ready writeup. Use one of these templates depending on disposit
 - [ ] (if required) Compliance / Legal: [name, date]
 ```
 
+#### Template: Mitigated (platform/config)
+
+```markdown
+## Finding: [Title] — MITIGATED (PLATFORM/CONFIG)
+**Severity:** [as rated]  **Code still vulnerable:** yes
+**Control:** [WAF rule / egress policy / IdP setting / flag — exact name or ID]
+**Configured in:** [system + path / console location / IaC file:line]
+
+### Evidence the control is active
+[Request blocked with response X; config export; screenshot reference; date checked]
+
+### What would undo it
+[Rule removal, config drift, region/environment without the control]
+
+### Long-term fix
+[Code change, and whether it's planned]
+
+### Owner of the control: [name / team]
+### Re-check: [date or trigger — e.g. every WAF policy change]
+```
+
+#### Template: Requires major migration
+
+```markdown
+## Finding: [Title] — REQUIRES MAJOR MIGRATION
+**Severity:** [unchanged]  **Original SLA:** [date]
+
+### Why a normal fix doesn't apply
+[Framework EOL, major-version upgrade, auth or data model change — scope it]
+
+### Interim mitigation (in place now)
+[What reduces exposure until the migration ships]
+
+### Migration plan
+- Milestone: [target date / release]
+- Owner: [name]
+- Tracking: [epic / ticket]
+
+### Re-evaluation: [date]
+```
+
 #### Template: False Positive
 
 ```markdown
@@ -186,6 +325,7 @@ Produce a ticket-ready writeup. Use one of these templates depending on disposit
 
 ### Why it's not real
 [Specific evidence — code path not reachable, version contains the fix, etc.]
+**Ruled out by:** [control] at [file:line / config] — runs on every reachable path
 
 ### Suppression decision
 - [ ] Suppress this exact finding (location + rule ID)
@@ -196,14 +336,28 @@ Produce a ticket-ready writeup. Use one of these templates depending on disposit
 ### Reviewed by: [name, date — for non-trivial suppressions]
 ```
 
+#### Template: Hardening note
+
+```markdown
+## Hardening note: [Title]  (not a finding — no severity)
+- **Gap:** [what's missing]
+- **Why no finding:** [which control already prevents it / which gate element is missing]
+- **Would help because:** [defense-in-depth value]
+- **Effort:** [S / M / L]
+```
+
 ### Step 6 — Validate the writeup
 
 Before submitting:
 
 - Could a future you (or auditor) reading this in 12 months understand the decision without further context?
+- Does the writeup name all six boundary + result elements, or say which one is missing (and so why it's a hardening note or needs validation)?
+- Is overall severity ≤ the impact you actually showed? For High/Critical, does it pass all six acceptance checks?
 - Is the verification step concrete enough that someone other than the original author could run it?
 - For Accept Risk: are all three required fields filled in with specifics, not platitudes ("standard controls in place" is not a compensating control)?
+- For Mitigated: is there evidence the control is active today, and a named owner of it?
 - Does the severity reflect your environment, or just the scanner's default?
+- If the input was a `findings.json` record: did you write back the verdict, severity and disposition, and does the validator still pass?
 
 ## When to escalate
 
@@ -213,7 +367,7 @@ Findings that should NOT be triaged unilaterally by a single engineer:
 - Anything pre-auth exploitable
 - Anything affecting regulated data (PII / PCI / PHI)
 - Anything with public PoC or active exploitation
-- Anything where the proposed disposition is Accept Risk and the severity is High or above
+- Anything where the proposed disposition is Accept Risk, Mitigated (platform/config), or Requires major migration and the severity is High or above
 
 These get a second reviewer (Tier 3 / security team / approver named in policy).
 
@@ -223,16 +377,23 @@ The primary output is the disposition writeup itself (templates above). For a tr
 
 ```markdown
 # Finding Triage Session
-## Source: [scanner / audit / report]
+## Source: [scanner / audit / report / findings.json path]
 ## Date: [date]
 ## Triaged by: [name]
 
 ### Summary
-| Finding | Original severity | Contextual severity | Disposition |
-|---------|-------------------|---------------------|-------------|
+| Finding | Fingerprint | Verdict | Original severity | Contextual severity | SLA | Disposition |
+|---------|-------------|---------|-------------------|---------------------|-----|-------------|
 
 ### Detail
 [Per-finding writeup using the appropriate template]
+
+### Needs validation (no severity yet)
+| Finding | Blocker | Validation plan | Owner |
+|---------|---------|-----------------|-------|
+
+### Hardening notes (not findings)
+- [one line each — gap, why it would help, effort]
 
 ### Escalations
 [Findings that need senior review or approval]
@@ -243,11 +404,17 @@ The primary output is the disposition writeup itself (templates above). For a tr
 - This skill operates on findings the user has authority to triage and dispose of
 - Severity decisions and Accept Risk dispositions affect organizational risk posture — for High+ findings, ensure the listed approver actually approves; don't fabricate sign-offs
 - False-positive determinations should be evidence-based, not "we don't want to fix it" rebranded — push back if the user wants to FP a real finding
+- Don't relabel a real finding as a hardening note to make it disappear: it's a hardening note only if no impact can be traced
 - Refuse to help downgrade severities to avoid disclosure or audit obligations
+- Reproductions stay non-destructive and in scope — no exploitation of production data, no testing systems the user doesn't own
 - If a finding surfaces an active incident, hand off to `incident-triage` — disposition triage is for steady-state findings, not fires
 
 ## References
 
+- [references/severity-calibration.md](references/severity-calibration.md) — boundary + result gate, anchors, over-rating list, High/Critical checklist
+- [references/findings-format.md](references/findings-format.md) — `findings.json` verdicts and fields; `validate-findings.mjs`, `to-sarif.mjs`
+- Cloudflare [security-audit-skill](https://github.com/cloudflare/security-audit-skill) (MIT) — boundary-and-result requirement, verdict-shaped findings records (paraphrased)
+- Strix [severity calibration](https://github.com/usestrix/strix/blob/main/strix/skills/analysis/severity_calibration.md) (Apache-2.0) — over-rating list and High/Critical acceptance checks (paraphrased)
 - CVSS v4.0 specification — `first.org/cvss`
 - EPSS — Exploit Prediction Scoring System (FIRST.org)
 - NIST SP 800-30 (Guide for Conducting Risk Assessments)
@@ -255,3 +422,14 @@ The primary output is the disposition writeup itself (templates above). For a tr
 - ISO 27005 — risk management
 - "Measuring and Managing Information Risk" — Jack Freund, Jack Jones (the FAIR book)
 - OWASP Risk Rating Methodology
+
+## Reference files
+
+This skill links to supporting files under `references/`. They are not inlined in this adapter; open them on GitHub (or in `skills/finding-triage/references/` if you have the repo checked out):
+
+- [references/findings-format.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/finding-triage/references/findings-format.md)
+- [references/findings.schema.json](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/finding-triage/references/findings.schema.json)
+- [references/severity-calibration.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/finding-triage/references/severity-calibration.md)
+- [references/to-sarif.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/finding-triage/references/to-sarif.mjs)
+- [references/validate-findings.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/finding-triage/references/validate-findings.mjs)
+- [references/verification.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/finding-triage/references/verification.md)

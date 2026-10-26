@@ -4,31 +4,37 @@
     "findings.schema.json": [
       "agent-supply-chain-audit",
       "business-logic-testing",
-      "scanner-pipeline"
+      "scanner-pipeline",
+      "finding-triage"
     ],
     "validate-findings.mjs": [
       "agent-supply-chain-audit",
       "business-logic-testing",
-      "scanner-pipeline"
+      "scanner-pipeline",
+      "finding-triage"
     ],
     "to-sarif.mjs": [
       "agent-supply-chain-audit",
       "business-logic-testing",
-      "scanner-pipeline"
+      "scanner-pipeline",
+      "finding-triage"
     ],
     "findings-format.md": [
       "agent-supply-chain-audit",
       "business-logic-testing",
-      "scanner-pipeline"
+      "scanner-pipeline",
+      "finding-triage"
     ],
     "severity-calibration.md": [
       "agent-supply-chain-audit",
-      "business-logic-testing"
+      "business-logic-testing",
+      "finding-triage"
     ],
     "coverage.schema.json": [],
     "validate-coverage.mjs": [],
     "verification.md": [
-      "business-logic-testing"
+      "business-logic-testing",
+      "finding-triage"
     ],
     "recon-and-coverage.md": [],
     "orchestration.md": [],
