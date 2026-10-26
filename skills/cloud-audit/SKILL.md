@@ -1,23 +1,24 @@
 ---
 name: cloud-audit
-description: "Audit cloud infrastructure (AWS, GCP, Azure) for misconfigurations, excessive permissions, and security gaps. Use when the user mentions 'cloud security,' 'cloud audit,' 'AWS security,' 'GCP security,' 'Azure security,' 'IAM audit,' 'S3 bucket,' 'cloud misconfiguration,' 'cloud hardening,' or needs to review cloud infrastructure security."
+description: "Audit cloud infrastructure (AWS, GCP, Azure) and PaaS deployment platforms (Vercel, Netlify, Heroku, Render, Railway, Fly) for misconfigurations, excessive permissions, stale or manual production deploys, and security gaps. Use when the user mentions 'cloud security,' 'cloud audit,' 'AWS security,' 'GCP security,' 'Azure security,' 'IAM audit,' 'S3 bucket,' 'cloud misconfiguration,' 'cloud hardening,' 'Vercel security,' 'Heroku audit,' 'Render audit,' 'PaaS security,' 'is production built from main,' 'old vercel.app still live,' 'preview deployments exposed,' 'Supabase RLS,' or needs to review cloud or deployment-platform security."
 allowed-tools: Bash, Read, Write, Grep, Glob, WebSearch
 ---
 
 # Cloud Audit — Cloud Infrastructure Security Review
 
-Audit cloud infrastructure configurations for misconfigurations, excessive permissions, public exposure, and compliance gaps. Covers AWS, GCP, and Azure.
+Audit cloud infrastructure configurations for misconfigurations, excessive permissions, public exposure, and compliance gaps. Covers AWS, GCP, and Azure, plus the PaaS deployment platforms many small teams run everything on (Vercel, Netlify, Heroku, Render, Railway, Fly).
 
-Cross-references: `iam-audit` for the consultant-style IAM deep-dive (design / audit / migrate across identity providers and federation patterns) — this skill includes an IAM section but stays at the cloud-posture level; for role design, JIT access, workload identity federation, and migration plans, invoke `iam-audit`. `container-audit` for Kubernetes-specific posture sitting on top of cloud. `secrets-audit` for secrets-manager hygiene and rotation.
+Cross-references: `iam-audit` for the consultant-style IAM deep-dive (design / audit / migrate across identity providers and federation patterns) — this skill includes an IAM section but stays at the cloud-posture level; for role design, JIT access, workload identity federation, and migration plans, invoke `iam-audit`. `container-audit` for Kubernetes-specific posture sitting on top of cloud. `secrets-audit` for secrets-manager hygiene and rotation. `patch-sweep` for responding to a CVE wave across a fleet of PaaS apps (this skill's PaaS section is the posture half of that). `scanner-pipeline` for running Supabase's security advisor and the other scanners on a schedule.
 
-Findings should use the three-disposition rule (Fixed / Deferred / Accepted Risk) per `owasp-audit`'s Report Format.
+Findings use the shared dispositions: Fixed / Deferred / Accepted Risk / Mitigated (platform/config) / Requires major migration, per `owasp-audit`'s Report Format.
 
 ## Scope the Audit
 
 Identify:
 1. Cloud provider(s) and account(s)
 2. Regions in use
-3. Whether CLI tools are available (`aws`, `gcloud`, `az`) or reviewing IaC files (Terraform, CloudFormation, Pulumi)
+3. Whether CLI tools are available (`aws`, `gcloud`, `az`, `vercel`, `heroku`, `netlify`, `fly`, `railway`, `gh`) or reviewing IaC files (Terraform, CloudFormation, Pulumi)
+4. For PaaS: every team/account and GitHub owner/org in scope, and which of them belong to clients or other maintainers
 
 ## Audit Categories
 
@@ -91,12 +92,101 @@ Check for: public buckets, missing encryption, no versioning, no lifecycle polic
 - Secrets Manager / Key Vault usage for sensitive values
 - KMS key rotation configured
 
+### PaaS (Vercel / Netlify / Heroku / Render / Railway / Fly)
+
+Many small teams have no AWS account at all; production is a Vercel team, a few Heroku apps, and a Render service. The exposures there don't show up on an AWS-style checklist: production that no merge will ever replace, git deploys that have been failing for months, old projects still serving unpatched code on a platform URL. Each check below comes from a real fleet sweep in October 2026.
+
+Inventory first: list every project/app per team, the repo and branch it builds from, and every domain it serves (`patch-sweep` Step 1 has the full mapping commands). Commands below are read-only unless marked. Netlify, Railway, and Fly equivalents are in [references/paas.md](references/paas.md).
+
+**1. Stale manual production deploy.** A client site's production was a 96-day-old `vercel deploy --prod` from a developer's laptop, still serving a vulnerable Next.js. The repo's `main` held only a README, so no merge would ever replace it.
+```bash
+vercel ls <project> --prod --scope <team>                    # latest production deployments, age
+vercel inspect <production-url> --scope <team>               # target, created, url
+vercel api "/v6/deployments?projectId=<id>&target=production&limit=5" --scope <team> \
+  | jq '.deployments[] | {url, created, source, sha: .meta.githubCommitSha, ref: .meta.githubCommitRef, creator: .creator.username}'
+git ls-remote origin refs/heads/<production-branch>          # compare with the deployed sha
+heroku releases -a <app> -n 20                               # who deployed, and how
+```
+Check: source is git (not `cli`), the deployed commit equals the production branch HEAD (or is an ancestor of it), and the deployment is younger than the last merge. A mismatch is the finding type below.
+
+**2. Git deploys silently broken.** Two patterns: an Ignored Build Step running `git diff HEAD^ HEAD` while `.vercelignore` excluded `.git` — `.vercelignore` applies to git builds too — so every git deploy errored and production only moved by CLI; and a second project still git-linked to the repo's *old* org, so every PR showed a failing check people learned to ignore.
+```bash
+vercel ls <project> --status ERROR --scope <team>            # recent failures
+vercel api /v9/projects/<project> --scope <team> | jq '{link: .link, productionBranch: .link.productionBranch, ignore: .commandForIgnoringBuildStep, rootDirectory}'
+grep -n '\.git' .vercelignore 2>/dev/null
+gh api repos/<o>/<r>/commits/<branch>/check-runs --jq '.check_runs[] | {name, app: .app.slug, conclusion}'   # duplicate/failing Vercel checks
+```
+Check: failure rate of the last 10–20 git-triggered deploys, what the ignore command needs (git history, files `.vercelignore` drops), and whether `link.org`/`link.repo` matches the repo's current owner.
+
+**3. Legacy projects still serving old code.** After domains moved to a new monorepo, the old projects kept serving `*.vercel.app` addresses from unpatched code.
+```bash
+vercel project ls --format json --scope <team>
+vercel api /v9/projects/<project>/domains --scope <team> | jq -r '.domains[].name'
+heroku apps --all --json | jq -r '.[] | "\(.name)\t\(.updated_at)"'; heroku domains -a <app>
+```
+Check: projects whose only domains are platform defaults (`*.vercel.app`, `*.herokuapp.com`, `*.onrender.com`, `*.netlify.app`, `*.fly.dev`, `*.up.railway.app`), and their last deploy dates. Recommend delete, or protect (deployment protection / maintenance mode) if the owner wants to keep it.
+
+**4. Duplicate projects per repo.** One repo triggered builds in two Vercel teams. Only one served the domain, but both held env vars and secrets.
+Check: group every team's projects by `link.org/link.repo`; more than one project per repo + root directory is a finding unless the owner can say why. Compare env var *names* (`vercel env ls --scope <team>`) to see what the extra copy holds.
+
+**5. Preview and production exposure.**
+```bash
+vercel project protection <project> --format json --scope <team>   # SSO / password / bypass settings
+curl -s -o /dev/null -w '%{http_code}\n' https://<project>.vercel.app/   # 200 = generated production URL is public
+vercel env ls preview --scope <team>                                   # names only
+```
+Check: deployment protection is on for previews; the generated `*.vercel.app` production URL isn't reachable when the custom domain sits behind Cloudflare or another WAF (it bypasses that WAF — Vercel's Standard Protection covers generated URLs); preview env vars don't point at production databases. To compare database hosts without exposing secrets, pull to a temp file, print only the host, delete the file: `vercel env pull /tmp/p.env --environment=preview && sed -nE 's/^DATABASE_URL="?[^@]*@([^/:]+).*/\1/p' /tmp/p.env; rm /tmp/p.env`.
+
+**6. Build queue as an availability risk.** On a team that runs one build at a time, an emergency patch waited 30–60 minutes behind unrelated builds.
+```bash
+vercel ls --status QUEUED,BUILDING --scope <team>
+```
+Check: the team's concurrent build limit. Record in the incident runbook how to get an emergency patch out: an on-demand concurrency increase, cancelling queued non-urgent builds, or an owner-approved CLI deploy path (which then needs to be reconciled with git — check 1).
+
+**7. Heroku specifics.**
+```bash
+heroku stack -a <app>                                   # heroku-22 / heroku-24
+heroku run --no-tty "vips --version" -a <app>           # libvips on the running dyno
+heroku run --no-tty "ruby -v" -a <app>                  # compare with .ruby-version / Gemfile ruby
+heroku pg:backups:schedules -a <app>
+heroku pg:backups -a <app>                              # lists backups AND restores
+heroku config -a <app> --json | jq -r 'keys[]'          # names only, never values
+heroku --version
+```
+Check:
+- Stack and libvips version. `VIPS_BLOCK_UNTRUSTED=1` (the mitigation for CVE-2026-66066) needs libvips ≥ 8.13; Heroku-24 ships 8.15.1.
+- The runtime in `.ruby-version` is what's actually running.
+- A `pg:backups` schedule exists, and at least one restore has been done (a backup that's never been restored is untested).
+- Heroku CLI 8.x can't run `pg:backups` on Essential plans; upgrade the CLI before concluding backups are missing.
+- Review apps don't inherit live keys: check the pipeline's review-app config vars and `app.json` `env` for production Stripe/email/database credentials.
+
+**8. Repo-level security defaults.** Dependabot alerts were off on 142 repos in one account and org.
+```bash
+gh api repos/<o>/<r>/vulnerability-alerts --silent && echo on || echo off   # 204 = on, 404 = off
+gh api repos/<o>/<r> --jq '.security_and_analysis'                          # secret scanning, push protection
+gh api repos/<o>/<r>/branches/<production-branch>/protection                # 404 = no classic protection
+gh api repos/<o>/<r>/rules/branches/<production-branch>                     # rulesets that apply
+```
+Check: vulnerability alerts, secret scanning, push protection, and branch protection (or a ruleset) on the **production branch** — which may not be the default branch. Enabling alerts is `gh api -X PUT repos/<o>/<r>/vulnerability-alerts`; it's a write, so it prompts.
+
+**Backend-as-a-service (Supabase).** If the app uses Supabase, run its security advisor — `rls_disabled_in_public` flags public tables readable and writable with the anon key. In the October 2026 sweep that was 10 tables, including 472k inbound email bodies. Use `supabase db advisors` or the Management API `GET /v1/projects/{ref}/advisors/security`; `scanner-pipeline` covers running it on a schedule and a semgrep rule for always-true policies such as `x.col = x.col`.
+
+#### Finding type: Production not reproducible from source (manual deploy / branch mismatch)
+
+Raise this when what's serving production can't be rebuilt from the production branch:
+- the current production deployment came from a CLI/manual deploy, not git;
+- the deployed commit isn't on the production branch;
+- git deploys fail, so the branch and production have diverged;
+- the platform's production branch isn't the branch people merge into (e.g., `main` holds only a README and the app lives on `development`).
+
+Why it matters: patches merged to the branch never reach production, nobody can say what code is live, and a rollback goes to an unknown state. Severity follows what's live: a vulnerable framework in the manual deploy makes it as severe as that vulnerability; with nothing known-vulnerable, it's a medium. Remediation is an owner decision — redeploy from git after fixing the build, adopt the deployed code into the branch, or retire the project — never a silent `vercel deploy --prod` over someone else's deploy. For a fleet of these, run `patch-sweep`.
+
 ## Output Format
 
 ```markdown
 # Cloud Security Audit Report
 ## Account(s): [account ID(s)]
-## Provider: [AWS/GCP/Azure]
+## Provider: [AWS/GCP/Azure/Vercel/Heroku/Render/...]
 ## Regions: [audited regions]
 ## Date: [date]
 
@@ -107,7 +197,7 @@ Check for: public buckets, missing encryption, no versioning, no lifecycle polic
 ### Findings
 
 #### [SEVERITY] [Category]: [Title]
-**Resource:** [resource ARN/ID]
+**Resource:** [resource ARN/ID, or platform team/project/deployment URL]
 **Region:** [region]
 
 **Issue:** [What the misconfiguration is]
@@ -130,6 +220,8 @@ Check for: public buckets, missing encryption, no versioning, no lifecycle polic
 ## Boundaries
 
 - Only audit accounts or projects the user has access to
+- For PaaS: don't delete projects, overwrite another person's production deploy, or disable protections during an audit; record the owner decision
+- Never print env var or config var values; list names
 - Do not attempt to access other accounts or tenants
 - Provide remediation for every finding
 - Note if a fix might impact availability (e.g., tightening a security group could break connectivity)
@@ -141,3 +233,7 @@ Check for: public buckets, missing encryption, no versioning, no lifecycle polic
 - CIS Benchmarks for AWS/GCP/Azure
 - AWS Well-Architected Security Pillar
 - ScoutSuite (multi-cloud auditing tool)
+- Vercel CLI: [`vercel list`](https://vercel.com/docs/cli/list), [`vercel inspect`](https://vercel.com/docs/cli/inspect), [`vercel project`](https://vercel.com/docs/cli/project), [`vercel api`](https://vercel.com/docs/cli/api)
+- [Heroku CLI commands](https://devcenter.heroku.com/articles/heroku-cli-commands); [Render API](https://api-docs.render.com/)
+- [GitHub REST — vulnerability alerts](https://docs.github.com/en/rest/repos/repos#check-if-vulnerability-alerts-are-enabled-for-a-repository)
+- [Supabase database advisors](https://supabase.com/docs/guides/database/database-advisors)

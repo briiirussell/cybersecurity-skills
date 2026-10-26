@@ -9,7 +9,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | api-audit | 1.1.0 | 2026-10-26 |
 | breach-patterns | 1.0.1 | 2026-10-26 |
 | business-logic-testing | 1.0.0 | 2026-10-26 |
-| cloud-audit | 1.0.0 | 2026-05-26 |
+| cloud-audit | 1.1.0 | 2026-10-26 |
 | container-audit | 1.0.0 | 2026-05-26 |
 | crypto-audit | 1.0.0 | 2026-05-26 |
 | csf-mapping | 1.0.0 | 2026-05-26 |
@@ -41,6 +41,26 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.1.0 | 2026-10-26 |
 
 ## Recent Changes
+
+### 1.18.0 (2026-10-26)
+
+cloud-audit adds a PaaS section. Many small teams have no AWS account at all: production is a Vercel team, a few Heroku apps and a Render service. Every check here comes from a real October 2026 fleet sweep.
+
+**Changed**
+
+- **cloud-audit** (1.1.0). New section **"PaaS (Vercel / Netlify / Heroku / Render / Railway / Fly)"**, with read-only CLI/API commands for each check (#83):
+  1. **Stale manual production deploys.** One client site was serving a 96-day-old `vercel deploy --prod` from a laptop while `main` held only a README. Compare the deploy's source, age and commit against the head of the production branch.
+  2. **Silently broken git deploys.** For example, an Ignored Build Step running `git diff` while `.vercelignore` excluded `.git`, or a second project still linked to an old org.
+  3. **Legacy projects still serving old code** on `*.vercel.app` after their domains moved.
+  4. **Duplicate projects per repo**, each carrying its own copy of env vars and secrets.
+  5. **Preview and production exposure.** Is deployment protection on? Can `*.vercel.app` addresses bypass the WAF in front of the custom domain? Do preview env vars point at production databases?
+  6. **The build queue as an availability risk** during an emergency patch.
+  7. **Heroku specifics:** stack and libvips version, runtime pin vs what's actually running, `pg:backups` schedule and restore test, live keys in review-app config vars.
+  8. **Repo security defaults:** Dependabot alerts, secret scanning, push protection, branch protection. They were off on 142 repos in one account.
+  - New finding type: **"Production not reproducible from source (manual deploy / branch mismatch)"**.
+  - Netlify, Render, Railway and Fly versions of the checks live in `references/paas.md`. Supabase RLS advisors are covered too.
+  - Cross-references to `patch-sweep` and `scanner-pipeline`. The disposition list now matches the shared set.
+- README: cloud-audit row updated.
 
 ### 1.17.0 (2026-10-26)
 
