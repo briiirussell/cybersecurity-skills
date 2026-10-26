@@ -8,13 +8,13 @@ Every PR into `development` or `main`, and every push to either branch, runs [`.
 
 | Job | Command | Fails when |
 |---|---|---|
-| Skill lint | `node scripts/lint-skills.mjs` | `name` ≠ folder; description outside 200–1024 chars; `SKILL.md` ≥ 500 lines; a cross-referenced skill has no folder; a relative link doesn't resolve; `allowed-tools` pairs `WebFetch` with unscoped `Bash` |
+| Skill lint | `node scripts/lint-skills.mjs` | `name` ≠ folder; description outside 200–1024 chars; `SKILL.md` ≥ 500 lines; a cross-referenced skill has no folder; a relative link doesn't resolve; two skills share a trigger phrase; `allowed-tools` pairs `WebFetch` with unscoped `Bash` |
 | Baseline check | `node .github/scripts/skillspector-baseline.mjs --check` | a baseline rule lacks `id`, `path`, `message` or `reason`, or names a skill that doesn't exist |
 | Adapter drift | `node scripts/build-adapters.mjs`, then `git diff --exit-code adapters/ skills/` | generated adapters or the `shared/` → `skills/*/references/` copies are stale |
 | Tests | `npm test` (`node --test "scripts/test/*.test.mjs"`, Node ≥ 21) | a validator, `to-sarif` or build test fails |
 | SkillSpector | per-skill `skillspector scan … --no-llm --baseline … --fail-on-findings --format sarif` | any finding that the baseline doesn't cover |
 
-The lint also prints a **warning** when two skills claim the same single-quoted trigger phrase, for example `'security review'` in both `owasp-audit` and `threat-modeling`. SkillSpector's TR2 rule looks for the same thing. A warning doesn't fail the build. It means one of the two skills should probably narrow its phrase.
+The lint also **fails** when two skills claim the same single-quoted trigger phrase, for example `'security review'` in both `owasp-audit` and `threat-modeling`, because the same request could activate either skill. SkillSpector's TR2 rule looks for the same thing. Fix it by keeping the phrase in the skill that owns the work and narrowing or dropping it in the other (v1.19.5 did this for seven phrases).
 
 Run the lint locally before you push:
 
