@@ -138,7 +138,7 @@ The skills are organized into seven families. Most security work crosses familie
 | [threat-hunting](skills/threat-hunting/) | Proactive, hypothesis-driven adversary detection — PEAK framework, ATT&CK-driven hunt catalog, every hunt produces an artifact (rule, dead-end doc, or coverage gap). |
 | [threat-modeling](skills/threat-modeling/) | Pre-implementation security design — STRIDE per element + abuse cases, data flow diagrams with trust boundaries, four-question Shostack frame. |
 | [vuln-research](skills/vuln-research/) | CVE deep-dive — pull canonical sources, confirm versions, reachability analysis, check public PoCs / CISA KEV / EPSS, decide patch / mitigate / accept-risk. |
-| [web-pentest](skills/web-pentest/) | Live web application pentest against an authorized target — OWASP WSTG-structured, nine phases from config through business logic. |
+| [web-pentest](skills/web-pentest/) | Live web application pentest against an authorized target — OWASP WSTG-structured, nine phases from config through business logic. Combined white-box + black-box mode (code ↔ endpoint Target Map) when you have source too; every PoC carries paired baseline-vs-attack evidence. |
 <!-- SKILLS:END -->
 
 Every offensive skill enforces an authorization check before doing anything; every skill refuses destructive or unauthorized use. Details in [Ethics & Authorization](#ethics--authorization).
