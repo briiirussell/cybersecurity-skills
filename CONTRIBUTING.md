@@ -27,12 +27,18 @@ This repo uses a `main` + `development` model:
    git checkout -b feature/your-change
    ```
 3. **Make your changes** — keep the scope tight; one logical change per PR
-4. **Regenerate adapters** if you touched any `SKILL.md`:
+4. **Regenerate adapters and shared copies** if you touched any `SKILL.md` or anything in `shared/`:
    ```bash
    node scripts/build-adapters.mjs
    ```
-5. **Commit and push**
-6. **Open a PR into `development`** — not `main`. The release cut promotes `development` → `main`.
+   Files in `shared/` are copied into `skills/<skill>/references/` per `shared/manifest.json`. Edit `shared/`, never the copies.
+5. **Run the checks CI runs**:
+   ```bash
+   node scripts/lint-skills.mjs
+   npm test        # node:test suites in scripts/test/ (Node >= 21, no dependencies)
+   ```
+6. **Commit and push**
+7. **Open a PR into `development`** — not `main`. The release cut promotes `development` → `main`.
 
 ## Adding a new skill
 
@@ -56,9 +62,19 @@ Required frontmatter:
 ---
 name: your-skill-name
 description: "What it does and when to use it. Include trigger phrases agents will see in user prompts. 200–1024 chars."
-allowed-tools: Bash, Read, Write, Grep, Glob, WebSearch
+allowed-tools: Read, Grep, Glob
 ---
 ```
+
+`allowed-tools` lists tools that run **without a permission prompt** while the skill is active. It is a pre-approval, not an access list: unlisted tools still work, they just prompt. Keep it tight:
+
+- Start from `Read, Grep, Glob`. Add `WebSearch` / `WebFetch` if the skill researches.
+- Add `Bash` only scoped to a read-only command, e.g. `Bash(trivy fs:*)`, `Bash(dig:*)`. If a wildcard would also match a destructive sub-mode, use an exact rule (`Bash(npm audit --json)`, not `Bash(npm audit:*)`, which matches `npm audit fix --force`). `grep`, `cat`, `ls` and read-only `git` already run without prompts.
+- Never pre-approve active scanning or exploitation of a target, history rewrites, or anything that changes state — the user should confirm those each time.
+- Never combine `WebFetch` with unscoped `Bash` — CI fails it.
+- Add `Write` only if the skill's main output is a file it writes.
+
+Cursor and Codex adapters carry no tool restrictions at all. See [docs/security-scanning.md](docs/security-scanning.md).
 
 ### 3. Naming rules
 
@@ -84,13 +100,14 @@ skills/your-skill-name/
 - **Include an authorization check** for any offensive skill — it should refuse if the user can't confirm authorization
 - **Anti-pattern bullets > prose** — `OWASP A01: missing role check on /api/admin/*` beats a paragraph about access control
 
-### 6. Build
+### 6. Build and lint
 
 ```bash
 node scripts/build-adapters.mjs
+node scripts/lint-skills.mjs
 ```
 
-This regenerates `adapters/cursor/your-skill-name.mdc` and `adapters/codex/your-skill-name.md`.
+The build regenerates `adapters/cursor/your-skill-name.mdc` and `adapters/codex/your-skill-name.md`, and copies the `shared/` files listed for your skill in `shared/manifest.json` into `skills/your-skill-name/references/`. To link a shared file (e.g. `references/findings.schema.json`), add your skill to that file's list in the manifest first. The lint checks frontmatter, size, cross-references, links and `allowed-tools`.
 
 ### 7. Test locally
 
@@ -102,11 +119,20 @@ Run a real scenario against it. Iterate until the output is what you'd want to r
 
 ## PR checklist
 
+CI (`.github/workflows/ci.yml`) runs on every PR into `development` or `main` and enforces the first group automatically. Run the commands locally first.
+
+Enforced by CI:
+
+- [ ] Skill lint passes — `node scripts/lint-skills.mjs` (`name` matches directory, `description` 200–1024 chars, `SKILL.md` under 500 lines, cross-referenced skills exist, relative links resolve, no `WebFetch` + unscoped `Bash`)
+- [ ] Adapters and shared copies regenerated and committed — `node scripts/build-adapters.mjs` leaves no diff; shared content edited in `shared/`, not in `skills/*/references/` copies
+- [ ] Tests pass — `npm test` (add or update a test in `scripts/test/` if you changed a validator, `to-sarif.mjs`, or the build)
+- [ ] SkillSpector scan is clean — any new finding is fixed, or covered by a narrow rule **with a reason** in `.skillspector-baseline.yaml` (see [docs/security-scanning.md](docs/security-scanning.md))
+
+Reviewed by a human:
+
 - [ ] Branched from `development`
-- [ ] `name` matches directory name
-- [ ] `description` is pushy and lists trigger phrases
-- [ ] `SKILL.md` is under 500 lines
-- [ ] Adapters regenerated (`node scripts/build-adapters.mjs`)
+- [ ] `description` is pushy and lists trigger phrases (lint warnings about phrases shared with another skill are addressed or justified)
+- [ ] `allowed-tools` is minimal: no unscoped `Bash`, `Write` only if the skill writes a file
 - [ ] Tested against a real scenario, not just a synthetic one
 - [ ] No secrets, credentials, or proprietary data in examples
 - [ ] If closing an issue, PR description references `Closes #N`
