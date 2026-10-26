@@ -59,6 +59,27 @@ jobs:
           BASE_REF: ${{ github.base_ref }}
         run: node scripts/check-versions.mjs --base "origin/$BASE_REF"
 
+  plugin:
+    name: Plugin validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      # Pinned like the actions: bump deliberately. Needs no credentials; validate reads files only.
+      CLAUDE_CODE_VERSION: "2.1.296"
+      DISABLE_AUTOUPDATER: "1"
+      CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Install Claude Code CLI
+        run: npm install -g --no-audit --no-fund "@anthropic-ai/claude-code@$CLAUDE_CODE_VERSION"
+      - name: claude plugin validate (strict, with named exceptions)
+        run: node .github/scripts/plugin-validate.mjs
+
   adapters:
     name: Adapter drift
     runs-on: ubuntu-latest

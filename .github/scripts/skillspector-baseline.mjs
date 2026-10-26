@@ -26,7 +26,8 @@ import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
 const ROOT = new URL("../..", import.meta.url).pathname;
-const BASELINE = join(ROOT, ".skillspector-baseline.yaml");
+// SKILLSPECTOR_BASELINE overrides the file (the self-tests in scripts/test/ use it).
+const BASELINE = process.env.SKILLSPECTOR_BASELINE || join(ROOT, ".skillspector-baseline.yaml");
 const FIELDS = new Set(["id", "rule_id", "path", "file", "message", "reason"]);
 
 function parse(text) {

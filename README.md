@@ -167,6 +167,12 @@ Installs to your `.agents/skills/` directory with a symlink into `.claude/skills
 ### Option 2: Claude Code plugin marketplace
 
 ```bash
+/plugin install cybersecurity-skills --marketplace briiirussell/cybersecurity-skills
+```
+
+That's one step on Claude Code 2.1.275 or later. On older versions, add the marketplace first:
+
+```bash
 /plugin marketplace add briiirussell/cybersecurity-skills
 /plugin install cybersecurity-skills
 ```

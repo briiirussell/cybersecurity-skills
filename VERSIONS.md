@@ -42,6 +42,27 @@ Current versions of all skills. Agents can compare against local versions to che
 
 ## Recent Changes
 
+### 1.23.2 (2026-10-26)
+
+CI now runs Claude Code's own plugin validator, and the repo's checkers get self-tests, so none of them can quietly stop catching problems. Repo tooling plus one README line; no skill content changes. Closes #121.
+
+**Added**
+
+- **Plugin validate** CI job: installs a pinned Claude Code CLI and runs `claude plugin validate --json .` through `.github/scripts/plugin-validate.mjs`. That is `--strict` with named exceptions. Any error, or any warning not in the script's `ALLOWED` list (each entry has a reason), fails the job. The one accepted warning is the root `CLAUDE.md`, which is contributor guidance and not plugin context.
+- `scripts/test/self-test.test.mjs`: 7 tests that feed known-bad fixtures to each checker.
+  - The lint: name mismatch, short description, missing Authorization section, WebFetch with unscoped Bash, destructive grant, broken link, unknown cross-reference, 500+ lines, and a shared trigger phrase. A clean fixture must pass.
+  - The SkillSpector baseline check: missing reason, unknown skill, wildcard-only message and a bad `*/` target, plus slicing that must not leak another skill's rules.
+  - `merge-sarif.mjs`: one run, rewritten paths, de-duplicated rules, remapped indexes and dropped baselined results.
+  - The plugin-validate filter.
+- `npm run check`: lint, baseline check, version check, adapter drift and tests in one command, mirroring CI except the SkillSpector and plugin-validate jobs, which need extra tools.
+
+**Changed**
+
+- `scripts/lint-skills.mjs` takes `--skills-dir <dir>`, and `.github/scripts/skillspector-baseline.mjs` reads `SKILLSPECTOR_BASELINE`, so the self-tests can point them at fixtures.
+- `.claude-plugin/marketplace.json`: dropped `metadata.repository`, which Claude Code doesn't recognize (`plugin.json` already has `repository`).
+- README: the plugin install is now one line, `/plugin install cybersecurity-skills --marketplace briiirussell/cybersecurity-skills` (Claude Code 2.1.275+), with the two-step form kept for older versions.
+- `docs/security-scanning.md`, `CLAUDE.md` and `CONTRIBUTING.md` document the new checks and `npm run check`.
+
 ### 1.23.1 (2026-10-26)
 
 CI now enforces the per-merge versioning rule. Until now it was checked only by hand. Repo tooling only; no skill content changes. Closes #120.
