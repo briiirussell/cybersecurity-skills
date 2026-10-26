@@ -18,7 +18,8 @@ Current versions of all skills. Agents can compare against local versions to che
 | finding-triage | 1.0.0 | 2026-05-26 |
 | hipaa-audit | 1.0.0 | 2026-05-26 |
 | iam-audit | 1.0.0 | 2026-05-26 |
-| incident-triage | 1.0.1 | 2026-10-26 |
+| incident-triage | 1.0.2 | 2026-10-26 |
+| log-watch | 1.0.0 | 2026-10-26 |
 | mobile-audit | 1.0.0 | 2026-05-26 |
 | osint-recon | 1.0.0 | 2026-05-26 |
 | owasp-audit | 1.1.0 | 2026-05-26 |
@@ -31,14 +32,35 @@ Current versions of all skills. Agents can compare against local versions to che
 | scanner-pipeline | 1.0.0 | 2026-10-26 |
 | secrets-audit | 1.0.0 | 2026-05-26 |
 | security-comms | 1.0.0 | 2026-05-26 |
-| siem-detection | 1.0.0 | 2026-05-26 |
-| soc-operations | 1.0.0 | 2026-05-26 |
+| siem-detection | 1.0.1 | 2026-10-26 |
+| soc-operations | 1.0.1 | 2026-10-26 |
 | threat-hunting | 1.0.1 | 2026-10-26 |
 | threat-modeling | 1.0.0 | 2026-05-26 |
 | vuln-research | 1.0.0 | 2026-05-26 |
 | web-pentest | 1.0.0 | 2026-05-26 |
 
 ## Recent Changes
+
+### 1.9.0 (2026-10-26)
+
+New skill: **log-watch**. It sets up scheduled, agent-driven log review and paging for small teams that have no SIEM and no security staff, but do have logs.
+
+**Added**
+
+- **log-watch** (1.0.0).
+  - **Inventory the logs you already have** and map each source to the detections it can support: Vercel, Heroku, Render, Sentry, Supabase / Neon / Postgres auth tables, Stripe, Cloudflare, CloudTrail, the GitHub audit log.
+  - **Ten starter detections**, each with a signal, threshold and severity, plus example queries: credential stuffing, new admin/owner grants, API key creation, 401/403/404 spikes on admin/`.env`/`.git` paths, bad webhook signatures, unusual export volume, impossible travel, Stripe refund/dispute spikes, CloudTrail root logins and IAM changes, and egress to collector domains.
+  - **Two-stage pipeline.** A deterministic filter or cheap classifier first, then a strong model reviews only flagged events alongside the previous run's state. A cost table converts events/min → tokens/day → $/month.
+  - **Schedule and state:** cron agent, GitHub Actions schedule or Vercel cron. A checkpoint, a dedupe key per alert, and a suppression list with expiry, so the same issue doesn't page every 5 minutes.
+  - **Paging** to Slack, Pushover, PagerDuty or email, with a "why this fired" summary and raw event links.
+  - **Logs are untrusted input.** User agents, paths, emails and error text are attacker-controlled, so the reviewing agent gets read-only credentials, log content is fenced as data, and log text never picks an action. Rule-based hits always page; the model can raise their severity but never silence them.
+  - **Detection only:** no auto-blocking. Hands off to `incident-triage`, and to `siem-detection` / `soc-operations` when the team outgrows it.
+  - Optional scaffold: a GitHub Actions workflow plus a runner in `references/scaffold.md`. (#79)
+
+**Changed**
+
+- `siem-detection` (1.0.1), `soc-operations` (1.0.1), `incident-triage` (1.0.2): cross-references to log-watch.
+- README: added to Detect & Respond, the skill table, crossovers, and Where to start.
 
 ### 1.8.0 (2026-10-26)
 

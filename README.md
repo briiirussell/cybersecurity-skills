@@ -26,6 +26,7 @@ Not every skill is for every user on day one. A good starting point by context:
 - **Want deterministic scanners in CI instead of asking an agent to "hack" your app:** `scanner-pipeline` picks the tools per layer, wires them into CI, and routes findings to `finding-triage`
 - **Securing cloud / infrastructure:** start with `cloud-audit` (AWS / GCP / Azure misconfig), then `iam-audit` if you manage identities, then `container-audit` if you run Docker / Kubernetes
 - **Responding to "something happened":** `incident-triage` for the immediate response, `disk-forensics` if you need to analyze a system afterward, `security-comms` to draft the stakeholder / customer communications
+- **No SIEM, no security staff, but you have logs:** `log-watch` sets up a scheduled agent that reads the logs you already have (Vercel, Heroku, Sentry, Supabase, Stripe, CloudTrail, GitHub) and pages someone when it matters
 - **Building a security program from scratch:** `csf-mapping` for the governance frame, `threat-modeling` before new features, `breach-patterns` to learn from public incidents
 - **Working under a specific regulation:** `privacy-engineering` for GDPR / CCPA / similar privacy laws, `hipaa-audit` for ePHI, `pci-audit` for payment cards, `ai-risk-management` for AI features
 - **Running AI coding agents with skills, plugins, or MCP servers:** `agent-supply-chain-audit` before you install or trust them — including this catalog
@@ -67,8 +68,8 @@ The skills are organized into seven families. Most security work crosses familie
 │ audit│ │business│ │ hunting│ │        │ │      │ │ comms   │ │          │
 │mobile│ │-logic- │ │breach- │ │        │ │      │ │         │ │          │
 │-audit│ │-testing│ │patterns│ │        │ │      │ │         │ │          │
-│patch-│ │        │ │        │ │        │ │      │ │         │ │          │
-│ sweep│ │        │ │        │ │        │ │      │ │         │ │          │
+│patch-│ │        │ │log-    │ │        │ │      │ │         │ │          │
+│ sweep│ │        │ │ watch  │ │        │ │      │ │         │ │          │
 │scan- │ │        │ │        │ │        │ │      │ │         │ │          │
 │ner-  │ │        │ │        │ │        │ │      │ │         │ │          │
 │pipe- │ │        │ │        │ │        │ │      │ │         │ │          │
@@ -89,6 +90,7 @@ The skills are organized into seven families. Most security work crosses familie
      owasp-audit (source-side race patterns) → business-logic-testing (prove it live) ← web-pentest
      dependency-audit (one project) → patch-sweep (the whole fleet)
      scanner-pipeline → finding-triage → fix agents (tools find it, agents fix it)
+     log-watch → siem-detection / soc-operations (outgrow it) → incident-triage (it's real)
      breach-patterns → every audit skill (what to check)
      finding-triage ← every audit skill (closes the loop on any finding)
      security-comms ← every skill (translates output for non-security audience)
@@ -115,6 +117,7 @@ The skills are organized into seven families. Most security work crosses familie
 | [hipaa-audit](skills/hipaa-audit/) | HIPAA Security / Privacy / Breach Notification — three safeguard categories, 18 identifiers, BAA chain-of-liability, minimum-necessary, 60-day breach clock, encryption-as-safe-harbor. |
 | [iam-audit](skills/iam-audit/) | Consultant-style IAM — audit / design / migrate. Cloud IAM (AWS/GCP/Azure), identity providers (Okta/Entra/Auth0/Workspace), application authorization (RBAC/ABAC/ReBAC), workload identity, JIT access, break-glass. |
 | [incident-triage](skills/incident-triage/) | Security incident triage following NIST SP 800-61. |
+| [log-watch](skills/log-watch/) | Scheduled agent log review + paging for small teams without a SIEM — inventory the logs you already have, starter detections with thresholds (credential stuffing, new admin grants, key creation, .env/.git probing, bad webhook signatures, export spikes, CloudTrail root/IAM), a cheap-filter → strong-model pipeline with a monthly cost table, dedupe + suppression, paging. Detection only; logs treated as untrusted input. |
 | [mobile-audit](skills/mobile-audit/) | iOS + Android audit against OWASP MASVS / MASTG — storage, crypto, network, auth, platform IPC, code, resilience. |
 | [osint-recon](skills/osint-recon/) | Open source intelligence gathering and correlation. |
 | [owasp-audit](skills/owasp-audit/) | Source-code audit against OWASP Top 10 (2021) — category checklist, grep patterns, runtime verification, Second-Opinion Pass, three-disposition reporting. |

@@ -11,7 +11,7 @@ Three modes:
 - **Run** — daily operations for an existing SOC
 - **Improve** — analyzing an existing SOC's metrics and fixing the broken parts
 
-Cross-references: `siem-detection` (the rules that feed alerts to the SOC), `incident-triage` (the playbook for confirmed incidents), `threat-hunting` (proactive work between alert triage), `breach-patterns` (what attacks the SOC should be ready for).
+Cross-references: `siem-detection` (the rules that feed alerts to the SOC), `incident-triage` (the playbook for confirmed incidents), `threat-hunting` (proactive work between alert triage), `breach-patterns` (what attacks the SOC should be ready for), `log-watch` (the no-SIEM, no-SOC starting point for small teams — this skill is where they graduate to).
 
 ## Mode 1 — Build a SOC
 
