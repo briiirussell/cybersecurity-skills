@@ -27,7 +27,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | pci-audit | 1.0.0 | 2026-05-26 |
 | personal-opsec | 1.0.0 | 2026-10-26 |
 | privacy-engineering | 1.0.0 | 2026-05-26 |
-| prompt-injection | 1.0.0 | 2026-05-26 |
+| prompt-injection | 1.1.0 | 2026-10-26 |
 | recon | 1.0.0 | 2026-05-26 |
 | red-team-engagement | 1.0.0 | 2026-05-26 |
 | scanner-pipeline | 1.0.0 | 2026-10-26 |
@@ -41,6 +41,26 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.0.0 | 2026-05-26 |
 
 ## Recent Changes
+
+### 1.16.0 (2026-10-26)
+
+prompt-injection now catches instructions a human reviewer can't see but the model reads, and MCP tool poisoning.
+
+**Changed**
+
+- **prompt-injection** (1.1.0)
+  - **New Step 3: inspect instruction-bearing content for concealment.** Applies to system prompts, RAG corpora, tool and MCP manifests, and agent instruction files. Copy-paste patterns in both `rg` and portable `grep` for:
+    - invisible characters (zero-width, bidi overrides, word joiners, BOM, soft hyphen, and the Unicode tag block)
+    - directive keywords hidden in HTML or `[//]: #` comments
+    - long whitespace runs that push text out of view
+    - `data:text/...;base64,` payloads
+
+    The old Steps 3–7 are now 4–8. (#70)
+  - **MCP tool poisoning:** injection inside parameter descriptions, a tool's description not matching its behaviour, pinning and diffing tool definitions after approval (rug pulls), and Unicode deception in tool names. (#70)
+  - Anti-refusal phrasing added to the indirect-injection patterns. New output category: **Hidden Instruction / Tool Poisoning**. NVIDIA [SkillSpector](https://github.com/NVIDIA/SkillSpector) (Apache-2.0) added to References. (#70)
+  - **Hardening notes are no longer findings.** "Low — defense-in-depth improvements" moves out of the findings list into a "Hardening notes (not findings)" section, with severity per `references/severity-calibration.md`. (#63)
+  - Cross-references to `agent-supply-chain-audit`, `log-watch` and `personal-opsec`.
+- README: prompt-injection row updated.
 
 ### 1.15.0 (2026-10-26)
 
