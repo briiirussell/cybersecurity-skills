@@ -22,6 +22,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | mobile-audit | 1.0.0 | 2026-05-26 |
 | osint-recon | 1.0.0 | 2026-05-26 |
 | owasp-audit | 1.1.0 | 2026-05-26 |
+| patch-sweep | 1.0.0 | 2026-10-26 |
 | pci-audit | 1.0.0 | 2026-05-26 |
 | privacy-engineering | 1.0.0 | 2026-05-26 |
 | prompt-injection | 1.0.0 | 2026-05-26 |
@@ -37,6 +38,27 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.0.0 | 2026-05-26 |
 
 ## Recent Changes
+
+### 1.7.0 (2026-10-26)
+
+New skill: **patch-sweep**. It came out of a real October 2026 sweep: about 45 apps (Heroku Rails, Render, and around 39 Vercel Next.js projects) responding to a wave of Ruby, Node, PHP, Rails/libvips and Next.js advisories. Most of the real work happened outside any single `npm audit`.
+
+**Added**
+
+- **patch-sweep** (1.0.0). Fleet-wide CVE response.
+  - **Inventory:** map each repo to its platform project and the domains it actually serves. Flag legacy projects still serving `*.vercel.app`, projects with no custom domain, and duplicate projects built from the same repo.
+  - **Production branch:** find the branch each project really deploys from. Don't assume it's the default.
+  - **Stale deploys:** detect stale manual deploys and broken git deploys, which need an owner decision rather than a merge.
+  - **Affectedness:** check the runtime, the dependency, and whether the vulnerable code path is used. Read every pin file, call out EOL lines that won't get a fix, and note managed runtimes that patch themselves.
+  - **Mitigate before patching**, e.g. `VIPS_BLOCK_UNTRUSTED`.
+  - **Patch procedure per app:** hotfix branch from production, in-range fixes only, lint/typecheck/build, preview check, merge, confirm production returns 200, sync back.
+  - **Delegation:** about 6 repos per agent, watch for build queues, and repos owned by clients or other maintainers get PRs, never merges.
+  - **Prevention:** turn on Dependabot alerts across the fleet.
+  - **Output:** a status board with one row per app, plus "not shipped, and why" and "needs a major-version upgrade". Pre-approved commands are read-only inventory only. (#80)
+
+**Changed**
+
+- README: added to AppSec & Supply Chain, the skill table, crossovers, and Where to start.
 
 ### 1.6.0 (2026-10-26)
 

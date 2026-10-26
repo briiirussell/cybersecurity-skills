@@ -22,6 +22,7 @@ Built by [Bri Russell](https://github.com/briiirussell). I run real audits with 
 Not every skill is for every user on day one. A good starting point by context:
 
 - **Reviewing your own code or product:** start with `owasp-audit` for the source-code sweep, then `api-audit` if you have API endpoints, then `dependency-audit` for the CVE pass
+- **A CVE wave just dropped and you run many apps:** `patch-sweep` to work out which apps are affected and ship fixes across the fleet, with `dependency-audit` for each project
 - **Securing cloud / infrastructure:** start with `cloud-audit` (AWS / GCP / Azure misconfig), then `iam-audit` if you manage identities, then `container-audit` if you run Docker / Kubernetes
 - **Responding to "something happened":** `incident-triage` for the immediate response, `disk-forensics` if you need to analyze a system afterward, `security-comms` to draft the stakeholder / customer communications
 - **Building a security program from scratch:** `csf-mapping` for the governance frame, `threat-modeling` before new features, `breach-patterns` to learn from public incidents
@@ -65,6 +66,8 @@ The skills are organized into seven families. Most security work crosses familie
 │ audit│ │business│ │ hunting│ │        │ │      │ │ comms   │ │          │
 │mobile│ │-logic- │ │breach- │ │        │ │      │ │         │ │          │
 │-audit│ │-testing│ │patterns│ │        │ │      │ │         │ │          │
+│patch-│ │        │ │        │ │        │ │      │ │         │ │          │
+│ sweep│ │        │ │        │ │        │ │      │ │         │ │          │
 └──┬───┘ └───┬────┘ └───┬────┘ └───┬────┘ └──┬───┘ └────┬────┘ └────┬─────┘
    │         │          │          │         │           │            │
    └─────────┴────┬─────┴──────────┴─────────┴───────────┴────────────┘
@@ -79,6 +82,7 @@ The skills are organized into seven families. Most security work crosses familie
      privacy-engineering ⇆ hipaa-audit / pci-audit (engineering ⇆ regulatory)
      agent-supply-chain-audit ⇆ dependency-audit / secrets-audit (agent extensions are supply chain too)
      owasp-audit (source-side race patterns) → business-logic-testing (prove it live) ← web-pentest
+     dependency-audit (one project) → patch-sweep (the whole fleet)
      breach-patterns → every audit skill (what to check)
      finding-triage ← every audit skill (closes the loop on any finding)
      security-comms ← every skill (translates output for non-security audience)
@@ -108,6 +112,7 @@ The skills are organized into seven families. Most security work crosses familie
 | [mobile-audit](skills/mobile-audit/) | iOS + Android audit against OWASP MASVS / MASTG — storage, crypto, network, auth, platform IPC, code, resilience. |
 | [osint-recon](skills/osint-recon/) | Open source intelligence gathering and correlation. |
 | [owasp-audit](skills/owasp-audit/) | Source-code audit against OWASP Top 10 (2021) — category checklist, grep patterns, runtime verification, Second-Opinion Pass, three-disposition reporting. |
+| [patch-sweep](skills/patch-sweep/) | Fleet-wide CVE response across many apps and deploy platforms — map repos → platform projects → live domains, find each project's real production branch, catch stale manual deploys, decide affectedness (runtime + dependency + code path), mitigate before patching, ship and confirm prod. Output: one status board row per app. |
 | [pci-audit](skills/pci-audit/) | PCI DSS v4.0 — scope determination first, then Req 3 (CHD storage) / 4 (transmission) / 6 (secure SDLC) / 7-8 (access) / 10 (logging) / 11 (testing) / 12 (program). |
 | [privacy-engineering](skills/privacy-engineering/) | GDPR / CCPA / CPRA / LGPD / PIPEDA technical implementation — data classification, minimization, consent, the DSAR pipeline (access / deletion / portability with full vendor fan-out), DPIA inputs. |
 | [prompt-injection](skills/prompt-injection/) | AI features / LLM integrations / agents — prompt injection, privilege escalation, authorization bypass. |
