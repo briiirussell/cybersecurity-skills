@@ -1,12 +1,24 @@
 # incident-triage
 
-> Guide rapid triage and initial response to security incidents following NIST SP 800-61 methodology. Use when the user mentions 'incident response,' 'security incident,' 'triage,' 'we've been hacked,' 'breach,' 'compromised,' 'malware detected,' 'suspicious activity,' 'IOC,' 'indicators of compromise,' or needs help handling a security event.
+> Guide rapid triage and initial response to a live security incident following NIST SP 800-61 Rev. 3 (CSF 2.0 Respond and Recover) — declare, validate and prioritize, contain, preserve evidence, scope, extract IOCs, start the notification clocks, and hand off to eradication, recovery and lessons learned. Use when the user mentions 'incident response,' 'security incident,' 'incident triage,' 'active incident,' 'we've been hacked,' 'we've been breached,' 'compromised,' 'ransomware,' 'contain the incident,' 'malware detected,' 'suspicious activity,' 'IOC,' 'indicators of compromise,' or needs help handling a security event.
 
 # Incident Triage — Security Incident Response
 
-Guide rapid triage and initial response to security incidents. Follow NIST SP 800-61 methodology.
+Guide rapid triage and initial response to security incidents. Follow NIST SP 800-61 Rev. 3 (April 2025), which
+replaced Rev. 2's four-phase lifecycle with the CSF 2.0 Functions: Govern, Identify and Protect are the preparation that
+happens before an incident; Detect, Respond and Recover are the response. This skill covers the first hours — Detect
+through the start of Respond — and hands off the rest. Each step names the CSF 2.0 outcomes it produces, so the report
+maps straight onto the organization's CSF profile (see `csf-mapping`).
 
 Cross-references: `siem-detection` for the rules that produced the alert this triage is responding to, `disk-forensics` for deeper disk and memory analysis once a host is contained, `breach-patterns` for the post-incident pattern extraction that hardens against recurrence, `soc-operations` for the operational layer above this skill (runbooks, escalation, handoff), `security-comms` for the stakeholder / customer notifications the response generates, `privacy-engineering` / `hipaa-audit` / `pci-audit` for the regulatory-clock determination when personal data, PHI, or cardholder data is involved, `ai-risk-management` for AI-specific incident classes (model failure, fairness drift, jailbreak exploitation in production), `agent-supply-chain-audit` when the suspected entry point is an AI coding-agent extension (a skill, plugin, hook or MCP server), `log-watch` for the scheduled log review that often raises the first alert on small teams, `secrets-audit` for its exfiltration-collector domain list (webhook.site, requestbin, ngrok, Discord / Telegram / Slack webhooks) to check egress logs against when credential theft is suspected.
+
+## Authorization
+
+Act only for the system owner or the incident lead, on systems in scope. The read-only commands below (process,
+network, user and file listings) are pre-approved. Every containment action — blocking, isolating, disabling an
+account, stopping a service — changes production: name the action and its blast radius, and get the incident lead's
+go-ahead before running it. Never touch systems outside the declared scope, even if indicators point there; report
+them instead.
 
 ## Priorities (in order)
 
@@ -16,7 +28,14 @@ Cross-references: `siem-detection` for the rules that produced the alert this tr
 4. Identify root cause and scope
 5. Document everything
 
-## Step 1: Classification
+## Step 1: Declare, validate and prioritize (DE.AE-02, DE.AE-08, RS.MA-02, RS.MA-03)
+
+Is it an incident? Validate the report before mobilizing: confirm the alert against a second source (raw log, the
+host itself), rule out a known change or test, and record who reported it and when. If it meets the organization's
+incident criteria, **declare it** and record the declaration time (UTC) — regulatory clocks often start from discovery
+or determination, not from the attack. If the IR plan names an incident lead, third parties (MSSP, IR retainer,
+cyber insurer — many policies require notice before you engage outside responders), or a war-room channel, start
+them now (RS.MA-01).
 
 Determine incident type:
 - **Malware:** ransomware, trojan, worm, cryptominer
@@ -32,17 +51,24 @@ Determine severity:
 - **Medium:** suspicious activity, potential indicators, failed attacks
 - **Low:** policy violation, reconnaissance detected, likely false positive
 
-## Step 2: Initial Containment
+Escalate (RS.MA-04) when severity is High or above, regulated data (personal data, PHI, cardholder data) may be
+involved, the attacker may still be active, or the scope crosses teams or vendors.
+
+## Step 2: Initial Containment (RS.MI-01)
 
 Based on type and severity:
 - **Network:** block suspicious IPs/domains at firewall
 - **Host:** isolate affected system (network disconnect, NOT power off — volatile memory is evidence)
 - **Account:** disable compromised accounts, force password resets
 - **Application:** disable affected service if safe to do so
+- **Credentials and tokens:** revoke sessions and rotate keys the attacker could hold; `secrets-audit` for where they live
+
+Contain without tipping off an active attacker when you can: if they're still inside, coordinate the isolate,
+disable and rotate steps to happen together, or they'll pivot to the persistence you haven't found.
 
 **Critical: Do NOT power off systems.** Volatile memory contains evidence.
 
-## Step 3: Evidence Preservation
+## Step 3: Evidence Preservation (RS.AN-06, RS.AN-07)
 
 Capture in order of volatility (most volatile first):
 
@@ -68,7 +94,12 @@ journalctl --since "1 hour ago" # Linux/systemd
 
 If memory forensics tools are available (LiME, WinPmem), capture a memory dump before anything else.
 
-## Step 4: Initial Analysis
+Preserve integrity and provenance: hash every artifact at collection (`sha256sum`), record who collected it, from
+where, and when, and keep an action log of every command run and containment step taken (time, actor, result). Copy
+cloud and SaaS logs before their retention window rotates them out. Deeper image and memory analysis goes to
+`disk-forensics`.
+
+## Step 4: Initial Analysis and Scoping (RS.AN-03, RS.AN-08)
 
 For each suspicious indicator, document:
 - **What:** describe the artifact
@@ -83,7 +114,11 @@ Common analysis:
 - **Log analysis:** authentication failures, privilege escalation, service changes, cleared logs
 - **Persistence:** crontab, systemd units, registry Run keys, scheduled tasks, startup items
 
-## Step 5: IOC Extraction
+Estimate magnitude (RS.AN-08) and keep it current: which systems, accounts and data sets are affected, what the
+attacker could reach from there, and the earliest known activity. Write scope as known / suspected / ruled out, each
+with its evidence — the notification decision depends on it.
+
+## Step 5: IOC Extraction (RS.AN-07, RS.CO-03)
 
 Extract and document all indicators of compromise:
 
@@ -97,6 +132,36 @@ Extract and document all indicators of compromise:
 | URLs | Malicious URLs, C2 endpoints |
 | User agents | Unusual or known-malicious user agents |
 
+Feed the IOCs back into detection (`siem-detection`, `threat-hunting` to sweep for them elsewhere) and share them
+with the designated parties (ISAC, vendor, IR retainer) once the incident lead approves.
+
+## Step 6: Communication and notification clocks (RS.CO-02, RS.CO-03)
+
+Notify internal stakeholders per the IR plan, and identify which external clocks may have started. Counsel makes
+the determination; your job is to surface the facts and the deadlines early. Common ones (verify current text):
+
+| Regime | Clock |
+|---|---|
+| GDPR (personal data) | 72 hours from awareness, to the supervisory authority |
+| NIS2 (EU essential / important entities) | 24-hour early warning, 72-hour notification, final report in a month |
+| HIPAA (PHI) | Without unreasonable delay, no later than 60 days from discovery |
+| SEC Form 8-K Item 1.05 (US public companies) | 4 business days after the incident is determined material |
+| PCI DSS (cardholder data) | Per the card brands and acquirer — usually immediately |
+| US state breach laws, contracts, cyber insurance | Vary; check the contract and policy |
+
+Draft messages with `security-comms`; the regulated-data determination lives in `privacy-engineering`,
+`hipaa-audit` and `pci-audit`.
+
+## Step 7: Hand off eradication, recovery and lessons learned (RS.MI-02, RS.MA-05, RC.RP, ID.IM)
+
+Triage ends when the incident is contained and scoped. Record, for the next owner:
+
+- **Eradication** (RS.MI-02): every persistence mechanism and credential to remove or rotate, and how you'll confirm
+  it's gone
+- **Recovery** (RS.MA-05, RC.RP): the criteria for starting recovery, restore points known to be clean, and the
+  checks that confirm restored systems are healthy before they rejoin production
+- **Lessons learned** (ID.IM): schedule the post-incident review; `breach-patterns` turns it into audit questions
+
 ## Output Format
 
 ```markdown
@@ -105,14 +170,15 @@ Extract and document all indicators of compromise:
 ## Date/Time: [UTC]
 ## Severity: [Critical/High/Medium/Low]
 ## Classification: [incident type]
-## Status: [Triage/Contained/Analyzing/Resolved]
+## Status: [Triage/Contained/Analyzing/Recovering/Closed]
+## Declared: [UTC time and who declared]   ## Incident lead: [name]
 
 ### Summary
 [2-3 sentence overview]
 
-### Affected Systems
-| Hostname | IP | Role | Status |
-|----------|-----|------|--------|
+### Scope
+| Asset (host / account / data set) | Status (known / suspected / ruled out) | Evidence |
+|-----------------------------------|----------------------------------------|----------|
 
 ### Timeline
 | Time (UTC) | Event | Source | Notes |
@@ -122,8 +188,9 @@ Extract and document all indicators of compromise:
 | Type | Value | Context | Confidence |
 |------|-------|---------|------------|
 
-### Containment Actions Taken
-- [ ] [Action and result]
+### Action Log
+| Time (UTC) | Actor | Action | Approved by | Result |
+|------------|-------|--------|-------------|--------|
 
 ### Evidence Preserved
 | Type | Location | Hash | Notes |
@@ -134,11 +201,21 @@ Extract and document all indicators of compromise:
 2. [Short-term action]
 3. [Follow-up investigation]
 
+### Notification Clocks
+| Regime | Clock started (UTC) | Deadline | Owner | Status |
+|--------|---------------------|----------|-------|--------|
+
 ### Escalation Checklist
-- [ ] Management notified
-- [ ] Legal notified (if data breach)
+- [ ] Incident lead and management notified
+- [ ] Legal / counsel notified (if regulated data may be involved)
+- [ ] Cyber insurer notified (before engaging outside responders, if the policy requires it)
 - [ ] Law enforcement (if applicable)
-- [ ] Affected parties notified (if data breach)
+- [ ] Affected parties notified (per counsel)
+
+### Handoff
+- Eradication: [persistence and credentials to remove, how to confirm]
+- Recovery: [criteria, clean restore points, health checks]
+- Lessons learned: [review date, owner]
 ```
 
 ## Boundaries
@@ -152,6 +229,7 @@ Extract and document all indicators of compromise:
 
 ## References
 
-- NIST SP 800-61r2: Computer Security Incident Handling Guide
+- [NIST SP 800-61 Rev. 3](https://csrc.nist.gov/pubs/sp/800/61/r3/final) (April 2025): Incident Response Recommendations and Considerations for Cybersecurity Risk Management — a CSF 2.0 Community Profile; supersedes Rev. 2 (2012)
+- NIST Cybersecurity Framework 2.0 (Respond and Recover Functions)
 - SANS Incident Handler's Handbook
 - MITRE ATT&CK Framework
