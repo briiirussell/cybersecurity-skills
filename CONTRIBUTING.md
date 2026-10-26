@@ -131,7 +131,7 @@ Enforced by CI:
 Reviewed by a human:
 
 - [ ] Branched from `development`
-- [ ] `description` is pushy and lists trigger phrases (lint warnings about phrases shared with another skill are addressed or justified)
+- [ ] `description` is pushy and lists trigger phrases and none of them is already claimed by another skill (the lint fails on shared phrases)
 - [ ] `allowed-tools` is minimal: no unscoped `Bash`, `Write` only if the skill writes a file
 - [ ] Tested against a real scenario, not just a synthetic one
 - [ ] No secrets, credentials, or proprietary data in examples

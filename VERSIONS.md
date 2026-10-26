@@ -42,6 +42,15 @@ Current versions of all skills. Agents can compare against local versions to che
 
 ## Recent Changes
 
+### 1.19.6 (2026-10-26)
+
+CI now fails when two skills claim the same trigger phrase. v1.19.5 brought the count to zero; this keeps it there. Repo tooling only; no skill content changes.
+
+**Changed**
+
+- `scripts/lint-skills.mjs`: a single-quoted trigger phrase that appears in two or more skill descriptions is now an **error** (exit 1), not a warning. The same request could activate either skill (SkillSpector rule TR2). The message names both skills and the fix: keep the phrase in the skill that owns the work, and narrow or drop it in the other.
+- `docs/security-scanning.md` and `CONTRIBUTING.md`: updated to match. The contributor checklist now asks that no trigger phrase is already claimed by another skill.
+
 ### 1.19.5 (2026-10-26)
 
 Trigger-phrase cleanup. Seven phrases appeared in two skills' descriptions, so the same request could activate either one (SkillSpector rule TR2). Each phrase now belongs to the skill that actually does that work. The other skill either drops it, when it already has a more specific trigger, or uses a narrower wording. Description-only changes; no skill bodies changed. `node scripts/lint-skills.mjs` now reports 0 warnings.
