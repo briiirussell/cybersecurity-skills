@@ -10,7 +10,7 @@ Cross-references: `threat-modeling` for design-time AI risk modeling on new AI f
 
 ## Background
 
-Prompt injection is the #1 vulnerability in LLM-integrated applications (OWASP Top 10 for LLMs, LLM01). It occurs when untrusted input influences the instructions an LLM follows, causing it to ignore its system prompt, leak secrets, or take unauthorized actions.
+Prompt injection is the #1 vulnerability in LLM-integrated applications (OWASP Top 10 for LLM Applications 2025, LLM01). It occurs when untrusted input influences the instructions an LLM follows, causing it to ignore its system prompt, leak secrets, or take unauthorized actions.
 
 **Three attack classes:**
 - **Direct injection:** Attacker provides malicious input directly to the LLM (e.g., chat input, form field processed by AI)
@@ -371,7 +371,7 @@ control that already stops the attack is a hardening note, not a Low finding. Se
 
 ## References
 
-- OWASP Top 10 for LLM Applications (LLM01: Prompt Injection, LLM08: Excessive Agency)
+- OWASP Top 10 for LLM Applications 2025 (LLM01:2025 Prompt Injection, LLM05:2025 Improper Output Handling, LLM06:2025 Excessive Agency, LLM08:2025 Vector and Embedding Weaknesses). Older reports use the 2023 numbering, where Excessive Agency was LLM08. [genai.owasp.org/llm-top-10](https://genai.owasp.org/llm-top-10/)
 - NIST AI Risk Management Framework (AI 100-1)
 - Anthropic prompt injection mitigations documentation
 - Simon Willison's prompt injection research
