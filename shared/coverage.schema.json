@@ -16,7 +16,7 @@
         "surface": { "$ref": "#/$defs/text", "description": "The attack surface, e.g. 'POST /api/orders/:id/refund' or 'webhook receiver'." },
         "boundary": { "$ref": "#/$defs/text", "description": "The trust boundary crossed, e.g. 'anonymous -> authenticated user', 'tenant A -> tenant B'." },
         "owasp_category": {
-          "description": "OWASP category id (e.g. 'A01:2021', 'API1:2023'), or null when the unit is not OWASP-mapped.",
+          "description": "OWASP category id (e.g. 'A01:2025', 'API1:2023'), or null when the unit is not OWASP-mapped.",
           "oneOf": [{ "$ref": "#/$defs/text" }, { "type": "null" }]
         },
         "status": {

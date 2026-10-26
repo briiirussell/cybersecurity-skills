@@ -73,7 +73,7 @@ Each of these is a candidate for the concurrency amplifier in Step 6 — a windo
 
 Most logic invariants are enforced with a check-then-act sequence that is safe sequentially and unsafe in parallel. The goal is to land N requests inside the same check-then-act window so the check passes N times before any act commits.
 
-Patterns to hunt (source-side equivalents live in `owasp-audit` A04/A05/A08):
+Patterns to hunt (source-side equivalents live in `owasp-audit` A06/A02/A08):
 
 - **Idempotency key scoped to the path, not the principal.** If the key is keyed by `(endpoint, key)` rather than `(principal, endpoint, key)`, another user's key — or a replay of your own — reuses a completed result. Submit two different operations under one key; submit one key across two accounts.
 - **Cache-before-commit.** The app writes a "reserved/pending" marker to a cache, then commits to the DB. Two requests both read "available" from the stale cache before either commit lands.
@@ -150,7 +150,7 @@ Report with the shared findings vocabulary; see [references/findings-format.md](
 
 ## Cross-references
 
-- `owasp-audit` A04/A05/A08 — source-side race patterns: TOCTOU, atomic queue claim (`UPDATE ... WHERE status='pending' RETURNING`), reserve-then-act, external-resource-create TOCTOU. Read the code to locate the check-then-act window this skill proves dynamically.
+- `owasp-audit` A06/A02/A08 — source-side race patterns: TOCTOU, atomic queue claim (`UPDATE ... WHERE status='pending' RETURNING`), reserve-then-act, external-resource-create TOCTOU. Read the code to locate the check-then-act window this skill proves dynamically.
 - `web-pentest` Phase 8 (business logic) and its "Combined white-box + black-box mode" — when source and a running instance are both available, code findings point to the exact window to race.
 - `api-audit` — idempotency, BOLA, and API-level object/function authorization.
 - `finding-triage` — close each candidate to a disposition with contextual severity.
