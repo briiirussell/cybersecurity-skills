@@ -12,6 +12,10 @@ Cross-references: `iam-audit` for the consultant-style IAM deep-dive (design / a
 
 Findings use the shared dispositions: Fixed / Deferred / Accepted Risk / Mitigated (platform/config) / Requires major migration, per `owasp-audit`'s Report Format.
 
+## Authorization
+
+Audit only cloud accounts, projects, subscriptions and PaaS teams the user owns or is authorized to review, with credentials provided for that purpose. The pre-approved commands are read-only lists and describes. Never change a policy, rotate a key, delete a resource or redeploy as part of the audit: recommend it and let the owner run it. If the audit credentials grant more than read access, report that as a finding of its own.
+
 ## Scope the Audit
 
 Identify:

@@ -12,6 +12,10 @@ This skill emphasizes scope determination first, then the engineering-relevant r
 
 Cross-references: `crypto-audit` for Req 3 / 4 cryptographic detail; `iam-audit` for Req 7-8; `siem-detection` for Req 10 logging; `dependency-audit` and `owasp-audit` for Req 6 (secure SDLC); `incident-triage` for Req 12.10 (incident response).
 
+## Authorization
+
+Audit only environments the user's organization owns or has engaged them to review. Never read, log or paste real card data (PAN, CVV, track data) into the transcript; use test card numbers and trace where cardholder data could flow. If you find real PAN where it shouldn't be, record the location, not the number, and treat it as a possible incident (`incident-triage`). This is a readiness review, not a QSA assessment.
+
 ## The scope question (do this first)
 
 "Scope" in PCI DSS means: the systems that store, process, or transmit cardholder data (CHD), plus systems that can affect the security of those systems (connected-to and security-impacting systems). Everything in scope is subject to all 12 requirements. Everything out of scope is not.

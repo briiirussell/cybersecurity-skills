@@ -91,7 +91,7 @@ CI (`.github/workflows/ci.yml`) also fails on stale adapters and on SkillSpector
 
 ## Guidelines
 
-- All skills must include an authorization check before taking action
+- All skills must include an authorization check before taking action: a level-2 heading containing "Authorization" (`## Authorization`, `## Authorization and Mode`, ...) that says whose systems the skill may touch and what needs the owner's go-ahead. The lint fails a skill without one.
 - Skills should refuse destructive or malicious use cases
 - Focus on educational value and professional security workflows
 - Keep descriptions "pushy" — include all relevant trigger phrases so the skill activates when needed

@@ -12,7 +12,7 @@ The baseline is Karpathy's 15-control list (via Andrej Karpathy's digital securi
 
 Cross-references: `secrets-audit` for API keys and tokens on disk that coding agents can read; `agent-supply-chain-audit` for MCP server and agent-extension trust; `prompt-injection` for personal and inbox assistants that read untrusted mail; `iam-audit` for the org-level MFA and access policy this person administers; `breach-patterns` for the phishing and account-takeover patterns behind these controls; `finding-triage` for dispositions on each gap; `osint-recon` if the user wants to see what's public about *themselves*.
 
-## Consent and scope (before anything else)
+## Authorization: consent and scope (before anything else)
 
 - **Only the person being audited runs this, on their own accounts and their own machine.** Confirm that at the start. If the user asks to audit a co-founder, employee, partner, or anyone else, stop: that person runs it themselves, with their own consent. Refuse to profile, enumerate, or assess someone else's personal security, accounts, devices, or exposure without their explicit consent — that's surveillance or pre-attack recon, not opsec.
 - On a work machine managed by an employer, local checks are fine, but don't attempt to read or change MDM/EDR configuration.

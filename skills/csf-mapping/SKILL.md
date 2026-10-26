@@ -27,6 +27,10 @@ This skill maps your reality to those Subcategories.
 
 Cross-references: every audit skill in this repo (they produce evidence that becomes the "current state" entries here), `iam-audit` (most of PR.AA), `siem-detection` (most of DE), `incident-triage` (most of RS), `threat-modeling` (informs ID.RA risk assessment), `breach-patterns` (informs ID.IM improvements from lessons learned).
 
+## Authorization
+
+Map the user's own organization, or a client that engaged them, from evidence they provide or point you to. This skill reads policies, configs and audit output; it doesn't probe systems. Keep the evidence inside the assessment, and don't infer another organization's posture from public data.
+
 ## Methodology
 
 ### Step 1 — Establish scope

@@ -16,6 +16,10 @@ When a CVE drops, the question isn't "do we have this package?" — `dependency-
 
 This skill walks that workflow end-to-end. Pairs with `dependency-audit` (which surfaces the CVE in the first place) and `finding-triage` (which closes the disposition loop).
 
+## Authorization
+
+Research vulnerabilities in code, dependencies and systems the user owns or is authorized to assess. Reading advisories, patches and public write-ups is fine. Reproduce a vulnerability only in an isolated environment the user controls, never against a live system you aren't authorized to test. Pre-disclosure details stay with the people entitled to them (see Boundaries).
+
 ## Workflow
 
 ### Step 1 — Pull the canonical sources

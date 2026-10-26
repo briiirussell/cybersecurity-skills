@@ -8,7 +8,9 @@ Audit project dependencies, frameworks, language runtimes, and dev tools for kno
 
 Cross-references: `patch-sweep` for patching the same advisory across many repos; `scanner-pipeline` for running osv-scanner / trivy in CI across every lockfile at once; `agent-supply-chain-audit` for reviewing the content of MCP servers, skills, and plugins this skill inventories; `cloud-audit` "PaaS" for platform runtime and config checks behind `Mitigated (platform/config)`; `secrets-audit` for tokens found in `.npmrc` or CI; `iam-audit` for the cloud roles CI assumes via OIDC; `finding-triage` for dispositioning individual findings.
 
-**Authorization:** confirm the user owns or is authorized to audit the repo, CI system, and registries before running anything. Audit tools are read-only, but fix commands (`audit fix`, `bundle update`) rewrite lockfiles. Run them only when asked, on a branch, never on the production branch directly.
+## Authorization
+
+Confirm the user owns or is authorized to audit the repo, CI system, and registries before running anything. Audit tools are read-only, but fix commands (`audit fix`, `bundle update`) rewrite lockfiles. Run them only when asked, on a branch, never on the production branch directly.
 
 ## Methodology
 

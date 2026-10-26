@@ -12,6 +12,10 @@ Breaches catalogued here are public, well-documented, and pattern-bearing. Each 
 
 Cross-references: every audit skill in this repo. Use this skill to surface "have we considered X?" questions, then pivot to the relevant audit skill for the deep dive. When a breach pattern surfaces a regulatory implication — health data exposure, payment card data exposure, PII exposure — also reach for `hipaa-audit`, `pci-audit`, or `privacy-engineering` to understand the regulatory clock and notification obligations that come with that breach class. When the pattern started with one person's account (a phished founder, a SIM-swapped admin, a developer laptop), run `personal-opsec` on the people who hold the keys.
 
+## Authorization
+
+This skill reads public breach write-ups and checks the user's own stack against them. Check only systems and code the user owns or is authorized to review, read-only. The patterns describe how real attacks worked so you can close the gap; don't turn one into a working attack against anyone's system. If a check shows the pattern is happening now, stop and switch to `incident-triage`.
+
 ## How to use this skill
 
 For each breach pattern below:

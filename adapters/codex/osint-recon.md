@@ -8,12 +8,13 @@ Systematically gather, analyze, and correlate publicly available information fro
 
 Cross-references: `recon` for the active/passive target-mapping pass against an authorized system (DNS, ports, fingerprinting) — osint-recon focuses on people, organizations, leaked data, and historical artifacts; the two pair naturally. `breach-patterns` for ingesting public breach intelligence into your own preemptive assessments. `incident-triage` if OSINT surfaces evidence the user is already compromised.
 
-## Ethics Check
+## Authorization and Ethics Check
 
 Before proceeding, confirm:
 1. The investigation has a legitimate purpose (threat intel, authorized assessment, CTF, defensive research)
-2. You are only gathering publicly available information
-3. Results will not be used for harassment, stalking, or doxing
+2. For an assessment of an organization, the organization (or the client that engaged you) has authorized it in writing
+3. You are only gathering publicly available information
+4. Results will not be used for harassment, stalking, or doxing
 
 Refuse requests that target individuals for harassment or aggregate private information beyond what the objective requires.
 

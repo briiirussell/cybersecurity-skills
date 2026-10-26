@@ -12,6 +12,10 @@ This skill takes technical security work and turns it into the deliverable that 
 
 Cross-references: feeds from every other skill (audit output, incident write-ups, threat-model summaries, CSF assessments) and produces audience-specific deliverables; pairs especially closely with `finding-triage` (the disposition writeup) and `incident-triage` (the response narrative).
 
+## Authorization
+
+Draft communications for the user's own organization, from facts they provide. A draft is not approval to send: anything external (customers, regulators, press, a researcher) needs sign-off from the owner the plan names, and breach notifications need legal review. Don't put customer names, PII or unconfirmed details in a draft without that sign-off.
+
 ## The seven audiences (and what each one actually needs)
 
 Security comms is not one register. Each audience needs a different deliverable; using the wrong register is the most common failure mode.
