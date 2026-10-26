@@ -12,6 +12,10 @@ Final compliance determinations stay with counsel and your privacy officer; this
 
 Cross-references: `privacy-engineering` for the GDPR / CCPA-shaped privacy work that often overlaps; `iam-audit` for access control and authentication; `crypto-audit` for encryption-at-rest and in-transit detail; `secrets-audit` for key management; `siem-detection` for audit-log engineering; `incident-triage` and `security-comms` for breach response.
 
+## Authorization
+
+Audit only systems and code that the user's organization (a covered entity or business associate) owns, or that it has engaged the user to review. Never read, export or paste real PHI into the transcript: trace where it flows and how it's protected from schemas, configs and synthetic records. If you come across real PHI, record the location without copying it. Compliance and breach-notification conclusions go to the privacy officer and counsel.
+
 ## Scope — who is covered and what is PHI
 
 ### Who must comply

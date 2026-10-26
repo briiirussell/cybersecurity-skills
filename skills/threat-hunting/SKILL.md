@@ -12,6 +12,10 @@ Hunting is hypothesis-driven, not browse-driven. "Let's look around the SIEM" is
 
 Cross-references: `siem-detection` (queries you write here often graduate to detection rules), `incident-triage` (what to do if a hunt confirms a finding), `breach-patterns` (a rich source of hunt hypotheses), `disk-forensics` (deeper analysis on confirmed hits), `agent-supply-chain-audit` (hunting for malicious or rug-pulled AI coding-agent extensions on developer machines), `secrets-audit` (its exfiltration-collector domain list is a ready-made egress hunt: DNS / proxy hits to webhook.site, requestbin, ngrok, or chat webhooks from servers or CI runners).
 
+## Authorization
+
+Hunt only in environments the user owns or is authorized to investigate, with the logs and telemetry they've given you access to. Hunting reads; it doesn't contain. If a hunt finds confirmed malicious activity, stop and hand off to `incident-triage` instead of acting on hosts or accounts. Hunting in employee activity stays within what HR and legal have authorized.
+
 ## Methodology — PEAK framework
 
 The PEAK (Prepare, Execute, Act, Knowledge) framework from Splunk SURGe — the most actionable hunting methodology I've seen.

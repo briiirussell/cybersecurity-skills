@@ -16,7 +16,9 @@ Cross-references:
 - `business-logic-testing` — invariant and race-condition testing of API flows (double-spend, TOCTOU on `/transfer`, coupon/quota races, out-of-order state machines). Hand off multi-step or concurrency-dependent flows there; this skill covers per-endpoint authz and misconfiguration
 - `finding-triage` — consumes the `findings.json` this skill emits
 
-Authorization check before you start: audit only APIs the user owns or has given you written permission to test. For any live request, confirm the target is a test/staging instance or that you have explicit authorization for production. See Boundaries.
+## Authorization
+
+Audit only APIs the user owns or has given you written permission to test; source review needs nothing more. For any live request, confirm the target is a test or staging instance, or that you have explicit authorization for production, and keep requests non-destructive: no writes to real tenants' data, no load. See Boundaries.
 
 ## Workflow
 

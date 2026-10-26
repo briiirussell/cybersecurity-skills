@@ -8,7 +8,7 @@ Every PR into `development` or `main`, and every push to either branch, runs [`.
 
 | Job | Command | Fails when |
 |---|---|---|
-| Skill lint | `node scripts/lint-skills.mjs` | `name` ≠ folder; description outside 200–1024 chars; `SKILL.md` ≥ 500 lines; a cross-referenced skill has no folder; a relative link doesn't resolve; two skills share a trigger phrase; `allowed-tools` pairs `WebFetch` with unscoped `Bash`; a `Bash` grant would pre-approve a write (see below) |
+| Skill lint | `node scripts/lint-skills.mjs` | `name` ≠ folder; description outside 200–1024 chars; `SKILL.md` ≥ 500 lines; no `## Authorization` section; a cross-referenced skill has no folder; a relative link doesn't resolve; two skills share a trigger phrase; `allowed-tools` pairs `WebFetch` with unscoped `Bash`; a `Bash` grant would pre-approve a write (see below) |
 | Baseline check | `node .github/scripts/skillspector-baseline.mjs --check` | a baseline rule lacks `id`, `path`, `message` or `reason`, or names a skill that doesn't exist |
 | Adapter drift | `node scripts/build-adapters.mjs`, then `git diff --exit-code adapters/ skills/` | generated adapters or the `shared/` → `skills/*/references/` copies are stale |
 | Tests | `npm test` (`node --test "scripts/test/*.test.mjs"`, Node ≥ 21) | a validator, `to-sarif` or build test fails |

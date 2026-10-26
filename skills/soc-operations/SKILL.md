@@ -15,6 +15,10 @@ Three modes:
 
 Cross-references: `siem-detection` (the rules that feed alerts to the SOC), `incident-triage` (the playbook for confirmed incidents), `threat-hunting` (proactive work between alert triage), `breach-patterns` (what attacks the SOC should be ready for), `log-watch` (the no-SIEM, no-SOC starting point for small teams — this skill is where they graduate to).
 
+## Authorization
+
+Design and improve security operations for the user's own organization or a client that engaged them. Runbooks and monitoring designs cover systems and accounts the organization owns, within what HR, legal and local law allow for employee monitoring. Escalation and on-call changes are proposals for the SOC lead to approve.
+
 ## Mode 1 — Build a SOC
 
 ### Decision: in-house, MSSP, or hybrid?

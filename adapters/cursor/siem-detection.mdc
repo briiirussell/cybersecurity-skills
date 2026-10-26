@@ -10,6 +10,10 @@ Build, audit, and maintain SIEM detection content — the rules that fire alerts
 
 Cross-references: `incident-triage` for what happens after the alert, `threat-hunting` for proactive hypothesis-driven hunts that often graduate into detection rules, `breach-patterns` for detection ideas pulled from public breach disclosures, `soc-operations` for the alert-triage operations on top of the detections engineered here, `log-watch` for small teams that don't run a SIEM yet (a scheduled agent over the logs they already have — the on-ramp to this skill).
 
+## Authorization
+
+Write and tune detections for environments the user owns or is authorized to work on. This skill writes rule files (it has `Write` for that); it doesn't deploy them, disable existing rules or change alert routing in a live SIEM. Testing a rule with simulated attack activity happens only in a lab, or on a host whose owner has signed off.
+
 ## Scope
 
 This skill covers:

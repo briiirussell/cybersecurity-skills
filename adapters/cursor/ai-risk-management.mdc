@@ -12,6 +12,10 @@ The framing is NIST AI RMF 1.0 (released 2023) — the most widely-adopted volun
 
 Cross-references: `prompt-injection` for prompt-injection / LLM-specific security attacks; `threat-modeling` for design-time AI risk modeling; `incident-triage` and `breach-patterns` for AI-related incident response patterns; `csf-mapping` for the broader governance frame that AI RMF sits within.
 
+## Authorization
+
+Assess AI systems the user's organization builds, deploys, or buys, using material they're entitled to share. This skill reads documentation, model cards, eval results and code. It doesn't run evaluations against production models with real user data, or against a third-party model in ways its terms forbid. Regulatory conclusions are input for counsel, not legal advice.
+
 ## The NIST AI RMF — four functions
 
 Just like the cybersecurity framework, the AI RMF organizes the work into functions. Same shape, different content.

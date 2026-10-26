@@ -5,42 +5,58 @@ Current versions of all skills. Agents can compare against local versions to che
 | Skill | Version | Last Updated |
 |-------|---------|--------------|
 | agent-supply-chain-audit | 1.0.1 | 2026-10-26 |
-| ai-risk-management | 1.1.0 | 2026-10-26 |
-| api-audit | 1.1.2 | 2026-10-26 |
-| breach-patterns | 1.0.3 | 2026-10-26 |
+| ai-risk-management | 1.1.1 | 2026-10-26 |
+| api-audit | 1.1.3 | 2026-10-26 |
+| breach-patterns | 1.0.4 | 2026-10-26 |
 | business-logic-testing | 1.0.1 | 2026-10-26 |
-| cloud-audit | 1.1.1 | 2026-10-26 |
-| container-audit | 1.0.1 | 2026-10-26 |
-| crypto-audit | 1.0.2 | 2026-10-26 |
-| csf-mapping | 1.0.1 | 2026-10-26 |
-| dependency-audit | 1.2.1 | 2026-10-26 |
+| cloud-audit | 1.1.2 | 2026-10-26 |
+| container-audit | 1.0.2 | 2026-10-26 |
+| crypto-audit | 1.0.3 | 2026-10-26 |
+| csf-mapping | 1.0.2 | 2026-10-26 |
+| dependency-audit | 1.2.2 | 2026-10-26 |
 | disk-forensics | 1.0.1 | 2026-10-26 |
 | finding-triage | 1.1.1 | 2026-10-26 |
-| hipaa-audit | 1.0.1 | 2026-10-26 |
-| iam-audit | 1.0.2 | 2026-10-26 |
+| hipaa-audit | 1.0.2 | 2026-10-26 |
+| iam-audit | 1.0.3 | 2026-10-26 |
 | incident-triage | 1.1.0 | 2026-10-26 |
 | log-watch | 1.0.1 | 2026-10-26 |
 | mobile-audit | 1.0.1 | 2026-10-26 |
-| osint-recon | 1.0.1 | 2026-10-26 |
+| osint-recon | 1.0.2 | 2026-10-26 |
 | owasp-audit | 1.3.0 | 2026-10-26 |
 | patch-sweep | 1.0.2 | 2026-10-26 |
-| pci-audit | 1.0.2 | 2026-10-26 |
-| personal-opsec | 1.0.0 | 2026-10-26 |
-| privacy-engineering | 1.0.2 | 2026-10-26 |
-| prompt-injection | 1.1.2 | 2026-10-26 |
+| pci-audit | 1.0.3 | 2026-10-26 |
+| personal-opsec | 1.0.1 | 2026-10-26 |
+| privacy-engineering | 1.0.3 | 2026-10-26 |
+| prompt-injection | 1.1.3 | 2026-10-26 |
 | recon | 1.0.1 | 2026-10-26 |
 | red-team-engagement | 1.0.1 | 2026-10-26 |
 | scanner-pipeline | 1.0.2 | 2026-10-26 |
-| secrets-audit | 1.1.1 | 2026-10-26 |
-| security-comms | 1.0.2 | 2026-10-26 |
-| siem-detection | 1.0.2 | 2026-10-26 |
-| soc-operations | 1.0.3 | 2026-10-26 |
-| threat-hunting | 1.0.3 | 2026-10-26 |
-| threat-modeling | 1.0.3 | 2026-10-26 |
-| vuln-research | 1.0.1 | 2026-10-26 |
+| secrets-audit | 1.1.2 | 2026-10-26 |
+| security-comms | 1.0.3 | 2026-10-26 |
+| siem-detection | 1.0.3 | 2026-10-26 |
+| soc-operations | 1.0.4 | 2026-10-26 |
+| threat-hunting | 1.0.4 | 2026-10-26 |
+| threat-modeling | 1.0.4 | 2026-10-26 |
+| vuln-research | 1.0.2 | 2026-10-26 |
 | web-pentest | 1.1.3 | 2026-10-26 |
 
 ## Recent Changes
+
+### 1.23.0 (2026-10-26)
+
+Every skill now has an Authorization section, and the lint fails a skill without one. `CLAUDE.md` always required an authorization check, but only 13 of 35 skills had a heading for it. The others had a line in Boundaries, an inline paragraph, or nothing. Closes #119.
+
+**Changed**
+
+- The lint (`scripts/lint-skills.mjs`) fails when `SKILL.md` has no level-2 heading containing "Authorization". `## Authorization`, `## Authorization Check`, `## Authorization and Mode` and `## Step 0 — Authorization and scope` all pass.
+- **New `## Authorization` sections** (PATCH each), written for what each skill actually touches:
+  - Audit skills (cloud, container, IAM, crypto, secrets, prompt-injection) say which systems are in scope, that pre-approved commands only read, and which actions (key checks, TLS probes, live injection tests, privilege-escalation paths) need the owner first.
+  - Data-handling skills (HIPAA, PCI, privacy) say never to copy real PHI, PAN or personal data into the transcript; record the location instead.
+  - Advisory skills (security-comms, csf-mapping, threat-modeling, ai-risk-management, soc-operations) state whose organization they work for and who signs off.
+  - Skills: **ai-risk-management** (1.1.1), **breach-patterns** (1.0.4), **cloud-audit** (1.1.2), **container-audit** (1.0.2), **crypto-audit** (1.0.3), **csf-mapping** (1.0.2), **hipaa-audit** (1.0.2), **iam-audit** (1.0.3), **pci-audit** (1.0.3), **privacy-engineering** (1.0.3), **prompt-injection** (1.1.3), **secrets-audit** (1.1.2), **security-comms** (1.0.3), **siem-detection** (1.0.3), **soc-operations** (1.0.4), **threat-hunting** (1.0.4), **threat-modeling** (1.0.4), **vuln-research** (1.0.2).
+- **Inline authorization text promoted to a heading** (PATCH each): **api-audit** (1.1.3) and **dependency-audit** (1.2.2). api-audit also says live requests stay non-destructive.
+- **Headings renamed** (PATCH each): **osint-recon** (1.0.2) "Ethics Check" → "Authorization and Ethics Check", with written authorization required for organization assessments. **personal-opsec** (1.0.1) "Consent and scope" → "Authorization: consent and scope".
+- `CLAUDE.md`, `CONTRIBUTING.md` and `docs/security-scanning.md` describe the rule.
 
 ### 1.22.0 (2026-10-26)
 

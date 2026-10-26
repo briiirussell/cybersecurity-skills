@@ -8,6 +8,10 @@ alwaysApply: false
 
 Audit container images, Dockerfiles, Helm charts, Kustomize overlays, and Kubernetes manifests for misconfiguration, excessive privilege, exposed secrets, and runtime security gaps. Distinct from `cloud-audit` (cloud-provider IAM and managed services) and `dependency-audit` (package CVEs in the application). This skill is the container/orchestration layer between them.
 
+## Authorization
+
+Audit only images, registries and clusters the user owns or is authorized to review. `trivy` and `kube-bench` read; they don't change the cluster. Don't `kubectl exec` into workloads, apply manifests or delete pods during the audit, and never try a container escape on a shared or production cluster: describe the path and let the owner validate it in an isolated environment.
+
 ## Scope the Audit
 
 1. Inventory the surface — Dockerfiles, base images, registries, Helm charts, K8s manifests, Kustomize overlays, CI build pipelines that produce images
