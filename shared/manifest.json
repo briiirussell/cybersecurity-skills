@@ -48,7 +48,8 @@
       "owasp-audit",
       "api-audit",
       "dependency-audit",
-      "secrets-audit"
+      "secrets-audit",
+      "prompt-injection"
     ],
     "coverage.schema.json": [
       "owasp-audit",
