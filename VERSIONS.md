@@ -42,6 +42,32 @@ Current versions of all skills. Agents can compare against local versions to che
 
 ## Recent Changes
 
+### 1.19.1 (2026-10-26)
+
+Repo trust: CI, lint, and a SkillSpector scan on every PR. Repo tooling only; no skill content changes.
+
+**Added**
+
+- **`.github/workflows/ci.yml`**: runs on PRs and pushes to `development` and `main`. Every action is pinned to a full commit SHA, and permissions are kept to the minimum. (#69)
+  - **Skill lint** (`scripts/lint-skills.mjs`, no dependencies). Fails when:
+    - `name` doesn't match the folder
+    - the description is outside 200–1024 characters
+    - `SKILL.md` is 500 lines or more
+    - a cross-referenced skill or relative link doesn't resolve
+    - `allowed-tools` pairs `WebFetch` with unscoped `Bash`
+
+    It also warns when two skills share a trigger phrase.
+  - **Adapter drift:** rebuilds the adapters and shared reference copies, and fails if the committed copies are stale.
+  - **Tests:** `npm test` (Node 22).
+  - **SkillSpector:** NVIDIA [SkillSpector](https://github.com/NVIDIA/SkillSpector), pinned commit, `--no-llm`, one skill at a time. The tool rejects `--baseline` on recursive scans and reports paths relative to each skill. SARIF is merged and uploaded to code scanning.
+- **`.skillspector-baseline.yaml`**: 117 narrow rules, each with a written reason. They cover all 221 current matches, every one of them an intentional example. A security skill has to name `~/.aws/credentials`, show an injection payload, and grep for collector domains. A `*` skill wildcard is only allowed for files copied from `shared/`. `node .github/scripts/skillspector-baseline.mjs --check` validates the file.
+- **`docs/security-scanning.md`**: the CI checks, how the baseline works, how to scan this repo yourself before installing, and the full allowed-tools before → after table from 1.19.0 with a reason per skill.
+- **README:** CI badge, a "Security scanning" section, build and test commands, and how `shared/` copies work.
+
+**Changed**
+
+- `CLAUDE.md` and `CONTRIBUTING.md`: directory tree and commands now cover `shared/` + `manifest.json` ("edit shared/, never the copies"), `npm test`, the lint, and the baseline check. The contributor checklist points at the CI jobs.
+
 ### 1.19.0 (2026-10-26)
 
 **Heads up: this may change how skills feel to use.** `allowed-tools` in a Claude Code skill lists tools that run **without a permission prompt** while the skill is active. It is not an access list or a ceiling. Before this version, 26 of 29 skills pre-approved plain `Bash`, 24 pre-approved `Write`, and 5 paired `Bash` with `WebFetch`. That last combination gives attacker-controlled web content a path to the shell with no prompt in between. Nothing is removed from what a skill *can* do. Commands that used to run silently now ask first, unless they're read-only and listed below. If you relied on the old pre-approvals for unattended runs, add the specific commands to your own permission settings. Credit: NVIDIA [SkillSpector](https://github.com/NVIDIA/SkillSpector) rule LP3. (#65)

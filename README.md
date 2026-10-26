@@ -1,5 +1,7 @@
 # Cybersecurity Skills for AI Agents
 
+[![CI](https://github.com/briiirussell/cybersecurity-skills/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/briiirussell/cybersecurity-skills/actions/workflows/ci.yml)
+
 A collection of cybersecurity skills for AI coding agents. The AI does the heavy lifting; you bring the context about your stack and your priorities.
 
 **Built to be useful at every experience level:**
@@ -209,8 +211,12 @@ Then reference skills from `.agents/cybersecurity-skills/skills/`.
 After creating or modifying a skill, regenerate the Cursor + Codex adapters:
 
 ```bash
-node scripts/build-adapters.mjs
+node scripts/build-adapters.mjs   # adapters + shared reference copies
+node scripts/lint-skills.mjs      # frontmatter, size, cross-reference and link lint
+npm test                          # findings / coverage validators, SARIF export, build (Node ≥ 21, no dependencies)
 ```
+
+Files in `shared/` (the `findings.json` schema and validator, severity calibration, verification and coverage guides) are copied into each skill's `references/` folder according to `shared/manifest.json`, because `npx skills` installs one skill folder at a time. Edit `shared/`, never the copies.
 
 ## Creating a New Skill
 
@@ -220,6 +226,14 @@ node scripts/build-adapters.mjs
 4. Run the build script to generate adapters
 
 Format details and writing guidance live in [`CLAUDE.md`](CLAUDE.md). Full contribution flow in [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+## Security scanning
+
+Every PR is linted and scanned with [NVIDIA SkillSpector](https://github.com/NVIDIA/SkillSpector) (static mode, pinned version). Intentional example payloads — a security skill has to name `~/.aws/credentials` and show what an injection looks like — are suppressed by narrow, reasoned rules in [`.skillspector-baseline.yaml`](.skillspector-baseline.yaml). Scan it yourself before installing:
+
+    skillspector scan https://github.com/briiirussell/cybersecurity-skills --recursive --no-llm
+
+Our baseline is never applied to your scan; SkillSpector only uses an author-shipped baseline for a single skill with `--use-shipped-baseline`. `allowed-tools` lists tools pre-approved to run **without a prompt** in Claude Code — it is not a sandbox — and the Cursor / Codex adapters carry no tool restrictions at all. Details: [docs/security-scanning.md](docs/security-scanning.md). You can also point `agent-supply-chain-audit` at this repo.
 
 ## Ethics & Authorization
 
@@ -234,6 +248,8 @@ This repo follows [semantic versioning](https://semver.org/). See [`VERSIONS.md`
 - **MAJOR** (X.0.0) — Breaking changes: skill renames, removals, or frontmatter changes that break existing installs
 - **MINOR** (1.X.0) — New skill, or substantive expansion of an existing one
 - **PATCH** (1.0.X) — Content fixes, grep-pattern updates, small additions
+
+Every new skill and every skill improvement ships as its own version, one PR each, so each skill's version in `VERSIONS.md` tells you exactly what changed and when.
 
 ## Contributing
 
