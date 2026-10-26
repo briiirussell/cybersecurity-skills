@@ -1,7 +1,7 @@
 ---
 name: scanner-pipeline
 description: "Set up and run deterministic security scanners across a repo or a whole fleet of repos — gitleaks, trufflehog, semgrep, osv-scanner, trivy, checkov, Brakeman, govulncheck, Supabase advisors, and (guarded) nuclei/ZAP — then normalize their output to findings.json or SARIF, dedupe, suppress with expiry, schedule in CI, and hand findings to fix agents. Use when the user mentions 'run scanners,' 'security scanning pipeline,' 'set up gitleaks,' 'semgrep in CI,' 'osv-scanner,' 'trivy fs,' 'SARIF,' 'code scanning,' 'scan all my repos,' 'security-scan workflow,' 'weekly security scan,' 'Supabase RLS advisor,' 'dedupe scanner findings,' 'suppression file,' 'stop asking Claude to hack my app,' or wants tools, not an agent, to find the bugs."
-allowed-tools: Read, Grep, Glob, Write, Bash(gitleaks:*), Bash(trufflehog:*), Bash(osv-scanner:*), Bash(semgrep:*), Bash(trivy:*), Bash(checkov:*), Bash(bundle-audit:*), Bash(brakeman:*), Bash(gosec:*), Bash(govulncheck:*), Bash(pip-audit:*), Bash(gh repo list:*)
+allowed-tools: Read, Grep, Glob, Write, Bash(gitleaks:*), Bash(trufflehog:*), Bash(osv-scanner scan:*), Bash(trivy fs:*), Bash(trivy image:*), Bash(trivy config:*), Bash(checkov:*), Bash(bundle-audit:*), Bash(brakeman:*), Bash(gosec:*), Bash(govulncheck:*), Bash(gh repo list:*)
 ---
 
 # Scanner Pipeline — Run the Real Tools, Normalize, Hand Off
