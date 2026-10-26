@@ -18,7 +18,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | finding-triage | 1.1.1 | 2026-10-26 |
 | hipaa-audit | 1.0.1 | 2026-10-26 |
 | iam-audit | 1.0.2 | 2026-10-26 |
-| incident-triage | 1.0.4 | 2026-10-26 |
+| incident-triage | 1.1.0 | 2026-10-26 |
 | log-watch | 1.0.1 | 2026-10-26 |
 | mobile-audit | 1.0.1 | 2026-10-26 |
 | osint-recon | 1.0.1 | 2026-10-26 |
@@ -41,6 +41,24 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.1.3 | 2026-10-26 |
 
 ## Recent Changes
+
+### 1.22.0 (2026-10-26)
+
+incident-triage moves from NIST SP 800-61 Rev. 2 (2012) to **Rev. 3** (April 2025), which `soc-operations` already cited. Rev. 3 drops the four-phase lifecycle and becomes a CSF 2.0 Community Profile, so the methodology changes, not just the citation. Closes #117.
+
+**Changed**
+
+- **incident-triage** (1.1.0):
+  - **Structure:** each step names the CSF 2.0 outcomes it produces (DE.AE, RS.MA, RS.MI, RS.AN, RS.CO, RC.RP, ID.IM), so the report maps onto the organization's CSF profile (`csf-mapping`). The intro explains the Rev. 3 model: Govern, Identify and Protect are preparation; Detect, Respond and Recover are response.
+  - **New Authorization section.** Only read-only listings are pre-approved. Every containment action needs the incident lead's go-ahead, with its blast radius named. Systems out of scope are reported, never touched.
+  - **Step 1 is now "Declare, validate and prioritize".** Confirm against a second source, record the declaration time (clocks often start at discovery), start the IR plan's third parties (including notifying the cyber insurer before outside responders are engaged), and apply escalation criteria.
+  - **Containment** covers revoking credentials and tokens, plus coordinated containment so an attacker who is still active doesn't pivot.
+  - **Evidence preservation** adds hashing at collection, provenance, an action log, and copying cloud and SaaS logs before retention rotates them.
+  - **Analysis** adds a magnitude estimate: known / suspected / ruled out, each with its evidence.
+  - **New Step 6, notification clocks:** GDPR 72h, NIS2 24h/72h/1 month, HIPAA 60 days, SEC 8-K Item 1.05 four business days after materiality, PCI, state laws and contracts. Hands off to `security-comms` and the privacy and compliance skills.
+  - **New Step 7, handoff:** eradication, recovery criteria and lessons learned.
+  - **Report:** scope table, action log with approver, notification-clock table, insurer escalation and a handoff section.
+  - **Description:** names Rev. 3. It narrows 'triage' to 'incident triage' and 'breach' to 'we've been breached' (overlaps with `finding-triage` and `breach-patterns`), and adds 'active incident', 'ransomware' and 'contain the incident'.
 
 ### 1.21.0 (2026-10-26)
 
