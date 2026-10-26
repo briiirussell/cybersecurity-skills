@@ -9,6 +9,11 @@
  * code scanning rejects uploads with more than 20 runs, and the catalog has more skills
  * than that. Rules are de-duplicated by id and ruleIndex / artifact indexes are remapped.
  *
+ * Results SkillSpector already suppressed via .skillspector-baseline.yaml (they carry a
+ * `suppressions` entry with the baseline reason) are dropped: code scanning ignores
+ * `kind: external` suppressions and would raise every intentional example as an alert.
+ * Unbaselined findings still fail the scan job before this step runs.
+ *
  * Usage: node .github/scripts/merge-sarif.mjs <dir-of-sarif-files> <out.sarif>
  */
 
@@ -40,6 +45,7 @@ const run = {
 };
 const ruleIds = new Map();
 let inputs = 0;
+let suppressed = 0;
 for (const file of readdirSync(dir).filter((f) => f.endsWith(".sarif")).sort()) {
   const skill = basename(file, ".sarif");
   const sarif = JSON.parse(readFileSync(join(dir, file), "utf8"));
@@ -59,6 +65,10 @@ for (const file of readdirSync(dir).filter((f) => f.endsWith(".sarif")).sort()) 
     run.artifacts.push(...(r.artifacts ?? []));
     rewrite(r.results ?? [], skill);
     for (const res of r.results ?? []) {
+      if ((res.suppressions ?? []).some((x) => x.status === undefined || x.status === "accepted")) {
+        suppressed++;
+        continue;
+      }
       const id = res.ruleId ?? localRules[res.ruleIndex]?.id;
       if (id !== undefined && ruleIds.has(id)) res.ruleIndex = ruleIds.get(id);
       else delete res.ruleIndex;
@@ -75,6 +85,7 @@ for (const file of readdirSync(dir).filter((f) => f.endsWith(".sarif")).sort()) 
 }
 if (run.tool.driver.rules.length === 0) delete run.tool.driver.rules;
 if (run.artifacts.length === 0) delete run.artifacts;
+run.properties = { baselineSuppressed: suppressed };
 const merged = { $schema: "https://json.schemastore.org/sarif-2.1.0.json", version: "2.1.0", runs: [run] };
 writeFileSync(out, JSON.stringify(merged, null, 2) + "\n");
-console.log(`merged ${inputs} per-skill run(s) into 1 run with ${run.results.length} result(s) in ${out}`);
+console.log(`merged ${inputs} per-skill run(s) into 1 run with ${run.results.length} result(s) in ${out} (${suppressed} baselined result(s) dropped)`);
