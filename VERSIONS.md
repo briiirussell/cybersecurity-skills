@@ -8,6 +8,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | ai-risk-management | 1.0.1 | 2026-10-26 |
 | api-audit | 1.0.0 | 2026-05-26 |
 | breach-patterns | 1.0.0 | 2026-05-26 |
+| business-logic-testing | 1.0.0 | 2026-10-26 |
 | cloud-audit | 1.0.0 | 2026-05-26 |
 | container-audit | 1.0.0 | 2026-05-26 |
 | crypto-audit | 1.0.0 | 2026-05-26 |
@@ -36,6 +37,25 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.0.0 | 2026-05-26 |
 
 ## Recent Changes
+
+### 1.6.0 (2026-10-26)
+
+New skill: **business-logic-testing**. Business logic and race conditions are the bugs scanners can't find, and until now the catalog covered them only thinly (web-pentest Phase 8 was eight one-line bullets).
+
+**Added**
+
+- **business-logic-testing** (1.0.0).
+  - **Invariants first:** conservation of value, uniqueness, monotonicity, exclusivity. Then an Actor × Action × Resource matrix.
+  - **State-machine abuse:** skip, reorder or replay steps, and limit-slicing.
+  - **Numeric issues:** float vs decimal, rounding, cross-currency refund arbitrage, negative amounts. Also stale feature gates and roles, and gaps in event-driven sagas.
+  - **Concurrency methodology** in `references/concurrency.md`: HTTP/2 single-packet and last-byte sync, connection warming, idempotency keys scoped to a path instead of a principal, cache-before-commit, lost updates, Redis locks without NX/EX or fencing tokens, READ COMMITTED anomalies, upsert races.
+  - **Validation and false positives per class.** Example of a validated race: one request is denied, N concurrent ones succeed, and durable state proves it. Truly idempotent operations and visual-only glitches don't count.
+  - **Authorization:** concurrency testing against production money flows needs explicit written scope. Staging or test mode is preferred, request counts are capped, and third parties are never targeted. Pre-approved tools are read-only, so live requests always prompt.
+  - Uses the shared verdicts and `findings.json`. Methodology paraphrased from [Strix](https://github.com/usestrix/strix) (Apache-2.0). Strix's never-refuse posture is explicitly not adopted. (#74)
+
+**Changed**
+
+- README: added to Offensive & Recon, the skill table and crossovers. The links from owasp-audit, api-audit and web-pentest come with those skills' own versions.
 
 ### 1.5.0 (2026-10-26)
 
