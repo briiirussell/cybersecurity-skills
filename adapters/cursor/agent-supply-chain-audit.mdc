@@ -19,7 +19,7 @@ Cross-references: `prompt-injection` for the same hidden-instruction and tool-po
 *application* (RAG corpora, system prompts, the MCP servers the app exposes); `secrets-audit` for tokens sitting in MCP
 `env` blocks, agent settings, and session transcripts; `dependency-audit` for the npm / PyPI packages behind MCP servers
 and bundled scripts; `ai-risk-management` for where agent tooling sits in the org's AI inventory; `incident-triage`
-when a malicious item has already run.
+when a malicious item has already run; `personal-opsec` for the operator's own machine and accounts around the agent.
 
 ## Step 0 — Authorization and scope
 
