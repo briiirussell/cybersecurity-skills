@@ -6,7 +6,7 @@ Current versions of all skills. Agents can compare against local versions to che
 |-------|---------|--------------|
 | agent-supply-chain-audit | 1.0.1 | 2026-10-26 |
 | ai-risk-management | 1.0.1 | 2026-10-26 |
-| api-audit | 1.0.0 | 2026-05-26 |
+| api-audit | 1.1.0 | 2026-10-26 |
 | breach-patterns | 1.0.1 | 2026-10-26 |
 | business-logic-testing | 1.0.0 | 2026-10-26 |
 | cloud-audit | 1.0.0 | 2026-05-26 |
@@ -41,6 +41,35 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.0.0 | 2026-05-26 |
 
 ## Recent Changes
+
+### 1.13.0 (2026-10-26)
+
+api-audit gets a much deeper GraphQL playbook, a paired-evidence rule, and the same verify-then-report workflow owasp-audit adopted in 1.12.0.
+
+**Changed**
+
+- **api-audit** (1.1.0)
+  - **GraphQL playbook** in `references/graphql.md`, paraphrased from [Strix](https://github.com/usestrix/strix) (Apache-2.0) (#75):
+    - schema inference when introspection is off (field suggestions, "Expected one of" enum leaks, existence oracles)
+    - an aliased owned-vs-foreign IDOR comparison in a single request
+    - child resolvers that assume the parent checked auth
+    - Relay `node(id:)` global-ID swaps
+    - federation `_entities` / `_service{sdl}`
+    - `@defer` / `@stream` leaks
+    - subscriptions authorized only at the handshake
+    - persisted-query replay
+    - `@oneOf` coercion
+    - cursor tampering
+    - alias/batch rate-limit bypass
+    - fragment-split WAF evasion
+  - **Paired evidence.** A validated finding shows the attack request next to its baseline. BOLA / BOPLA / BFLA must show owner vs non-owner requests that are byte-identical except for the token. (#76)
+  - **Recon first + coverage ledger.** An API entry surface is a REST route, GraphQL operation or resolver, gRPC method, webhook or websocket channel. There's a coverage critic before the report, and partial reports say so. (#68)
+  - **Verify every finding** using the three verdicts. "Potential" is retired for `needs_validation` with blockers and a plan, and there's a "Rejected (do not re-raise)" section. (#62)
+  - **Severity calibration and hardening notes.** CORS and header issues are findings only with a traced impact. (#63)
+  - **findings.json** is written and validated before the prose. (#64)
+  - **Diff / PR-scoped mode** for API changes. (#67)
+  - Cross-reference to `business-logic-testing` for invariant and race testing of API flows. Existing API1–API10 checklist kept as is.
+- README: api-audit row updated.
 
 ### 1.12.0 (2026-10-26)
 
