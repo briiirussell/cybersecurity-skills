@@ -5,39 +5,55 @@
       "agent-supply-chain-audit",
       "business-logic-testing",
       "scanner-pipeline",
-      "finding-triage"
+      "finding-triage",
+      "owasp-audit"
     ],
     "validate-findings.mjs": [
       "agent-supply-chain-audit",
       "business-logic-testing",
       "scanner-pipeline",
-      "finding-triage"
+      "finding-triage",
+      "owasp-audit"
     ],
     "to-sarif.mjs": [
       "agent-supply-chain-audit",
       "business-logic-testing",
       "scanner-pipeline",
-      "finding-triage"
+      "finding-triage",
+      "owasp-audit"
     ],
     "findings-format.md": [
       "agent-supply-chain-audit",
       "business-logic-testing",
       "scanner-pipeline",
-      "finding-triage"
+      "finding-triage",
+      "owasp-audit"
     ],
     "severity-calibration.md": [
       "agent-supply-chain-audit",
       "business-logic-testing",
-      "finding-triage"
+      "finding-triage",
+      "owasp-audit"
     ],
-    "coverage.schema.json": [],
-    "validate-coverage.mjs": [],
+    "coverage.schema.json": [
+      "owasp-audit"
+    ],
+    "validate-coverage.mjs": [
+      "owasp-audit"
+    ],
     "verification.md": [
       "business-logic-testing",
-      "finding-triage"
+      "finding-triage",
+      "owasp-audit"
     ],
-    "recon-and-coverage.md": [],
-    "orchestration.md": [],
-    "diff-review.md": []
+    "recon-and-coverage.md": [
+      "owasp-audit"
+    ],
+    "orchestration.md": [
+      "owasp-audit"
+    ],
+    "diff-review.md": [
+      "owasp-audit"
+    ]
   }
 }
