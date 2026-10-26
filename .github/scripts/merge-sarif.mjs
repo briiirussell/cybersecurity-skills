@@ -5,8 +5,9 @@
  *
  * Each input is named <skill>.sarif and holds results with paths relative to the
  * skill (`SKILL.md`). This rewrites every artifact URI to `skills/<skill>/<uri>` so
- * alerts land on the right file, and gives each run its own automationDetails.id
- * (`skillspector/<skill>/`) so GitHub treats them as distinct analyses.
+ * alerts land on the right file, and folds every per-skill run into ONE run: GitHub
+ * code scanning rejects uploads with more than 20 runs, and the catalog has more skills
+ * than that. Rules are de-duplicated by id and ruleIndex / artifact indexes are remapped.
  *
  * Usage: node .github/scripts/merge-sarif.mjs <dir-of-sarif-files> <out.sarif>
  */
@@ -30,16 +31,50 @@ const rewrite = (node, skill) => {
   }
 };
 
-const merged = { $schema: "https://json.schemastore.org/sarif-2.1.0.json", version: "2.1.0", runs: [] };
+const run = {
+  tool: { driver: { name: "skillspector", rules: [] } },
+  automationDetails: { id: "skillspector/" },
+  artifacts: [],
+  results: [],
+  invocations: [{ executionSuccessful: true }],
+};
+const ruleIds = new Map();
+let inputs = 0;
 for (const file of readdirSync(dir).filter((f) => f.endsWith(".sarif")).sort()) {
   const skill = basename(file, ".sarif");
   const sarif = JSON.parse(readFileSync(join(dir, file), "utf8"));
-  for (const run of sarif.runs ?? []) {
-    rewrite(run.results ?? [], skill);
-    rewrite(run.artifacts ?? [], skill);
-    run.automationDetails = { id: `skillspector/${skill}/` };
-    merged.runs.push(run);
+  for (const r of sarif.runs ?? []) {
+    inputs++;
+    const driver = r.tool?.driver ?? {};
+    if (driver.version) run.tool.driver.version = driver.version;
+    const localRules = driver.rules ?? [];
+    for (const rule of localRules) {
+      if (!ruleIds.has(rule.id)) {
+        ruleIds.set(rule.id, run.tool.driver.rules.length);
+        run.tool.driver.rules.push(rule);
+      }
+    }
+    const artifactOffset = run.artifacts.length;
+    rewrite(r.artifacts ?? [], skill);
+    run.artifacts.push(...(r.artifacts ?? []));
+    rewrite(r.results ?? [], skill);
+    for (const res of r.results ?? []) {
+      const id = res.ruleId ?? localRules[res.ruleIndex]?.id;
+      if (id !== undefined && ruleIds.has(id)) res.ruleIndex = ruleIds.get(id);
+      else delete res.ruleIndex;
+      for (const loc of res.locations ?? []) {
+        const al = loc.physicalLocation?.artifactLocation;
+        if (al && Number.isInteger(al.index)) al.index += artifactOffset;
+      }
+      run.results.push(res);
+    }
+    for (const inv of r.invocations ?? []) {
+      if (inv.executionSuccessful === false) run.invocations[0].executionSuccessful = false;
+    }
   }
 }
+if (run.tool.driver.rules.length === 0) delete run.tool.driver.rules;
+if (run.artifacts.length === 0) delete run.artifacts;
+const merged = { $schema: "https://json.schemastore.org/sarif-2.1.0.json", version: "2.1.0", runs: [run] };
 writeFileSync(out, JSON.stringify(merged, null, 2) + "\n");
-console.log(`merged ${merged.runs.length} run(s) into ${out}`);
+console.log(`merged ${inputs} per-skill run(s) into 1 run with ${run.results.length} result(s) in ${out}`);
