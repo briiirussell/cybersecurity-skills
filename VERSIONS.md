@@ -42,6 +42,14 @@ Current versions of all skills. Agents can compare against local versions to che
 
 ## Recent Changes
 
+### 1.19.3 (2026-10-26)
+
+CI fix: the SkillSpector scan passed, but uploading its SARIF to GitHub code scanning failed with "more runs than allowed (35 > 20)". Repo tooling only; no skill content changes.
+
+**Fixed**
+
+- `.github/scripts/merge-sarif.mjs` now folds every per-skill scan into one SARIF run. Paths are still rewritten to `skills/<skill>/…`. Rules are de-duplicated by id, and the indexes pointing to rules and files are remapped. The catalog can now grow past 20 skills without breaking the upload.
+
 ### 1.19.2 (2026-10-26)
 
 Tightens two pre-approvals that were broader than they looked. Found in the 1.19.1 SkillSpector triage. (#65)
