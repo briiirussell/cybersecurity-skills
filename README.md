@@ -27,6 +27,7 @@ Not every skill is for every user on day one. A good starting point by context:
 - **Securing cloud / infrastructure:** start with `cloud-audit` (AWS / GCP / Azure misconfig), then `iam-audit` if you manage identities, then `container-audit` if you run Docker / Kubernetes
 - **Responding to "something happened":** `incident-triage` for the immediate response, `disk-forensics` if you need to analyze a system afterward, `security-comms` to draft the stakeholder / customer communications
 - **No SIEM, no security staff, but you have logs:** `log-watch` sets up a scheduled agent that reads the logs you already have (Vercel, Heroku, Sentry, Supabase, Stripe, CloudTrail, GitHub) and pages someone when it matters
+- **You are the security team (founder / solo operator):** `personal-opsec` audits your own accounts, devices and AI-agent setup first — the person holding the keys is usually the softest target
 - **Building a security program from scratch:** `csf-mapping` for the governance frame, `threat-modeling` before new features, `breach-patterns` to learn from public incidents
 - **Working under a specific regulation:** `privacy-engineering` for GDPR / CCPA / similar privacy laws, `hipaa-audit` for ePHI, `pci-audit` for payment cards, `ai-risk-management` for AI features
 - **Running AI coding agents with skills, plugins, or MCP servers:** `agent-supply-chain-audit` before you install or trust them — including this catalog
@@ -66,8 +67,8 @@ The skills are organized into seven families. Most security work crosses familie
 │ audit│ │ engage-│ │ ops    │ │        │ │-chain│ │ mapping │ │          │
 │crypt-│ │ ment   │ │threat- │ │        │ │-audit│ │security-│ │          │
 │ audit│ │business│ │ hunting│ │        │ │      │ │ comms   │ │          │
-│mobile│ │-logic- │ │breach- │ │        │ │      │ │         │ │          │
-│-audit│ │-testing│ │patterns│ │        │ │      │ │         │ │          │
+│mobile│ │-logic- │ │breach- │ │        │ │      │ │personal-│ │          │
+│-audit│ │-testing│ │patterns│ │        │ │      │ │ opsec   │ │          │
 │patch-│ │        │ │log-    │ │        │ │      │ │         │ │          │
 │ sweep│ │        │ │ watch  │ │        │ │      │ │         │ │          │
 │scan- │ │        │ │        │ │        │ │      │ │         │ │          │
@@ -91,6 +92,7 @@ The skills are organized into seven families. Most security work crosses familie
      dependency-audit (one project) → patch-sweep (the whole fleet)
      scanner-pipeline → finding-triage → fix agents (tools find it, agents fix it)
      log-watch → siem-detection / soc-operations (outgrow it) → incident-triage (it's real)
+     personal-opsec → iam-audit / secrets-audit / agent-supply-chain-audit (the person → the org → the agents)
      breach-patterns → every audit skill (what to check)
      finding-triage ← every audit skill (closes the loop on any finding)
      security-comms ← every skill (translates output for non-security audience)
@@ -123,6 +125,7 @@ The skills are organized into seven families. Most security work crosses familie
 | [owasp-audit](skills/owasp-audit/) | Source-code audit against OWASP Top 10 (2021) — category checklist, grep patterns, runtime verification, Second-Opinion Pass, three-disposition reporting. |
 | [patch-sweep](skills/patch-sweep/) | Fleet-wide CVE response across many apps and deploy platforms — map repos → platform projects → live domains, find each project's real production branch, catch stale manual deploys, decide affectedness (runtime + dependency + code path), mitigate before patching, ship and confirm prod. Output: one status board row per app. |
 | [pci-audit](skills/pci-audit/) | PCI DSS v4.0 — scope determination first, then Req 3 (CHD storage) / 4 (transmission) / 6 (secure SDLC) / 7-8 (access) / 10 (logging) / 11 (testing) / 12 (program). |
+| [personal-opsec](skills/personal-opsec/) | Audit one person's own security setup — the founder or operator holding the keys. Walks Karpathy's 15-step checklist with read-only local checks where possible (disk encryption, firewall, DNS), adds operator-critical items (account recovery, SIM-swap / port-out PIN, registrar lock, hardware-key MFA), and the AI-agent-era layer (tokens your agents can read, MCP trust, inbox-agent prompt injection). Not awareness training. |
 | [privacy-engineering](skills/privacy-engineering/) | GDPR / CCPA / CPRA / LGPD / PIPEDA technical implementation — data classification, minimization, consent, the DSAR pipeline (access / deletion / portability with full vendor fan-out), DPIA inputs. |
 | [prompt-injection](skills/prompt-injection/) | AI features / LLM integrations / agents — prompt injection, privilege escalation, authorization bypass. |
 | [recon](skills/recon/) | Structured attack surface enumeration for authorized pentests, bug bounty, CTF. |

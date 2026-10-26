@@ -4,10 +4,10 @@ Current versions of all skills. Agents can compare against local versions to che
 
 | Skill | Version | Last Updated |
 |-------|---------|--------------|
-| agent-supply-chain-audit | 1.0.0 | 2026-10-26 |
+| agent-supply-chain-audit | 1.0.1 | 2026-10-26 |
 | ai-risk-management | 1.0.1 | 2026-10-26 |
 | api-audit | 1.0.0 | 2026-05-26 |
-| breach-patterns | 1.0.0 | 2026-05-26 |
+| breach-patterns | 1.0.1 | 2026-10-26 |
 | business-logic-testing | 1.0.0 | 2026-10-26 |
 | cloud-audit | 1.0.0 | 2026-05-26 |
 | container-audit | 1.0.0 | 2026-05-26 |
@@ -17,7 +17,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | disk-forensics | 1.0.0 | 2026-05-26 |
 | finding-triage | 1.0.0 | 2026-05-26 |
 | hipaa-audit | 1.0.0 | 2026-05-26 |
-| iam-audit | 1.0.0 | 2026-05-26 |
+| iam-audit | 1.0.1 | 2026-10-26 |
 | incident-triage | 1.0.2 | 2026-10-26 |
 | log-watch | 1.0.0 | 2026-10-26 |
 | mobile-audit | 1.0.0 | 2026-05-26 |
@@ -25,6 +25,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | owasp-audit | 1.1.0 | 2026-05-26 |
 | patch-sweep | 1.0.0 | 2026-10-26 |
 | pci-audit | 1.0.0 | 2026-05-26 |
+| personal-opsec | 1.0.0 | 2026-10-26 |
 | privacy-engineering | 1.0.0 | 2026-05-26 |
 | prompt-injection | 1.0.0 | 2026-05-26 |
 | recon | 1.0.0 | 2026-05-26 |
@@ -40,6 +41,29 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.0.0 | 2026-05-26 |
 
 ## Recent Changes
+
+### 1.10.0 (2026-10-26)
+
+New skill: **personal-opsec**. Every other skill in the catalog is aimed at an org or a codebase. This one covers the individual: the founder or operator who holds the keys, and who is usually the easiest way in.
+
+**Added**
+
+- **personal-opsec** (1.0.0). An agent-run audit of one person's setup, not a static checklist.
+  - **Karpathy's 15 controls** (via Andrej Karpathy's digital security checklist). The agent checks current state on the local machine where it can, using read-only commands: disk encryption, firewall, DNS resolver, password manager CLI, registrar lock via `whois`. It asks the user about the rest.
+  - **Operator-critical additions:** account recovery paths, SIM-swap protection and carrier port-out PIN, recovery codes stored offline, registrar and DNS account lock, hardware-key MFA on GitHub and cloud consoles.
+  - **The AI-agent-era layer:**
+    - tokens and API keys your coding agents can read (→ `secrets-audit`)
+    - MCP server trust and what a connected agent could exfiltrate (→ `agent-supply-chain-audit`)
+    - prompt injection of personal and inbox assistants (→ `prompt-injection`)
+    - clipboard exposure
+    - scoped, short-lived tokens over long-lived ones
+  - **Output:** a prioritized gap report in the catalog's finding vocabulary, handed to `finding-triage`. Privacy-preference items that don't lead to account takeover are reported as hardening notes, not findings.
+  - This is explicitly not security-awareness or phishing training. It refuses to audit someone else's personal security without their consent. (#61)
+
+**Changed**
+
+- `iam-audit` (1.0.1), `breach-patterns` (1.0.1), `agent-supply-chain-audit` (1.0.1): cross-references to personal-opsec.
+- README: added to Design & Governance, the skill table, crossovers, and Where to start.
 
 ### 1.9.0 (2026-10-26)
 
