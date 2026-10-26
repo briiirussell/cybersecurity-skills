@@ -24,7 +24,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | osint-recon | 1.0.1 | 2026-10-26 |
 | owasp-audit | 1.2.1 | 2026-10-26 |
 | patch-sweep | 1.0.2 | 2026-10-26 |
-| pci-audit | 1.0.1 | 2026-10-26 |
+| pci-audit | 1.0.2 | 2026-10-26 |
 | personal-opsec | 1.0.0 | 2026-10-26 |
 | privacy-engineering | 1.0.2 | 2026-10-26 |
 | prompt-injection | 1.1.2 | 2026-10-26 |
@@ -41,6 +41,18 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.1.2 | 2026-10-26 |
 
 ## Recent Changes
+
+### 1.19.9 (2026-10-26)
+
+pci-audit now targets PCI DSS v4.0.1. The skill said "PCI DSS v4.0 (effective March 2025)", but v4.0 was retired on 31 December 2024; v4.0.1 is the only active version. Closes #113.
+
+**Fixed**
+
+- **pci-audit** (1.0.2):
+  - The description, intro, report header and references now name v4.0.1. A version note says that the requirements v4.0 marked "future-dated" became mandatory on 31 March 2025, so assess against all of them.
+  - MFA for all access into the CDE now cites Req 8.4.2 and says it is mandatory, not "new".
+  - The internal-network encryption line cited Req 4.2.1.1, which is the trusted keys and certificates inventory. It now says Req 4.2.1 mandates strong cryptography only over open, public networks, so encrypting internal links is defense in depth.
+- README: pci-audit row says v4.0.1.
 
 ### 1.19.8 (2026-10-26)
 

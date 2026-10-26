@@ -1,12 +1,14 @@
 ---
 name: pci-audit
-description: "Audit applications and infrastructure handling payment card data against PCI DSS v4.0. Heavy emphasis on scope determination (the single most-leveraged variable) plus the engineering-relevant requirements — Req 3 (storage of CHD), Req 4 (transmission), Req 6 (secure SDLC), Req 7-8 (access), Req 10 (logging), Req 11 (testing), Req 12 (program). Use when the user mentions 'PCI,' 'PCI DSS,' 'PCI DSS 4.0,' 'payment card,' 'cardholder data,' 'CHD,' 'PAN,' 'PCI scope,' 'PCI compliance,' 'SAQ,' 'AoC,' 'attestation of compliance,' 'tokenization,' 'P2PE,' 'network segmentation for PCI,' or audits any system that stores, processes, or transmits payment card data."
+description: "Audit applications and infrastructure handling payment card data against PCI DSS v4.0.1. Heavy emphasis on scope determination (the single most-leveraged variable) plus the engineering-relevant requirements — Req 3 (storage of CHD), Req 4 (transmission), Req 6 (secure SDLC), Req 7-8 (access), Req 10 (logging), Req 11 (testing), Req 12 (program). Use when the user mentions 'PCI,' 'PCI DSS,' 'PCI DSS 4.0,' 'payment card,' 'cardholder data,' 'CHD,' 'PAN,' 'PCI scope,' 'PCI compliance,' 'SAQ,' 'AoC,' 'attestation of compliance,' 'tokenization,' 'P2PE,' 'network segmentation for PCI,' or audits any system that stores, processes, or transmits payment card data."
 allowed-tools: Read, Grep, Glob, WebSearch
 ---
 
 # PCI Audit — Payment Card Industry Data Security Standard
 
-PCI DSS v4.0 (effective March 2025) is the security standard for any environment that stores, processes, or transmits payment card data. Twelve high-level requirements; hundreds of sub-requirements. Most organizations pass or fail on a single decision: **scope**.
+PCI DSS v4.0.1 is the security standard for any environment that stores, processes, or transmits payment card data. Twelve high-level requirements; hundreds of sub-requirements. Most organizations pass or fail on a single decision: **scope**.
+
+Version note: v4.0.1 (June 2024) is the only active version. v4.0 was retired on 31 December 2024, and the requirements v4.0 marked "future-dated" became mandatory on 31 March 2025. Assess against all of them; don't treat any as best-practice-only.
 
 This skill emphasizes scope determination first, then the engineering-relevant requirements. Final compliance attestation (SAQ self-assessment or QSA audit producing an Attestation of Compliance) is a process this skill prepares for — it is not the attestation itself.
 
@@ -81,7 +83,7 @@ If a Luhn-valid PAN appears anywhere in source, lock files, or logs — that is 
 
 - TLS 1.2 or higher, modern cipher suites only (see `crypto-audit` for the configuration detail)
 - No PAN transmitted via end-user messaging tech (email, SMS, chat) — and reject any flow that does
-- Internal-only networks transmitting PAN should still encrypt (defense in depth — Req 4.2.1.1 in v4.0)
+- Internal-only networks transmitting PAN should still encrypt (defense in depth — Req 4.2.1 mandates strong cryptography only over open, public networks)
 
 ### Req 6 — Develop and maintain secure systems and software
 
@@ -107,8 +109,8 @@ See `iam-audit` for the full identity-and-access deep dive.
 ### Req 8 — Identify users and authenticate access
 
 - Unique IDs (no shared accounts) for every user — including service accounts
-- Strong authentication — passwords meeting current PCI complexity requirements, MFA for non-console administrative access AND for all remote network access AND (new in v4.0) for all access into the CDE
-- MFA must be phishing-resistant for the most sensitive access paths (recommended in v4.0)
+- Strong authentication — passwords meeting current PCI complexity requirements, MFA for non-console administrative access AND for all remote network access AND (Req 8.4.2, mandatory since 31 March 2025) for all access into the CDE
+- MFA must be phishing-resistant for the most sensitive access paths (recommended, not required, in v4.0.1)
 - Account lockout, session timeout, password rotation per current PCI parameters (v4.0 relaxed some legacy requirements — verify current text)
 
 See `iam-audit` for implementation patterns and identity-provider integration.
@@ -142,7 +144,7 @@ The program-level layer. Engineering inputs:
 ## Putting it together — audit checklist
 
 ```markdown
-# PCI DSS v4.0 Audit Findings
+# PCI DSS v4.0.1 Audit Findings
 ## Merchant: [name]
 ## Merchant level: [1/2/3/4]
 ## SAQ type: [A / A-EP / B / C-VT / D / not applicable - Level 1 QSA]
@@ -188,7 +190,7 @@ Disposition rule (Fixed / Deferred / Accepted Risk) per `owasp-audit`. PCI accep
 - **Tokenization scope misunderstanding** — surrogate tokens stored in your DB that are reversible by your processor account are still in scope; only one-way tokens reduce scope
 - **Iframe vs proxy** — "hosted payment page" implemented as a proxy where your server briefly handles the PAN before forwarding (still in scope) vs a true iframe where your server never sees it (out of scope)
 - **Segmentation by firewall rule, not by architecture** — firewall rule "permits" only specific traffic but the systems share a VLAN; effective segmentation requires architectural separation
-- **MFA gaps** — v4.0 broadened MFA requirements; older environments that met v3.2.1 may have gaps
+- **MFA gaps** — v4.0 broadened MFA requirements (mandatory since 31 March 2025); older environments that met v3.2.1 may have gaps
 
 ## Boundaries
 
@@ -200,8 +202,8 @@ Disposition rule (Fixed / Deferred / Accepted Risk) per `owasp-audit`. PCI accep
 
 ## References
 
-- **PCI DSS v4.0** — `pcisecuritystandards.org/document_library`
-- **PCI DSS v4.0 Quick Reference Guide** — practitioner-focused summary
+- **PCI DSS v4.0.1** — `pcisecuritystandards.org/document_library`
+- **PCI DSS v4.x Quick Reference Guide** — practitioner-focused summary
 - **SAQ Instructions and Guidelines** — for self-assessing merchants
 - **PCI SSC FAQ database** — official interpretive guidance
 - **QIR / QSA / PFI / ASV registries** — for approved assessor / vendor selection
