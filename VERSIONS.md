@@ -5,7 +5,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | Skill | Version | Last Updated |
 |-------|---------|--------------|
 | agent-supply-chain-audit | 1.0.1 | 2026-10-26 |
-| ai-risk-management | 1.0.2 | 2026-10-26 |
+| ai-risk-management | 1.0.3 | 2026-10-26 |
 | api-audit | 1.1.1 | 2026-10-26 |
 | breach-patterns | 1.0.2 | 2026-10-26 |
 | business-logic-testing | 1.0.0 | 2026-10-26 |
@@ -26,21 +26,34 @@ Current versions of all skills. Agents can compare against local versions to che
 | patch-sweep | 1.0.1 | 2026-10-26 |
 | pci-audit | 1.0.1 | 2026-10-26 |
 | personal-opsec | 1.0.0 | 2026-10-26 |
-| privacy-engineering | 1.0.1 | 2026-10-26 |
+| privacy-engineering | 1.0.2 | 2026-10-26 |
 | prompt-injection | 1.1.1 | 2026-10-26 |
 | recon | 1.0.1 | 2026-10-26 |
 | red-team-engagement | 1.0.1 | 2026-10-26 |
 | scanner-pipeline | 1.0.1 | 2026-10-26 |
 | secrets-audit | 1.1.1 | 2026-10-26 |
-| security-comms | 1.0.1 | 2026-10-26 |
+| security-comms | 1.0.2 | 2026-10-26 |
 | siem-detection | 1.0.2 | 2026-10-26 |
-| soc-operations | 1.0.2 | 2026-10-26 |
+| soc-operations | 1.0.3 | 2026-10-26 |
 | threat-hunting | 1.0.3 | 2026-10-26 |
-| threat-modeling | 1.0.1 | 2026-10-26 |
+| threat-modeling | 1.0.2 | 2026-10-26 |
 | vuln-research | 1.0.1 | 2026-10-26 |
-| web-pentest | 1.1.1 | 2026-10-26 |
+| web-pentest | 1.1.2 | 2026-10-26 |
 
 ## Recent Changes
+
+### 1.19.5 (2026-10-26)
+
+Trigger-phrase cleanup. Seven phrases appeared in two skills' descriptions, so the same request could activate either one (SkillSpector rule TR2). Each phrase now belongs to the skill that actually does that work. The other skill either drops it, when it already has a more specific trigger, or uses a narrower wording. Description-only changes; no skill bodies changed. `node scripts/lint-skills.mjs` now reports 0 warnings.
+
+**Changed**
+
+- **ai-risk-management** (1.0.3): 'AI red team' → 'AI red-team program' (governance). Hands-on adversarial testing stays with `prompt-injection`.
+- **web-pentest** (1.1.2): dropped 'business logic testing'. It belongs to `business-logic-testing`, which Phase 8 already hands off to.
+- **security-comms** (1.0.2): dropped 'risk justification', which belongs to `finding-triage`; 'why this matters to the business' stays. 'breach notification' → 'breach notification letter', since engineering the notification pipeline is `privacy-engineering`.
+- **privacy-engineering** (1.0.2): dropped 'BAA', which belongs to `hipaa-audit`; 'DPA' and 'data processing agreement' stay.
+- **threat-modeling** (1.0.2): dropped 'security review', which belongs to `owasp-audit` for code; 'security architecture review' and 'design review' stay.
+- **soc-operations** (1.0.3): dropped 'alert tuning', which belongs to `siem-detection` for rule tuning; 'alert fatigue' stays.
 
 ### 1.19.4 (2026-10-26)
 
