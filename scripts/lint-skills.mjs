@@ -12,9 +12,9 @@
  *   - a backticked skill name in a cross-reference context does not resolve to skills/<name>/
  *   - a relative markdown link does not resolve (links to shared copies under
  *     references/ are allowed even before the build has copied them)
- *
- * Warnings (never fail):
  *   - the same single-quoted trigger phrase appears in two or more descriptions
+ *     (the request would be ambiguous between skills; SkillSpector TR2). Keep the
+ *     phrase in the skill that owns the work and narrow or drop it in the other.
  *
  * Usage: node scripts/lint-skills.mjs [--quiet]
  */
@@ -237,7 +237,7 @@ for (const entry of readdirSync(SKILLS_DIR)) {
 
 for (const [phrase, skills] of triggerPhrases) {
   if (skills.size > 1)
-    warn(SKILLS_DIR, `trigger phrase '${phrase}' appears in ${[...skills].sort().join(", ")}`);
+    err(SKILLS_DIR, `trigger phrase '${phrase}' appears in ${[...skills].sort().join(", ")} — keep it in the skill that owns the work, narrow or drop it in the other`);
 }
 
 // ---------------------------------------------------------------------------
