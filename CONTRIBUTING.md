@@ -123,7 +123,7 @@ CI (`.github/workflows/ci.yml`) runs on every PR into `development` or `main` an
 
 Enforced by CI:
 
-- [ ] Skill lint passes — `node scripts/lint-skills.mjs` (`name` matches directory, `description` 200–1024 chars, `SKILL.md` under 500 lines, cross-referenced skills exist, relative links resolve, no `WebFetch` + unscoped `Bash`)
+- [ ] Skill lint passes — `node scripts/lint-skills.mjs` (`name` matches directory, `description` 200–1024 chars, `SKILL.md` under 500 lines, cross-referenced skills exist, relative links resolve, no `WebFetch` + unscoped `Bash`, no `Bash` grant whose prefix also matches a destructive subcommand)
 - [ ] Adapters and shared copies regenerated and committed — `node scripts/build-adapters.mjs` leaves no diff; shared content edited in `shared/`, not in `skills/*/references/` copies
 - [ ] Tests pass — `npm test` (add or update a test in `scripts/test/` if you changed a validator, `to-sarif.mjs`, or the build)
 - [ ] SkillSpector scan is clean — any new finding is fixed, or covered by a narrow rule **with a reason** in `.skillspector-baseline.yaml` (see [docs/security-scanning.md](docs/security-scanning.md))

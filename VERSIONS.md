@@ -42,6 +42,25 @@ Current versions of all skills. Agents can compare against local versions to che
 
 ## Recent Changes
 
+### 1.19.11 (2026-10-26)
+
+The lint now fails any `allowed-tools` Bash grant that would pre-approve a write. This rule would have caught the heroku grants fixed in 1.19.7. Repo tooling only; no skill content changes. Closes #118.
+
+**Added**
+
+- `scripts/grant-check.mjs`: checks each `Bash(...)` rule. It fails when the rule:
+  - is unscoped
+  - names a write verb (`delete`, `rollback`, `set`, `push`, `--fix`, ...), matched as whole segments so `get-credential-report`, `--prefix` and `assignment` don't trip it
+  - is a wildcard whose prefix also matches a known destructive command (about 150 entries across heroku, vercel, gh, git, package managers, and cloud and infra CLIs)
+  - is a wildcard on a bare multi-command CLI (`git:*`, `vercel:*`, `aws:*`)
+  - is a wildcard on a tool that rewrites source files with a flag (`semgrep:*`, `eslint:*`, `terraform fmt:*`)
+- `scripts/test/grant-check.test.mjs`: 8 tests. The 1.19.6 heroku grants and the earlier `git branch:*` and `npm audit:*` grants all fail. Their replacements pass. Every shipped skill's grants pass.
+
+**Changed**
+
+- `scripts/lint-skills.mjs` runs the check on every skill.
+- `docs/security-scanning.md`, `CONTRIBUTING.md` and `CLAUDE.md` describe the rule. They also say where to add a new CLI's destructive subcommands. Report-file flags (`--output`, `--report-path`) are out of scope on purpose. `bundle audit update` is left out because it only refreshes bundler-audit's own advisory database.
+
 ### 1.19.10 (2026-10-26)
 
 Example cleanup. Two skill examples used the maintainer's own name as the person who added a suppression. Both now use a neutral placeholder. Closes #114.
