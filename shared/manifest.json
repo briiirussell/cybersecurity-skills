@@ -8,7 +8,8 @@
       "finding-triage",
       "owasp-audit",
       "api-audit",
-      "dependency-audit"
+      "dependency-audit",
+      "secrets-audit"
     ],
     "validate-findings.mjs": [
       "agent-supply-chain-audit",
@@ -17,7 +18,8 @@
       "finding-triage",
       "owasp-audit",
       "api-audit",
-      "dependency-audit"
+      "dependency-audit",
+      "secrets-audit"
     ],
     "to-sarif.mjs": [
       "agent-supply-chain-audit",
@@ -26,7 +28,8 @@
       "finding-triage",
       "owasp-audit",
       "api-audit",
-      "dependency-audit"
+      "dependency-audit",
+      "secrets-audit"
     ],
     "findings-format.md": [
       "agent-supply-chain-audit",
@@ -35,7 +38,8 @@
       "finding-triage",
       "owasp-audit",
       "api-audit",
-      "dependency-audit"
+      "dependency-audit",
+      "secrets-audit"
     ],
     "severity-calibration.md": [
       "agent-supply-chain-audit",
@@ -43,7 +47,8 @@
       "finding-triage",
       "owasp-audit",
       "api-audit",
-      "dependency-audit"
+      "dependency-audit",
+      "secrets-audit"
     ],
     "coverage.schema.json": [
       "owasp-audit",
