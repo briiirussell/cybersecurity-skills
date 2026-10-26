@@ -42,6 +42,14 @@ Current versions of all skills. Agents can compare against local versions to che
 
 ## Recent Changes
 
+### 1.19.4 (2026-10-26)
+
+CI fix: code scanning raised every baselined SkillSpector match (221 intentional examples) as an open alert. GitHub ignores the `kind: external` suppressions SkillSpector writes for baselined results. Repo tooling only; no skill content changes.
+
+**Fixed**
+
+- `.github/scripts/merge-sarif.mjs` drops results that SkillSpector already suppressed via `.skillspector-baseline.yaml`, and records how many it dropped in the run's properties. Code scanning now shows only real, unbaselined findings, and those still fail the scan job first. Uploading the clean run closes the 221 stale alerts on `development` and the open PRs.
+
 ### 1.19.3 (2026-10-26)
 
 CI fix: the SkillSpector scan passed, but uploading its SARIF to GitHub code scanning failed with "more runs than allowed (35 > 20)". Repo tooling only; no skill content changes.
