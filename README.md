@@ -26,6 +26,7 @@ Not every skill is for every user on day one. A good starting point by context:
 - **Responding to "something happened":** `incident-triage` for the immediate response, `disk-forensics` if you need to analyze a system afterward, `security-comms` to draft the stakeholder / customer communications
 - **Building a security program from scratch:** `csf-mapping` for the governance frame, `threat-modeling` before new features, `breach-patterns` to learn from public incidents
 - **Working under a specific regulation:** `privacy-engineering` for GDPR / CCPA / similar privacy laws, `hipaa-audit` for ePHI, `pci-audit` for payment cards, `ai-risk-management` for AI features
+- **Running AI coding agents with skills, plugins, or MCP servers:** `agent-supply-chain-audit` before you install or trust them — including this catalog
 - **Closing the loop on findings:** `finding-triage` for any single finding from any source — gives you a defensible disposition with the right ticket fields
 - **Translating security work upward or outward:** `security-comms` for board / exec / customer / engineering / sales-engineering deliverables
 
@@ -57,10 +58,10 @@ The skills are organized into seven families. Most security work crosses familie
 │api-  │ │ recon  │ │disk-   │ │contain-│ │ai-   │ │vuln-    │ │ ing      │
 │ audit│ │web-    │ │ forens.│ │ audit  │ │ risk-│ │ research│ │pci-audit │
 │depen-│ │ pentest│ │siem-   │ │iam-aud-│ │ mgmt │ │finding- │ │hipaa-    │
-│ audit│ │red-    │ │ detect.│ │ it     │ │      │ │ triage  │ │ audit    │
-│secre-│ │ team-  │ │soc-    │ │        │ │      │ │csf-     │ │          │
-│ audit│ │ engage-│ │ ops    │ │        │ │      │ │ mapping │ │          │
-│crypt-│ │ ment   │ │threat- │ │        │ │      │ │security-│ │          │
+│ audit│ │red-    │ │ detect.│ │ it     │ │agent-│ │ triage  │ │ audit    │
+│secre-│ │ team-  │ │soc-    │ │        │ │supply│ │csf-     │ │          │
+│ audit│ │ engage-│ │ ops    │ │        │ │-chain│ │ mapping │ │          │
+│crypt-│ │ ment   │ │threat- │ │        │ │-audit│ │security-│ │          │
 │ audit│ │        │ │ hunting│ │        │ │      │ │ comms   │ │          │
 │mobile│ │        │ │breach- │ │        │ │      │ │         │ │          │
 │-audit│ │        │ │patterns│ │        │ │      │ │         │ │          │
@@ -76,6 +77,7 @@ The skills are organized into seven families. Most security work crosses familie
      threat-modeling → owasp-audit / api-audit (pre-implementation → code)
      prompt-injection ⇆ ai-risk-management (security slice ⇆ whole lifecycle)
      privacy-engineering ⇆ hipaa-audit / pci-audit (engineering ⇆ regulatory)
+     agent-supply-chain-audit ⇆ dependency-audit / secrets-audit (agent extensions are supply chain too)
      breach-patterns → every audit skill (what to check)
      finding-triage ← every audit skill (closes the loop on any finding)
      security-comms ← every skill (translates output for non-security audience)
@@ -87,6 +89,7 @@ The skills are organized into seven families. Most security work crosses familie
 <!-- SKILLS:START -->
 | Skill | What it does |
 |-------|--------------|
+| [agent-supply-chain-audit](skills/agent-supply-chain-audit/) | Audit what your AI coding agents load and trust — skills, plugins, hooks, settings, MCP servers, `CLAUDE.md` / `AGENTS.md` / `.cursor/rules`. Hidden instructions, invisible Unicode, agent snooping, unpinned MCP servers (rug pulls), exfil hooks. Covers Claude Code, Cursor, Codex, Gemini CLI, Copilot. |
 | [ai-risk-management](skills/ai-risk-management/) | NIST AI Risk Management Framework + EU AI Act — model lifecycle governance, fairness, robustness, transparency, monitoring, third-party model risk. Broader than prompt-injection. |
 | [api-audit](skills/api-audit/) | OWASP API Security Top 10 (2023) — REST / GraphQL / RPC endpoint audit. BOLA, mass assignment, BFLA, rate-limit, GraphQL introspection, webhook signature. |
 | [breach-patterns](skills/breach-patterns/) | Preemptive hardening — read public breach disclosures, extract the audit question each one implies, check your stack. Capital One / LastPass / Okta / Snowflake / MOVEit / Codecov / Equifax / Uber. |

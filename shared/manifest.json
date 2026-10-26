@@ -1,11 +1,21 @@
 {
   "$comment": "Maps each file in shared/ to the skills that receive a copy at skills/<skill>/references/<file>. scripts/build-adapters.mjs reads this. Copies are generated: edit shared/, never the copies. Each skill adds itself here in the release that starts linking a file.",
   "files": {
-    "findings.schema.json": [],
-    "validate-findings.mjs": [],
-    "to-sarif.mjs": [],
-    "findings-format.md": [],
-    "severity-calibration.md": [],
+    "findings.schema.json": [
+      "agent-supply-chain-audit"
+    ],
+    "validate-findings.mjs": [
+      "agent-supply-chain-audit"
+    ],
+    "to-sarif.mjs": [
+      "agent-supply-chain-audit"
+    ],
+    "findings-format.md": [
+      "agent-supply-chain-audit"
+    ],
+    "severity-calibration.md": [
+      "agent-supply-chain-audit"
+    ],
     "coverage.schema.json": [],
     "validate-coverage.mjs": [],
     "verification.md": [],

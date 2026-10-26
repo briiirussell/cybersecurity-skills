@@ -10,7 +10,7 @@ Hunt for adversaries who are already inside but haven't tripped an alert. Distin
 
 Hunting is hypothesis-driven, not browse-driven. "Let's look around the SIEM" is not hunting; "let's check for the specific pattern of T1059.001 (PowerShell) being launched by Office processes" is.
 
-Cross-references: `siem-detection` (queries you write here often graduate to detection rules), `incident-triage` (what to do if a hunt confirms a finding), `breach-patterns` (a rich source of hunt hypotheses), `disk-forensics` (deeper analysis on confirmed hits).
+Cross-references: `siem-detection` (queries you write here often graduate to detection rules), `incident-triage` (what to do if a hunt confirms a finding), `breach-patterns` (a rich source of hunt hypotheses), `disk-forensics` (deeper analysis on confirmed hits), `agent-supply-chain-audit` (hunting for malicious or rug-pulled AI coding-agent extensions on developer machines).
 
 ## Methodology — PEAK framework
 
