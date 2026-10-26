@@ -1,6 +1,6 @@
 ---
 name: dependency-audit
-description: "Audit project dependencies, frameworks, languages, and dev tools for known vulnerabilities, CVEs, and security anti-patterns. Use when the user mentions 'dependency audit,' 'npm audit,' 'CVE,' 'vulnerable packages,' 'supply chain security,' 'outdated dependencies,' 'known vulnerabilities,' 'security advisory,' 'package security,' 'framework vulnerability,' 'is this package safe,' or needs to check whether their stack has known security issues."
+description: "Audit project dependencies, frameworks, languages, and dev tools for known vulnerabilities, CVEs, and security anti-patterns. Use when the user mentions 'dependency audit,' 'npm audit,' 'CVE,' 'vulnerable packages,' 'supply chain security,' 'outdated dependencies,' 'known vulnerabilities,' 'security advisory,' 'package security,' 'framework vulnerability,' 'is this package safe,' 'pnpm audit,' 'yarn audit,' 'bundle audit,' 'patch this CVE,' 'audit fix broke,' 'lockfile diff,' 'dependency confusion,' 'registry redirection,' 'MCP server pinning,' 'GitHub Actions security,' 'cache poisoning,' 'OIDC trust policy,' 'release pipeline,' or needs to check whether their stack, CI, or release pipeline has known security issues."
 allowed-tools: Bash, Read, Write, Grep, Glob, WebSearch
 ---
 
@@ -8,7 +8,20 @@ allowed-tools: Bash, Read, Write, Grep, Glob, WebSearch
 
 Audit project dependencies, frameworks, language runtimes, and dev tools for known vulnerabilities (CVEs), security anti-patterns, and supply chain risks.
 
+Cross-references: `patch-sweep` for patching the same advisory across many repos; `scanner-pipeline` for running osv-scanner / trivy in CI across every lockfile at once; `agent-supply-chain-audit` for reviewing the content of MCP servers, skills, and plugins this skill inventories; `cloud-audit` "PaaS" for platform runtime and config checks behind `Mitigated (platform/config)`; `secrets-audit` for tokens found in `.npmrc` or CI; `iam-audit` for the cloud roles CI assumes via OIDC; `finding-triage` for dispositioning individual findings.
+
+**Authorization:** confirm the user owns or is authorized to audit the repo, CI system, and registries before running anything. Audit tools are read-only, but fix commands (`audit fix`, `bundle update`) rewrite lockfiles. Run them only when asked, on a branch, never on the production branch directly.
+
 ## Methodology
+
+### Step 0: Confirm What Ships
+
+Before inventorying anything, confirm you are auditing the code that is actually deployed:
+- **Production branch:** the branch the platform or deploy workflow builds from (Vercel/Netlify production branch, Heroku pipeline, `on: push: branches:` in the deploy workflow). It is not always `main`. In one field sweep, `main` held only a README.
+- **Monorepos:** which app or package is deployed, and its lockfile or workspace slice.
+- **Package manager:** which lockfile is committed and the `packageManager` field. This decides the audit command in Step 2.
+
+If the deployed branch can't be confirmed from the repo, say which branch you audited and mark it `needs_validation`. Details: [references/fixing-safely.md](references/fixing-safely.md) §10.
 
 ### Step 1: Inventory the Stack
 
@@ -37,6 +50,12 @@ PHP:        composer.json, composer.lock
 - Check container base images and their update status
 - Check IaC tool versions (Terraform, Pulumi, CDK)
 
+**Agent extensions** (code a coding agent loads and runs at launch):
+- MCP server configs: `.mcp.json`, `.cursor/mcp.json`, `.vscode/mcp.json`. Record each server's `command` + `args` (or `url` for remote servers) and whether the version is pinned.
+- Installed skills and agent rules: `SKILL.md` folders, `.claude/agents/`, `.claude/commands/`, `.cursor/rules/*.mdc`, `AGENTS.md`
+- Plugin marketplaces and enabled plugins: `extraKnownMarketplaces`, `enabledPlugins`, `enableAllProjectMcpServers` in `.claude/settings*.json`
+- Inventory and pinning only here. Defer review of what the extension tells the agent to do to `agent-supply-chain-audit`. Greps: [references/source-redirection.md](references/source-redirection.md) §2.
+
 **Edge cases in package manifests:**
 - `optionalDependencies` — installed but not audited by default
 - `peerDependencies` — version range may not match what's installed
@@ -54,6 +73,12 @@ npm audit --json                # full structured output
 npm audit --omit=dev --json     # production-only: filters dev/build-time vulns
 # Compare the two — vulns only in dev/build tooling do not ship to users
 # and should be triaged as lower priority. Don't bury this in the report.
+
+# pnpm / yarn — use their own audit; npm audit in a pnpm or yarn repo has no
+# package-lock.json and fails or audits the wrong tree without a clear error
+pnpm audit --prod --json                       # use the pnpm major matching the lockfile (corepack)
+yarn audit --groups dependencies --json        # yarn v1
+yarn npm audit --environment production -R     # yarn Berry (v2+)
 
 # Python
 pip audit          # If pip-audit installed
@@ -99,6 +124,19 @@ npm audit fix --force           # only after reviewing the dry-run
 3. **Consider swapping the parent provider entirely.**
 4. **If none apply:** document explicitly, track upstream, and note in the audit report rather than silently dropping the finding.
 
+**Package-manager traps that pass install and build but break at runtime** (full detail and commands in [references/fixing-safely.md](references/fixing-safely.md)):
+- **`pnpm audit --fix` writes open-ended `>=` overrides** (`nanoid@<3.3.8: >=3.3.8`) that force major jumps. Rewrite each to a same-major range (`^3.3.8`), or update the package within its range instead.
+- **In-range re-resolves can duplicate singletons.** Two copies of `react`, `react-dom`, `prosemirror-*`, `@tiptap/pm`, `yjs`, `graphql`, `styled-components`, or `@emotion/*` pass the build and throw at runtime. Check with `npm ls <pkg> --all` / `pnpm why <pkg>` / `yarn why <pkg>`.
+- **Exact pins in an intermediate package block the fix.** Don't report "no fix available". Name the pinning parent (`npm ls <pkg>` shows the chain) and recommend a scoped override (`"overrides": {"<parent>": {"<pkg>": "^x.y.z"}}`) or an upstream issue.
+- **Fixes can raise the Node `engines` floor.** Compare new lockfile entries' `engines.node` against `.nvmrc` / `.node-version` / `engines`. yarn v1 hard-fails on a mismatch.
+
+**Verify after fixing** (checklist with commands in [references/fixing-safely.md](references/fixing-safely.md)):
+- [ ] Advisory gone on re-audit, not suppressed; no unintended downgrades or major jumps in the lockfile diff
+- [ ] No duplicate singleton packages
+- [ ] Engines floor still met by every pinned runtime
+- [ ] Clean frozen install: `npm ci`, `pnpm install --frozen-lockfile`, `yarn install --frozen-lockfile` (v1) / `--immutable` (Berry), `BUNDLE_FROZEN=true bundle install`
+- [ ] Full test suite, then a preview smoke test of the features those packages power (editor, image upload, auth), watching the browser console and server logs
+
 ### Step 3: Research Framework-Specific Known Issues
 
 Beyond CVEs in packages, check for known vulnerability patterns specific to the framework in use. Search for recent advisories and common misconfiguration issues.
@@ -108,6 +146,12 @@ For every direct dependency, cross-reference the installed version against:
 - `https://github.com/<org>/<repo>/security/advisories`
 
 The framework-specific patterns below cover *evergreen* anti-patterns (mass assignment, debug-in-prod, etc.). Recent CVEs need a fresh check because hardcoded advisory lists rot fast and LLM training data is often 6+ months behind the latest.
+
+**Runtime and framework upgrades** (detail in [references/fixing-safely.md](references/fixing-safely.md) §6–9):
+- **Move every runtime pin together.** Ruby: `.ruby-version`, Gemfile `ruby`, `Gemfile.lock` `RUBY VERSION`, Dockerfile `ARG`/`FROM`, CI image, buildpack/stack. Node: `.nvmrc`, `.node-version`, `engines`, Dockerfile, CI `node-version`, platform setting. One missed pin keeps the vulnerable runtime running there.
+- **Ruby gotchas:** `bundle update --conservative <gem>` can still jump a shared dependency a major (`json` 2→3 broke `httparty` at runtime), so constrain it (`~> 2.21`). To pin without a permanent Gemfile change, tighten the constraint, resolve, then restore it; Bundler keeps the locked version. Brakeman fails CI when it isn't the latest release, so expect a red patch PR. Patch-level Rails releases can still break specs.
+- **No in-place fix exists** when the framework or runtime line gets no backport (an out-of-support Next.js major, an EOL Ruby minor). Report it as `Requires major migration` with the minimum fixed version and an effort estimate, not next to one-command fixes.
+- **Platform or config mitigation** can be the right answer: a config flag that blocks the vulnerable path (for example, libvips `VIPS_BLOCK_UNTRUSTED=1`, which only exists in libvips ≥ 8.13), or a managed runtime that patches itself (Vercel-managed Node). Record it as `Mitigated (platform/config)` with the control, where it's set, the version prerequisite, and how it was verified. Unverified platform state is `needs_validation`.
 
 **Next.js / React:**
 - Server Actions exposing internal endpoints (pre-14.1.1 middleware bypass CVE-2025-29927)
@@ -181,6 +225,35 @@ Beyond known CVEs, look for supply chain attack indicators:
 - Missing `.npmrc` or `pip.conf` scoping to private registry
 - No lockfile integrity verification
 
+**Package-source redirection** — any config, CLI call, or env var that adds or replaces where packages come from. Full per-ecosystem table and greps in [references/source-redirection.md](references/source-redirection.md) §1:
+
+| Ecosystem | Surfaces to check |
+|---|---|
+| npm / pnpm | `.npmrc` `registry=` and `@scope:registry=`; `npm config set registry`; `--registry`; `NPM_CONFIG_REGISTRY` / `npm_config_registry` |
+| Yarn | `.yarnrc` `registry`; `.yarnrc.yml` `npmRegistryServer`, `npmScopes.*.npmRegistryServer`, `unsafeHttpWhitelist`; `YARN_NPM_REGISTRY_SERVER` |
+| pip / uv | `pip.conf` / `pip.ini` / requirements `--index-url`, `--extra-index-url`, `--trusted-host`; `PIP_INDEX_URL`, `PIP_EXTRA_INDEX_URL`; `UV_INDEX_URL`, `UV_EXTRA_INDEX_URL` |
+| Poetry | `[[tool.poetry.source]]` and its `priority`; `poetry source add`; `POETRY_REPOSITORIES_<NAME>_URL` |
+| Maven / Gradle | `settings.xml` `<mirrors>` / `<mirrorOf>`; `pom.xml` `<repositories>`; Gradle `repositories { maven { url } }`, init scripts |
+| Cargo | `.cargo/config.toml` `[source.crates-io] replace-with`, `[registries.*]`; `CARGO_REGISTRIES_<NAME>_INDEX`, `CARGO_REGISTRY_DEFAULT` |
+
+```bash
+grep -rnE "registry\s*=|npmRegistryServer|(extra-)?index-url|trusted-host|<mirrorOf>|replace-with|NPM_CONFIG_REGISTRY|PIP_(EXTRA_)?INDEX_URL|CARGO_REGISTRIES_|poetry source add" \
+  .npmrc .yarnrc .yarnrc.yml pip.conf pyproject.toml requirements*.txt settings.xml pom.xml .cargo/ .github/ Dockerfile* scripts/ 2>/dev/null
+```
+
+`PIP_EXTRA_INDEX_URL` / `--extra-index-url` is the classic dependency-confusion setup: pip queries every index and installs the highest version from any of them, so a public package with a private package's name and a higher version wins. A default-registry replacement pointing at a host the org doesn't control, over `http://`, or added in the PR under review is a candidate finding.
+
+**Agent extensions (unpinned / unreviewed):** MCP server commands from the Step 1 inventory that fetch the latest version on every launch:
+```bash
+# npx -y pkg without @x.y.z, uvx/pipx pkg without ==, docker run image without a tag or digest
+grep -nE '"(-y|--yes)",\s*"(@[a-z0-9._-]+/)?[a-z0-9._-]+(@latest)?"' .mcp.json .cursor/mcp.json .vscode/mcp.json 2>/dev/null
+grep -nE '"(uvx|pipx)"' -A3 .mcp.json .cursor/mcp.json 2>/dev/null | grep -vE '==[0-9]'
+grep -nE '"docker"' -A8 .mcp.json .cursor/mcp.json 2>/dev/null | grep -vE ':[0-9][^"]*"|@sha256:'
+```
+Pinned looks like `some-mcp-server@1.4.2`, `tool==0.9.1`, `image@sha256:...`. Hand each unpinned or unreviewed extension to `agent-supply-chain-audit` for content review.
+
+**Shipped bytecode:** `.pyc` files tracked in git or packaged without a matching `.py` can run code nobody reviewed. `git ls-files | grep -E '\.py[co]$|__pycache__/'`, plus the no-matching-source check in [references/source-redirection.md](references/source-redirection.md) §3.
+
 **Typosquatting:**
 - Package names that are close misspellings of popular packages
 - Recently published packages with very few downloads
@@ -223,23 +296,59 @@ Beyond known CVEs, look for supply chain attack indicators:
 - Missing state file encryption
 - Over-permissive IAM in provider configuration
 
+### Step 5b: CI and Release Trust Handoffs
+
+CI configuration is authorization code: it decides who can run what, with which credentials, against which targets. Most pipeline compromises go through a handoff, where a lower-trust job writes something a higher-trust job later restores, executes, or ships. Check each handoff below. Greps, validation rules, and reporting fields are in [references/ci-release.md](references/ci-release.md).
+
+| # | Handoff | Starting grep (`.github/workflows/*.y*ml`) |
+|---|---|---|
+| 1 | `workflow_run` / `pull_request_target` restoring artifacts or caches into a privileged job | `grep -lE "workflow_run\|pull_request_target" … \| xargs grep -nE "download-artifact\|actions/cache\|gh run download"` |
+| 2 | `actions/cache` keys or `restore-keys` an untrusted PR run can write | `grep -nE "actions/cache\|restore-keys:\|cache:\s*(npm\|yarn\|pnpm\|pip)"` |
+| 3 | `permissions:` missing or `write-all`, **combined with** a privileged step an untrusted actor can reach | `grep -L "permissions:"` and `grep -nE "write-all\|:\s*write"` |
+| 4 | OIDC `id-token: write` plus a cloud trust policy whose `sub` condition is a wildcard or missing | `grep -nE "id-token:\s*write\|role-to-assume"`; IaC: `grep -rnE "githubusercontent\.com:sub\|repo:[^\"]*\*"` |
+| 5 | Release or promotion pulling by tag or artifact name instead of digest | `grep -nE "docker (pull\|tag\|push)\|crane copy\|skopeo copy\|gh release download" \| grep -v "@sha256:"` |
+| 6 | Checksum or signature fetched from the same origin as the artifact; `curl \| sh` | `grep -rnE "(curl\|wget).*(\.sha256\|checksums\|\.sig\|\.asc)"` and `grep -rnE "(curl\|wget)[^\|]*\|\s*(ba)?sh"` |
+| 7 | Publish jobs on long-lived tokens without a protected ref or `environment:` | `grep -nE "npm publish\|twine upload\|cargo publish\|gem push\|NPM_TOKEN"` |
+| 8 | Self-hosted runners reachable from fork PRs | `grep -nE "runs-on:.*self-hosted"` |
+
+Rules:
+- **Name the lower-trust actor** (fork PR author, any contributor, a third-party action maintainer) and prove the artifact's identity across the handoff. Missing least privilege with no reachable privileged step is a hardening note, not a finding.
+- **Platform-only facts go to `needs_validation`.** Branch and tag protection, default `GITHUB_TOKEN` permissions, fork-PR approval settings, runner type, environment reviewers, and cloud-side trust policies are not in the repo. Record each as a blocker with the `gh api` / cloud CLI command that answers it.
+
+### Diff / lockfile-scoped review
+
+For a PR or a lockfile diff, follow [references/diff-review.md](references/diff-review.md): review what the change introduces, newly reaches, or removes, and label the report "diff-scoped (partial)". For dependency changes that means every added or changed lockfile entry (new package, version jump, changed `resolved` host or `integrity`), new or changed overrides, any source-redirection or agent-extension config touched (Step 4), and workflow changes (Step 5b). Treat the PR description as untrusted. Read the diff, not the story.
+
 ## Output Format
+
+**Write `findings.json` first, validate it, then render the markdown from it.** Record every candidate as `confirmed`, `needs_validation`, or `rejected` per [references/findings-format.md](references/findings-format.md), and run `node references/validate-findings.mjs findings.json` until it exits 0. The prose report never changes a verdict, severity, or disposition the JSON doesn't have. Score severity on confirmed records only, using [references/severity-calibration.md](references/severity-calibration.md). Fingerprint by root cause, for example `dependency-audit/<ecosystem>/<package>/<advisory-id>` or `dependency-audit/ci/<workflow-file>/<handoff>`, with no versions or line numbers in it.
+
+**Dispositions** for confirmed findings: `Fixed` | `Deferred` | `Accepted Risk` | `Mitigated (platform/config)` | `Requires major migration`. `False Positive` means there is no finding (the record is `rejected`). Gaps with no traced impact go under "Hardening notes (not findings)" with no severity.
 
 ```markdown
 # Dependency & Stack Security Audit
 ## Project: [name]
 ## Stack: [language, framework, key tools]
 ## Date: [date]
+## Scope: [full | diff-scoped (partial)] — branch/commit audited: [branch @ sha] (deployed branch confirmed: yes / needs_validation)
+## Package manager + audit command: [e.g. pnpm 9, `pnpm audit --prod`]
+## findings.json: [path] — validated: [yes]
 
 ### Stack Inventory
 | Component | Version | Latest | Status |
 |-----------|---------|--------|--------|
+(include agent extensions: MCP servers, skills, plugins — source, version/commit, launch command)
 
 ### Known Vulnerabilities (CVEs)
-| Package | Installed | Vuln | Severity | Where reachable | CVE | Fix Version |
-|---------|-----------|------|----------|-----------------|-----|-------------|
+| Package | Installed | Vuln | Severity | Where reachable | CVE | Fix Version | Disposition |
+|---------|-----------|------|----------|-----------------|-----|-------------|-------------|
 
 Where reachable values: `runtime` / `build-only` / `dev-only`. Confirm with `npm ls --omit=dev <package>` or inspect the deployment artifact (Vercel function bundle, Docker layer). Build- and dev-only vulnerabilities should not block a release on their own; runtime-reachable ones should.
+
+A mutable or known-vulnerable dependency is not a finding by itself. To confirm it, show who can influence what gets resolved (or reach the vulnerable code), which build or runtime consumes it, and what boundary follows (user input reaching the vulnerable function, secrets in a build, a publish or deploy). Without that it is `needs_validation` (missing fact as the blocker) or a hardening note, not a severity-rated row.
+
+Fix Version values: a version, **"Blocked by exact pin in `<parent>@<ver>`"** (+ scoped override or upstream issue link), or **"None on this line — Requires major migration to `<ver>` (effort S/M/L)"**. Never just "no fix available".
+Disposition values: `Fixed` / `Deferred` / `Accepted Risk` / `Mitigated (platform/config)` (name the control, where it's set, its version prerequisite) / `Requires major migration`.
 
 ### Framework-Specific Issues
 #### [SEVERITY] [Title]
@@ -252,9 +361,20 @@ Where reachable values: `runtime` / `build-only` / `dev-only`. Confirm with `npm
 | Risk | Package/Component | Details | Remediation |
 |------|-------------------|---------|-------------|
 
+Risk types include: Dependency confusion, Source redirection (registry/index/mirror), Typosquat, Malicious install script, Unmaintained, Shipped bytecode without source, **Agent extension (unpinned / unreviewed)** — MCP server, skill, or plugin launched without a version pin or from an unreviewed source (hand content review to `agent-supply-chain-audit`).
+
 ### Dev Tool / CI Security
 | Tool | Issue | Severity | Remediation |
 |------|-------|----------|-------------|
+
+For CI/release trust handoffs (Step 5b), each row names the lower-trust actor, the handoff object, the privileged consumer, and the boundary crossed. Platform facts not verified → `needs_validation` with the command that answers them.
+
+### Needs Validation
+| Candidate | Blockers | Validation plan |
+|-----------|----------|-----------------|
+
+### Hardening Notes (not findings)
+- [gap with no traced impact, e.g. workflow without `permissions:` and no reachable privileged step — no severity]
 
 ### Prioritized Action Plan
 1. [Critical — actively exploited CVEs, RCE vulnerabilities]
@@ -270,6 +390,8 @@ Where reachable values: `runtime` / `build-only` / `dev-only`. Confirm with `npm
 - Provide specific fix versions or remediation steps for every finding
 - Note when a vulnerability requires specific conditions to exploit (reducing effective severity)
 - Refuse to help exploit found vulnerabilities against unauthorized targets
+- Don't run `audit fix`, `bundle update`, or other lockfile-rewriting commands unless asked, and never directly on the production branch
+- Don't trigger, re-run, or modify CI workflows, publish packages, or assume cloud roles to "prove" a CI/release finding. Static evidence plus a validation plan for the owner is the bar
 
 ## References
 
@@ -279,3 +401,6 @@ Where reachable values: `runtime` / `build-only` / `dev-only`. Confirm with `npm
 - Snyk Vulnerability Database
 - npm audit / pip-audit / bundler-audit documentation
 - SLSA (Supply-chain Levels for Software Artifacts) framework
+- Cloudflare security-audit-skill, [`SUPPLY-CHAIN-AND-RELEASE.md`](https://github.com/cloudflare/security-audit-skill/blob/main/skills/security-audit/SUPPLY-CHAIN-AND-RELEASE.md) (MIT) — CI/release trust-handoff principles, paraphrased in [references/ci-release.md](references/ci-release.md)
+- NVIDIA SkillSpector (Apache-2.0) — [dependency-source redirection](https://github.com/NVIDIA/SkillSpector/blob/main/docs/DEPENDENCY_SOURCE_REDIRECTION.md), [MCP rug-pull](https://github.com/NVIDIA/SkillSpector/blob/main/src/skillspector/nodes/analyzers/mcp_rug_pull.py), and [supply-chain patterns](https://github.com/NVIDIA/SkillSpector/blob/main/README.md#supply-chain-10-patterns), paraphrased in [references/source-redirection.md](references/source-redirection.md)
+- Field notes from a 45-app CVE sweep (Rails/Heroku, Next.js/Vercel; npm, pnpm, yarn v1), October 2026 — [references/fixing-safely.md](references/fixing-safely.md)
