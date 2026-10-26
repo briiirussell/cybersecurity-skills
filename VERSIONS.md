@@ -13,7 +13,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | container-audit | 1.0.0 | 2026-05-26 |
 | crypto-audit | 1.0.0 | 2026-05-26 |
 | csf-mapping | 1.0.0 | 2026-05-26 |
-| dependency-audit | 1.1.0 | 2026-05-26 |
+| dependency-audit | 1.2.0 | 2026-10-26 |
 | disk-forensics | 1.0.0 | 2026-05-26 |
 | finding-triage | 1.1.0 | 2026-10-26 |
 | hipaa-audit | 1.0.0 | 2026-05-26 |
@@ -41,6 +41,41 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.0.0 | 2026-05-26 |
 
 ## Recent Changes
+
+### 1.14.0 (2026-10-26)
+
+dependency-audit gets field feedback from a 45-app CVE sweep (October 2026), CI/release trust handoffs, and package-source redirection checks.
+
+**Changed**
+
+- **dependency-audit** (1.2.0)
+  - **Step 0: audit the branch that's actually deployed.** Confirm the production branch, plus the deployed package in a monorepo, and the package manager before running anything. In one real repo, `main` held only a README. (#81)
+  - **Fixing safely**, from the sweep, in `references/fixing-safely.md` (#81):
+    - `pnpm audit --fix` writes open-ended `>=` overrides that force major jumps. Rewrite them to same-major ranges.
+    - In-range re-resolves can create duplicate singleton packages. A real case: two copies of `prosemirror-model` broke a live editor while install, lint and build all passed.
+    - When a fix is blocked, name the intermediate package that pins the vulnerable version rather than reporting "no fix available".
+    - Fixes can raise the Node `engines` floor.
+    - pnpm and yarn need their own audit commands. `npm audit` in a pnpm repo fails silently.
+    - New "Verify after fixing" checklist: singleton dupes, engines floor, clean `--frozen-lockfile` / `npm ci`, and a preview smoke test of the features those packages power.
+  - **Runtimes** (#81):
+    - Every pin has to move together (`.ruby-version`, Gemfile `ruby`, lockfile, Dockerfile `ARG`, CI image, buildpack; `.nvmrc`, `.node-version`, `engines`, platform setting).
+    - Ruby gotchas: `--conservative` still jumping shared deps, the tighten-resolve-restore pin trick, Brakeman being latest-only, patch-level Rails breaking specs.
+    - "No in-place fix exists" is separated from in-range fixes.
+    - Platform mitigations count as compensating controls.
+  - **New dispositions:** `Mitigated (platform/config)` and `Requires major migration (est. effort)`. (#81)
+  - **CI and release trust handoffs** in `references/ci-release.md`, plus a Step 5b summary (#71):
+    - Ten patterns, each with a grep: `workflow_run` / `pull_request_target` restoring artifacts or caches into privileged jobs, cache keys that PRs can write, missing or `write-all` `permissions:` combined with a reachable privileged step, OIDC `id-token: write` and the cloud trust-policy subject, release jobs promoting by tag instead of digest, a checksum fetched from the same origin as the artifact, and more.
+    - New rule next to the CVE table: a mutable or known-vulnerable dependency is not a finding by itself. Show who can influence resolution and what boundary follows.
+    - Facts that only exist on the hosting platform go to `needs_validation`.
+    - Paraphrased from Cloudflare's [SUPPLY-CHAIN-AND-RELEASE.md](https://github.com/cloudflare/security-audit-skill/blob/main/skills/security-audit/SUPPLY-CHAIN-AND-RELEASE.md) (MIT).
+  - **Agent extensions and source redirection** (#72):
+    - The inventory now includes `.mcp.json` / `.cursor/mcp.json` server commands, installed skills and plugin marketplaces.
+    - A per-ecosystem table of package-source redirection (npm, Yarn, pip/uv, Poetry, Maven/Gradle, Cargo, including env-var and CLI forms) in `references/source-redirection.md`.
+    - Greps for unpinned `npx -y` / `uvx` / `docker run`, and a check for `.pyc` files with no matching source.
+    - New risk row: "Agent extension (unpinned / unreviewed)".
+  - **findings.json** is written and validated before the prose (#64). Diff / lockfile-scoped review mode (#67).
+  - Cross-references to `patch-sweep`, `scanner-pipeline`, `agent-supply-chain-audit` and cloud-audit "PaaS".
+- README: dependency-audit row updated.
 
 ### 1.13.0 (2026-10-26)
 

@@ -7,7 +7,8 @@
       "scanner-pipeline",
       "finding-triage",
       "owasp-audit",
-      "api-audit"
+      "api-audit",
+      "dependency-audit"
     ],
     "validate-findings.mjs": [
       "agent-supply-chain-audit",
@@ -15,7 +16,8 @@
       "scanner-pipeline",
       "finding-triage",
       "owasp-audit",
-      "api-audit"
+      "api-audit",
+      "dependency-audit"
     ],
     "to-sarif.mjs": [
       "agent-supply-chain-audit",
@@ -23,7 +25,8 @@
       "scanner-pipeline",
       "finding-triage",
       "owasp-audit",
-      "api-audit"
+      "api-audit",
+      "dependency-audit"
     ],
     "findings-format.md": [
       "agent-supply-chain-audit",
@@ -31,14 +34,16 @@
       "scanner-pipeline",
       "finding-triage",
       "owasp-audit",
-      "api-audit"
+      "api-audit",
+      "dependency-audit"
     ],
     "severity-calibration.md": [
       "agent-supply-chain-audit",
       "business-logic-testing",
       "finding-triage",
       "owasp-audit",
-      "api-audit"
+      "api-audit",
+      "dependency-audit"
     ],
     "coverage.schema.json": [
       "owasp-audit",
@@ -64,7 +69,8 @@
     ],
     "diff-review.md": [
       "owasp-audit",
-      "api-audit"
+      "api-audit",
+      "dependency-audit"
     ]
   }
 }
