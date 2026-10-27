@@ -12,7 +12,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | cicd-security | 1.0.0 | 2026-10-27 |
 | cloud-audit | 1.2.0 | 2026-10-26 |
 | container-audit | 1.1.0 | 2026-10-26 |
-| control-audit | 1.0.0 | 2026-10-27 |
+| control-audit | 1.1.0 | 2026-10-27 |
 | crypto-audit | 1.1.2 | 2026-10-27 |
 | csf-mapping | 1.0.3 | 2026-10-27 |
 | dependency-audit | 1.2.4 | 2026-10-27 |
@@ -47,6 +47,14 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.48.0 (2026-10-27)
+
+control-audit adds ISO/IEC 27001:2022 (#140). control-audit 1.1.0.
+
+**Added**
+- **ISO 27001** (`references/iso27001.md`): management-system clauses 4–10 and the Statement of Applicability. The 93 Annex A controls are grouped in the four themes, with the 11 controls that are new in 2022 marked. It also covers Amendment 1:2024 and the end of the 2013 transition on 31 October 2025. Control titles are paraphrased, not reproduced, because ISO text is copyrighted.
+- The skill's scope step and trigger phrases cover ISO 27001.
 
 ### 1.47.0 (2026-10-27)
 

@@ -1,6 +1,6 @@
 ---
 name: control-audit
-description: "Control-level audit readiness for compliance frameworks, starting with SOC 2. Scope the audit (criteria, systems, audit period, Type 1 vs Type 2), build the control inventory, write an evidence request per control (artifact, owner, sample period, test method), test what the repo and configs can show (CC8.1 change management via branch protection and required reviews, CC6 access), hand technical checks to the owning audit skill, and record control gaps in the shared findings format with a control matrix. Use when the user mentions 'SOC 2,' 'SOC 2 Type 2,' 'SOC 2 Type 1,' 'SOC 2 readiness,' 'Trust Services Criteria,' 'common criteria,' 'control matrix,' 'evidence request list,' 'PBC list,' 'audit readiness,' 'control testing,' 'audit evidence,' 'auditor fieldwork,' 'test of operating effectiveness,' or is getting ready for an external auditor."
+description: "Control-level audit readiness for SOC 2 and ISO/IEC 27001:2022. Scope the audit (criteria, systems, period, Type 1 vs Type 2, Stage 1/2), build the control inventory, write an evidence request per control (artifact, owner, sample, test method), test what the repo and configs show (CC8.1 / A.8.32 change management via branch protection, access), hand technical checks to the owning skill, and record control gaps in the shared findings format with a control matrix. Use when the user mentions 'SOC 2,' 'SOC 2 Type 2,' 'SOC 2 readiness,' 'Trust Services Criteria,' 'ISO 27001,' 'ISO 27001:2022,' 'ISMS,' 'Statement of Applicability,' 'Annex A controls,' 'certification audit,' 'control matrix,' 'evidence request list,' 'PBC list,' 'audit readiness,' 'control testing,' 'audit evidence,' or is getting ready for an external auditor."
 allowed-tools: Read, Grep, Glob, WebSearch
 ---
 
@@ -16,6 +16,7 @@ Cross-references: `csf-mapping` (crosswalk a control set to NIST CSF 2.0, and go
 
 - "We have a SOC 2 Type 2 in six months, where are we?" or "the auditor sent a PBC list, help us answer it"
 - Building or reviewing a control matrix, and writing evidence requests per control
+- "Our ISO 27001 Stage 2 is in May" or "is our Statement of Applicability defensible?"
 - Readiness review before fieldwork: which controls lack evidence, which failed in the period, which are only on paper
 - Re-running after remediation, matched by fingerprint
 
@@ -38,10 +39,10 @@ Write `scope.md` before anything else. Most readiness work that goes wrong went 
 | Decision | What to pin down |
 |---|---|
 | Framework and version | See the framework table below. Name the version in the report header |
-| Criteria or baseline | SOC 2: Security (the common criteria) is always in; add Availability, Confidentiality, Processing Integrity, Privacy only where customers or contracts need them |
+| Criteria or baseline | SOC 2: Security (the common criteria) is always in; add Availability, Confidentiality, Processing Integrity, Privacy only where customers or contracts need them. ISO 27001: all of clauses 4–10, plus the Annex A controls the Statement of Applicability includes |
 | System boundary | The service, its infrastructure, software, people, procedures and data. List every in-scope system by name |
 | Third parties | Subservice organizations (cloud host, IdP, payroll) and whether each is carved out or included; the complementary controls you rely on them for, and the ones your customers must run (CUECs) |
-| Audit period | Type 1: a single date (design only). Type 2: a period, commonly 3 to 12 months (design and operating effectiveness). A first Type 2 is often 3 to 6 months |
+| Audit period | SOC 2 Type 1: a single date (design only). Type 2: a period, commonly 3 to 12 months (design and operating effectiveness); a first Type 2 is often 3 to 6 months. ISO 27001: Stage 1 then Stage 2, with records showing the ISMS has run (an internal audit and a management review at least), then yearly surveillance |
 | What exists already | Prior reports, an existing control matrix, policies, a GRC tool export. Start from the organization's controls, not a blank list |
 
 Frameworks this skill carries a reference for:
@@ -49,6 +50,7 @@ Frameworks this skill carries a reference for:
 | Framework | Reference | Version to assess against |
 |---|---|---|
 | SOC 2 | [references/soc2.md](references/soc2.md) | AICPA 2017 Trust Services Criteria with the 2022 revised points of focus |
+| ISO/IEC 27001 | [references/iso27001.md](references/iso27001.md) | ISO/IEC 27001:2022 with Amendment 1:2024; the 2013 transition ended 31 October 2025. Build the inventory from the Statement of Applicability |
 
 For a crosswalk between frameworks, or to NIST CSF 2.0, map each control here to its CSF subcategory with `csf-mapping` and keep the mapping in a `csf` column of the control matrix. One control, evidenced once, can satisfy several frameworks; say which.
 
@@ -59,7 +61,7 @@ One row per control the organization operates, not per criterion. A criterion is
 | Field | Example |
 |---|---|
 | Control ID | `CHG-02` (the organization's own ID) |
-| Framework refs | `CC8.1`; later `A.8.32`, `CM-3` if mapped |
+| Framework refs | `CC8.1`, `A.8.32` |
 | Control as operated | "Every merge to `main` needs one approving review from someone other than the author; CI must pass" |
 | Owner | Role, not a person's name: "Engineering manager, platform" |
 | Frequency | Per event / daily / weekly / monthly / quarterly / annual |
@@ -171,14 +173,15 @@ What each verdict looks like here:
 control-audit/soc2/CC6.2/okta-workforce
 control-audit/soc2/CC8.1/github/acme/api
 control-audit/soc2/A1.2/aws/123456789012/prod-db
+control-audit/iso27001/A.5.18/okta-workforce
 ```
 
 **`ext` fields** (flat, snake_case; don't repeat anything that already has a field):
 
 | Key | Value | Example |
 |---|---|---|
-| `framework` | Framework and version | `"soc2-tsc-2017"` |
-| `control_id` | The framework control or criterion | `"CC6.2"` |
+| `framework` | Framework and version | `"soc2-tsc-2017"`, `"iso27001-2022"` |
+| `control_id` | The framework control or criterion | `"CC6.2"`, `"A.8.32"`, `"clause-9.2"` |
 | `org_control_id` | The organization's own control ID, if any | `"IAM-04"` |
 | `test_method` | How it was tested | `"inspection"`, `"reperformance"` |
 | `evidence_request` | The request ID that holds or would hold the evidence | `"ER-IAM-03-1"` |
@@ -260,7 +263,8 @@ The control matrix counts records from `findings.json` and entries from the docu
 
 ## Boundaries
 
-- This is readiness, not an audit opinion. A SOC 2 report is issued by an independent CPA firm. The readiness review prepares for that and does not replace it
+- This is readiness, not an audit opinion or a certificate. A SOC 2 report is issued by an independent CPA firm, and an ISO/IEC 27001 certificate by an accredited certification body. The readiness review prepares for those and does not replace them
+- Severity is not a nonconformity grade. A major nonconformity for a missing management review is still a documentation gap here, and the report says it will block certification
 - Severity reflects exposure. Don't inflate a paperwork gap to High to get budget, and don't call a live exposure a documentation gap because the auditor might not sample it
 - Never fabricate, backdate or edit evidence, and never pick samples to avoid known exceptions. The auditor picks samples. If evidence doesn't exist, the row says so
 - Technical findings belong to the skill that found them. Cite their fingerprints here; don't duplicate records
@@ -272,5 +276,6 @@ The control matrix counts records from `findings.json` and entries from the docu
 - AICPA, 2017 Trust Services Criteria for Security, Availability, Processing Integrity, Confidentiality, and Privacy (with Revised Points of Focus, 2022) — `aicpa-cima.com`
 - AICPA, SOC 2 Reporting on an Examination of Controls at a Service Organization (Guide, 2022 edition)
 - COSO, Internal Control — Integrated Framework (2013): the 17 principles behind CC1–CC5
-- Framework detail: [references/soc2.md](references/soc2.md)
+- ISO/IEC 27001:2022 and Amendment 1:2024, ISO/IEC 27002:2022 — `iso.org` (copyrighted; the reference file paraphrases control titles)
+- Framework detail: [references/soc2.md](references/soc2.md), [references/iso27001.md](references/iso27001.md)
 - Shared references (copied into `references/` at build time): [references/findings-format.md](references/findings-format.md), [references/verification.md](references/verification.md), [references/severity-calibration.md](references/severity-calibration.md), [references/findings.schema.json](references/findings.schema.json)
