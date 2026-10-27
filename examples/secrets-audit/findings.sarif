@@ -9,7 +9,7 @@
           "informationUri": "https://github.com/briiirussell/cybersecurity-skills",
           "rules": [
             {
-              "id": "secrets-audit:jwt-hmac-default:src/config.js:jwtSecret",
+              "id": "secrets-audit/jwt-hmac-default/src/config.js/jwtSecret",
               "shortDescription": {
                 "text": "JWT signing secret falls back to a hardcoded default when JWT_SECRET is unset or empty, and .env.example ships it empty"
               },
@@ -34,7 +34,7 @@
       },
       "results": [
         {
-          "ruleId": "secrets-audit:jwt-hmac-default:src/config.js:jwtSecret",
+          "ruleId": "secrets-audit/jwt-hmac-default/src/config.js/jwtSecret",
           "ruleIndex": 0,
           "level": "note",
           "message": {
@@ -54,7 +54,7 @@
             }
           ],
           "partialFingerprints": {
-            "cybersecuritySkills/v1": "secrets-audit:jwt-hmac-default:src/config.js:jwtSecret"
+            "cybersecuritySkills/v1": "secrets-audit/jwt-hmac-default/src/config.js/jwtSecret"
           },
           "properties": {
             "verdict": "needs_validation",

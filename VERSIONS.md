@@ -31,7 +31,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | recon | 1.0.1 | 2026-10-26 |
 | red-team-engagement | 1.0.1 | 2026-10-26 |
 | scanner-pipeline | 1.0.2 | 2026-10-26 |
-| secrets-audit | 1.1.2 | 2026-10-26 |
+| secrets-audit | 1.1.3 | 2026-10-26 |
 | security-comms | 1.0.3 | 2026-10-26 |
 | siem-detection | 1.0.3 | 2026-10-26 |
 | soc-operations | 1.0.4 | 2026-10-26 |
@@ -41,6 +41,20 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.1.3 | 2026-10-26 |
 
 ## Recent Changes
+
+### 1.26.2 (2026-10-26)
+
+secrets-audit fixes from the worked-example run (#159). secrets-audit 1.1.3.
+
+**Fixed**
+- **Fingerprint form.** The skill wrote `secrets-audit:<type>:<file>:last4-XXXX` and `findings-format.md` wrote `secrets-audit/<type>/<file>/<VAR>`. The skill now uses the shared slash form, with the variable name as the last part. If the value has no variable name, it uses the enclosing symbol or `last4-XXXX`. The worked example's five fingerprints are renamed to match, and its SARIF is regenerated.
+- **Report template.** It now has the "Rejected (do not re-raise)" section that `findings-format.md` requires.
+- **Value printing.** The generic 40-character and high-entropy greps printed every match, which the skill tells agents not to do. The provider sweeps now list files (`-l`), the 40-character sweep counts per file, and the env-file sweep masks values to first and last 4.
+- **Cross-reference.** "`owasp-audit` A02 (in-source secret patterns)" was ambiguous after the 2025 renumbering. It now reads A04:2025 Cryptographic Failures, where owasp-audit checks hard-coded secrets.
+
+**Changed**
+- **Verdicts follow the v1.26.1 rules.** A hard-coded fallback secret is `confirmed`, with confidence capped at medium. A vendor's published example value is `rejected`, pointing at the line that holds it.
+- The skill now links `verification.md` for the refutation pass, and gets a copy of it.
 
 ### 1.26.1 (2026-10-26)
 
