@@ -42,6 +42,20 @@ Current versions of all skills. Agents can compare against local versions to che
 
 ## Recent Changes
 
+### 1.23.6 (2026-10-26)
+
+**Added**
+- `SECURITY.md` (#125). It explains how to report privately through GitHub private vulnerability reporting, which is now turned on, and sets response targets. It also says what counts as a vulnerability in a skills repo:
+  - over-broad `allowed-tools` grants
+  - instructions that skip the authorization check or send data out
+  - prompt injection or hidden Unicode in skill content
+  - the plugin manifests, build and workflows
+  - the bundled scripts, when they run on untrusted input
+- It also lists what's out of scope, such as upstream tools, stale advice (that's a field report) and marked example snippets.
+- `.github/CODEOWNERS` requires maintainer review on every path, with `skills/`, `shared/`, `.github/`, `.claude-plugin/` and `scripts/` listed explicitly.
+- The README's security section links to the policy.
+- The Dependabot part of #125 already shipped in v1.23.3.
+
 ### 1.23.5 (2026-10-26)
 
 **Added**

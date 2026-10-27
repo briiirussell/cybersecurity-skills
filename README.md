@@ -242,6 +242,8 @@ Every PR is linted and scanned with [NVIDIA SkillSpector](https://github.com/NVI
 
 Our baseline is never applied to your scan; SkillSpector only uses an author-shipped baseline for a single skill with `--use-shipped-baseline`. `allowed-tools` lists tools pre-approved to run **without a prompt** in Claude Code — it is not a sandbox — and the Cursor / Codex adapters carry no tool restrictions at all. Details: [docs/security-scanning.md](docs/security-scanning.md). You can also point `agent-supply-chain-audit` at this repo.
 
+Found a way a skill could lead an agent to do something unsafe, like an over-broad grant or an instruction that skips the authorization check? Please report it privately. [SECURITY.md](SECURITY.md) has what's in scope and how.
+
 ## Ethics & Authorization
 
 These skills are for **authorized security testing, CTF competitions, security research, and defensive use only**. Every offensive skill (`recon`, `osint-recon`, `web-pentest`, etc.) opens with an authorization check and refuses destructive techniques, mass targeting, supply-chain compromise, or evasion patterns intended for malicious use.
