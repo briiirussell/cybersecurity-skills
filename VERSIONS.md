@@ -22,7 +22,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | log-watch | 1.0.1 | 2026-10-26 |
 | mobile-audit | 1.1.0 | 2026-10-27 |
 | osint-recon | 1.0.2 | 2026-10-26 |
-| owasp-audit | 1.3.4 | 2026-10-27 |
+| owasp-audit | 1.4.0 | 2026-10-27 |
 | patch-sweep | 1.0.2 | 2026-10-26 |
 | pci-audit | 1.1.0 | 2026-10-27 |
 | personal-opsec | 1.0.1 | 2026-10-26 |
@@ -41,6 +41,19 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.0 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.39.0 (2026-10-27)
+
+owasp-audit gets framework playbooks, part 1: Next.js and Supabase (#132). owasp-audit 1.4.0.
+
+**Added**
+- **Framework detection.** Recon detects frameworks from package.json dependencies and config files, then loads only the matching playbook from `references/frameworks/`. Playbook findings use the normal Top 10:2025 categories, ledger units and findings format.
+- **Next.js** (`frameworks/nextjs.md`): server actions as public POST endpoints, middleware/proxy matcher gaps and CVE-2025-29927, `NEXT_PUBLIC_` and `next.config` `env` leaks, route handler auth, per-user data leaking through cache and revalidate, and version advisories.
+- **Supabase** (`frameworks/supabase.md`): RLS on every exposed table, permissive policies (including roles read from `user_metadata`), service-role and `sb_secret_` keys in client code, storage policies, `security definer` RPC, and `getSession()` / `verify_jwt` reliance. Links scanner-pipeline's `supabase-rls.yml`.
+- Each playbook has the surfaces to add to the ledger, `rg` and portable grep commands, what confirms or rejects a candidate, and a confirmed and a rejected example.
+
+**Changed**
+- The weekly link check now covers nested reference folders (`skills/*/references/**/*.md`).
 
 ### 1.38.0 (2026-10-27)
 
