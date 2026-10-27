@@ -1,0 +1,38 @@
+{
+  "skill": "cicd-security",
+  "should_fire": [
+    "is our pull_request_target workflow safe? it checks out the PR so we can build previews",
+    "zizmor flagged a bunch of template-injection stuff in our workflows, which of these are real?",
+    "can a random person on GitHub get our secrets through our Actions setup?",
+    "we added claude-code-action so anyone can @claude on issues, is that a problem?",
+    "check this workflow:\n```yaml\non:\n  issues:\n    types: [opened]\njobs:\n  greet:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo \"Thanks for ${{ github.event.issue.title }}\"\n```",
+    "our AWS role trusts GitHub OIDC with repo:acme/* as the sub, and we use a self-hosted runner on a public repo, how bad is that?",
+    "review our GitLab CI pipeline for security problems"
+  ],
+  "near_miss": [
+    {
+      "prompt": "check package-lock.json for vulnerable npm packages",
+      "owner": "dependency-audit"
+    },
+    {
+      "prompt": "an AWS key got printed in an old CI log, how do we rotate it and scrub history?",
+      "owner": "secrets-audit"
+    },
+    {
+      "prompt": "is this MCP server I'm about to add to Claude Code safe to install?",
+      "owner": "agent-supply-chain-audit"
+    },
+    {
+      "prompt": "our customer support chatbot reads emails, can someone jailbreak it through an email?",
+      "owner": "prompt-injection"
+    },
+    {
+      "prompt": "set up gitleaks and semgrep to run weekly across all our repos",
+      "owner": "scanner-pipeline"
+    },
+    {
+      "prompt": "design least-privilege IAM roles for our engineers with Okta SSO",
+      "owner": "iam-audit"
+    }
+  ]
+}

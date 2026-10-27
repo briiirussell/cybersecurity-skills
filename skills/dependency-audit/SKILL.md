@@ -1,6 +1,6 @@
 ---
 name: dependency-audit
-description: "Audit project dependencies, frameworks, languages, and dev tools for known vulnerabilities, CVEs, and security anti-patterns. Use when the user mentions 'dependency audit,' 'npm audit,' 'CVE,' 'vulnerable packages,' 'supply chain security,' 'outdated dependencies,' 'known vulnerabilities,' 'security advisory,' 'package security,' 'framework vulnerability,' 'is this package safe,' 'pnpm audit,' 'yarn audit,' 'bundle audit,' 'patch this CVE,' 'audit fix broke,' 'lockfile diff,' 'dependency confusion,' 'registry redirection,' 'MCP server pinning,' 'GitHub Actions security,' 'cache poisoning,' 'OIDC trust policy,' 'release pipeline,' or needs to check whether their stack, CI, or release pipeline has known security issues."
+description: "Audit project dependencies, frameworks, languages, and dev tools for known vulnerabilities, CVEs, and security anti-patterns. Use when the user mentions 'dependency audit,' 'npm audit,' 'CVE,' 'vulnerable packages,' 'supply chain security,' 'outdated dependencies,' 'known vulnerabilities,' 'security advisory,' 'package security,' 'framework vulnerability,' 'is this package safe,' 'pnpm audit,' 'yarn audit,' 'bundle audit,' 'patch this CVE,' 'audit fix broke,' 'lockfile diff,' 'dependency confusion,' 'registry redirection,' 'MCP server pinning,' 'release pipeline,' or needs to check whether their stack, CI, or release pipeline has known security issues."
 allowed-tools: Read, Grep, Glob, WebSearch, Bash(npm audit), Bash(npm audit --json), Bash(npm audit --omit=dev), Bash(npm audit --omit=dev --json), Bash(npm ls:*), Bash(npm view:*), Bash(npm outdated:*), Bash(pnpm audit --prod), Bash(pnpm audit --prod --json), Bash(pnpm why:*), Bash(yarn audit --groups dependencies --json), Bash(yarn npm audit:*), Bash(yarn why:*), Bash(osv-scanner scan:*), Bash(govulncheck:*), Bash(bundle audit:*), Bash(composer audit:*), Bash(dotnet list package:*), Bash(trivy fs:*), Bash(trivy image:*)
 ---
 
@@ -8,7 +8,7 @@ allowed-tools: Read, Grep, Glob, WebSearch, Bash(npm audit), Bash(npm audit --js
 
 Audit project dependencies, frameworks, language runtimes, and dev tools for known vulnerabilities (CVEs), security anti-patterns, and supply chain risks.
 
-Cross-references: `patch-sweep` for patching the same advisory across many repos; `scanner-pipeline` for running osv-scanner / trivy in CI across every lockfile at once; `agent-supply-chain-audit` for reviewing the content of MCP servers, skills, and plugins this skill inventories; `cloud-audit` "PaaS" for platform runtime and config checks behind `Mitigated (platform/config)`; `secrets-audit` for tokens found in `.npmrc` or CI; `iam-audit` for the cloud roles CI assumes via OIDC; `finding-triage` for dispositioning individual findings.
+Cross-references: `patch-sweep` for patching the same advisory across many repos; `scanner-pipeline` for running osv-scanner / trivy in CI across every lockfile at once; `agent-supply-chain-audit` for reviewing the content of MCP servers, skills, and plugins this skill inventories; `cloud-audit` "PaaS" for platform runtime and config checks behind `Mitigated (platform/config)`; `secrets-audit` for tokens found in `.npmrc` or CI; `iam-audit` for the cloud roles CI assumes via OIDC; `cicd-security` for workflow and runner security; `finding-triage` for dispositioning individual findings.
 
 ## Authorization
 
@@ -280,11 +280,7 @@ Pinned looks like `some-mcp-server@1.4.2`, `tool==0.9.1`, `image@sha256:...`. Ha
 
 ### Step 5: Check Dev Tool and CI/CD Security
 
-**GitHub Actions:**
-- `pull_request_target` trigger with checkout of PR code (code injection risk)
-- Secrets accessible in forked PR workflows
-- Unpinned action versions (`uses: actions/checkout@main` vs `@v4.1.0` or SHA pin)
-- Script injection via `${{ github.event.issue.title }}` in `run:` blocks
+**GitHub Actions and other CI:** workflow security (pull_request_target, script injection, token permissions, SHA pinning, fork secrets, self-hosted runners, agents in CI) → `cicd-security`.
 
 **Docker:**
 - Running as root in container (missing `USER` directive)
@@ -300,7 +296,7 @@ Pinned looks like `some-mcp-server@1.4.2`, `tool==0.9.1`, `image@sha256:...`. Ha
 
 ### Step 5b: CI and Release Trust Handoffs
 
-CI configuration is authorization code: it decides who can run what, with which credentials, against which targets. Most pipeline compromises go through a handoff, where a lower-trust job writes something a higher-trust job later restores, executes, or ships. Check each handoff below. Greps, validation rules, and reporting fields are in [references/ci-release.md](references/ci-release.md).
+CI configuration is authorization code: it decides who can run what, with which credentials, against which targets. Most pipeline compromises go through a handoff, where a lower-trust job writes something a higher-trust job later restores, executes, or ships. Check each handoff below. Greps, validation rules, and reporting fields are in [references/ci-release.md](references/ci-release.md). Handoffs 1–4, 7 and 8 belong to `cicd-security`; this step keeps 5 and 6.
 
 | # | Handoff | Starting grep (`.github/workflows/*.y*ml`) |
 |---|---|---|
@@ -323,7 +319,7 @@ For a PR or a lockfile diff, follow [references/diff-review.md](references/diff-
 
 ## Output Format
 
-**Write `findings.json` first, validate it, then render the markdown from it.** Record every candidate as `confirmed`, `needs_validation`, or `rejected` per [references/findings-format.md](references/findings-format.md), and run `node references/validate-findings.mjs findings.json` until it exits 0. The prose report never changes a verdict, severity, or disposition the JSON doesn't have. Score severity on confirmed records only, using [references/severity-calibration.md](references/severity-calibration.md). Fingerprint by root cause in the shared form, `dependency-audit/<advisory-id>/<lockfile>/<package>` (for example `dependency-audit/GHSA-29mw-wpgm-hmr9/package-lock.json/lodash`), or `dependency-audit/ci/<workflow-file>/<handoff>` for CI findings. No versions or line numbers in it.
+**Write `findings.json` first, validate it, then render the markdown from it.** Record every candidate as `confirmed`, `needs_validation`, or `rejected` per [references/findings-format.md](references/findings-format.md), and run `node references/validate-findings.mjs findings.json` until it exits 0. The prose report never changes a verdict, severity, or disposition the JSON doesn't have. Score severity on confirmed records only, using [references/severity-calibration.md](references/severity-calibration.md). Fingerprint by root cause in the shared form, `dependency-audit/<advisory-id>/<lockfile>/<package>` (for example `dependency-audit/GHSA-29mw-wpgm-hmr9/package-lock.json/lodash`), or `dependency-audit/ci/<workflow-file>/<handoff>` for handoffs 5–6. No versions or line numbers in it.
 
 **Rejections** follow the table in [references/verification.md](references/verification.md):
 

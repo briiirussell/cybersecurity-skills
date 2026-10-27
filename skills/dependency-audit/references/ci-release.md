@@ -1,6 +1,6 @@
 # CI and Release Trust Handoffs
 
-Companion to `dependency-audit` Step 5b. Most real build-pipeline compromises don't need a vulnerable package. They go through a handoff: a lower-trust job writes something (a cache, an artifact, a tag, a checksum) that a higher-trust job later restores, executes, signs, or ships. This file lists the handoffs to check, a grep for each, and the evidence a finding needs.
+Companion to `dependency-audit` Step 5b. Handoffs 1–4, 7 and 8 are now reviewed by `cicd-security`, which has the fuller checks; they stay listed here so a dependency review can spot them and hand off. Most real build-pipeline compromises don't need a vulnerable package. They go through a handoff: a lower-trust job writes something (a cache, an artifact, a tag, a checksum) that a higher-trust job later restores, executes, signs, or ships. This file lists the handoffs to check, a grep for each, and the evidence a finding needs.
 
 Approach adapted (paraphrased) from Cloudflare's security-audit-skill `SUPPLY-CHAIN-AND-RELEASE.md` (MIT).
 

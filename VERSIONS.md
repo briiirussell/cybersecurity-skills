@@ -4,20 +4,21 @@ Current versions of all skills. Agents can compare against local versions to che
 
 | Skill | Version | Last Updated |
 |-------|---------|--------------|
-| agent-supply-chain-audit | 1.0.1 | 2026-10-26 |
+| agent-supply-chain-audit | 1.0.2 | 2026-10-27 |
 | ai-risk-management | 1.1.2 | 2026-10-26 |
 | api-audit | 1.1.7 | 2026-10-27 |
 | breach-patterns | 1.0.4 | 2026-10-26 |
 | business-logic-testing | 1.0.2 | 2026-10-26 |
+| cicd-security | 1.0.0 | 2026-10-27 |
 | cloud-audit | 1.2.0 | 2026-10-26 |
 | container-audit | 1.1.0 | 2026-10-26 |
 | crypto-audit | 1.1.0 | 2026-10-27 |
 | csf-mapping | 1.0.2 | 2026-10-26 |
-| dependency-audit | 1.2.3 | 2026-10-26 |
+| dependency-audit | 1.2.4 | 2026-10-27 |
 | disk-forensics | 1.0.1 | 2026-10-26 |
 | finding-triage | 1.3.0 | 2026-10-27 |
 | hipaa-audit | 1.1.0 | 2026-10-27 |
-| iam-audit | 1.1.0 | 2026-10-26 |
+| iam-audit | 1.1.1 | 2026-10-27 |
 | incident-triage | 1.1.0 | 2026-10-26 |
 | log-watch | 1.0.1 | 2026-10-26 |
 | mobile-audit | 1.1.0 | 2026-10-27 |
@@ -30,8 +31,8 @@ Current versions of all skills. Agents can compare against local versions to che
 | prompt-injection | 1.2.0 | 2026-10-27 |
 | recon | 1.0.1 | 2026-10-26 |
 | red-team-engagement | 1.0.1 | 2026-10-26 |
-| scanner-pipeline | 1.0.2 | 2026-10-26 |
-| secrets-audit | 1.1.3 | 2026-10-26 |
+| scanner-pipeline | 1.0.3 | 2026-10-27 |
+| secrets-audit | 1.1.4 | 2026-10-27 |
 | security-comms | 1.0.3 | 2026-10-26 |
 | siem-detection | 1.0.3 | 2026-10-26 |
 | soc-operations | 1.0.4 | 2026-10-26 |
@@ -41,6 +42,30 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.0 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.42.0 (2026-10-27)
+
+New skill: cicd-security (#134). cicd-security 1.0.0. Back-references: dependency-audit 1.2.4, secrets-audit 1.1.4, scanner-pipeline 1.0.3, agent-supply-chain-audit 1.0.2, iam-audit 1.1.1.
+
+**Added**
+- **cicd-security 1.0.0.** Reviews CI the way you'd review authorization code. For every job, it asks one question: can someone with less trust than the job (a fork PR author, any commenter, a third-party action maintainer) change what it runs or reads, and what does the job hold when they do? It covers:
+  - `pull_request_target` and `workflow_run` running untrusted code ("pwn requests"), including GitHub's December 2025 change to `pull_request_target`
+  - expression injection from `${{ github.event.* }}` into `run:` steps
+  - missing or broad `permissions:`
+  - third-party actions not pinned to a commit SHA
+  - OIDC trust policies with wildcard or missing `sub` conditions (AWS, GCP, Azure)
+  - self-hosted runners on public repos, and secrets reaching forks
+  - cache poisoning, and artifacts trusted across workflows
+  - publish jobs without a protected identity
+  - **AI agents in CI** (claude-code-action and similar): who can trigger them, what issue and PR text reaches them, and what token, tools and secrets they hold
+  - GitLab CI and CircleCI equivalents, briefly
+- Runs zizmor (`--offline`) and actionlint read-only, using exact grants only, because a wildcard would also allow `zizmor --fix` or `actionlint -init-config`. There's no `gh api` grant, because a trailing `-X` or `-f` can turn a read into a write.
+- Writes `findings.json` with fingerprints `cicd-security/<class>/<workflow file>/<job>`, and `ext` keys for the trigger, job, lower-trust actor, token permissions and secrets in scope. Settings that live only on the platform (fork-PR approval, branch protection, cloud trust policies) go to `needs_validation`, along with the command that answers them. Worked examples cover each verdict.
+
+**Changed**
+- dependency-audit hands workflow security to cicd-security. Its Step 5 GitHub Actions bullets and Step 5b handoffs 1–4, 7 and 8 now point there. It keeps release-artifact identity and independent checksums, and drops the 'GitHub Actions security', 'cache poisoning' and 'OIDC trust policy' trigger phrases. A trigger-eval prompt about workflow review moves to cicd-security.
+- secrets-audit, scanner-pipeline, agent-supply-chain-audit and iam-audit gain cross-references to cicd-security.
+- README: new row, map cell, crossover line, and a "Where to start" mention.
 
 ### 1.41.0 (2026-10-27)
 
