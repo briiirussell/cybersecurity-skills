@@ -229,7 +229,7 @@ Before writing prose, emit `findings.json` and validate it. It is the source of 
 node references/validate-findings.mjs findings.json   # exits non-zero on malformed input
 ```
 
-Each record is one of the three verdict shapes with a stable `fingerprint` (root-cause id — never includes line number, severity, or verdict), a `trace[]` from entrypoint to sink, `evidence[]`, `counterevidence`, and `confidence`. API findings set `skill: "api-audit"`, `owasp_category` (e.g. `API1:2023`), and a `cwe`. Confirmed records add `severity` and `conditions[]`; `needs_validation` adds `blockers[]` + `validation_plan`; `rejected` adds `ruled_out_by {control, location}`. Coverage goes in `coverage.json`, validated with [references/validate-coverage.mjs](references/validate-coverage.mjs).
+Each record is one of the three verdict shapes with a stable `fingerprint` (root-cause id — never includes line number, severity, or verdict), a `trace[]` from entrypoint to sink, `evidence[]`, `counterevidence`, and `confidence`. API findings set `skill: "api-audit"`, `owasp_category` (e.g. `API1:2023`), and a `cwe`. Some real API bugs have no API Top 10 category: SQL or command injection, path traversal, XSS in an HTML response, crypto misuse. For those, use the matching web Top 10:2025 category (`A05:2025` for injection, `A04:2025` for cryptographic failures) in `owasp_category` and in the heading, with the CWE as usual. Don't stretch API8 or API10 to fit. Confirmed records add `severity` and `conditions[]`; `needs_validation` adds `blockers[]` + `validation_plan`; `rejected` adds `ruled_out_by {control, location}`. Coverage goes in `coverage.json`, validated with [references/validate-coverage.mjs](references/validate-coverage.mjs).
 
 ## Verify Fixes at Runtime
 
@@ -248,16 +248,16 @@ Render the report from the validated `findings.json`. The header states the run 
 2. **Needs validation** — verdict `needs_validation`: the claim, the `blockers[]`, and the owner-runnable `validation_plan`. No severity.
 3. **Hardening notes (not findings)** — gaps with no traced impact. No severity.
 4. **Rejected (do not re-raise)** — ruled out, with the control + `file:line` that rules it out. Kept so re-runs don't re-surface them.
-5. **Items checked and found clean** — generated from the `covered` coverage units (what was checked, per surface × boundary). Not a bare category line.
+5. **Items checked and found clean** — generated from the `covered` and `not_applicable` coverage units (what was checked, per surface × boundary). Not a bare category line. A unit with a confirmed or needs_validation finding stays `candidate` and isn't listed here.
 6. **Deferred / out of scope** — surfaces not reached, with reason. State plainly when the audit is partial.
 
 Each confirmed finding:
 
 ```markdown
-#### [SEVERITY] APIN: [Title]
+#### [SEVERITY] APIN: [Title]   (or A0N:2025 for a class outside the API Top 10)
 **Fingerprint:** `<stable root-cause id>`  **Verdict:** confirmed
 **Endpoint:** `METHOD /path/to/endpoint`
-**Handler:** `path/to/handler.ts:42`   **CWE:** CWE-XXX   **OWASP:** APIN:2023
+**Handler:** `path/to/handler.ts:42`   **CWE:** CWE-XXX   **OWASP:** APIN:2023 | A0N:2025
 
 **Description:** [What the vulnerability is]
 
