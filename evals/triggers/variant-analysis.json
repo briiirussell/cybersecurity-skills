@@ -1,0 +1,38 @@
+{
+  "skill": "variant-analysis",
+  "should_fire": [
+    "found an IDOR on one route, are there more like it in the codebase?",
+    "this handler forgot the owner check, find every other place we did the same thing\n```js\nrouter.get(\"/:id\", (req, res) => {\n  const note = db.prepare(\"SELECT * FROM notes WHERE id = ?\").get(req.params.id);\n  res.json(note);\n});\n```",
+    "write a semgrep rule with ruleid and ok test cases for this SSRF so it can't come back",
+    "turn finding owasp-audit/CWE-639/src/routes/notes.js/GET-note-by-id into a rule and run it across all our repos",
+    "write a CodeQL query with a test for this path traversal and look for variants",
+    "same missing auth check is probably on our other staging apps, write a nuclei template to check",
+    "do variant analysis on the bug we just fixed"
+  ],
+  "near_miss": [
+    {
+      "prompt": "write a Sigma rule for repeated failed logins",
+      "owner": "siem-detection"
+    },
+    {
+      "prompt": "set up semgrep and gitleaks in CI for all my repos",
+      "owner": "scanner-pipeline"
+    },
+    {
+      "prompt": "triage this one semgrep finding",
+      "owner": "finding-triage"
+    },
+    {
+      "prompt": "patch the Next.js CVE across all 40 of our apps",
+      "owner": "patch-sweep"
+    },
+    {
+      "prompt": "do a full OWASP security review of this Express app",
+      "owner": "owasp-audit"
+    },
+    {
+      "prompt": "is the vulnerable function from this CVE actually reachable in our code?",
+      "owner": "vuln-research"
+    }
+  ]
+}

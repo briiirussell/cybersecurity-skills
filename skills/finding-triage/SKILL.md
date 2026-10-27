@@ -16,6 +16,7 @@ Cross-references:
 - `vuln-research` for the technical CVE deep-dive that feeds reachability assessment here
 - `owasp-audit` / `api-audit` disposition rule (the framework this implements per-finding) and their per-finding verification pass ([references/verification.md](references/verification.md))
 - `scanner-pipeline` for bulk scanner output — triage the survivors here, one at a time
+- `variant-analysis` when a confirmed finding probably has siblings: encode it as a rule and sweep the repo or org
 - `security-comms` for translating the disposition writeup into stakeholder-readable language when the finding has to leave the security context
 - Any audit skill — this consumes their findings as input
 - [references/severity-calibration.md](references/severity-calibration.md) — the full severity rules this skill summarizes

@@ -20,7 +20,8 @@
       "pci-audit",
       "hipaa-audit",
       "privacy-engineering",
-      "cicd-security"
+      "cicd-security",
+      "variant-analysis"
     ],
     "validate-findings.mjs": [
       "agent-supply-chain-audit",
@@ -41,7 +42,8 @@
       "pci-audit",
       "hipaa-audit",
       "privacy-engineering",
-      "cicd-security"
+      "cicd-security",
+      "variant-analysis"
     ],
     "to-sarif.mjs": [
       "agent-supply-chain-audit",
@@ -62,7 +64,8 @@
       "pci-audit",
       "hipaa-audit",
       "privacy-engineering",
-      "cicd-security"
+      "cicd-security",
+      "variant-analysis"
     ],
     "findings-format.md": [
       "agent-supply-chain-audit",
@@ -83,7 +86,8 @@
       "pci-audit",
       "hipaa-audit",
       "privacy-engineering",
-      "cicd-security"
+      "cicd-security",
+      "variant-analysis"
     ],
     "severity-calibration.md": [
       "agent-supply-chain-audit",
@@ -103,7 +107,8 @@
       "pci-audit",
       "hipaa-audit",
       "privacy-engineering",
-      "cicd-security"
+      "cicd-security",
+      "variant-analysis"
     ],
     "coverage.schema.json": [
       "owasp-audit",
@@ -130,7 +135,8 @@
       "pci-audit",
       "hipaa-audit",
       "privacy-engineering",
-      "cicd-security"
+      "cicd-security",
+      "variant-analysis"
     ],
     "recon-and-coverage.md": [
       "owasp-audit",

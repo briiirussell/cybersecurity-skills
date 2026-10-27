@@ -47,6 +47,7 @@ body:
         - soc-operations
         - threat-hunting
         - threat-modeling
+        - variant-analysis
         - vuln-research
         - web-pentest
         - Not one skill (tooling, docs, adapters)
