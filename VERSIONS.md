@@ -38,9 +38,24 @@ Current versions of all skills. Agents can compare against local versions to che
 | threat-hunting | 1.0.4 | 2026-10-26 |
 | threat-modeling | 1.0.4 | 2026-10-26 |
 | vuln-research | 1.0.3 | 2026-10-26 |
-| web-pentest | 1.1.3 | 2026-10-26 |
+| web-pentest | 1.2.0 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.32.0 (2026-10-27)
+
+web-pentest moves onto the shared findings format (#129). web-pentest 1.2.0.
+
+**Changed**
+- **Verify, then record.** A new step after the paired-evidence rule:
+  - **Confirmed:** paired evidence holds, for example a non-owner and the owner both get 200 on the same order id. A paired capture against an authorized target sets `reproduced: true`, so high confidence is allowed.
+  - **Needs validation:** the isolating control wasn't captured, or a WAF, proxy or IdP fact decides it, like a `Host:`-poisoned reset link not yet seen in the mail.
+  - **Rejected:** the control held on every path (403 or 404 for a non-owner, `state` validated).
+- **Evidence.** Both request/response exchanges are saved, redacted, to `evidence/`, and `location` points there. Combined-mode findings also cite the source handler in `trace[]`.
+- **Fingerprints:** `web-pentest/<wstg-or-class>/<endpoint or resource>/<parameter or operation>`, with `host:port` written as `host/port`.
+- **`ext` keys:** `wstg`, `endpoint`, `mode` (black-box, grey-box or combined).
+- **Output Format** is rendered from `findings.json`. It has a verdict and severity summary, confirmed findings, needs validation, hardening notes, "Rejected (do not re-raise)" and "Out of scope / not tested". The old per-finding `VERDICT` framing is gone.
+- The skill now gets copies of the four shared findings files it didn't already have.
 
 ### 1.31.0 (2026-10-27)
 
