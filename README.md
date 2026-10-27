@@ -23,6 +23,7 @@ Built by [Bri Russell](https://github.com/briiirussell). I run real audits with 
 
 Not every skill is for every user on day one. A good starting point by context:
 
+- **Not sure?** Ask for `security-start` (or just say "where do I start with security?"). It asks two or three questions and picks the skill.
 - **Reviewing your own code or product:** start with `owasp-audit` for the source-code sweep, then `api-audit` if you have API endpoints, then `dependency-audit` for the CVE pass
 - **A CVE wave just dropped and you run many apps:** `patch-sweep` to work out which apps are affected and ship fixes across the fleet, with `dependency-audit` for each project
 - **Want deterministic scanners in CI instead of asking an agent to "hack" your app:** `scanner-pipeline` picks the tools per layer, wires them into CI, and routes findings to `finding-triage`
@@ -71,8 +72,8 @@ The skills are organized into seven families. Most security work crosses familie
 │ audit│ │business│ │ hunting│ │        │ │      │ │ comms   │ │          │
 │mobile│ │-logic- │ │breach- │ │        │ │      │ │personal-│ │          │
 │-audit│ │-testing│ │patterns│ │        │ │      │ │ opsec   │ │          │
-│patch-│ │        │ │log-    │ │        │ │      │ │         │ │          │
-│ sweep│ │        │ │ watch  │ │        │ │      │ │         │ │          │
+│patch-│ │        │ │log-    │ │        │ │      │ │security-│ │          │
+│ sweep│ │        │ │ watch  │ │        │ │      │ │ start   │ │          │
 │scan- │ │        │ │malware-│ │        │ │      │ │         │ │          │
 │ner-  │ │        │ │ triage │ │        │ │      │ │         │ │          │
 │pipe- │ │        │ │        │ │        │ │      │ │         │ │          │
@@ -113,6 +114,7 @@ The skills are organized into seven families. Most security work crosses familie
      native-code-review ↔ fuzzing-harness (read the parser ↔ fuzz it)
      incident-triage → malware-triage → siem-detection / threat-hunting (the sample → detections and hunts)
      control-audit ⇆ csf-mapping / pci-audit / hipaa-audit (audit readiness ⇆ framework mapping)
+     security-start → any skill (a vague ask → the right first step)
      breach-patterns → every audit skill (what to check)
      finding-triage ← every audit skill (closes the loop on any finding)
      security-comms ← every skill (translates output for non-security audience)
@@ -158,6 +160,7 @@ The skills are organized into seven families. Most security work crosses familie
 | [scanner-pipeline](skills/scanner-pipeline/) | Set up and run real scanners per layer (gitleaks / trufflehog, semgrep, osv-scanner, trivy / checkov, Supabase advisors, ZAP / nuclei on domains you own), normalize to SARIF or findings.json, dedupe, suppress with reason + expiry, schedule in CI, and hand one finding at a time to fix agents. Works across a fleet of repos. |
 | [secrets-audit](skills/secrets-audit/) | Find leaked secrets (code, Git history, build artifacts, CI, frontend bundles, AI agent configs and session transcripts) + audit secrets-management posture (rotation, scope, workload identity). Confirms key type (publishable vs restricted vs secret) before rating; findings.json with values redacted; exfil collector-domain list for egress hunting. [Example run](examples/secrets-audit/report.md). |
 | [security-comms](skills/security-comms/) | Translate security work for non-security audiences — board, executive, engineering, customer success, customers, legal, procurement. Seven audience archetypes, six templates (incident comms, post-mortem, breach disclosure, etc.). |
+| [security-start](skills/security-start/) | Not sure which skill you need? Start here. Looks at the repo, asks at most three questions (what you have, what's happening, who it's for), and hands off to one to three skills from this catalog, in order. Routing only — no audit of its own. |
 | [siem-detection](skills/siem-detection/) | SIEM detection engineering — log source coverage, Sigma rule authoring, MITRE ATT&CK mapping, FP tuning, detection-as-code. |
 | [soc-operations](skills/soc-operations/) | Build / run / improve a SOC — alert prioritization, runbook authoring, escalation criteria, on-call structure, KPIs (MTTD / MTTR / FP rate), alert-fatigue tuning loop. |
 | [threat-hunting](skills/threat-hunting/) | Proactive, hypothesis-driven adversary detection — PEAK framework, ATT&CK-driven hunt catalog, every hunt produces an artifact (rule, dead-end doc, or coverage gap). |
