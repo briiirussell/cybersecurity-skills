@@ -32,6 +32,7 @@ body:
         - incident-triage
         - log-watch
         - mobile-audit
+        - native-code-review
         - osint-recon
         - owasp-audit
         - patch-sweep

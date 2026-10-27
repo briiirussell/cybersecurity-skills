@@ -12,7 +12,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | cicd-security | 1.0.0 | 2026-10-27 |
 | cloud-audit | 1.2.0 | 2026-10-26 |
 | container-audit | 1.1.0 | 2026-10-26 |
-| crypto-audit | 1.1.0 | 2026-10-27 |
+| crypto-audit | 1.1.1 | 2026-10-27 |
 | csf-mapping | 1.0.2 | 2026-10-26 |
 | dependency-audit | 1.2.4 | 2026-10-27 |
 | disk-forensics | 1.0.1 | 2026-10-26 |
@@ -21,7 +21,8 @@ Current versions of all skills. Agents can compare against local versions to che
 | iam-audit | 1.1.1 | 2026-10-27 |
 | incident-triage | 1.1.0 | 2026-10-26 |
 | log-watch | 1.0.1 | 2026-10-26 |
-| mobile-audit | 1.1.0 | 2026-10-27 |
+| mobile-audit | 1.1.1 | 2026-10-27 |
+| native-code-review | 1.0.0 | 2026-10-27 |
 | osint-recon | 1.0.2 | 2026-10-26 |
 | owasp-audit | 1.6.0 | 2026-10-27 |
 | patch-sweep | 1.0.2 | 2026-10-26 |
@@ -39,10 +40,35 @@ Current versions of all skills. Agents can compare against local versions to che
 | threat-hunting | 1.0.4 | 2026-10-26 |
 | threat-modeling | 1.0.4 | 2026-10-26 |
 | variant-analysis | 1.0.0 | 2026-10-27 |
-| vuln-research | 1.0.3 | 2026-10-26 |
+| vuln-research | 1.0.4 | 2026-10-27 |
 | web-pentest | 1.2.0 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.44.0 (2026-10-27)
+
+New skill: native-code-review (#135). native-code-review 1.0.0. Back-references: crypto-audit 1.1.1, mobile-audit 1.1.1, vuln-research 1.0.4.
+
+**Added**
+- **native-code-review 1.0.0.** Memory-safety review of C, C++ and Rust source, parsers of untrusted input first. Each candidate is traced from where untrusted bytes enter to the memory operation that goes wrong. It covers:
+  - out-of-bounds reads and writes
+  - integer overflow, truncation and sign confusion that feed a size
+  - use-after-free and double free
+  - format strings, and uninitialized memory
+  - Rust `unsafe` soundness (safety comments, `Send`/`Sync` impls, `transmute`, `set_len`, raw-pointer aliasing)
+  - FFI boundaries
+  - secrets not wiped from memory
+- `references/bug-classes.md` has 11 bug classes, each with CWE ids, `rg` and portable grep patterns, and what rules a hit out or confirms it. The patterns were tested on sample C, C++ and Rust files. Also new: `references/rust-unsafe-checklist.md`, and `references/hardening-and-sanitizers.md` (OpenSSF compiler flags with minimum versions, `readelf` / `checksec` checks, ASan / UBSan / MSan / TSan and Miri runs).
+- Calibration rules:
+  - A missing hardening flag is always a hardening note, never a finding.
+  - A missing wipe is a finding only when wiping is a documented guarantee or there's a traced leak path.
+  - Unsound Rust in a published library's safe API is a finding even without an app-level path.
+  - Titles never say "remote code execution" unless it was shown.
+- Only `readelf` and `checksec file` are pre-approved. Building, tests, sanitizers, Miri and `cargo geiger` always prompt, because building runs the project's build scripts. Dynamic work stops at a sanitizer or Miri report.
+
+**Changed**
+- crypto-audit, mobile-audit (native libraries) and vuln-research (reachability for C, C++ and Rust libraries) point to native-code-review.
+- README: new row, map cell and crossover line.
 
 ### 1.43.0 (2026-10-27)
 

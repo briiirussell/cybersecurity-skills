@@ -82,6 +82,9 @@ The skills are organized into seven families. Most security work crosses familie
 │vari- │ │        │ │        │ │        │ │      │ │         │ │          │
 │ ant- │ │        │ │        │ │        │ │      │ │         │ │          │
 │ anal.│ │        │ │        │ │        │ │      │ │         │ │          │
+│native│ │        │ │        │ │        │ │      │ │         │ │          │
+│-code-│ │        │ │        │ │        │ │      │ │         │ │          │
+│review│ │        │ │        │ │        │ │      │ │         │ │          │
 └──┬───┘ └───┬────┘ └───┬────┘ └───┬────┘ └──┬───┘ └────┬────┘ └────┬─────┘
    │         │          │          │         │           │            │
    └─────────┴────┬─────┴──────────┴─────────┴───────────┴────────────┘
@@ -103,6 +106,7 @@ The skills are organized into seven families. Most security work crosses familie
      dependency-audit → cicd-security ← agent-supply-chain-audit (the pipeline is supply chain too)
      dependency-audit → cicd-security ← agent-supply-chain-audit (the pipeline is supply chain too)
      finding-triage → variant-analysis → scanner-pipeline (one bug → a rule → it can't come back)
+     native-code-review ↔ crypto-audit (memory safety ↔ constant time and key handling)
      breach-patterns → every audit skill (what to check)
      finding-triage ← every audit skill (closes the loop on any finding)
      security-comms ← every skill (translates output for non-security audience)
@@ -132,6 +136,7 @@ The skills are organized into seven families. Most security work crosses familie
 | [incident-triage](skills/incident-triage/) | Security incident triage following NIST SP 800-61. |
 | [log-watch](skills/log-watch/) | Scheduled agent log review + paging for small teams without a SIEM — inventory the logs you already have, starter detections with thresholds (credential stuffing, new admin grants, key creation, .env/.git probing, bad webhook signatures, export spikes, CloudTrail root/IAM), a cheap-filter → strong-model pipeline with a monthly cost table, dedupe + suppression, paging. Detection only; logs treated as untrusted input. |
 | [mobile-audit](skills/mobile-audit/) | iOS + Android audit against OWASP MASVS / MASTG — storage, crypto, network, auth, platform IPC, code, resilience. Writes findings.json (confirmed / needs validation / rejected), with SARIF export. |
+| [native-code-review](skills/native-code-review/) | Memory-safety review of C, C++ and Rust — out-of-bounds writes and integer overflow into sizes, use-after-free, format strings, uninitialized memory, Rust `unsafe` soundness, FFI boundaries, parsers of untrusted input first, secrets left in memory, plus hardening flags and sanitizers. Writes findings.json (confirmed / needs validation / rejected), with SARIF export. |
 | [osint-recon](skills/osint-recon/) | Open source intelligence gathering and correlation. |
 | [owasp-audit](skills/owasp-audit/) | Source-code audit against OWASP Top 10:2025 — recon first (architecture + coverage ledger), category checklist with grep patterns, a per-finding refutation pass (confirmed / needs validation / rejected), coverage critic, findings.json → report. Quick / standard / deep run profiles, subagent orchestration, re-runs by fingerprint, diff / PR-scoped mode, inbound-webhook and parser-limit patterns. [Example run](examples/owasp-audit/report.md). |
 | [patch-sweep](skills/patch-sweep/) | Fleet-wide CVE response across many apps and deploy platforms — map repos → platform projects → live domains, find each project's real production branch, catch stale manual deploys, decide affectedness (runtime + dependency + code path), mitigate before patching, ship and confirm prod. Output: one status board row per app. |
