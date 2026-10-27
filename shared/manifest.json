@@ -65,7 +65,8 @@
       "finding-triage",
       "owasp-audit",
       "api-audit",
-      "web-pentest"
+      "web-pentest",
+      "secrets-audit"
     ],
     "recon-and-coverage.md": [
       "owasp-audit",
