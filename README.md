@@ -50,12 +50,12 @@ The goal isn't to replace a security engineer — or to pretend you have one if 
 The skills are organized into seven families. Most security work crosses families — an OWASP audit surfaces a dependency question, an incident kicks off an OSINT trail, cloud findings overlap with appsec, and findings have to be translated for the audience that hears them. Skills cross-reference each other where that's true; `finding-triage`, `security-comms`, and `csf-mapping` orchestrate across the whole map.
 
 ```
-                    ┌──────────────────────────────────────────┐
-                    │          Cybersecurity Skill Map         │
-                    └──────────────────────┬───────────────────┘
-                                           │
-  ┌──────────┬──────────┬──────────┬───────┴────┬─────────┬──────────┬───────────┐
-  ▼          ▼          ▼          ▼            ▼         ▼          ▼           ▼
+             ┌──────────────────────────────────────────┐
+             │         Cybersecurity Skill Map          │
+             └─────────────────────┬────────────────────┘
+                                   │
+   ┌─────────┬──────────┬──────────┼─────────┬──────────┬───────────┐
+   ▼         ▼          ▼          ▼         ▼          ▼           ▼
 ┌──────┐ ┌────────┐ ┌────────┐ ┌────────┐ ┌──────┐ ┌─────────┐ ┌──────────┐
 │AppSec│ │Offens. │ │Detect &│ │Cloud & │ │ AI   │ │Design & │ │Complianc │
 │& Sup │ │& Recon │ │Respond │ │ Infra  │ │Secur.│ │Governnce│ │& Privacy │
@@ -90,9 +90,9 @@ The skills are organized into seven families. Most security work crosses familie
 │ing-  │ │        │ │        │ │        │ │      │ │         │ │          │
 │ harn.│ │        │ │        │ │        │ │      │ │         │ │          │
 └──┬───┘ └───┬────┘ └───┬────┘ └───┬────┘ └──┬───┘ └────┬────┘ └────┬─────┘
-   │         │          │          │         │           │            │
-   └─────────┴────┬─────┴──────────┴─────────┴───────────┴────────────┘
-                  │
+   │         │          │          │         │          │           │
+   └─────────┴──────────┴──────────┼─────────┴──────────┴───────────┘
+                                   │
    Common crossovers:
      owasp-audit ↔ api-audit ↔ dependency-audit ↔ vuln-research
      web-pentest ↔ recon ↔ osint-recon ↔ red-team-engagement
