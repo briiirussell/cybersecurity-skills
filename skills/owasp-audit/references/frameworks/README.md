@@ -10,13 +10,16 @@ load each one for the packages it applies to, and note in `architecture.md` whic
 |---|---|
 | [Next.js](nextjs.md) | `next` in `package.json` dependencies; `next.config.{js,mjs,ts}`; an `app/` or `pages/` tree next to them; `middleware.{ts,js}` or `proxy.{ts,js}` at the root or in `src/` |
 | [Supabase](supabase.md) | `@supabase/supabase-js`, `@supabase/ssr`, or `@supabase/auth-helpers-*` in `package.json`; `supabase` in `requirements.txt` / `pyproject.toml`; `supabase_flutter` in `pubspec.yaml`; a `supabase/` directory with `config.toml`, `migrations/`, or `functions/`; `SUPABASE_URL` in `.env.example` |
+| [Firebase](firebase.md) | `firebase`, `firebase-admin`, `firebase-functions`, or `@react-native-firebase/*` in `package.json`; `firebase.json` or `.firebaserc`; `firestore.rules`, `storage.rules`, or `database.rules.json`; `google-services.json` (Android) or the `GoogleService-Info` config file (iOS); `firebase_core` in `pubspec.yaml` |
+| [Electron](electron.md) | `electron` in `package.json` (usually `devDependencies`); `electron-builder`, `@electron-forge/*`, or `electron-vite`; `forge.config.*` or `electron-builder.{yml,json}`; `BrowserWindow` in the file named by `package.json` `"main"` |
 
 ```bash
 # Quick detection pass (run at the repo root; checks nested package.json files too)
-rg -l --glob '**/package.json' --glob '!**/node_modules/**' '"(next|@supabase/[a-z-]+)"\s*:'
-ls next.config.* middleware.* proxy.* src/middleware.* src/proxy.* supabase/config.toml 2>/dev/null
+rg -l --glob '**/package.json' --glob '!**/node_modules/**' '"(next|@supabase/[a-z-]+|firebase(-admin|-functions)?|@react-native-firebase/[a-z-]+|electron)"\s*:' .
+ls next.config.* middleware.* proxy.* src/middleware.* src/proxy.* supabase/config.toml firebase.json *.rules \
+   forge.config.* electron-builder.* 2>/dev/null
 # portable
-find . -name package.json -not -path '*/node_modules/*' -exec grep -lE '"(next|@supabase/[a-z-]+)"[[:space:]]*:' {} +
+find . -name package.json -not -path '*/node_modules/*' -exec grep -lE '"(next|@supabase/[a-z-]+|firebase(-admin|-functions)?|@react-native-firebase/[a-z-]+|electron)"[[:space:]]*:' {} +
 ```
 
 ## How playbook checks fit the audit

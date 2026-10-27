@@ -22,7 +22,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | log-watch | 1.0.1 | 2026-10-26 |
 | mobile-audit | 1.1.0 | 2026-10-27 |
 | osint-recon | 1.0.2 | 2026-10-26 |
-| owasp-audit | 1.4.0 | 2026-10-27 |
+| owasp-audit | 1.5.0 | 2026-10-27 |
 | patch-sweep | 1.0.2 | 2026-10-26 |
 | pci-audit | 1.1.0 | 2026-10-27 |
 | personal-opsec | 1.0.1 | 2026-10-26 |
@@ -41,6 +41,14 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.0 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.40.0 (2026-10-27)
+
+owasp-audit framework playbooks, part 2: Firebase and Electron (#132). owasp-audit 1.5.0.
+
+**Added**
+- **Firebase** (`frameworks/firebase.md`): open and test-mode rules, `request.auth != null` as the only check, field allowlists on writes, Storage rules versus bucket IAM, Cloud Functions identity, and what API key restrictions and App Check do and don't protect.
+- **Electron** (`frameworks/electron.md`): `webPreferences` (contextIsolation, nodeIntegration, sandbox, webSecurity), what the preload bridge exposes, IPC sender and argument checks, navigation and `shell.openExternal`, deep links, fuses, CVE-2025-55305, and update signing.
 
 ### 1.39.0 (2026-10-27)
 
