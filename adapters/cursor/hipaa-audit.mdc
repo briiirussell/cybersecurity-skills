@@ -102,7 +102,7 @@ This is where this skill spends its time.
 - **Unique user identification** — required. Every individual accessing ePHI has a unique ID. No shared accounts
 - **Emergency access procedure** — break-glass path for emergency PHI access, logged
 - **Automatic logoff** — addressable; idle session termination
-- **Encryption and decryption** — addressable; encrypt ePHI at rest (in practice, treat as required; OCR enforcement strongly suggests this)
+- **Encryption and decryption** — addressable; encrypt ePHI at rest. Addressable is not optional: the entity implements it, or documents why it isn't reasonable and appropriate and what equivalent it uses instead (§164.306(d)(3)). OCR enforcement treats missing encryption with no such analysis as a violation, and unencrypted ePHI loses the breach safe harbor either way
 
 **Audit grep patterns:**
 - Shared service-account access to PHI tables: `SELECT.*patient`, `SELECT.*encounter` from non-individual accounts
@@ -130,7 +130,7 @@ See `iam-audit` for implementation.
 #### §164.312(e) Transmission Security
 
 - **Integrity controls** — addressable; protect ePHI in transit from improper modification
-- **Encryption** — addressable in text but treat as required; TLS 1.2+ for any ePHI traversing networks
+- **Encryption** — addressable, with the same implement-or-document rule; in practice TLS 1.2+ for any ePHI traversing networks
 
 See `crypto-audit`.
 
@@ -182,68 +182,6 @@ HITECH (2009) strengthened HIPAA in several ways relevant here:
 
 For modern engineering work, HITECH means: a BA that handles ePHI is subject to most of the Security Rule directly. Vendors cannot hide behind the CE.
 
-## Audit checklist
-
-```markdown
-# HIPAA Audit Findings
-## Entity: [name]
-## Entity type: Covered Entity / Business Associate / Subcontractor
-## Date: [date]
-## Auditor: [name]
-
-### Scope
-- [ ] ePHI inventory complete (every data store containing PHI)
-- [ ] Data flow diagrams for PHI transmission paths
-- [ ] BAA in place with every BA (and BA's subcontractors where required)
-- [ ] Cloud provider BAA on file (AWS / GCP / Azure / etc.)
-- [ ] Risk analysis (§164.308(a)(1)(ii)(A)) current
-
-### Administrative safeguards
-| Subsection | Status | Findings |
-|------------|--------|----------|
-| Security Management Process | | |
-| Assigned Security Responsibility | | |
-| Workforce Security | | |
-| Information Access Management | | |
-| Security Awareness and Training | | |
-| Security Incident Procedures | | |
-| Contingency Plan | | |
-| Evaluation | | |
-| BA Contracts | | |
-
-### Technical safeguards
-| Subsection | Status | Findings |
-|------------|--------|----------|
-| Access Control — unique IDs | | |
-| Access Control — emergency access | | |
-| Access Control — automatic logoff | | |
-| Access Control — encryption at rest | | |
-| Audit Controls | | |
-| Integrity | | |
-| Person / Entity Authentication (MFA) | | |
-| Transmission Security (encryption in transit) | | |
-
-### Privacy Rule
-- [ ] Minimum necessary applied in code (no SELECT * on PHI tables)
-- [ ] Notice of Privacy Practices published and presented
-- [ ] Individual access path implemented (30-day delivery)
-- [ ] Amendment / accounting of disclosures process exists
-
-### Breach response readiness
-- [ ] Audit logs sufficient to scope a breach within 60-day clock
-- [ ] Incident-response procedures tested
-- [ ] Notification templates drafted (see security-comms)
-- [ ] Encryption-as-safe-harbor verified across ePHI stores
-
-### Findings detail
-[Per finding: section reference, severity, location, evidence, remediation]
-
-### Recommendations
-[Prioritized]
-```
-
-Disposition rule (Fixed / Deferred / Accepted Risk) per `owasp-audit`. HIPAA accepted-risk is highly disfavored — most "accepted risks" should be documented as residual risk with compensating controls and re-evaluation triggers.
-
 ## Common audit findings (real-world starting hypotheses)
 
 - **PHI in non-BAA vendor pipelines** — Sentry, Datadog, Mixpanel, Segment, Slack receiving PHI without a BAA (Sentry has a BAA path; Datadog has a healthcare offering; Mixpanel does not by default — verify each vendor's BAA stance)
@@ -256,6 +194,156 @@ Disposition rule (Fixed / Deferred / Accepted Risk) per `owasp-audit`. HIPAA acc
 - **Audit log retention < 6 years** — HIPAA's 6-year retention applies to documentation required by the rules, including audit logs that evidence compliance
 - **No automatic logoff on ePHI-accessing workstations / clinical applications**
 - **BA chain breaks** — vendor's subcontractor handles ePHI but the BA never put their own BAA in place with the subcontractor
+
+## Verify, then record
+
+Close every candidate with one verdict, as defined in [references/findings-format.md](references/findings-format.md), and run the refutation pass in [references/verification.md](references/verification.md) before anything is confirmed.
+
+**A gap against a required implementation specification is a finding.** The spec is the intended control. Rate severity by the exposure it creates for ePHI, using [references/severity-calibration.md](references/severity-calibration.md), not by the audit or penalty consequence: PHI sent to a vendor with no BAA is a real disclosure; a missing sanction policy is not, by itself, an exposure. A gap with no exposure (no named Security Official, no documented risk analysis, overdue training records) is a **documentation gap**: list it in the report's own section, with no severity and no `findings.json` record. A missing risk analysis is the gap OCR cites most often, so list it first. Defense-in-depth gaps where another layer already stops the exposure are hardening notes.
+
+**Addressable specifications.** An addressable spec (automatic logoff, encryption at rest, transmission encryption, integrity controls, ...) must be implemented, or the entity documents why it isn't reasonable and appropriate and what it does instead (§164.306(d)(3)). If it isn't implemented but that documented equivalent or risk-based rationale exists, the candidate is `rejected`, with `ruled_out_by.location` pointing at that document. If neither the control nor the document exists, treat it like a required spec: a finding when there's exposure, a documentation gap when there isn't. Record the spec's status with `ext.addressable`.
+
+What each verdict looks like here:
+
+- **`confirmed`**: the code or the exported config shows ePHI reaching someone or somewhere the rule doesn't allow, or a required control missing on a path to ePHI.
+  - On-call engineers query `patients` ad hoc through one shared `phi_admin` database role (unique user identification, §164.312(a)(2)(i), required). Evidence: the role export and the runbook that hands out the password.
+  - `analytics.track("appointment_booked", { email, diagnosis })` sends PHI to Mixpanel, and the BAA register in the evidence folder has no Mixpanel entry (§164.502(e), §164.308(b)(1)).
+  - `GET /api/patients/:id` returns the full record, SSN and diagnoses included, to a scheduling view that renders name and time (minimum necessary, §164.502(b)).
+  - An unsafe shipped default, such as `PHI_AUDIT_LOG=false` unless overridden, is `confirmed` with a `system_configuration` condition ("deployments that don't set `PHI_AUDIT_LOG=true`") and confidence `medium`. A deployment fact you can't see lowers confidence, not the verdict or severity.
+- **`needs_validation`**: the code supports the claim and one fact lives outside it. Name it and give the owner the check.
+  - Sentry receives request bodies from `/api/patients`, and nobody has provided the BAA register. Blocker: whether a signed BAA with Sentry covers this project. Check: the privacy officer confirms the BAA and its effective date; save a redacted register entry to the evidence folder.
+  - The production database was created in the console, not in Terraform. Blocker: whether storage encryption is on. Check: `aws rds describe-db-instances --query 'DBInstances[].[DBInstanceIdentifier,StorageEncrypted,KmsKeyId]' --output text`, saved to the evidence folder.
+- **`rejected`**: a named control or document at a named location rules it out.
+  - The clinician desktop app has no idle logoff (§164.312(a)(2)(iii), addressable), and the risk analysis documents the equivalent: MDM screen lock after 5 minutes on every managed device. `ruled_out_by.location` points at that section of the risk analysis.
+  - "Error reporter receives PHI": `beforeSend` in `src/lib/sentry.ts` deletes `event.request.data` and `event.user` on every event before it leaves the process. `ruled_out_by.location` points at that line.
+  - A control inside a dependency (an SDK's own redaction hook) can reject a candidate: `ruled_out_by.location` points at the lockfile or manifest line that pins the version, and `control` names the library function and version.
+  - "Never reachable" rejections point `ruled_out_by.location` at the evidence: the only import or call site, or the dependency declaration if nothing uses it.
+
+Pseudonymized data is still PHI, so a pseudonym never rejects a candidate on its own. A rejected addressable-spec record doesn't change the breach consequence: unencrypted ePHI is still "unsecured" for the Breach Notification Rule. Say so under Breach response readiness.
+
+**Evidence for deployed resources and documents.** Many HIPAA findings are about things that aren't source files: database and bucket encryption settings, IdP and MFA policies, log retention, the BAA register, the risk analysis, policies and procedures. Save the read-only command output or the export, redacted, to `<audit dir>/evidence/<name>.json` or `.txt` (for example `audit/hipaa/evidence/rds-encryption.txt`, `audit/hipaa/evidence/baa-register.json`) and point `location` and `evidence[]` at that file and the relevant line. A risk analysis or policy that already lives in the repo can be cited where it is. **Never save PHI or a credential value** in evidence, `findings.json` or the report; record where it lives and which identifier classes it contains. Live checks only when authorized and read-only; a check described but not run is `needs_validation`.
+
+**Fingerprints** are `hipaa-audit/<class>/<file or resource>/<symbol or name>`, slash-separated, with no line numbers. The validator rejects `:<digits>` segments, so write ARNs and `host:port` with slashes. Use a short class such as `phi-to-non-baa-vendor`, `shared-account`, `min-necessary`, `encryption-at-rest`, `transmission-security`, `audit-log-gap`, `no-auto-logoff`, `mfa-gap`, `phi-in-logs`, `phi-in-lower-env`, `baa-chain-break`:
+
+```
+hipaa-audit/phi-to-non-baa-vendor/src/lib/analytics.ts/mixpanel
+hipaa-audit/min-necessary/src/serializers/patient.ts/PatientSerializer
+hipaa-audit/shared-account/postgres/patients-prod/phi_admin
+hipaa-audit/encryption-at-rest/aws/123456789012/us-east-1/rds/patients-prod
+```
+
+For a deployed resource, build the fingerprint from the resource (provider, account or database, name), not from the evidence file name, so it stays the same when the evidence is re-captured.
+
+**`ext` fields** (optional object on any record; don't repeat anything that already has a field, such as `cwe` or `location`):
+
+| Key | Value | Example |
+|---|---|---|
+| `standard` | The 45 CFR section or implementation specification | `"164.312(b)"`, `"164.312(a)(2)(iv)"`, `"164.502(b)"` |
+| `addressable` | `true` for an addressable spec, `false` for a required one; omit for Privacy and Breach Notification Rule records | `true` |
+| `rule` | Which HIPAA rule the record falls under | `"security"`, `"privacy"`, `"breach-notification"` |
+
+Then:
+
+1. Write `findings.json` sorted by `fingerprint`, with `skill: "hipaa-audit"`. Validate it and fix every error: `node references/validate-findings.mjs findings.json` ([references/validate-findings.mjs](references/validate-findings.mjs)).
+2. Optionally export SARIF: `node references/to-sarif.mjs findings.json -o findings.sarif` ([references/to-sarif.mjs](references/to-sarif.mjs)).
+3. Keep documentation gaps and hardening notes in a short list next to the JSON (for example `notes.md`). They are not records.
+
+Dispositions (set later, usually by `finding-triage`): Fixed / Deferred / Accepted Risk / Mitigated (platform/config) / Requires major migration. HIPAA accepted risk is highly disfavored: most "accepted risks" should be documented as residual risk in the risk analysis, with compensating controls and re-evaluation triggers. A false positive is a `rejected` record, not a disposition.
+
+## Output Format
+
+Write `findings.json` first. Render the report from it; the prose never changes a verdict, severity or blocker the JSON doesn't already say.
+
+```markdown
+# HIPAA Technical Readiness Review
+## Entity: [name]   ## Entity type: Covered Entity / Business Associate / Subcontractor
+## Date: [date]   ## Reviewer: [name]   ## Scope: [full | partial, what was left out]
+## findings.json: [path], validated: [yes]   ## Evidence folder: [path]
+
+### Summary
+- Confirmed: [N] (Critical [n] | High [n] | Medium [n] | Low [n])   Needs validation: [N]   Rejected: [N]
+- Documentation gaps: [N]   Hardening notes: [N]
+
+### Confirmed findings
+#### [SEVERITY] [Title]  `fingerprint`
+**Standard:** [ext.standard] ([required | addressable])   **Rule:** [ext.rule]
+**Location:** `path:line` (source or evidence file)   **Confidence:** [medium | high (reproduced)]
+**What and why it matters:** [the trace or the config evidence, in a few lines; the ePHI exposed and to whom]
+**Fix:** [concrete change]
+**Verify the fix:** [the check that proves it]
+
+### Needs validation
+| Finding | Standard | Blocker | Check for the owner to run |
+|---|---|---|---|
+
+### Hardening notes (not findings)
+- [gap] — [why it isn't a finding] — [effort]
+
+### Documentation gaps (not findings)
+| Standard | What's missing | Owner | Evidence expected |
+|---|---|---|---|
+
+### Rejected (do not re-raise)
+| Fingerprint | Ruled out by | Location |
+|---|---|---|
+
+### Scope
+- [ ] ePHI inventory complete (every data store containing PHI)
+- [ ] Data flow diagrams for PHI transmission paths
+- [ ] BAA in place with every BA (and BA's subcontractors where required)
+- [ ] Cloud provider BAA on file (AWS / GCP / Azure / etc.)
+- [ ] Risk analysis (§164.308(a)(1)(ii)(A)) current
+
+### PHI flow map
+| Store or flow | Identifier classes | Vendor / BAA | Encrypted at rest | Encrypted in transit | Records |
+|---|---|---|---|---|---|
+
+### Administrative safeguards
+| Subsection | Confirmed | Needs validation | Documentation gaps |
+|------------|-----------|------------------|--------------------|
+| Security Management Process | | | |
+| Assigned Security Responsibility | | | |
+| Workforce Security | | | |
+| Information Access Management | | | |
+| Security Awareness and Training | | | |
+| Security Incident Procedures | | | |
+| Contingency Plan | | | |
+| Evaluation | | | |
+| BA Contracts | | | |
+
+### Technical safeguards
+| Subsection | Confirmed | Needs validation | Documentation gaps |
+|------------|-----------|------------------|--------------------|
+| Access Control — unique IDs | | | |
+| Access Control — emergency access | | | |
+| Access Control — automatic logoff | | | |
+| Access Control — encryption at rest | | | |
+| Audit Controls | | | |
+| Integrity | | | |
+| Person / Entity Authentication (MFA) | | | |
+| Transmission Security (encryption in transit) | | | |
+
+### Addressable specifications
+| Spec | Implemented? | Equivalent or rationale (document, location) | Record |
+|---|---|---|---|
+
+### Privacy Rule
+- [ ] Minimum necessary applied in code (no SELECT * on PHI tables)
+- [ ] Notice of Privacy Practices published and presented
+- [ ] Individual access path implemented (30-day delivery)
+- [ ] Amendment / accounting of disclosures process exists
+
+### Breach response readiness
+- [ ] Audit logs sufficient to scope a breach within the 60-day clock
+- [ ] Incident-response procedures tested
+- [ ] Notification templates drafted (see security-comms)
+- [ ] Encryption-as-safe-harbor verified across ePHI stores (list stores that are unsecured, including any covered by a rejected addressable-spec record)
+
+### Prioritized remediation plan
+1. [highest first: PHI to non-BAA vendors, unencrypted ePHI reachable from outside, shared accounts]
+```
+
+The safeguard tables count records from `findings.json` (by `ext.standard`) and entries from the documentation-gap list. They are not a separate judgement.
 
 ## Boundaries
 
@@ -278,3 +366,15 @@ Disposition rule (Fixed / Deferred / Accepted Risk) per `owasp-audit`. HIPAA acc
 - **45 CFR Parts 160 and 164** — the regulatory text itself
 - **OCR Cybersecurity Newsletter** — quarterly guidance updates
 - **"HIPAA Plain & Simple"** — Carolyn P. Hartley — practitioner reference
+- Shared references (copied into `references/` at build time): [references/findings-format.md](references/findings-format.md), [references/verification.md](references/verification.md), [references/severity-calibration.md](references/severity-calibration.md), [references/findings.schema.json](references/findings.schema.json)
+
+## Reference files
+
+This skill links to supporting files under `references/`. They are not inlined in this adapter; open them on GitHub (or in `skills/hipaa-audit/references/` if you have the repo checked out):
+
+- [references/findings-format.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/hipaa-audit/references/findings-format.md)
+- [references/findings.schema.json](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/hipaa-audit/references/findings.schema.json)
+- [references/severity-calibration.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/hipaa-audit/references/severity-calibration.md)
+- [references/to-sarif.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/hipaa-audit/references/to-sarif.mjs)
+- [references/validate-findings.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/hipaa-audit/references/validate-findings.mjs)
+- [references/verification.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/hipaa-audit/references/verification.md)

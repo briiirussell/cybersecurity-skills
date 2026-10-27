@@ -16,7 +16,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | dependency-audit | 1.2.3 | 2026-10-26 |
 | disk-forensics | 1.0.1 | 2026-10-26 |
 | finding-triage | 1.1.2 | 2026-10-26 |
-| hipaa-audit | 1.0.2 | 2026-10-26 |
+| hipaa-audit | 1.1.0 | 2026-10-27 |
 | iam-audit | 1.1.0 | 2026-10-26 |
 | incident-triage | 1.1.0 | 2026-10-26 |
 | log-watch | 1.0.1 | 2026-10-26 |
@@ -41,6 +41,24 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.0 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.35.0 (2026-10-27)
+
+hipaa-audit moves onto the shared findings format (#129). hipaa-audit 1.1.0.
+
+**Changed**
+- **Verify, then record.** A gap against a required Security Rule specification is a finding, rated by ePHI exposure.
+  - **Addressable specs:** one with neither the control nor a documented alternative is treated like a required spec. One with a documented equivalent or rationale (§164.306(d)(3)) is `rejected`, pointing at that document.
+  - **Breach status:** rejecting an addressable spec doesn't change it. Unencrypted ePHI is still "unsecured", and the report says so under Breach response readiness.
+  - **Confirmed:** a shared `phi_admin` database role; Mixpanel receiving PHI with no BAA on record; a full patient record returned to a scheduling view (minimum necessary); a shipped `PHI_AUDIT_LOG=false` default.
+  - **Needs validation:** a vendor's BAA status when no register was provided; RDS encryption for a console-created database, with the exact `describe-db-instances` check.
+  - **Rejected:** no idle logoff, but the risk analysis documents MDM screen lock as the equivalent; a Sentry `beforeSend` hook that strips request data.
+- **Encryption wording.** The "treat as required" wording on encryption is replaced by the implement-or-document rule.
+- **Fingerprints:** `hipaa-audit/<class>/<file or resource>/<name>`, with 11 named classes, built from the resource rather than the evidence file.
+- **`ext` keys:** `standard` (e.g. `164.312(b)`), `addressable`, `rule` (security, privacy or breach-notification).
+- **Output Format** is rendered from `findings.json`. It has "Rejected (do not re-raise)", a PHI flow map and an addressable-specifications table.
+- The skill now gets copies of the six shared findings files.
+- **SkillSpector baseline.** One new rule: saving a redacted BAA register entry as evidence was read as session persistence.
 
 ### 1.34.0 (2026-10-27)
 
