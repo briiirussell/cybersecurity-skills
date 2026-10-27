@@ -69,15 +69,18 @@ itself is **not** coverage evidence.
 ## Phase 2 — The coverage ledger (`coverage.json`)
 
 One **unit** per entry surface × trust boundary × attack class. Give each a stable `id` that survives line-number
-churn: `<file>#<method> <route>` or `<file>#<exportName>`, plus the boundary and category, e.g.
-`src/app/api/invoices/[id]/route.ts#PUT:tenant-isolation:A01`.
+churn: `<file>:<method or export>:<boundary>:<category>`, e.g. `src/app/api/invoices/id/route.ts:PUT:tenant-isolation:A01`.
+
+Ids use only `A-Z a-z 0-9 . _ : / @ + -` and start with a letter, digit or `.` (so `.env.example:...` works). Drop
+other characters from the file path: Next.js `[id]` becomes `id`, and `#`, spaces and brackets go. The validator
+rejects anything else.
 
 ```json
 {
-  "id": "src/app/api/invoices/[id]/route.ts#PUT:tenant-isolation:A01",
+  "id": "src/app/api/invoices/id/route.ts:PUT:tenant-isolation:A01",
   "surface": "PUT /api/invoices/:id",
   "boundary": "signed-in user → another tenant's invoice",
-  "owasp_category": "A01",
+  "owasp_category": "A01:2025",
   "status": "covered",
   "reviewed_paths": ["src/app/api/invoices/[id]/route.ts", "src/lib/auth/requireOrg.ts"],
   "checks": [
@@ -102,8 +105,8 @@ The authoritative shape lives in [coverage.schema.json](coverage.schema.json). V
 | `planned` | Identified in recon, not started | Default for every new unit |
 | `in_progress` | Being reviewed now | Only one owner at a time (see [orchestration.md](orchestration.md)) |
 | `blocked` | Can't proceed: missing code, unreadable generated output, needs a running instance | Put the reason in `unresolved[]` |
-| `covered` | Reviewed, and no candidate came out of it | Requires **non-empty `reviewed_paths` and at least one check** |
-| `candidate` | Review produced at least one candidate | List the fingerprints in `finding_fingerprints[]`. Stays `candidate` until every fingerprint has a verdict |
+| `covered` | Reviewed, and nothing from it was confirmed or left `needs_validation` | Requires **non-empty `reviewed_paths` and at least one check**. May list `rejected` fingerprints, never others |
+| `candidate` | Review produced at least one candidate that wasn't rejected | List the fingerprints in `finding_fingerprints[]`. **Stays `candidate` for good** once any of them is `confirmed` or `needs_validation` |
 | `deferred` | In scope but not reviewed in this run (profile budget, time) | Reported under "Deferred / out of scope". Makes the run **partial** |
 | `out_of_scope` | Excluded by the user or by diff mode | State the reason. In diff mode, everything outside the diff is `out_of_scope` |
 | `not_applicable` | The attack class can't apply to this surface (no outbound HTTP → no SSRF) | State why in a check: the check is the evidence it doesn't apply |
@@ -112,8 +115,15 @@ The authoritative shape lives in [coverage.schema.json](coverage.schema.json). V
 for X" without naming the paths read, or a framework's reputation. A check names an invariant, how you tested it, and
 what you found.
 
-Once all a unit's candidates have verdicts, it can move to `covered`. Its `finding_fingerprints[]` keeps the
-confirmed, needs_validation, and rejected fingerprints so the report can link them.
+When a unit's candidates get their verdicts:
+
+- **All `rejected`:** move the unit to `covered`. Keep the rejected fingerprints in `finding_fingerprints[]`, and add a
+  check whose result names the control that held.
+- **Any `confirmed` or `needs_validation`:** the unit stays `candidate`, listing every fingerprint it raised. It is not
+  clean, so it must never feed "Items checked and found clean".
+
+`validate-coverage.mjs --findings findings.json` fails a `covered` unit that lists a confirmed or needs_validation
+fingerprint.
 
 ## Phase 3 — Coverage critic
 
@@ -151,7 +161,8 @@ budget is spent). How many critic waves to run depends on the run profile ([orch
 
 ## Rendering coverage into the report
 
-- **Items checked and found clean** is generated from `covered` and `not_applicable` units. List the surface, boundary,
+- **Items checked and found clean** is generated from `covered` and `not_applicable` units only. A `candidate` unit
+  shows up through its findings, not here. List the surface, boundary,
   category, and the check's invariant and result. Don't hand-write this section.
 - **Deferred / out of scope** lists every `deferred`, `out_of_scope`, and `blocked` unit with its reason.
 - If any in-scope unit is `deferred` or `blocked`, or the run was diff-scoped, the report header says **partial**

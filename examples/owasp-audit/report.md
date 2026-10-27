@@ -7,7 +7,7 @@
 ### Summary
 - Confirmed: 8 (Critical 0 | High 4 | Medium 2 | Low 2)
 - Needs validation: 3   Rejected: 7   Hardening notes: 12
-- Units: 32 covered, 1 not applicable, 0 deferred, 3 out of scope
+- Units: 21 covered, 11 candidate, 1 not applicable, 0 deferred, 3 out of scope
 - Static review only: nothing was run, so no finding is `reproduced` and confirmed confidence is capped at medium. `npm audit` was not run (it needs network), so the dependency picture is limited to what the lockfile shows.
 
 ### Confirmed findings
@@ -371,40 +371,27 @@ Issue `tv` in `issueToken`, and bump `token_version` on deletion, password chang
 
 ### Items checked and found clean
 
-Generated from every `covered` and `not_applicable` unit in coverage.json. A unit that produced a finding is listed too; its result names the record.
+Generated from every `covered` and `not_applicable` unit in coverage.json. Units that produced a confirmed or needs-validation finding are `candidate` and appear through their findings above, not here. A covered unit can still name a rejected candidate.
 
 | Surface | Boundary | Category | Invariant checked | Result |
 |---|---|---|---|---|
 | POST /api/users/signup | anonymous -> admin role | A01:2025 | a new account cannot choose its role | holds: only email/password destructured (users.js:8); INSERT (email, password_hash) at users.js:10; role DEFAULT 'user' (db.js:11). Candidate closed as rejected |
 | POST /api/users/signup, POST /api/users/login | anonymous -> database | A05:2025 | signup/login SQL is parameterized | holds: users.js:10, :11, :17 all use ? placeholders |
-| POST /api/users/login | anonymous -> any user account | A07:2025 | password check is constant-time over a salted slow hash | holds: scrypt with 16-byte random salt (auth.js:6-8), timingSafeEqual (auth.js:14); default scrypt cost is a hardening note |
-| POST /api/users/login | anonymous -> any user account | A07:2025 | repeated guesses are throttled | fails: no limiter anywhere in the repo -> confirmed CWE-307 (medium) |
-| POST /api/users/login | anonymous -> any user account | A07:2025 | unknown and known emails are indistinguishable | fails on timing (scrypt skipped on miss), but signup already enumerates emails directly -> hardening note, not a separate finding |
 | POST /api/users/signup | anonymous -> weak credentials for other users | A07:2025 | password policy enforced server-side | fails without a separate traced impact: only an 8-char minimum (users.js:9), no complexity or breached-password check, and no type check (an 8-element array passes the length test, then scrypt throws a 500). Weak passwords are the precondition of the CWE-307 finding; no separate record |
 | GET /healthz | anonymous -> app | A01:2025 | health check exposes nothing sensitive | holds: returns the literal 'ok' |
 | express.json body parser (all routes) | anonymous -> process memory/CPU | A06:2025 | request parsers have explicit limits | holds: express.json limit 100kb (app.js:5); no urlencoded or multipart parser mounted; no uploads |
-| Express default (qs) query parser on every request | anonymous -> process availability | A03:2025 | the query parser in use has no known pre-auth DoS | undecided: depends on library code and advisory data not available offline -> needs_validation |
-| global error middleware (all routes) | any client (incl. anonymous) -> server internals | A02:2025 | errors return a generic message without stack | fails: message + stack returned to anyone -> confirmed CWE-209 (low) |
 | error paths in all handlers | any client -> availability / fail-open | A10:2025 | auth checks fail closed on error | holds: verify throw -> 401 (auth.js:30-31); missing/non-admin row -> 403 (auth.js:37) |
 | error paths in all handlers | any client -> availability / fail-open | A10:2025 | async rejections cannot crash the process | holds: only preview.js is async and it wraps everything in try/next(err) (preview.js:9-17); all other handlers are sync, which Express 4 catches |
 | error paths in all handlers | any client -> availability / fail-open | A10:2025 | multi-step writes are atomic | fails without traced impact: two deletes outside a transaction (admin.js:13-14), admin-only -> hardening note |
-| JWT signing secret (config) | deploy environment / anonymous -> any account | A04:2025 | the signing secret has no usable default and is asserted at startup | fails: falls back to "changeme" (config.js:5), .env.example:3 blank, no startup check -> confirmed CWE-321 (high) |
 | requireAuth middleware | anonymous -> authenticated user | A07:2025 | unsigned or wrongly signed tokens are rejected | holds: secret is always truthy; verify failure -> 401. alg:none candidate closed as rejected; missing algorithms allow-list is a hardening note |
 | requireAuth middleware | anonymous -> authenticated user | A07:2025 | requireAuth is mounted on every non-public router | holds: notes.js:7, preview.js:8, admin.js:6; users router and /healthz are intentionally public |
 | all state-changing routes | attacker web origin -> victim's session | A01:2025 | no ambient credential a cross-site request could ride | holds: Bearer header only (auth.js:23-25); no cookies anywhere. CSRF candidate closed as rejected |
 | password hashing | database read -> plaintext passwords | A04:2025 | passwords stored with a salted slow KDF | holds: scrypt + per-user random salt (auth.js:6-8); Node default cost below OWASP scrypt minimum -> hardening note |
 | GET /api/notes | user -> other users' notes | A01:2025 | list is scoped to the caller | holds: WHERE owner_id = ? bound to req.user.id (notes.js:15) |
 | GET /api/notes?sort= | user -> database | A05:2025 | sort input cannot reach SQL text | holds while Object.prototype is unpolluted: allow-list map (notes.js:9, :13-14); inherited keys only yield a syntax-error 500. Candidate closed as rejected; the rejection is conditional on the open prototype-pollution needs_validation record (a polluted prototype string would be interpolated at notes.js:15) |
-| GET /api/notes/search?q= | user -> database / other users' data | A05:2025 | search input is bound, not interpolated | fails: q and req.user.id interpolated into SQL (notes.js:22) -> confirmed CWE-89 (high) |
-| GET /api/notes/:id | user -> another user's note | A01:2025 | note is loaded with owner_id = caller (or shared) before returning | fails: WHERE id = ? only (notes.js:28); shared flag unused -> confirmed CWE-639 (high) |
 | POST /api/notes | user -> another user's account | A01:2025 | new note's owner comes from the session, not the body | holds: only title/body taken from body; owner_id = req.user.id (notes.js:35) |
-| PATCH /api/notes/:id | user -> another user's note | A01:2025 | the UPDATE targets only the ownership-checked row and cannot change owner_id | fails: merge lets the body overwrite id and owner_id -> confirmed CWE-915 (high) |
-| PATCH /api/notes/:id (_.merge) | user -> process-wide object prototype | A08:2025 | untrusted keys cannot reach Object.prototype | undecided: lodash internals not vendored -> needs_validation. Gadget search: requireAdmin reads an own DB property (no gadget); SORT_COLUMNS[req.query.sort] at notes.js:13 reads inherited keys, so a polluted string would reach ORDER BY at notes.js:15 (pollution -> SQLi chain if the blocker resolves to confirmed) |
 | DELETE /api/notes/:id | user -> another user's note | A01:2025 | delete is scoped to the caller | holds: WHERE id = ? AND owner_id = ? (notes.js:50), 0 changes -> 404. Candidate closed as rejected |
 | note title/body and preview title in responses | user -> other users' browsers (stored XSS) | A05:2025 | no HTML sink in this repo renders stored content | holds: all responses are res.json (application/json) except the literal 'ok' at app.js:12; no templates or HTML. Rendering in a frontend is out of scope (separate unit) |
-| POST /api/preview | user -> server's internal network | A01:2025 | outbound fetch is restricted to allowed public destinations | fails: scheme-only regex (preview.js:11) -> confirmed CWE-918 (medium); read-back is limited to &lt;title> plus the error channel (preview.js:16 -> app.js:17 returns connection-refused/timeout/status text), i.e. a host/port-scan oracle, already in the record's evidence and impact; no body read-back, so credential theft is not shown and impact stays medium |
-| POST /api/preview | user -> server's internal network | A01:2025 | redirects and timeouts are bounded | fails: timeout 5s and 1MB cap are set, but redirects are not restricted (no maxRedirects/beforeRedirect; relies on axios 0.21.0 defaults, not read). Doesn't change the confirmed SSRF, since IP literals pass directly |
-| axios 0.21.0 used by POST /api/preview | user -> internal network via a vulnerable dependency | A03:2025 | runtime-reachable dependencies carry no known critical advisory | undecided: impact depends on an egress proxy that the repo doesn't show -> needs_validation |
 | GET /api/admin/users, DELETE /api/admin/users/:id | user -> admin | A01:2025 | admin role is checked server-side from a source the user can't set | holds: role read from DB per request (auth.js:36-37), mounted on the router (admin.js:6); no path writes users.role. Candidate closed as rejected |
 | admin and auth events | insider / compromised account -> undetected actions | A09:2025 | auth and admin events are logged and alertable | fails without traced impact: only console.error(err) at app.js:16 -> hardening note |
 | admin and auth events | insider / compromised account -> undetected actions | A09:2025 | no secrets or passwords written to logs | holds: console.error(err) logs the error object; no request bodies or tokens logged |
@@ -415,7 +402,6 @@ Generated from every `covered` and `not_applicable` unit in coverage.json. A uni
 | remaining db.prepare sinks: notes.js:28, :35, :41, :44-45, :50; admin.js:9, :13, :14; auth.js:36 | user/admin -> database | A05:2025 | every other SQL statement binds its input | holds: all use ? placeholders with .get/.run arguments; the only string-built SQL is notes.js:15 (allow-listed) and notes.js:22 (confirmed CWE-89) |
 | POST /api/users/signup, POST /api/preview, POST /api/notes | any (self-registered) user -> server CPU, outbound bandwidth, disk | A06:2025 | costly operations are rate- or quota-limited | fails without traced impact: signup (scrypt per call), preview (outbound fetch up to 5s / 1MB each) and note creation are unlimited. No metered third-party cost is involved, so this is a hardening note; the preview fetch's security impact is the confirmed CWE-918 |
 | app.listen plain HTTP (app.js:20) carrying passwords and Bearer tokens | network path -> credentials in transit | A04:2025 | credentials only travel over TLS | not decidable from the repo: the app speaks plain HTTP and TLS, if any, terminates in front of it (deployment). No traced impact in code -> hardening note with an owner check (confirm HTTPS-only + HSTS at the edge) |
-| requireAuth + DELETE /api/admin/users/:id + POST /api/users/signup (token lifecycle) | deleted or former user -> another live account | A07:2025 | a token stops working when its user is deleted, and cannot be re-bound to a different account | fails: requireAuth trusts claims.sub without a user lookup (auth.js:28); 7-day tokens with no revocation (config.js:6); ids are reusable (db.js:8) -> confirmed CWE-613 (low, unlikely preconditions) |
 
 ### Deferred / out of scope
 

@@ -215,9 +215,11 @@ node references/validate-coverage.mjs coverage.json --findings findings.json
 
 A unit is `{id, surface, boundary, owasp_category, status, reviewed_paths[], checks[{invariant, method, result}], finding_fingerprints[], unresolved[]}`. All fields are required; `owasp_category` may be `null`. `status` ∈ `planned`, `in_progress`, `blocked`, `covered`, `candidate`, `deferred`, `out_of_scope`, `not_applicable`. Units have unique ids, and `reviewed_paths` follow the same safe-path rule (globs allowed). The validator also requires:
 
-- `covered`: at least one reviewed path and at least one check
-- `candidate`: at least one finding fingerprint
+- `covered`: at least one reviewed path and at least one check. With `--findings`, it may list only `rejected` fingerprints
+- `candidate`: at least one finding fingerprint. A unit with a confirmed or needs_validation finding stays `candidate`
 - `blocked`: at least one unresolved item
+
+Unit ids use the same characters as fingerprints and may also start with `.`, for dotfiles.
 
 `coverage.schema.json` documents the shape.
 

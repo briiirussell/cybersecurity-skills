@@ -42,6 +42,24 @@ Current versions of all skills. Agents can compare against local versions to che
 
 ## Recent Changes
 
+### 1.26.0 (2026-10-26)
+
+Fixes the coverage ledger instructions that the worked examples tripped over (#159). Following them as written could list a confirmed vulnerability under "Items checked and found clean", and the owasp-audit example did exactly that for 11 units.
+
+**Fixed**
+- `covered` versus `candidate` in `shared/recon-and-coverage.md`. The guide said both "covered means no candidate came out of it" and "once its candidates have verdicts it can move to covered". Now there is one rule:
+  - a unit whose candidates were all rejected becomes `covered`, keeping the rejected fingerprints;
+  - a unit with any confirmed or needs_validation finding stays `candidate` for good;
+  - "Items checked and found clean" is built from `covered` and `not_applicable` units only.
+- The unit id example (`src/app/api/invoices/[id]/route.ts#PUT:...`) used `#`, `[` and `]`, which the validator rejects. The new example passes, and the guide says which characters to drop. Its `owasp_category` is now `A01:2025`, as the skills write it.
+- Unit ids may now start with `.`, so a dotfile like `.env.example` can be an id prefix.
+
+**Added**
+- `validate-coverage.mjs --findings` fails a `covered` unit that lists a confirmed or needs_validation fingerprint. Tests cover the new rule, dotfile ids, and the guide's example.
+
+**Changed**
+- `examples/owasp-audit/`: the 11 affected units are now `candidate`, and their rows are gone from the report's clean list (21 covered, 11 candidate).
+
 ### 1.25.0 (2026-10-26)
 
 The findings format gets room for skill-specific fields and a rule for findings that aren't in a source file. Both are needed before the remaining audit skills move onto it (#129): a PCI gap needs its requirement number, and a cloud finding is about a bucket, not a line of code.
