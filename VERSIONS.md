@@ -12,17 +12,18 @@ Current versions of all skills. Agents can compare against local versions to che
 | cicd-security | 1.0.0 | 2026-10-27 |
 | cloud-audit | 1.2.0 | 2026-10-26 |
 | container-audit | 1.1.0 | 2026-10-26 |
-| crypto-audit | 1.1.1 | 2026-10-27 |
+| crypto-audit | 1.1.2 | 2026-10-27 |
 | csf-mapping | 1.0.2 | 2026-10-26 |
 | dependency-audit | 1.2.4 | 2026-10-27 |
 | disk-forensics | 1.0.1 | 2026-10-26 |
 | finding-triage | 1.3.1 | 2026-10-27 |
+| fuzzing-harness | 1.0.0 | 2026-10-27 |
 | hipaa-audit | 1.1.0 | 2026-10-27 |
 | iam-audit | 1.1.1 | 2026-10-27 |
 | incident-triage | 1.1.0 | 2026-10-26 |
 | log-watch | 1.0.1 | 2026-10-26 |
 | mobile-audit | 1.1.1 | 2026-10-27 |
-| native-code-review | 1.0.0 | 2026-10-27 |
+| native-code-review | 1.0.1 | 2026-10-27 |
 | osint-recon | 1.0.2 | 2026-10-26 |
 | owasp-audit | 1.6.0 | 2026-10-27 |
 | patch-sweep | 1.0.2 | 2026-10-26 |
@@ -41,9 +42,28 @@ Current versions of all skills. Agents can compare against local versions to che
 | threat-modeling | 1.0.4 | 2026-10-26 |
 | variant-analysis | 1.0.0 | 2026-10-27 |
 | vuln-research | 1.0.4 | 2026-10-27 |
-| web-pentest | 1.2.0 | 2026-10-27 |
+| web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.45.0 (2026-10-27)
+
+New skill: fuzzing-harness (#137). fuzzing-harness 1.0.0. Back-references: native-code-review 1.0.1, web-pentest 1.2.1, crypto-audit 1.1.2.
+
+**Added**
+- **fuzzing-harness 1.0.0.** Writes and runs fuzz harnesses and property-based tests for the code that handles untrusted bytes: parsers, decoders, serializers, deserializers, token and header parsing, protocol state machines.
+  - **Ranks targets** by what they parse and where the input comes from.
+  - **Harnesses:** libFuzzer, cargo-fuzz, Go native fuzzing, Atheris, Jazzer.js and Jazzer. Templates are in `references/harness-templates.md`.
+  - **Property-based tests:** Hypothesis, fast-check and proptest, with useful properties: round-trip, invariants, differential against a reference, no crash on arbitrary input.
+  - **Runs:** seed corpora and dictionaries, sanitizer builds, timeouts.
+  - **Crashes:** each one is reproduced, minimized, deduped by stack and triaged into `findings.json`. A crash input that reproduces sets `reproduced: true`; `references/crash-triage.md` maps sanitizer reports to crash class and CWE. Each crash becomes a regression test.
+  - **CI:** regression replay on every PR, short PR fuzz runs, ClusterFuzzLite, and OSS-Fuzz eligibility (`references/ci-integration.md`).
+- Write is granted because harness, test, corpus and CI files are the main output. There are no Bash grants: installs, builds and fuzz runs execute the project's code, so they always prompt.
+- An unfixed memory-safety crash input is never committed to a public repo, and public CI artifacts are treated as public.
+
+**Changed**
+- native-code-review hands dynamic confirmation to fuzzing-harness by name. web-pentest separates live HTTP fuzzing from code-level harnesses. crypto-audit points to it for round-trip and tamper-rejection property tests.
+- README: new row, map cell and crossover line.
 
 ### 1.44.0 (2026-10-27)
 

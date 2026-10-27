@@ -85,6 +85,9 @@ The skills are organized into seven families. Most security work crosses familie
 │native│ │        │ │        │ │        │ │      │ │         │ │          │
 │-code-│ │        │ │        │ │        │ │      │ │         │ │          │
 │review│ │        │ │        │ │        │ │      │ │         │ │          │
+│fuzz- │ │        │ │        │ │        │ │      │ │         │ │          │
+│ing-  │ │        │ │        │ │        │ │      │ │         │ │          │
+│ harn.│ │        │ │        │ │        │ │      │ │         │ │          │
 └──┬───┘ └───┬────┘ └───┬────┘ └───┬────┘ └──┬───┘ └────┬────┘ └────┬─────┘
    │         │          │          │         │           │            │
    └─────────┴────┬─────┴──────────┴─────────┴───────────┴────────────┘
@@ -107,6 +110,7 @@ The skills are organized into seven families. Most security work crosses familie
      dependency-audit → cicd-security ← agent-supply-chain-audit (the pipeline is supply chain too)
      finding-triage → variant-analysis → scanner-pipeline (one bug → a rule → it can't come back)
      native-code-review ↔ crypto-audit (memory safety ↔ constant time and key handling)
+     native-code-review ↔ fuzzing-harness (read the parser ↔ fuzz it)
      breach-patterns → every audit skill (what to check)
      finding-triage ← every audit skill (closes the loop on any finding)
      security-comms ← every skill (translates output for non-security audience)
@@ -131,6 +135,7 @@ The skills are organized into seven families. Most security work crosses familie
 | [dependency-audit](skills/dependency-audit/) | Dependencies, frameworks, runtimes, toolchain — CVEs, security anti-patterns, supply chain risk. Fixing safely (pnpm override traps, duplicate singletons, engines floor, runtime pins that must move together), CI/release trust handoffs (cache/artifact poisoning, OIDC, digest promotion), package-source redirection, agent-extension pinning. [Example run](examples/dependency-audit/report.md). |
 | [disk-forensics](skills/disk-forensics/) | Disk image analysis, evidence recovery, timeline reconstruction. Explicit Authorization Check covering lawful basis, chain of custody, privacy scope. |
 | [finding-triage](skills/finding-triage/) | Single-finding disposition workflow — accepts any source (or a findings.json record by fingerprint) and the confirmed / needs-validation / rejected verdicts. Boundary + result gate, severity capped at demonstrated impact, hardening notes kept out of findings. Fixed / Deferred / Accepted Risk / Mitigated (platform/config) / Requires major migration / False Positive, with ticket-ready writeups. Closes the loop on every audit skill. [Example run](examples/finding-triage/report.md). |
+| [fuzzing-harness](skills/fuzzing-harness/) | Fuzz harnesses (libFuzzer, cargo-fuzz, Go, Atheris, Jazzer.js / Jazzer) and property-based tests (Hypothesis, fast-check, proptest) for parsers, decoders and serializers — seed corpora, sanitizer runs, crash minimization and triage into findings, regression tests from crashes, and CI fuzzing (ClusterFuzzLite / OSS-Fuzz). Writes findings.json (confirmed / needs validation / rejected), with SARIF export. |
 | [hipaa-audit](skills/hipaa-audit/) | HIPAA Security / Privacy / Breach Notification — three safeguard categories, 18 identifiers, BAA chain-of-liability, minimum-necessary, 60-day breach clock, encryption-as-safe-harbor. Writes findings.json (confirmed / needs validation / rejected), with SARIF export. |
 | [iam-audit](skills/iam-audit/) | Consultant-style IAM — audit / design / migrate. Cloud IAM (AWS/GCP/Azure), identity providers (Okta/Entra/Auth0/Workspace), application authorization (RBAC/ABAC/ReBAC), workload identity, JIT access, break-glass. Writes findings.json (confirmed / needs validation / rejected), with SARIF export. |
 | [incident-triage](skills/incident-triage/) | Security incident triage following NIST SP 800-61. |

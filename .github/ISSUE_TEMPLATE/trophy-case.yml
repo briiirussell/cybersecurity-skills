@@ -26,6 +26,7 @@ body:
         - dependency-audit
         - disk-forensics
         - finding-triage
+        - fuzzing-harness
         - hipaa-audit
         - iam-audit
         - incident-triage
