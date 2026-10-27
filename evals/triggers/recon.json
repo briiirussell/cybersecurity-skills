@@ -1,0 +1,32 @@
+{
+  "skill": "recon",
+  "should_fire": [
+    "enumerate subdomains for target.example, it's in our bug bounty scope",
+    "port scan the in-scope hosts and fingerprint the services",
+    "map the external attack surface for our pentest",
+    "HTB box at 10.10.11.5, start recon",
+    "asset discovery for the engagement"
+  ],
+  "near_miss": [
+    {
+      "prompt": "OSINT on the company's employees and public records",
+      "owner": "osint-recon"
+    },
+    {
+      "prompt": "test the web app login for auth bypass",
+      "owner": "web-pentest"
+    },
+    {
+      "prompt": "write the rules of engagement for our red team",
+      "owner": "red-team-engagement"
+    },
+    {
+      "prompt": "research this CVE we found on the host",
+      "owner": "vuln-research"
+    },
+    {
+      "prompt": "audit our AWS security groups",
+      "owner": "cloud-audit"
+    }
+  ]
+}

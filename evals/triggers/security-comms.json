@@ -1,0 +1,32 @@
+{
+  "skill": "security-comms",
+  "should_fire": [
+    "explain this finding to my boss in plain English",
+    "write an executive summary of the pentest for the board",
+    "draft the customer disclosure email for the incident",
+    "turn this technical post-mortem into a narrative for leadership",
+    "help me justify the security budget to the CFO"
+  ],
+  "near_miss": [
+    {
+      "prompt": "CSF gap analysis with current and target tiers",
+      "owner": "csf-mapping"
+    },
+    {
+      "prompt": "contain the incident that's happening now",
+      "owner": "incident-triage"
+    },
+    {
+      "prompt": "what severity is this finding really?",
+      "owner": "finding-triage"
+    },
+    {
+      "prompt": "GDPR right to deletion across backups",
+      "owner": "privacy-engineering"
+    },
+    {
+      "prompt": "HIPAA Security Rule audit of our ePHI systems",
+      "owner": "hipaa-audit"
+    }
+  ]
+}

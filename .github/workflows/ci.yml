@@ -40,6 +40,20 @@ jobs:
       - name: Validate SkillSpector baseline
         run: node .github/scripts/skillspector-baseline.mjs --check
 
+  triggers:
+    name: Trigger eval (offline)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Rank evals/triggers prompts against every description (BM25, no API calls)
+        run: node scripts/eval-triggers.mjs --verbose
+
   versions:
     name: Version check
     runs-on: ubuntu-latest

@@ -1,0 +1,32 @@
+{
+  "skill": "prompt-injection",
+  "should_fire": [
+    "can a malicious web page hijack our browsing agent?",
+    "our support bot does this, is it safe?\n```py\nprompt = f\"You are a helpful assistant. Answer: {user_input}\"\nresp = llm(prompt, tools=[send_email, delete_account])\n```",
+    "test our LLM app for jailbreaks and system prompt leaking",
+    "our agent reads incoming emails and can send replies, what could go wrong?",
+    "AI red team our chatbot"
+  ],
+  "near_miss": [
+    {
+      "prompt": "is the skill I just installed malicious?",
+      "owner": "agent-supply-chain-audit"
+    },
+    {
+      "prompt": "NIST AI RMF governance for our models",
+      "owner": "ai-risk-management"
+    },
+    {
+      "prompt": "OWASP Top 10 code review of the backend",
+      "owner": "owasp-audit"
+    },
+    {
+      "prompt": "threat model our new agent feature before we build it",
+      "owner": "threat-modeling"
+    },
+    {
+      "prompt": "design least-privilege IAM roles for the agent's service account",
+      "owner": "iam-audit"
+    }
+  ]
+}

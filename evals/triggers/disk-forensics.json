@@ -1,0 +1,32 @@
+{
+  "skill": "disk-forensics",
+  "should_fire": [
+    "I have an E01 image of a laptop, help me recover deleted files",
+    "build a timeline with plaso from this disk image",
+    "analyze this memory dump with volatility",
+    "CTF challenge: the flag is hidden somewhere in this disk image",
+    "how do I keep chain of custody for this evidence?"
+  ],
+  "near_miss": [
+    {
+      "prompt": "we're under active attack right now, what's the first step?",
+      "owner": "incident-triage"
+    },
+    {
+      "prompt": "hunt our proxy logs for beaconing",
+      "owner": "threat-hunting"
+    },
+    {
+      "prompt": "find secrets in our git history",
+      "owner": "secrets-audit"
+    },
+    {
+      "prompt": "research this person's public footprint for the investigation",
+      "owner": "osint-recon"
+    },
+    {
+      "prompt": "is this CVE exploitable in our app?",
+      "owner": "vuln-research"
+    }
+  ]
+}

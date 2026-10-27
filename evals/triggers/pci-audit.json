@@ -1,0 +1,32 @@
+{
+  "skill": "pci-audit",
+  "should_fire": [
+    "what's in PCI scope if we use Stripe Elements?",
+    "which SAQ do we need to fill out?",
+    "we found card numbers in a logs table, is that a PCI problem?",
+    "help us prepare for a PCI DSS 4.0 assessment",
+    "does tokenization shrink our cardholder data environment?"
+  ],
+  "near_miss": [
+    {
+      "prompt": "HIPAA requirements for patient data",
+      "owner": "hipaa-audit"
+    },
+    {
+      "prompt": "GDPR cookie consent",
+      "owner": "privacy-engineering"
+    },
+    {
+      "prompt": "race condition in checkout lets users double spend",
+      "owner": "business-logic-testing"
+    },
+    {
+      "prompt": "review the encryption algorithms we use",
+      "owner": "crypto-audit"
+    },
+    {
+      "prompt": "CSF gap analysis for the board",
+      "owner": "csf-mapping"
+    }
+  ]
+}

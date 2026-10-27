@@ -1,0 +1,32 @@
+{
+  "skill": "ai-risk-management",
+  "should_fire": [
+    "we're deploying a credit scoring model, how do we evaluate it for bias across demographic groups?",
+    "map our ML platform to the NIST AI RMF govern / map / measure / manage functions",
+    "does the EU AI Act apply to our resume screening tool, and when do the high-risk obligations start?",
+    "write a model card for our churn prediction model",
+    "how should we monitor for model drift once this goes live?"
+  ],
+  "near_miss": [
+    {
+      "prompt": "can a user trick our support bot into revealing its system prompt?",
+      "owner": "prompt-injection"
+    },
+    {
+      "prompt": "do a GDPR DPIA for the new analytics feature",
+      "owner": "privacy-engineering"
+    },
+    {
+      "prompt": "map our security program to NIST CSF 2.0",
+      "owner": "csf-mapping"
+    },
+    {
+      "prompt": "is this MCP server I'm about to install safe?",
+      "owner": "agent-supply-chain-audit"
+    },
+    {
+      "prompt": "STRIDE threat model for the RAG feature before we build it",
+      "owner": "threat-modeling"
+    }
+  ]
+}

@@ -34,8 +34,7 @@ This repo uses a `main` + `development` model:
    Files in `shared/` are copied into `skills/<skill>/references/` per `shared/manifest.json`. Edit `shared/`, never the copies.
 5. **Run the checks CI runs**:
    ```bash
-   node scripts/lint-skills.mjs
-   npm test        # node:test suites in scripts/test/ (Node >= 21, no dependencies)
+   npm run check   # lint, baseline, versions, trigger eval, adapter drift, tests (Node >= 21, no dependencies)
    ```
 6. **Commit and push**
 7. **Open a PR into `development`** — not `main`. The release cut promotes `development` → `main`.
@@ -109,7 +108,21 @@ node scripts/lint-skills.mjs
 
 The build regenerates `adapters/cursor/your-skill-name.mdc` and `adapters/codex/your-skill-name.md`, and copies the `shared/` files listed for your skill in `shared/manifest.json` into `skills/your-skill-name/references/`. To link a shared file (e.g. `references/findings.schema.json`), add your skill to that file's list in the manifest first. The lint checks frontmatter, size, cross-references, links and `allowed-tools`.
 
-### 7. Test locally
+### 7. Add trigger prompts
+
+Create `evals/triggers/your-skill-name.json`:
+
+```json
+{
+  "skill": "your-skill-name",
+  "should_fire": ["five or more prompts a real user would type, casual ones and one with pasted code or config"],
+  "near_miss": [{ "prompt": "a prompt that sounds close but belongs elsewhere", "owner": "other-skill" }]
+}
+```
+
+Write the prompts the way people actually ask, not by copying phrases from your description. `node scripts/eval-triggers.mjs --verbose` ranks every prompt against every description and lists the ones that land on the wrong skill. It's a cheap proxy for routing, so a miss is a hint to sharpen a description, not proof the model will misroute. See [evals/README.md](evals/README.md).
+
+### 8. Test locally
 
 ```bash
 cp -r skills/your-skill-name ~/.claude/skills/
@@ -126,7 +139,8 @@ Enforced by CI:
 - [ ] Skill lint passes — `node scripts/lint-skills.mjs` (`name` matches directory, `description` 200–1024 chars, `SKILL.md` under 500 lines, an `## Authorization` section, cross-referenced skills exist, relative links resolve, no `WebFetch` + unscoped `Bash`, no `Bash` grant whose prefix also matches a destructive subcommand)
 - [ ] Adapters and shared copies regenerated and committed — `node scripts/build-adapters.mjs` leaves no diff; shared content edited in `shared/`, not in `skills/*/references/` copies
 - [ ] Versions bumped — repo version in `.claude-plugin/plugin.json` and `marketplace.json`, a `### X.Y.Z (date)` entry in `VERSIONS.md`, and the row of every skill you changed (fix = PATCH, improvement = MINOR, new skill = 1.0.0). `node scripts/check-versions.mjs --base origin/development` checks this
-- [ ] `npm run check` passes (lint, baseline check, version check, adapter drift, tests — the CI checks that need no extra tools)
+- [ ] Trigger prompts added or updated — `evals/triggers/<skill>.json` (5+ should-fire, 5+ near-misses with an `owner`); `node scripts/eval-triggers.mjs --verbose` shows which prompts land on the wrong skill. If you edited a description, check you didn't steal another skill's prompts
+- [ ] `npm run check` passes (lint, baseline check, version check, trigger eval, adapter drift, tests — the CI checks that need no extra tools)
 - [ ] Tests pass — `npm test` (add or update a test in `scripts/test/` if you changed a validator, `to-sarif.mjs`, or the build)
 - [ ] SkillSpector scan is clean — any new finding is fixed, or covered by a narrow rule **with a reason** in `.skillspector-baseline.yaml` (see [docs/security-scanning.md](docs/security-scanning.md))
 

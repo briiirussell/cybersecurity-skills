@@ -1,0 +1,32 @@
+{
+  "skill": "breach-patterns",
+  "should_fire": [
+    "could a Capital One style metadata-service abuse happen to us?",
+    "what lessons from the Snowflake credential-reuse breaches should we check in our own stack?",
+    "my boss read about the LastPass breach and asked 'could that happen to us?' where do I start",
+    "walk me through what MOVEit and SolarWinds teach us and turn it into an audit checklist",
+    "security retrospective: apply lessons from real-world breaches to our setup"
+  ],
+  "near_miss": [
+    {
+      "prompt": "we've just been breached and the attacker is still in the network, what do I do right now",
+      "owner": "incident-triage"
+    },
+    {
+      "prompt": "write the breach notification letter to our customers",
+      "owner": "security-comms"
+    },
+    {
+      "prompt": "is CVE-2023-34362 reachable in our code, and is there a public exploit?",
+      "owner": "vuln-research"
+    },
+    {
+      "prompt": "hunt for lateral movement in our EDR telemetry",
+      "owner": "threat-hunting"
+    },
+    {
+      "prompt": "plan an adversary emulation of APT29 with our blue team",
+      "owner": "red-team-engagement"
+    }
+  ]
+}

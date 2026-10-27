@@ -1,0 +1,32 @@
+{
+  "skill": "finding-triage",
+  "should_fire": [
+    "semgrep flagged this as high, is it a real vulnerability?\n```js\nconst q = `SELECT * FROM t WHERE id = ${Number(req.query.id)}`;\n```",
+    "is this a false positive, or should we fix it?",
+    "write an accepted-risk justification for this finding",
+    "the scanner says critical. what severity is this, really?",
+    "we can't fix this soon, help me with a mitigation plan and compensating controls"
+  ],
+  "near_miss": [
+    {
+      "prompt": "full security audit of the repo",
+      "owner": "owasp-audit"
+    },
+    {
+      "prompt": "set up a scanner pipeline that dedupes findings across repos",
+      "owner": "scanner-pipeline"
+    },
+    {
+      "prompt": "explain this finding to the exec team in plain English",
+      "owner": "security-comms"
+    },
+    {
+      "prompt": "research this CVE's exploitability and patch status",
+      "owner": "vuln-research"
+    },
+    {
+      "prompt": "we've been compromised, help triage the incident",
+      "owner": "incident-triage"
+    }
+  ]
+}

@@ -42,6 +42,22 @@ Current versions of all skills. Agents can compare against local versions to che
 
 ## Recent Changes
 
+### 1.23.4 (2026-10-26)
+
+**Added**
+- Offline trigger eval (#123). `evals/triggers/<skill>.json` holds at least 5 prompts that should fire each skill and 5 near-misses, each near-miss naming the skill that should own it instead. Some prompts are casual and some paste code or config. `scripts/eval-triggers.mjs` ranks all 350 prompts against every description with BM25. It needs no dependencies and makes no API calls.
+- A new CI job, **Trigger eval (offline)**, fails when:
+  - fewer than 85% of should-fire prompts rank their skill first
+  - fewer than 90% of near-misses rank their owner above the skill
+  - any skill wins fewer than 3 of its own 5
+  - two descriptions are more than 0.55 similar (TF-IDF cosine)
+  - a skill has no triggers file
+- Current scores:
+  - should-fire top-1 160/175 (91.4%)
+  - near-miss 171/175 (97.7%)
+- [evals/README.md](evals/README.md) explains the numbers, what the proxy can't see, and which misses point at descriptions worth sharpening.
+- `npm run check` runs the trigger eval. CONTRIBUTING, CLAUDE.md and the README's new-skill steps now include writing trigger prompts.
+
 ### 1.23.3 (2026-10-26)
 
 Weekly checks for problems that show up without a PR: broken external links, new SkillSpector rules, and outdated action pins. Repo tooling only; no skill content changes. Closes #122.

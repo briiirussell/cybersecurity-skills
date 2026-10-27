@@ -1,0 +1,32 @@
+{
+  "skill": "hipaa-audit",
+  "should_fire": [
+    "we're building a telehealth app, what does HIPAA require of us?",
+    "do we need a BAA with our cloud provider for patient data?",
+    "audit our system that stores ePHI against the Security Rule",
+    "is a date of birth one of the 18 HIPAA identifiers?",
+    "a laptop with patient records on it was stolen, what are the HIPAA breach notification deadlines?"
+  ],
+  "near_miss": [
+    {
+      "prompt": "handle a GDPR deletion request across our backups",
+      "owner": "privacy-engineering"
+    },
+    {
+      "prompt": "what's in PCI scope for our card payments?",
+      "owner": "pci-audit"
+    },
+    {
+      "prompt": "map our controls to NIST CSF",
+      "owner": "csf-mapping"
+    },
+    {
+      "prompt": "audit our AWS account for misconfigurations",
+      "owner": "cloud-audit"
+    },
+    {
+      "prompt": "explain the incident to our board",
+      "owner": "security-comms"
+    }
+  ]
+}

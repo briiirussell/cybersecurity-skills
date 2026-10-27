@@ -1,0 +1,32 @@
+{
+  "skill": "siem-detection",
+  "should_fire": [
+    "write a Sigma rule for suspicious PowerShell",
+    "convert this SPL to KQL for Sentinel\n```\nindex=win EventCode=4625 | stats count by src_ip | where count > 20\n```",
+    "map our detections to MITRE ATT&CK and find the coverage gaps",
+    "tune this noisy alert",
+    "set up detection-as-code for our rules"
+  ],
+  "near_miss": [
+    {
+      "prompt": "an agent that reads my logs since we have no SIEM",
+      "owner": "log-watch"
+    },
+    {
+      "prompt": "SOC on-call rotation and escalation",
+      "owner": "soc-operations"
+    },
+    {
+      "prompt": "hypothesis-driven proactive hunt",
+      "owner": "threat-hunting"
+    },
+    {
+      "prompt": "we're in an active incident right now",
+      "owner": "incident-triage"
+    },
+    {
+      "prompt": "adversary emulation plan for the red team",
+      "owner": "red-team-engagement"
+    }
+  ]
+}

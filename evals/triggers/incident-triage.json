@@ -1,0 +1,32 @@
+{
+  "skill": "incident-triage",
+  "should_fire": [
+    "we've been hacked, the site is defaced, what do I do first?",
+    "ransomware just hit our file server",
+    "suspicious activity on a production box: someone created a new admin user at 3am",
+    "help me contain this incident and preserve evidence",
+    "extract IOCs from these alerts and tell me which notification clocks have started"
+  ],
+  "near_miss": [
+    {
+      "prompt": "write the post-mortem narrative for leadership",
+      "owner": "security-comms"
+    },
+    {
+      "prompt": "analyze the disk image we pulled from the server",
+      "owner": "disk-forensics"
+    },
+    {
+      "prompt": "triage this single scanner finding",
+      "owner": "finding-triage"
+    },
+    {
+      "prompt": "lessons from the Okta breach we should apply to our stack",
+      "owner": "breach-patterns"
+    },
+    {
+      "prompt": "proactive hunt for persistence that no alert has caught",
+      "owner": "threat-hunting"
+    }
+  ]
+}

@@ -6,7 +6,7 @@
   "scripts": {
     "build": "node scripts/build-adapters.mjs",
     "test": "node --test \"scripts/test/*.test.mjs\"",
-    "check": "node scripts/lint-skills.mjs && node .github/scripts/skillspector-baseline.mjs --check && node scripts/check-versions.mjs && node scripts/build-adapters.mjs && git diff --exit-code -- adapters/ skills/ && npm test"
+    "check": "node scripts/lint-skills.mjs && node .github/scripts/skillspector-baseline.mjs --check && node scripts/check-versions.mjs && node scripts/eval-triggers.mjs && node scripts/build-adapters.mjs && git diff --exit-code -- adapters/ skills/ && npm test"
   },
   "engines": {
     "node": ">=21"

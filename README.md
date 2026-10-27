@@ -229,7 +229,8 @@ Files in `shared/` (the `findings.json` schema and validator, severity calibrati
 1. Copy `templates/skill-template.md` to `skills/<your-skill>/SKILL.md`
 2. Fill in the frontmatter (`name`, `description`, `allowed-tools`)
 3. Write instructions in imperative form, under 500 lines
-4. Run the build script to generate adapters
+4. Add trigger prompts in `evals/triggers/<your-skill>.json` (see [`evals/README.md`](evals/README.md))
+5. Run the build script to generate adapters, then `npm run check`
 
 Format details and writing guidance live in [`CLAUDE.md`](CLAUDE.md). Full contribution flow in [`CONTRIBUTING.md`](CONTRIBUTING.md).
 

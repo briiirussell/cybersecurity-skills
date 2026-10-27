@@ -31,10 +31,14 @@ scripts/
 ├── build-adapters.mjs       # Adapters + manifest-driven shared/ copies
 ├── lint-skills.mjs
 ├── grant-check.mjs          # allowed-tools Bash grant check (used by the lint)
+├── eval-triggers.mjs        # offline trigger eval: ranks evals/triggers prompts against descriptions
 └── test/                    # node:test suites + fixtures (run with npm test)
+evals/
+├── README.md                # how the trigger evals work and what the numbers mean
+└── triggers/<skill>.json    # 5+ prompts that should fire the skill, 5+ near-misses with their owner
 package.json                 # npm test / npm run build — no dependencies, Node >= 21
 .github/
-├── workflows/ci.yml   # lint, versions, plugin validate, adapter drift, tests, SkillSpector (+ weekly on main)
+├── workflows/ci.yml   # lint, trigger eval, versions, plugin validate, adapter drift, tests, SkillSpector (+ weekly on main)
 ├── workflows/links.yml  # weekly link check; opens a broken-links issue
 ├── dependabot.yml     # weekly grouped bumps for the pinned actions
 └── scripts/           # SkillSpector baseline splitter + SARIF merge
@@ -74,6 +78,7 @@ allowed-tools: Read, Grep, Glob     # Pre-approved: run WITHOUT a permission pro
 node scripts/build-adapters.mjs    # Generate Cursor + Codex adapters and copy shared/ files into skills/*/references/ (also: npm run build)
 node scripts/lint-skills.mjs       # Frontmatter, size, cross-reference, link and allowed-tools lint (CI runs this)
 node scripts/check-versions.mjs --base origin/development   # Versions in sync + bumped vs the base (CI runs this on PRs)
+node scripts/eval-triggers.mjs --verbose   # Offline trigger eval: which prompts route to the wrong skill (CI runs this)
 npm run check                      # Everything CI runs locally except SkillSpector and plugin validate
 node .github/scripts/plugin-validate.mjs  # claude plugin validate, strict with named exceptions (needs the claude CLI)
 npm test                           # node:test suites in scripts/test/ — validators, to-sarif, build (CI runs this; Node >= 21)
@@ -89,10 +94,11 @@ CI (`.github/workflows/ci.yml`) also fails on stale adapters and on SkillSpector
 1. Create `skills/<skill-name>/SKILL.md` using `templates/skill-template.md`
 2. Use proper frontmatter (`name`, `description`, `allowed-tools`)
 3. Write instructions in imperative form
-4. If the skill links a shared file (`references/findings.schema.json`, `references/verification.md`, ...), add it to `shared/manifest.json`
-5. Run `node scripts/build-adapters.mjs` to generate adapters and shared copies
-6. Run `node scripts/lint-skills.mjs` and `npm test`
-7. Test the skill in Claude Code by copying to `.claude/skills/`
+4. Add `evals/triggers/<skill-name>.json`: at least 5 prompts that should fire it (include a casual one and one with pasted code or config) and 5 near-misses, each naming the skill that should own it instead
+5. If the skill links a shared file (`references/findings.schema.json`, `references/verification.md`, ...), add it to `shared/manifest.json`
+6. Run `node scripts/build-adapters.mjs` to generate adapters and shared copies
+7. Run `npm run check`
+8. Test the skill in Claude Code by copying to `.claude/skills/`
 
 ## Guidelines
 
