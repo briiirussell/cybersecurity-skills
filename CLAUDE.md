@@ -17,7 +17,7 @@
 ```
 skills/
 └── <skill-name>/
-    ├── SKILL.md             # Canonical skill (41 skills)
+    ├── SKILL.md             # Canonical skill (42 skills)
     └── references/          # Skill-specific references + GENERATED copies of shared/ files
 agents/
 └── finding-verifier.md      # Read-only plugin subagent (Claude Code only); lint checks name/description/read-only tools

@@ -38,6 +38,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | scanner-pipeline | 1.0.4 | 2026-10-27 |
 | secrets-audit | 1.1.4 | 2026-10-27 |
 | security-comms | 1.0.3 | 2026-10-26 |
+| security-start | 1.0.0 | 2026-10-27 |
 | siem-detection | 1.0.5 | 2026-10-27 |
 | soc-operations | 1.0.4 | 2026-10-26 |
 | threat-hunting | 1.0.5 | 2026-10-27 |
@@ -47,6 +48,15 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.50.0 (2026-10-27)
+
+New skill: security-start, a router for vague asks (#131). security-start 1.0.0.
+
+**Added**
+- **security-start 1.0.0.** For asks with no shape ("make this secure", "where do I start?"). It takes a quick read-only look at the repo, then asks at most three questions: what you have, what's happening, and who the result is for. Then it hands off to one to three skills from the catalog, in order. A 37-row table maps situations to a first skill and its follow-ups and covers all 41 other skills. An active incident skips the questions and goes straight to incident-triage. Routing to an offensive skill always comes with a note that it needs written authorization. It does no auditing itself and has no SessionStart hook, so it costs nothing in sessions that don't use it.
+- **Doesn't steal triggers.** Its description claims only vague phrases and tells the model to use the named skill whenever the ask names a framework, target or tool. On the offline trigger eval it takes no other skill's prompts and wins all six of its own.
+- README: new row, map cell, crossover line, and a "Not sure?" bullet at the top of "Where to start".
 
 ### 1.49.0 (2026-10-27)
 

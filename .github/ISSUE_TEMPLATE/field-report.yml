@@ -48,6 +48,7 @@ body:
         - scanner-pipeline
         - secrets-audit
         - security-comms
+        - security-start
         - siem-detection
         - soc-operations
         - threat-hunting
