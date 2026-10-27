@@ -1,0 +1,9 @@
+# Every path needs the maintainer's review. Listed explicitly so the sensitive paths stay
+# owned if more owners are added later.
+*                   @briiirussell
+/skills/            @briiirussell
+/shared/            @briiirussell
+/.github/           @briiirussell
+/.claude-plugin/    @briiirussell
+/scripts/           @briiirussell
+/SECURITY.md        @briiirussell

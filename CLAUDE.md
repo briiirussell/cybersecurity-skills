@@ -43,8 +43,10 @@ package.json                 # npm test / npm run build — no dependencies, Nod
 ├── workflows/links.yml  # weekly link check; opens a broken-links issue
 ├── workflows/evals.yml  # claude plugin eval on demand + on main (needs ANTHROPIC_API_KEY)
 ├── dependabot.yml     # weekly grouped bumps for the pinned actions
+├── CODEOWNERS         # maintainer review on every path
 └── scripts/           # SkillSpector baseline splitter, SARIF merge, plugin-validate, eval summary
 .skillspector-baseline.yaml
+SECURITY.md                  # private vulnerability reporting; what's in scope for a skills repo
 docs/
 └── security-scanning.md
 ```
