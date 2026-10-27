@@ -77,7 +77,7 @@ If unclear, ask before proceeding.
 
 ## Audit Checklist — MASVS-CODE (Code Quality)
 
-- Native libraries — modern compilers, no stack canaries disabled, PIE enabled (`otool -hv` on iOS, `readelf -h` on Android `.so`)
+- Native libraries — modern compilers, no stack canaries disabled, PIE enabled (`otool -hv` on iOS, `readelf -h` on Android `.so`). For memory-safety review of the native and JNI source itself → `native-code-review`
 - Symbols stripped from release builds (`strip`, ProGuard/R8)
 - No debug builds in production (`DEBUG` flag, `isDebuggable` in manifest)
 - No reflection-based hidden APIs (Android non-SDK interfaces) — break on OS upgrades

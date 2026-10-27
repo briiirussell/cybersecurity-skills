@@ -61,7 +61,7 @@ If transitive, walk up the dependency tree until you find which direct dependenc
 
 ### Step 4 — Reachability analysis (the high-leverage step)
 
-A CVE is only exploitable if you actually call the vulnerable code path. This is where dependency-audit's noise gets cut down to real risk.
+A CVE is only exploitable if you actually call the vulnerable code path. This is where dependency-audit's noise gets cut down to real risk. For a bug in a C, C++ or Rust library, `native-code-review` traces whether your inputs reach the faulty memory operation.
 
 **Read the patch.** The fix commit shows exactly which function / file / API was vulnerable. Then:
 

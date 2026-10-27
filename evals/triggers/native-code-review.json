@@ -1,0 +1,39 @@
+{
+  "skill": "native-code-review",
+  "should_fire": [
+    "can you look over my C parser for buffer overflows? it reads packets off a socket",
+    "is this unsafe block sound?\n```rust\nlet mut buf = Vec::with_capacity(n);\nunsafe { buf.set_len(n); }\nreader.read(&mut buf)?;\nOk(buf)\n```",
+    "review our C++ daemon for use-after-free and double free before we ship it",
+    "check this for memory safety: memcpy(rec->value, p, len) where len comes from the packet header",
+    "our Rust crate wraps a C library through FFI, can you check the extern \"C\" boundary and who frees what",
+    "we memset the private key to zero before free, but I heard the compiler removes that. how do we wipe secrets properly in C?",
+    "run checksec on the release binary and tell me which hardening flags we're missing, like FORTIFY_SOURCE and full RELRO",
+    "is there an integer overflow here? size_t total = count * sizeof(struct item); buf = malloc(total);"
+  ],
+  "near_miss": [
+    {
+      "prompt": "is our HMAC comparison constant-time, or does it leak timing?",
+      "owner": "crypto-audit"
+    },
+    {
+      "prompt": "does the libpng version we link have known CVEs?",
+      "owner": "dependency-audit"
+    },
+    {
+      "prompt": "OWASP Top 10 review of our Express API",
+      "owner": "owasp-audit"
+    },
+    {
+      "prompt": "CVE-2024-6387 just dropped for OpenSSH, is our build affected and reachable?",
+      "owner": "vuln-research"
+    },
+    {
+      "prompt": "audit the native libraries and JNI calls inside our Android APK",
+      "owner": "mobile-audit"
+    },
+    {
+      "prompt": "scan our Docker image for vulnerable packages and running as root",
+      "owner": "container-audit"
+    }
+  ]
+}

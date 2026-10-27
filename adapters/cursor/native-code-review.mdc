@@ -1,0 +1,386 @@
+---
+description: "Review C, C++ and Rust source for memory-safety bugs: out-of-bounds reads and writes, integer overflow or truncation that feeds a size, use-after-free and double free, format strings, uninitialized memory, Rust unsafe soundness, FFI boundaries, parsers of untrusted input, and secrets left in memory. Also checks compiler hardening flags and recommends sanitizers, and reports in the shared findings.json format. Use when the user mentions 'native code review,' 'C code review,' 'C++ security review,' 'memory safety review,' 'buffer overflow,' 'use-after-free,' 'double free,' 'format string bug,' 'integer overflow,' 'uninitialized memory,' 'unsafe Rust,' 'is this unsafe block sound,' 'FFI boundary,' 'Miri,' 'AddressSanitizer,' 'checksec,' 'FORTIFY_SOURCE,' 'hardening flags,' 'explicit_bzero,' or 'zeroize.'"
+globs:
+alwaysApply: false
+---
+
+# Native Code Review — C, C++ and Rust Memory Safety
+
+Review native source for the bugs that only memory-unsafe code has: a length that outgrows its buffer, a pointer that
+outlives its object, a format string the caller controls, bytes read before anyone wrote them, and Rust `unsafe` that
+quietly breaks the guarantees safe code relies on. Parsers of untrusted input come first. Every candidate is traced from
+where untrusted bytes enter to the memory operation that goes wrong, then challenged before it becomes a finding.
+
+Cross-references: `crypto-audit` (timing leaks and constant-time code in crypto paths, algorithm and parameter choice),
+`owasp-audit` (web and application logic, including command injection a native service shares with any other),
+`dependency-audit` (known CVEs and RustSec advisories in the libraries and crates you link), `vuln-research` (whether a
+published CVE in a C library is reachable from your code), `mobile-audit` (JNI and native libraries inside an Android
+or iOS app), `container-audit` (the image the binary ships in), `finding-triage` (one finding to a disposition).
+
+## When to use
+
+- "Review this C parser / C++ daemon / Rust crate for memory safety"
+- A pasted function with `memcpy`, `malloc(n * size)`, `printf(buf)`, `unsafe { ... }`, `set_len`, `transmute`,
+  `from_raw_parts` or an `extern "C"` block, and the question "is this safe?"
+- A Rust crate's `unsafe` blocks, `Send`/`Sync` impls or FFI layer, before release or before depending on it
+- Secrets that should be wiped from memory (keys, passwords, tokens) in C, C++ or Rust
+- Whether a binary was built with hardening flags (`checksec`, `readelf`), and which flags and sanitizers to add
+- Input: a repo or directory, a diff, or a pasted snippet. A built binary is optional and only used read-only
+
+**Not for:** constant-time comparison, timing side channels in crypto code, or cipher and KDF choices → `crypto-audit`;
+web routes, auth and injection in a service that happens to be written in C++ or Rust → `owasp-audit`; "is our
+OpenSSL / zlib / libpng version vulnerable?" → `dependency-audit`, then `vuln-research` for reachability; Go, Java,
+Python or JavaScript code (memory-safe runtimes) → `owasp-audit`; reverse engineering or analyzing a binary you don't
+have source for, malware analysis, or kernel exploitation research (out of scope).
+
+## Authorization
+
+- Review only source and binaries the user owns or is authorized to audit. If the code is a third party's and you
+  find a bug, say so and point at the project's security policy (see Boundaries).
+- **Read-only steps:** reading and grepping source, build files and CI config; `readelf` and `checksec file` on
+  binaries already built in the repo or handed to you. Both only read the file.
+- **Needs a yes first:** building the project, running its tests, sanitizer builds, Miri, `cargo geiger`, a fuzzer or
+  any harness. Building runs the project's build scripts (`build.rs`, CMake, `configure`) and running tests runs its
+  code, so get the go-ahead first and prefer a container or VM the user controls. Install toolchains only when the user says to.
+- **Stops at proof of the invariant.** A sanitizer report, a Miri error or a crash on a minimal input is the end of
+  dynamic work. Don't develop it further into control of execution, and don't run anything against systems or
+  binaries outside the authorized scope.
+
+## Workflow
+
+1. **Scope**: languages, build system, targets, where untrusted bytes come from
+2. **Map the surface**: entry points, parsers, FFI boundaries, unsafe inventory
+3. **Hunt by bug class**: priority targets first, using the catalog
+4. **Rust unsafe soundness** (Rust code only)
+5. **Secrets in memory**
+6. **Binary hardening**: flags in the build, then the built artifact
+7. **Dynamic confirmation**: sanitizers, Miri, fuzzing hand-off (with a yes)
+8. **Verify, then record**
+
+For a diff or PR, run the same steps on the changed functions, plus every caller that now passes new input into an old
+memory operation.
+
+### Step 1 — Scope
+
+```bash
+git ls-files | grep -cE '\.(c|h)$'; git ls-files | grep -cE '\.(cc|cpp|cxx|hpp|hh)$'; git ls-files | grep -c '\.rs$'
+ls CMakeLists.txt Makefile meson.build configure.ac Cargo.toml build.rs compile_commands.json 2>/dev/null
+git ls-files | grep -iE '(fuzz|corpus)' | head    # existing fuzz targets and seed inputs
+grep -rnE 'fsanitize|-Zsanitizer|miri' .github .gitlab-ci.yml CMakeLists.txt Makefile 2>/dev/null | head
+```
+
+Write down, before hunting:
+
+- **Who supplies the bytes**: network peer (pre- or post-auth), a file the user opens, another process over IPC, a
+  less-privileged local user (setuid, daemon running as root), a plugin, or only the program's own config
+- **Targets**: architectures and word size (a 32-bit build changes which integer overflows are reachable),
+  compiler, libc, Rust edition and MSRV
+- **Out of scope**, with a reason: vendored third-party code (→ `dependency-audit`), generated code, test-only code
+
+### Step 2 — Map the surface
+
+Untrusted input decides priority. Map where it enters, then the code that interprets it:
+
+- **Entry points**: `recv`, `read`, `fread`, `mmap` of input files, `getenv` and `argv` in privileged programs,
+  message handlers, `#[no_mangle] pub extern "C" fn` and other exported symbols, callbacks registered with C libraries
+- **Parsers and decoders** (the priority targets): functions named `parse_*`, `decode_*`, `unpack_*`, `read_*`,
+  `deserialize`, length-prefixed or TLV formats, `ntohs`/`ntohl`/`be32toh`, image, font, archive, media and document
+  loaders, protocol state machines, anything with a hand-written `switch` over a tag byte
+- **FFI boundaries**: `extern "C"` / `unsafe extern "C"` blocks, `bindgen` output, `cxx` bridges, JNI, Python C
+  extensions, CGo
+- **Rust unsafe inventory**: every `unsafe` block, `unsafe fn`, `unsafe impl`, plus whether crates declare
+  `#![forbid(unsafe_code)]`
+
+For each parser and FFI boundary, fill one row of a boundary table: the length or type accepted, where it's checked,
+which representation is checked versus used, who allocates, who frees, which thread uses it, and when it's torn down.
+Most native bugs are one cell in that table that disagrees with another.
+
+Search patterns for every step are in [references/bug-classes.md](references/bug-classes.md), with `rg` and portable
+`grep -E` versions.
+
+### Step 3 — Hunt by bug class
+
+Work parser by parser, not grep hit by grep hit. For each memory operation that touches untrusted data, re-derive the
+bound from the worst input the code accepts, from every caller, not from the test vectors. The catalog with patterns,
+false-positive notes and CWE ids is in [references/bug-classes.md](references/bug-classes.md). The classes:
+
+| Class | Ask | CWE |
+|---|---|---|
+| Out-of-bounds write / read | Is the destination's capacity checked, after headers, padding and the terminator are counted? Is the declared length trusted before the input is that long? | 787, 125, 121, 122, 193 |
+| Integer overflow, underflow, truncation, sign | Does arithmetic on an input value wrap before it reaches `malloc`, `memcpy`, an index or a loop bound? `a - b` with `b > a`, `n * size`, `size_t` narrowed to `int` or `u16`, `-1` becoming `SIZE_MAX` | 190, 191, 197, 195, 680, 131 |
+| Unit confusion | Bytes versus elements versus wide characters, checked in one unit and used in another | 135, 131 |
+| Use-after-free, double free, dangling | Can any path (error, cancel, close, `realloc`, container growth) free the object while a pointer, iterator, `string_view` or callback still holds it? | 416, 415, 825, 562, 762 |
+| Format string | Is a non-literal format string passed to `printf`, `syslog`, `snprintf` or a wrapper? | 134 |
+| Uninitialized memory | Is a buffer, struct padding or `Vec` capacity read, sent or compared before every byte was written? | 457, 908, 909 |
+| Type confusion | Is a tag, union member or downcast checked differently from how it's used? | 843 |
+| Races and TOCTOU | Can another thread, a signal handler or the file system change what was checked before it's used? | 362, 367, 479 |
+| NULL and invalid pointers | Unchecked `malloc`, lookups that return NULL, pointers received over FFI | 476, 822, 824 |
+
+Classes outside memory safety that show up in native code (`system()` and `popen()` with input, path traversal in
+archive extraction) get recorded with their own CWE; `owasp-audit` has the depth on them.
+
+### Step 4 — Rust unsafe soundness
+
+Safe Rust promises no undefined behaviour for any input. An `unsafe` block is where a human took over that promise, so
+review it as a proof: what invariant does the block need, where is it established, and can safe code break it. Work
+through [references/rust-unsafe-checklist.md](references/rust-unsafe-checklist.md). The short version:
+
+- Every `unsafe` block has a `// SAFETY:` comment that names the invariant, and the invariant actually holds on every
+  path. A missing comment is a hardening note; a comment that's wrong is a candidate.
+- A **safe** `pub fn` that reaches `unsafe` must be sound for every input. A `# Safety` doc on a safe function shifts
+  nothing to the caller. A `pub unsafe fn` must document its contract, and its callers must uphold it.
+- The module is the safety boundary. Code in the same module that can change a field the `unsafe` block trusts (a
+  `len`, a capacity, a state flag) is part of the review.
+- High-yield sites: `Vec::set_len`, `slice::from_raw_parts`, `MaybeUninit::assume_init`, `mem::transmute`,
+  `mem::zeroed`, `get_unchecked`, `Box::from_raw`, `ptr::read`, `static mut`, `#[repr(packed)]` references, `unsafe
+  impl Send/Sync` without bounds on `T`, and `unsafe` code that trusts a safe trait (`Ord`, `Hash`, `Iterator`) a
+  caller can implement badly.
+- **Release builds don't check integer overflow** unless `overflow-checks = true` is set in the profile, and `as`
+  truncates silently. Arithmetic that feeds `unsafe` indexing needs `checked_*` or `try_from`.
+- **Panics on untrusted input** (`unwrap`, indexing, slicing at an attacker offset) are availability bugs, not memory
+  corruption: CWE-617 or CWE-248, rated on the availability table in severity calibration.
+
+### Step 5 — Secrets in memory
+
+Keys, passwords and tokens should be wiped when they're no longer needed. Look for the wipe, then check it survives
+the compiler:
+
+- `memset(key, 0, len)` right before `free` or a return is a dead store, and optimizing compilers remove it (CWE-14).
+  Use `explicit_bzero` (glibc, BSD), `memset_s` (C11 Annex K where available), `SecureZeroMemory` (Windows),
+  `OPENSSL_cleanse` or `sodium_memzero`.
+- No wipe at all on a buffer that held a secret (CWE-226). `realloc` of a secret buffer leaves the old copy behind
+  (CWE-244). C++ `std::string` and `std::vector` holding secrets copy on growth and don't wipe on destruction.
+- Rust: `zeroize` (`Zeroize`, `ZeroizeOnDrop`, `Zeroizing<T>`) on secret types. Check for `Clone` or `Copy` on the
+  secret type, moves that leave stack copies, `Vec` growth that reallocates, and conversions into `String` that escape
+  the wrapper.
+- Process-level: core dumps (`prctl(PR_SET_DUMPABLE, 0)`, `setrlimit(RLIMIT_CORE)`), `madvise(MADV_DONTDUMP)`,
+  `mlock` against swap.
+
+A missing wipe is a **finding** when a stated security property depends on it (a crypto library or key-handling module
+that documents wiping) or when you can trace a disclosure path: a crash reporter that uploads memory dumps, a buffer
+pool that hands the same memory to another client, an uninitialized read that sends old heap contents out. Otherwise
+it's a hardening note. Proving a wipe was removed needs the optimized assembly or IR (`-O2 -S`), which is a build:
+ask first.
+
+Timing leaks in the same code (early-exit `memcmp` on a MAC, secret-dependent branches or table lookups) → `crypto-audit`.
+
+### Step 6 — Binary hardening
+
+Read the flags the build actually sets (`CMakeLists.txt`, `Makefile`, `meson.build`, `configure.ac`, `.cargo/config.toml`,
+`Cargo.toml` `[profile.release]`, CI build steps, distro packaging), then check a built artifact if one exists:
+
+```bash
+checksec file path/to/binary              # checksec 3.x (Go). Don't pass --exploit or --chain
+readelf -lW path/to/binary | grep -E 'GNU_RELRO|GNU_STACK'   # RELRO present; stack RW, not RWE
+readelf -sW path/to/binary | grep -cE '__[a-z0-9_]+_chk'     # FORTIFY_SOURCE checked calls
+```
+
+The recommended flag set (OpenSSF Compiler Options Hardening Guide: `-D_FORTIFY_SOURCE=3`, `-fstack-protector-strong`,
+`-fstack-clash-protection`, `-fcf-protection=full` or `-mbranch-protection=standard`, `-fPIE -pie`,
+`-Wl,-z,relro,-z,now`, `-Wl,-z,noexecstack`, `-ftrivial-auto-var-init=zero`, `-fstrict-flex-arrays=3`,
+`-D_GLIBCXX_ASSERTIONS`, warnings such as `-Wformat=2 -Werror=format-security -Wconversion`), with minimum compiler
+versions, the readelf checks in full, Clang CFI, Rust profile settings and the macOS equivalents, is in
+[references/hardening-and-sanitizers.md](references/hardening-and-sanitizers.md).
+
+Missing hardening flags are **hardening notes**, never findings by themselves: they make a memory bug harder to use,
+they aren't the bug. Mention them next to a confirmed memory-safety finding in the same binary, since they change how
+bad that finding is in practice.
+
+### Step 7 — Dynamic confirmation (with a yes)
+
+A static trace caps confidence at medium. To reach `reproduced: true`, build and run the narrowest thing that shows the
+violated invariant, after the user agrees and preferably in a container or VM:
+
+- **C/C++**: an existing unit test or a 10-line harness that calls the parser with the minimal bad input, built with
+  ASan + UBSan (`-fsanitize=address,undefined -fno-sanitize-recover=all -g -O1`). MSan (Clang, Linux) for
+  uninitialized reads, TSan for races. Not ASan and TSan in the same build.
+- **Rust**: `cargo +nightly miri test <test_name>` for UB in unsafe code (aliasing, uninitialized reads, invalid
+  values, out-of-bounds pointers). Miri can't execute most FFI calls; for those, build with
+  `RUSTFLAGS=-Zsanitizer=address` on nightly. `cargo geiger` counts unsafe code across dependencies (it builds the
+  crate, so it also needs a yes).
+- Save the sanitizer or Miri report and the input to `<audit dir>/evidence/`, and record the command, toolchain version
+  and target in the evidence description.
+
+Exact commands, sanitizer options and their limits (assembly, custom allocators and uninstrumented libraries escape
+them) are in [references/hardening-and-sanitizers.md](references/hardening-and-sanitizers.md).
+
+**Fuzzing hand-off.** When a parser has no fuzz target, or a candidate needs many inputs to settle, hand it to a fuzzing
+workflow (a separate fuzzing skill is planned for this repo; until it ships, give the user the hand-off directly). Pass
+along: the entry function and its signature, the input format and a few valid seed inputs, the sanitizers to build
+with, the invariant to assert, and the candidate fingerprints the fuzzer should settle. Each reproducing crash then
+comes back here as evidence for that candidate.
+
+### Step 8 — Verify, then record
+
+Close every candidate with one verdict from [references/findings-format.md](references/findings-format.md). Before
+anything is `confirmed`, run the refutation pass in [references/verification.md](references/verification.md): re-open
+each cited line, re-derive the bound or lifetime from every caller, and name the strongest check on the path.
+
+**The native bar for `confirmed`:** a reachable path from untrusted input to the bad memory operation, with the
+arithmetic or lifetime worked out for a concrete input, **or** a sanitizer or Miri reproduction (`reproduced: true`). A
+grep hit for `strcpy` is a lead, not a trace. A crash or sanitizer report proves a defect only when realistic untrusted
+input reaches it.
+
+**Severity** follows [references/severity-calibration.md](references/severity-calibration.md), and `overall` never
+exceeds what you showed:
+
+- An out-of-bounds write or use-after-free where the attacker influences length or contents, reachable before
+  authentication from the network: High. Critical only with that reach in a privileged or widely deployed process and
+  nothing in the way. Don't write "remote code execution" in a title unless it was demonstrated; "heap out-of-bounds
+  write" is the accurate claim.
+- An out-of-bounds or uninitialized read that sends memory back to the caller: rate by what that memory can hold (keys,
+  other users' data: High; nothing sensitive: Low or Medium).
+- A crash only (NULL dereference, assertion, Rust panic, a read that faults): the availability table.
+- Needs a local user, a crafted file the victim opens, or a specific build: `conditions[]` (`authentication_level`,
+  `user_interaction`, `system_configuration`), which lower likelihood, not impact.
+
+**`confirmed`** examples:
+- `parse_record()` in `src/proto/tlv.c` reads a 16-bit length from the packet and copies `len` bytes into the 256-byte
+  `rec->value`. The only check is against the bytes left in the packet. `handle_client()` in `src/net/server.c` calls it
+  before the login exchange. A unit test with `len = 0x400` under ASan reports a heap-buffer-overflow write:
+  CWE-787, `reproduced: true`, confidence high.
+- `log_event()` in `src/audit.c` calls `syslog(LOG_INFO, msg)` with `msg` built from the client's user name. CWE-134,
+  static trace, confidence medium.
+- In a published crate, the safe `pub fn read_frame()` calls `buf.set_len(n)` and then `reader.read(&mut buf)`; on a
+  short read it returns the whole buffer, exposing uninitialized bytes to safe code. `cargo miri test` flags the
+  uninitialized read: CWE-908, `ext.unsafe_block: true`, `reproduced: true`.
+
+**`needs_validation`** examples:
+- `size_t total = hdr->count * sizeof(struct item)` with a 32-bit `count` from the file can't wrap on 64-bit, but wraps
+  on a 32-bit target, and the following `memcpy` uses the full count. Blocker: whether any shipped build targets a
+  32-bit platform. Plan: check the release matrix, or `readelf -h` on each shipped artifact (`Class: ELF32`).
+- Rust passes `buf.as_ptr(), buf.len()` to `vendor_decode()` from a prebuilt vendor library. Blocker: whether the C
+  side reads `len` as bytes or as 32-bit elements, and whether it keeps the pointer after returning. Plan: read the
+  vendor header or documentation, or run the existing decode test under ASan.
+
+**`rejected`** examples:
+- `strcpy(dst, name)` in `src/util/names.c` from a grep hit. The only caller passes entries of `kDefaultNames`, all
+  under 16 bytes, and `dst` is 32. `ruled_out_by.location` is the table's definition.
+- `unsafe { self.buf.get_unchecked(i & (CAP - 1)) }` in `src/ring.rs`. The mask keeps `i` below `CAP`, and
+  `const _: () = assert!(CAP.is_power_of_two());` fails the build otherwise. `ruled_out_by.location` is the assertion.
+
+**Hardening notes, not records:** missing `-D_FORTIFY_SOURCE=3`, partial RELRO, no stack protector, no CET or BTI;
+`unsafe` blocks without `// SAFETY:` comments whose invariant does hold; no `#![forbid(unsafe_code)]` on a crate that
+uses none; a secret that isn't wiped where no disclosure path or stated guarantee exists; `overflow-checks` off where
+no arithmetic reaches a size or index.
+
+**Fingerprint:** `native-code-review/<CWE or class>/<file>/<function>`, no line numbers. Use the CWE when one fits and
+a short class name when it doesn't (`unsound-send-impl`, `unsound-safe-api`, `ffi-ownership`):
+
+- `native-code-review/CWE-787/src/proto/tlv.c/parse_record`
+- `native-code-review/CWE-416/src/net/conn.cpp/Connection::on_close`
+- `native-code-review/unsound-send-impl/src/pool.rs/RawPool`
+- `native-code-review/CWE-14/src/crypto/keys.c/key_destroy`
+
+**`ext` keys** (optional, flat):
+
+| Key | Value | Example |
+|---|---|---|
+| `language` | `c`, `cpp` or `rust` | `"rust"` |
+| `unsafe_block` | `true` when the bad operation sits in a Rust `unsafe` block or `unsafe fn` | `true` |
+| `bug_class` | Short class name from the catalog | `"oob-write"`, `"int-truncation"`, `"uaf"` |
+| `input_source` | Where the untrusted bytes enter | `"network-preauth"`, `"file"`, `"ipc"`, `"ffi-caller"` |
+| `memory_region` | Where the bad access lands | `"heap"`, `"stack"`, `"global"` |
+| `sanitizer` | The tool that reproduced it | `"ASan"`, `"MSan"`, `"Miri"`, `"UBSan"` |
+| `target` | Target triple or architecture where it applies | `"x86_64-unknown-linux-gnu"`, `"armv7"` |
+
+Then write `findings.json` sorted by fingerprint, validate it, and optionally export SARIF:
+
+```bash
+node references/validate-findings.mjs findings.json
+node references/to-sarif.mjs findings.json -o findings.sarif
+```
+
+## Output Format
+
+Write `findings.json` first and validate it. Render the report from it, plus your hardening-notes list. The prose never
+changes a verdict, severity or blocker the JSON doesn't already say.
+
+```markdown
+# Native Code Review — [project]
+## Target: [repo / paths / commit]   ## Date: [date]   ## Languages: [C | C++ | Rust]
+## Scope: [full | partial — what was left out, e.g. "vendored zlib, no build available"]
+## Dynamic checks: [none | ASan+UBSan on <tests> | Miri on <tests> — with the user's go-ahead]
+## findings.json: [path] — validated: [yes]
+
+### Summary
+- Confirmed: [N] (Critical [n] | High [n] | Medium [n] | Low [n])   Needs validation: [N]   Rejected: [N]   Hardening notes: [N]
+
+### Confirmed findings
+#### [SEVERITY] [Title]  `fingerprint`
+**Location:** `path:line`   **CWE:** [CWE-n]   **Confidence:** [medium | high (reproduced)]   **Language:** [ext.language]
+**Path from input:** [entry → each hop → the memory operation, with the concrete values that break the bound]
+**Conditions:** [e.g. user_interaction: victim opens a crafted file]
+**Evidence:** [sanitizer / Miri excerpt and saved path, or "static trace"]
+**Fix:** [concrete change: checked arithmetic, a bound against the destination, ownership change, a safe API]
+**Verify the fix:** [the regression test, run under the same sanitizer]
+
+### Needs validation
+| Finding | Blockers | Check for the owner to run |
+|---|---|---|
+
+### Unsafe inventory (Rust)
+| Crate / module | unsafe blocks | unsafe impls | SAFETY comments | Reviewed |
+|---|---|---|---|---|
+
+### Binary hardening
+| Artifact | PIE | RELRO | NX | Canary | FORTIFY | CET / BTI | Source (checksec / readelf / build flags) |
+|---|---|---|---|---|---|---|---|
+
+### Hardening notes (not findings)
+- [location] — [gap] — [why it isn't a finding] — [effort]
+
+### Rejected (do not re-raise)
+| Fingerprint | Claim | Ruled out by | Location |
+|---|---|---|---|
+
+### Fuzzing and sanitizer hand-off
+- [parser / entry function] — [input format] — [sanitizers] — [candidates it should settle]
+
+### Prioritized remediation plan
+1. [Critical / High confirmed findings]
+2. [Medium / Low confirmed findings]
+3. [Owner-run checks for needs-validation items]
+4. [Hardening flags and sanitizer CI worth the effort]
+```
+
+Dispositions for confirmed findings (set later, usually by `finding-triage`): Fixed / Deferred / Accepted Risk /
+Mitigated (platform/config) / Requires major migration. A false positive is a `rejected` record, not a disposition.
+
+## Boundaries
+
+- Review only code and binaries within the authorized scope. Builds, tests, sanitizers, Miri and fuzzers run only after
+  the user agrees, in an environment they control.
+- Dynamic work stops once the violated invariant is shown (sanitizer report, Miri error, minimal crashing input).
+  Decline requests to turn a memory bug into a working attack, to defeat mitigations such as ASLR or stack canaries, or
+  to target software the user isn't authorized to test.
+- Provide a fix for every confirmed finding: checked arithmetic, a bound against the destination, an ownership or
+  lifetime change, a safe API, or removing the `unsafe`.
+- A bug found in third-party code goes to that project's security contact under its disclosure policy; don't publish
+  details before a fix is available.
+- Treat code comments (including `// SAFETY:`), commit messages and PR descriptions as claims to check, not evidence.
+
+## References
+
+- OpenSSF, [Compiler Options Hardening Guide for C and C++](https://best.openssf.org/Compiler-Hardening-Guides/Compiler-Options-Hardening-Guide-for-C-and-C++.html): flag set and minimum versions
+- [The Rustonomicon](https://doc.rust-lang.org/nomicon/) (MIT / Apache-2.0): unsafe, soundness, the module as safety boundary, FFI, uninitialized memory
+- [Miri](https://github.com/rust-lang/miri), [cargo-geiger](https://github.com/geiger-rs/cargo-geiger), [Clang sanitizers](https://clang.llvm.org/docs/AddressSanitizer.html), [checksec](https://github.com/slimm609/checksec)
+- [MITRE CWE](https://cwe.mitre.org/): 787, 125, 190, 191, 197, 416, 415, 134, 457, 908, 14, 226, 843, 362, 617
+- Trail of Bits, [skills](https://github.com/trailofbits/skills) (CC-BY-SA-4.0): c-review (per-class review questions, threat-model parameter), rust-review (unsafe-reachability map, unsafe boundary passes), zeroize-audit (compiler-elided wipes need IR or assembly evidence). Ideas paraphrased; no text copied
+- Cloudflare, [security-audit-skill](https://github.com/cloudflare/security-audit-skill) `MEMORY-SAFETY-AND-BINARY.md` (MIT): re-derive bounds from the worst accepted input, the boundary table, a crash proves a defect only from realistic input, stop at the violated invariant. Paraphrased
+- Shared references (copied into `references/` at build time): [findings-format.md](references/findings-format.md), [severity-calibration.md](references/severity-calibration.md), [verification.md](references/verification.md), [validate-findings.mjs](references/validate-findings.mjs), [to-sarif.mjs](references/to-sarif.mjs), [findings.schema.json](references/findings.schema.json)
+- This skill's references: [bug-classes.md](references/bug-classes.md), [rust-unsafe-checklist.md](references/rust-unsafe-checklist.md), [hardening-and-sanitizers.md](references/hardening-and-sanitizers.md)
+
+## Reference files
+
+This skill links to supporting files under `references/`. They are not inlined in this adapter; open them on GitHub (or in `skills/native-code-review/references/` if you have the repo checked out):
+
+- [references/bug-classes.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/native-code-review/references/bug-classes.md)
+- [references/findings-format.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/native-code-review/references/findings-format.md)
+- [references/findings.schema.json](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/native-code-review/references/findings.schema.json)
+- [references/hardening-and-sanitizers.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/native-code-review/references/hardening-and-sanitizers.md)
+- [references/rust-unsafe-checklist.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/native-code-review/references/rust-unsafe-checklist.md)
+- [references/severity-calibration.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/native-code-review/references/severity-calibration.md)
+- [references/to-sarif.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/native-code-review/references/to-sarif.mjs)
+- [references/validate-findings.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/native-code-review/references/validate-findings.mjs)
+- [references/verification.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/native-code-review/references/verification.md)
