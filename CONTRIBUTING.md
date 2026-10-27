@@ -4,9 +4,10 @@ Thanks for your interest in contributing. The highest-signal contribution to thi
 
 ## What to contribute
 
-- **Field feedback issues** — "I ran `owasp-audit` against a Next.js + Drizzle app and it missed X. Here's the pattern and a suggested grep." Open an [issue](https://github.com/briiirussell/cybersecurity-skills/issues/new) with the framework, the missing pattern, and (if you have it) a concrete code shape it should match against.
+- **Field feedback issues** — "I ran `owasp-audit` against a Next.js + Drizzle app and it missed X. Here's the pattern and a suggested grep." Open a [field report](https://github.com/briiirussell/cybersecurity-skills/issues/new?template=field-report.yml) with the framework, the missing pattern, and (if you have it) a concrete code shape it should match against.
 - **PRs that close a feedback gap** — Take an open issue, add the bullet/grep/section to the relevant `SKILL.md`, regenerate adapters, open a PR referencing the issue.
 - **New skills** — A new skill should cover a distinct domain (not a re-slice of an existing one). Check the [skill map](README.md#how-skills-work-together) first to make sure it fits.
+- **Trophy case** — If a skill found a real bug, [tell me](https://github.com/briiirussell/cybersecurity-skills/issues/new?template=trophy-case.yml). It's how I know which checks are earning their place.
 - **Adapter fixes** — Cursor / Codex output bugs, build script improvements.
 
 ## Workflow
@@ -122,6 +123,8 @@ Create `evals/triggers/your-skill-name.json`:
 
 Write the prompts the way people actually ask, not by copying phrases from your description. `node scripts/eval-triggers.mjs --verbose` ranks every prompt against every description and lists the ones that land on the wrong skill. It's a cheap proxy for routing, so a miss is a hint to sharpen a description, not proof the model will misroute. See [evals/README.md](evals/README.md).
 
+Also add the skill to the `skill` dropdown in the issue forms (`.github/ISSUE_TEMPLATE/field-report.yml`, `bug.yml`, `trophy-case.yml`). A test fails until you do.
+
 ### 8. Test locally
 
 ```bash
@@ -131,6 +134,9 @@ cp -r skills/your-skill-name ~/.claude/skills/
 Run a real scenario against it. Iterate until the output is what you'd want to read first thing on a Monday.
 
 ## PR checklist
+
+The PR templates carry these checklists. For a new skill, add `?template=new-skill.md` to the compare URL. For a change to one skill, add `?template=skill-update.md`. The default template covers tooling and docs.
+
 
 CI (`.github/workflows/ci.yml`) runs on every PR into `development` or `main` and enforces the first group automatically. Run the commands locally first.
 

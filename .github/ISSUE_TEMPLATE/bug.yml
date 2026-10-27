@@ -1,0 +1,76 @@
+name: Skill bug
+description: A skill told the agent to do something wrong, broken, or outdated.
+title: "[bug] <skill>: <what went wrong>"
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        If the skill could make an agent do something **unsafe**, such as running a destructive command without a prompt, skipping the authorization check, or sending data out, please [report it privately](https://github.com/briiirussell/cybersecurity-skills/security/advisories/new) instead. See [SECURITY.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/SECURITY.md).
+  - type: dropdown
+    id: skill
+    attributes:
+      label: Skill
+      description: Which skill?
+      options:
+        - agent-supply-chain-audit
+        - ai-risk-management
+        - api-audit
+        - breach-patterns
+        - business-logic-testing
+        - cloud-audit
+        - container-audit
+        - crypto-audit
+        - csf-mapping
+        - dependency-audit
+        - disk-forensics
+        - finding-triage
+        - hipaa-audit
+        - iam-audit
+        - incident-triage
+        - log-watch
+        - mobile-audit
+        - osint-recon
+        - owasp-audit
+        - patch-sweep
+        - pci-audit
+        - personal-opsec
+        - privacy-engineering
+        - prompt-injection
+        - recon
+        - red-team-engagement
+        - scanner-pipeline
+        - secrets-audit
+        - security-comms
+        - siem-detection
+        - soc-operations
+        - threat-hunting
+        - threat-modeling
+        - vuln-research
+        - web-pentest
+        - Not one skill (tooling, docs, adapters)
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: The instruction or command, the file and line if you know them, and what it did.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What should have happened
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Prompt or setup that shows it
+      description: Redacted. The smaller the better.
+  - type: input
+    id: agent
+    attributes:
+      label: Agent and model
+      placeholder: "Claude Code 2.1.x with Sonnet, Cursor, Codex, ..."

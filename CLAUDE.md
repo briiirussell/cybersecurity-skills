@@ -44,6 +44,8 @@ package.json                 # npm test / npm run build — no dependencies, Nod
 ├── workflows/evals.yml  # claude plugin eval on demand + on main (needs ANTHROPIC_API_KEY)
 ├── dependabot.yml     # weekly grouped bumps for the pinned actions
 ├── CODEOWNERS         # maintainer review on every path
+├── ISSUE_TEMPLATE/    # field report, skill request, bug, trophy case (skill dropdowns kept in sync by a test)
+├── pull_request_template.md + PULL_REQUEST_TEMPLATE/  # default, new-skill.md, skill-update.md
 └── scripts/           # SkillSpector baseline splitter, SARIF merge, plugin-validate, eval summary
 .skillspector-baseline.yaml
 SECURITY.md                  # private vulnerability reporting; what's in scope for a skills repo
@@ -99,10 +101,11 @@ CI (`.github/workflows/ci.yml`) also fails on stale adapters and on SkillSpector
 2. Use proper frontmatter (`name`, `description`, `allowed-tools`)
 3. Write instructions in imperative form
 4. Add `evals/triggers/<skill-name>.json`: at least 5 prompts that should fire it (include a casual one and one with pasted code or config) and 5 near-misses, each naming the skill that should own it instead
-5. If the skill links a shared file (`references/findings.schema.json`, `references/verification.md`, ...), add it to `shared/manifest.json`
-6. Run `node scripts/build-adapters.mjs` to generate adapters and shared copies
-7. Run `npm run check`
-8. Test the skill in Claude Code by copying to `.claude/skills/`
+5. Add the skill to the `skill` dropdown in `.github/ISSUE_TEMPLATE/field-report.yml`, `bug.yml` and `trophy-case.yml` (sorted; a test checks)
+6. If the skill links a shared file (`references/findings.schema.json`, `references/verification.md`, ...), add it to `shared/manifest.json`
+7. Run `node scripts/build-adapters.mjs` to generate adapters and shared copies
+8. Run `npm run check`
+9. Test the skill in Claude Code by copying to `.claude/skills/`
 
 ## Guidelines
 

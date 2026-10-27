@@ -262,7 +262,7 @@ Every new skill and every skill improvement ships as its own version, one PR eac
 
 ## Contributing
 
-See [`CONTRIBUTING.md`](CONTRIBUTING.md). The short version: field feedback (PRs or issues with concrete patterns from a real audit) is the highest-signal contribution. If a skill missed something in your audit, that's exactly what I want to know.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md). The short version: field feedback (PRs or issues with concrete patterns from a real audit) is the highest-signal contribution. If a skill missed something in your audit, that's exactly what I want to know. Open a [field report](https://github.com/briiirussell/cybersecurity-skills/issues/new?template=field-report.yml). If one found something real, I'd love a [trophy case](https://github.com/briiirussell/cybersecurity-skills/issues/new?template=trophy-case.yml) entry.
 
 ## License
 

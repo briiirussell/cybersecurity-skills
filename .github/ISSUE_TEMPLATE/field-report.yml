@@ -1,0 +1,89 @@
+name: Field report
+description: You ran a skill on something real. Tell me what it missed, got wrong, or flagged that wasn't a problem.
+title: "[field] <skill>: <what happened>"
+labels: [field-feedback]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Field reports are the most useful thing you can send. Concrete patterns from a real audit beat general suggestions.
+        **Don't paste secrets, customer data or anything from a system you don't own.** Redact first. If you found a way a skill could make an agent do something unsafe, use [private reporting](https://github.com/briiirussell/cybersecurity-skills/security/advisories/new) instead.
+  - type: dropdown
+    id: skill
+    attributes:
+      label: Skill
+      description: Which skill?
+      options:
+        - agent-supply-chain-audit
+        - ai-risk-management
+        - api-audit
+        - breach-patterns
+        - business-logic-testing
+        - cloud-audit
+        - container-audit
+        - crypto-audit
+        - csf-mapping
+        - dependency-audit
+        - disk-forensics
+        - finding-triage
+        - hipaa-audit
+        - iam-audit
+        - incident-triage
+        - log-watch
+        - mobile-audit
+        - osint-recon
+        - owasp-audit
+        - patch-sweep
+        - pci-audit
+        - personal-opsec
+        - privacy-engineering
+        - prompt-injection
+        - recon
+        - red-team-engagement
+        - scanner-pipeline
+        - secrets-audit
+        - security-comms
+        - siem-detection
+        - soc-operations
+        - threat-hunting
+        - threat-modeling
+        - vuln-research
+        - web-pentest
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Skill version
+      description: From the skill's row in VERSIONS.md, or the release you installed.
+      placeholder: "1.3.0"
+  - type: textarea
+    id: target
+    attributes:
+      label: What you ran it against
+      description: Stack, size, and kind of app. No names or URLs needed.
+      placeholder: "Next.js 15 app router, Supabase, ~40 API routes, deployed on Vercel"
+    validations:
+      required: true
+  - type: textarea
+    id: missed
+    attributes:
+      label: What it missed
+      description: Real issues the skill didn't find. Include the pattern (redacted code, config, or a grep) that would have caught it.
+  - type: textarea
+    id: false-positives
+    attributes:
+      label: False positives or wrong calls
+      description: Findings that weren't real, wrong severities, or advice that didn't apply.
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested change
+      description: A new check, a sharper grep, a reference to add, or a section to cut.
+    validations:
+      required: true
+  - type: input
+    id: agent
+    attributes:
+      label: Agent and model
+      placeholder: "Claude Code 2.1.x with Sonnet, Cursor, Codex, ..."
