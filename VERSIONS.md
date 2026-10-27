@@ -24,7 +24,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | osint-recon | 1.0.2 | 2026-10-26 |
 | owasp-audit | 1.3.2 | 2026-10-26 |
 | patch-sweep | 1.0.2 | 2026-10-26 |
-| pci-audit | 1.0.3 | 2026-10-26 |
+| pci-audit | 1.1.0 | 2026-10-27 |
 | personal-opsec | 1.0.1 | 2026-10-26 |
 | privacy-engineering | 1.0.4 | 2026-10-26 |
 | prompt-injection | 1.2.0 | 2026-10-27 |
@@ -41,6 +41,23 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.0 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.34.0 (2026-10-27)
+
+pci-audit moves onto the shared findings format (#129). pci-audit 1.1.0.
+
+**Changed**
+- **Verify, then record.** A gap against a PCI DSS requirement is a finding, since the requirement is the intended control. Severity rates the exposure for cardholder data, not the audit consequence.
+  - **Confirmed:** `logger.info(req.body)` logging a posted `cardNumber` (Req 3.5.1); an IdP export allowing password-only sign-in to the CDE admin console (8.4.2); a shipped `LOG_REQUEST_BODIES=true` default.
+  - **Needs validation:** Sentry scrubbing set in the dashboard, not the repo; whether the staging seed really runs with `--sanitize`.
+  - **Rejected:** a Stripe Elements iframe where the server only reads `paymentMethodId`; a published test PAN in a fixture.
+- **Compensating controls.** A compensating control rejects a candidate only when its worksheet exists and there's evidence it works. Without that evidence, it's `needs_validation`.
+- **Documentation gaps (not findings).** A new report section for gaps with no exposure to card data: a missing policy, overdue training. They're kept apart from hardening notes.
+- **Evidence.** IdP and MFA policies, firewall rules, log retention, AoCs and written policies go in `evidence/`. Never save PAN, CVV, track data, PIN blocks or credentials there.
+- **Fingerprints:** `pci-audit/<class>/<file or resource>/<name>`, with 13 named classes. Deployed resources are fingerprinted by the resource, not the evidence file.
+- **`ext` keys:** `requirement` (e.g. `8.4.2`), `scope` (cde, connected-to or security-impacting), `data_element`.
+- **Output Format** is rendered from `findings.json`. It has "Rejected (do not re-raise)". The old audit checklist moved into the report template.
+- The skill now gets copies of the six shared findings files.
 
 ### 1.33.0 (2026-10-27)
 

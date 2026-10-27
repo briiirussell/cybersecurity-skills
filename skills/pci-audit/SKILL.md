@@ -81,7 +81,7 @@ Briefly, because it sets the audit cadence and rigor:
 - Error reporting: confirm Sentry / Datadog / Bugsnag scrubbing rules redact card patterns (Luhn-valid 13-19 digit sequences)
 - Backups: confirm backup retention does not include unencrypted CHD
 
-If a Luhn-valid PAN appears anywhere in source, lock files, or logs — that is a finding regardless of intent.
+If a Luhn-valid PAN appears anywhere in source, lock files, or logs, that is a finding regardless of intent, unless it is a published test card number (`4242 4242 4242 4242`, `4111 1111 1111 1111` and the processor's other documented test PANs).
 
 ### Req 4 — Protect transmission across open networks
 
@@ -145,47 +145,6 @@ The program-level layer. Engineering inputs:
 - **12.5** Third-party / service-provider management — DPA-like attestations, annual review of provider compliance (your processor will send you an AoC; you must retain it)
 - **12.6** Security awareness training — for personnel handling CHD
 
-## Putting it together — audit checklist
-
-```markdown
-# PCI DSS v4.0.1 Audit Findings
-## Merchant: [name]
-## Merchant level: [1/2/3/4]
-## SAQ type: [A / A-EP / B / C-VT / D / not applicable - Level 1 QSA]
-## Date: [date]
-## Auditor: [name + qualification]
-
-### Scope determination
-- [ ] Payment data flow diagrammed end-to-end
-- [ ] CDE explicitly bounded
-- [ ] Connected-to systems enumerated
-- [ ] Segmentation evidence documented
-- [ ] Scope-reduction opportunities identified
-
-### Per-requirement findings
-| Req | Compliant? | Findings | Severity |
-|-----|------------|----------|----------|
-| 3 — Stored CHD | | | |
-| 4 — Transmission | | | |
-| 6 — Secure SDLC | | | |
-| 7 — Access restriction | | | |
-| 8 — Authentication | | | |
-| 10 — Logging | | | |
-| 11 — Testing | | | |
-| 12 — Program | | | |
-
-### Per-finding detail
-[Title, req reference, severity, location, vulnerable config, remediation, verification]
-
-### Recommended scope reductions (if applicable)
-[Hosted payment page, tokenization, network segmentation improvements with effort estimates]
-
-### Compensating controls (if used)
-[Each compensating control: control description, what it compensates for, evidence of effectiveness, review cadence]
-```
-
-Disposition rule (Fixed / Deferred / Accepted Risk) per `owasp-audit`. PCI accepted-risk is heavily disfavored — most "accepted risks" should be Compensating Controls with documented evidence of effectiveness.
-
 ## Common audit findings (real-world starting hypotheses)
 
 - **PAN in logs** — error / debug / access logs containing card data, captured by Sentry / Datadog / Bugsnag, retained beyond authorization
@@ -195,6 +154,128 @@ Disposition rule (Fixed / Deferred / Accepted Risk) per `owasp-audit`. PCI accep
 - **Iframe vs proxy** — "hosted payment page" implemented as a proxy where your server briefly handles the PAN before forwarding (still in scope) vs a true iframe where your server never sees it (out of scope)
 - **Segmentation by firewall rule, not by architecture** — firewall rule "permits" only specific traffic but the systems share a VLAN; effective segmentation requires architectural separation
 - **MFA gaps** — v4.0 broadened MFA requirements (mandatory since 31 March 2025); older environments that met v3.2.1 may have gaps
+
+## Verify, then record
+
+Close every candidate with one verdict, as defined in [references/findings-format.md](references/findings-format.md), and run the refutation pass in [references/verification.md](references/verification.md) before anything is confirmed.
+
+**A gap against a PCI DSS requirement is a finding.** The requirement is the intended control. Rate severity by the exposure it creates for cardholder data, using [references/severity-calibration.md](references/severity-calibration.md), not by the audit consequence: CVV written to a reachable table is High or Critical; a missing quarterly ASV scan report is not, by itself, an exposure. A gap with no exposure (a missing policy document, an overdue training record, an annual review not yet done) is a **documentation gap**: list it in the report's own section, with no severity and no `findings.json` record. Defense-in-depth gaps where another layer already stops the exposure are hardening notes.
+
+What each verdict looks like here:
+
+- **`confirmed`**: the code or the exported config shows cardholder data reaching a place the requirement forbids, or a required control missing on a path into the CDE.
+  - `logger.info("charge", req.body)` in a checkout handler whose form posts `cardNumber` to the server: PAN written to application logs in clear (Req 3.5.1). The trace runs from the form field to the logger call.
+  - The IdP policy export for the CDE admin console allows password-only sign-in (Req 8.4.2). Location is the evidence file and line (see below).
+  - An unsafe shipped default, such as `LOG_REQUEST_BODIES=true` unless overridden, is `confirmed` with a `system_configuration` condition ("deployments that don't set `LOG_REQUEST_BODIES=false`") and confidence `medium`. A deployment fact you can't see lowers confidence, not the verdict or severity.
+- **`needs_validation`**: the code supports the claim and one fact lives outside it. Name it and give the owner the check.
+  - Sentry receives request bodies from the payment route, and data scrubbing is set in the Sentry project, not the repo. Blocker: whether the project's server-side scrubbing rules cover credit card numbers. Check: in Sentry, Project Settings > Security & Privacy, confirm the data scrubber is on and an advanced rule covers `$creditcard`; save the settings export to the evidence folder.
+  - Staging is seeded by `scripts/seed-from-prod.sh`, which calls a sanitizer. Blocker: whether the pipeline that actually runs it passes `--sanitize`. Check: count (do not print) Luhn-valid 13-19 digit values in the staging `payments` table.
+- **`rejected`**: a named control at a named location rules it out on every path.
+  - "Checkout handles PAN": the card field is a Stripe Elements iframe and the server handler reads only `paymentMethodId`. `ruled_out_by.location` points at the handler line that reads the body; `control` names the iframe integration.
+  - A Luhn-valid 16-digit number in `test/fixtures/cards.json` is Stripe's published test PAN. `ruled_out_by` points at the fixture line and names it as a documented test card.
+  - A gap covered by a compensating control is `rejected` only when the compensating control worksheet exists and the evidence shows the control running; `ruled_out_by.location` points at the worksheet. A worksheet with no evidence of effectiveness is `needs_validation`.
+  - A control inside a dependency (a payment SDK that masks PAN in its own logs) can reject a candidate: `ruled_out_by.location` points at the lockfile or manifest line that pins the version, and `control` names the library function and version.
+  - "Never reachable" rejections point `ruled_out_by.location` at the evidence: the only import or call site, or the dependency declaration if nothing uses it.
+
+**Evidence for deployed resources.** Many PCI findings are about things that aren't files: IdP and MFA policies, firewall rules and security groups, log retention settings, a processor's AoC, a written policy. Save the read-only command output or the export, redacted, to `<audit dir>/evidence/<name>.json` or `.txt` (for example `audit/pci/evidence/okta-cde-policies.json`, `audit/pci/evidence/sg-cde-ingress.txt`) and point `location` and `evidence[]` at that file and the relevant line. Process and policy evidence (the incident response plan, a compensating control worksheet, an access review record) goes in the same folder. **Never save PAN, CVV, track data, PIN blocks or a credential value** in evidence, `findings.json` or the report; record where the value lives and at most the last 4 digits. Live checks only when authorized and read-only; a check described but not run is `needs_validation`.
+
+**Fingerprints** are `pci-audit/<class>/<file or resource>/<symbol or name>`, slash-separated, with no line numbers. The validator rejects `:<digits>` segments, so write ARNs and `host:port` with slashes. Use a short class such as `pan-at-rest`, `sad-stored`, `pan-in-logs`, `pan-unmasked`, `pan-in-lower-env`, `weak-transmission`, `pan-in-messaging`, `shared-account`, `mfa-gap`, `access-not-restricted`, `audit-log-gap`, `segmentation-gap`, `scope-misclassified`:
+
+```
+pci-audit/pan-in-logs/src/routes/checkout.ts/createCharge
+pci-audit/sad-stored/db/schema.sql/payments.cvv
+pci-audit/mfa-gap/okta/acme/cde-admin-console
+pci-audit/segmentation-gap/aws/123456789012/us-east-1/sg-0abc/ingress-0.0.0.0-0
+```
+
+For a deployed resource, build the fingerprint from the resource (provider, account or tenant, name), not from the evidence file name, so it stays the same when the evidence is re-captured.
+
+**`ext` fields** (optional object on any record; don't repeat anything that already has a field, such as `cwe` or `location`):
+
+| Key | Value | Example |
+|---|---|---|
+| `requirement` | The PCI DSS v4.0.1 requirement the gap is against | `"8.4.2"`, `"3.3.1"` |
+| `scope` | Scope category of the affected system | `"cde"`, `"connected-to"`, `"security-impacting"` |
+| `data_element` | The cardholder data element exposed, if any | `"PAN"`, `"SAD-CVV"`, `"SAD-track"`, `"PIN-block"` |
+
+Then:
+
+1. Write `findings.json` sorted by `fingerprint`, with `skill: "pci-audit"`. Validate it and fix every error: `node references/validate-findings.mjs findings.json` ([references/validate-findings.mjs](references/validate-findings.mjs)).
+2. Optionally export SARIF: `node references/to-sarif.mjs findings.json -o findings.sarif` ([references/to-sarif.mjs](references/to-sarif.mjs)).
+3. Keep documentation gaps and hardening notes in a short list next to the JSON (for example `notes.md`). They are not records.
+
+Dispositions (set later, usually by `finding-triage`): Fixed / Deferred / Accepted Risk / Mitigated (platform/config) / Requires major migration. PCI accepted risk is heavily disfavored: most "accepted risks" should be compensating controls with documented evidence of effectiveness. A false positive is a `rejected` record, not a disposition.
+
+## Output Format
+
+Write `findings.json` first. Render the report from it; the prose never changes a verdict, severity or blocker the JSON doesn't already say.
+
+```markdown
+# PCI DSS v4.0.1 Readiness Review
+## Merchant: [name]   ## Merchant level: [1/2/3/4]   ## SAQ type: [A / A-EP / B / C-VT / D / n/a, Level 1 QSA]
+## Date: [date]   ## Reviewer: [name]   ## Scope: [full | partial, what was left out]
+## findings.json: [path], validated: [yes]   ## Evidence folder: [path]
+
+### Summary
+- Confirmed: [N] (Critical [n] | High [n] | Medium [n] | Low [n])   Needs validation: [N]   Rejected: [N]
+- Documentation gaps: [N]   Hardening notes: [N]
+
+### Confirmed findings
+#### [SEVERITY] [Title]  `fingerprint`
+**Requirement:** [ext.requirement]   **Scope:** [ext.scope]   **Data element:** [ext.data_element]
+**Location:** `path:line` (source or evidence file)   **Confidence:** [medium | high (reproduced)]
+**What and why it matters:** [the trace or the config evidence, in a few lines; the exposure to CHD]
+**Fix:** [concrete change]
+**Verify the fix:** [the check that proves it]
+
+### Needs validation
+| Finding | Requirement | Blocker | Check for the owner to run |
+|---|---|---|---|
+
+### Hardening notes (not findings)
+- [gap] — [why it isn't a finding] — [effort]
+
+### Documentation gaps (not findings)
+| Requirement | What's missing | Owner | Evidence expected |
+|---|---|---|---|
+
+### Rejected (do not re-raise)
+| Fingerprint | Ruled out by | Location |
+|---|---|---|
+
+### Scope determination
+- [ ] Payment data flow diagrammed end-to-end
+- [ ] CDE explicitly bounded
+- [ ] Connected-to systems enumerated
+- [ ] Segmentation evidence documented
+- [ ] Scope-reduction opportunities identified
+
+| System | Scope category | Why | Evidence |
+|---|---|---|---|
+
+### Per-requirement status
+| Req | Confirmed | Needs validation | Documentation gaps |
+|-----|-----------|------------------|--------------------|
+| 3 — Stored CHD | | | |
+| 4 — Transmission | | | |
+| 6 — Secure SDLC | | | |
+| 7 — Access restriction | | | |
+| 8 — Authentication | | | |
+| 10 — Logging | | | |
+| 11 — Testing | | | |
+| 12 — Program | | | |
+
+### Recommended scope reductions (if applicable)
+[Hosted payment page, tokenization, network segmentation improvements with effort estimates]
+
+### Compensating controls (if used)
+[Each compensating control: control description, what it compensates for, evidence of effectiveness, review cadence, worksheet path]
+
+### Prioritized remediation plan
+1. [highest first: SAD storage, PAN in clear, missing CDE MFA]
+```
+
+The per-requirement table counts records from `findings.json` (by `ext.requirement`) and entries from the documentation-gap list. It is not a separate judgement.
 
 ## Boundaries
 
@@ -216,3 +297,4 @@ Disposition rule (Fixed / Deferred / Accepted Risk) per `owasp-audit`. PCI accep
 - **Open Web Application Security Project (OWASP)** — Req 6 substantive content
 - **NIST SP 800-53** — control catalog that maps cleanly to many PCI requirements
 - **"PCI Compliance"** — Branden Williams, Anton Chuvakin — practitioner book, updated through v4.0
+- Shared references (copied into `references/` at build time): [references/findings-format.md](references/findings-format.md), [references/verification.md](references/verification.md), [references/severity-calibration.md](references/severity-calibration.md), [references/findings.schema.json](references/findings.schema.json)
