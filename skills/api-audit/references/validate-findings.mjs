@@ -32,7 +32,7 @@ export const CONDITION_KINDS = [
 ];
 
 const COMMON = ["fingerprint", "verdict", "skill", "title", "location", "trace", "evidence", "counterevidence", "confidence"];
-const OPTIONAL_COMMON = ["cwe", "owasp_category"];
+const OPTIONAL_COMMON = ["cwe", "owasp_category", "ext"];
 const SHAPES = {
   confirmed: { required: [...COMMON, "severity", "conditions"], optional: [...OPTIONAL_COMMON, "reproduced", "disposition"] },
   needs_validation: { required: [...COMMON, "blockers", "validation_plan"], optional: OPTIONAL_COMMON },
@@ -42,6 +42,7 @@ const SHAPES = {
 const FINGERPRINT_RE = /^[A-Za-z0-9][A-Za-z0-9._:/@+-]{2,199}$/;
 const SKILL_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const CWE_RE = /^CWE-[1-9][0-9]*$/;
+const EXT_KEY_RE = /^[a-z][a-z0-9_]{0,63}$/;
 
 const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 const isText = (v) => typeof v === "string" && /\S/.test(v);
@@ -114,6 +115,21 @@ function checkTrace(trace, where, errors, minItems) {
   }
 }
 
+// ext holds a skill's own fields (a PCI requirement, a cloud account, a MASVS control). Keep it flat so reports and
+// SARIF property bags can show it as-is: snake_case keys, scalar values or arrays of scalars.
+function checkExt(v, where, errors) {
+  if (!isObj(v)) return errors.push(`${where}: must be an object of skill-specific fields`);
+  const keys = Object.keys(v);
+  if (keys.length === 0) errors.push(`${where}: must not be empty (leave ext out instead)`);
+  const scalar = (x) => (typeof x === "string" && x.length > 0) || typeof x === "boolean" || (typeof x === "number" && Number.isFinite(x));
+  for (const k of keys) {
+    if (!EXT_KEY_RE.test(k)) errors.push(`${where}: key ${JSON.stringify(k)} must be snake_case ([a-z][a-z0-9_]*)`);
+    const x = v[k];
+    if (Array.isArray(x) ? x.length === 0 || !x.every(scalar) : !scalar(x))
+      errors.push(`${where}.${k}: must be a non-empty string, a number, a boolean, or a non-empty array of those`);
+  }
+}
+
 function checkScored(v, where, errors) {
   if (!isObj(v)) return errors.push(`${where}: must be an object {score, reason}`);
   checkKeys(v, ["score", "reason"], [], where, errors);
@@ -171,6 +187,7 @@ export function validateRecord(rec, where = "record") {
   if ("cwe" in rec && (typeof rec.cwe !== "string" || !CWE_RE.test(rec.cwe)))
     errors.push(`${where}.cwe: must look like "CWE-89"`);
   if ("owasp_category" in rec) checkText(rec.owasp_category, `${where}.owasp_category`, errors);
+  if ("ext" in rec) checkExt(rec.ext, `${where}.ext`, errors);
   if ("location" in rec) checkLocation(rec.location, `${where}.location`, errors);
   if ("trace" in rec) checkTrace(rec.trace, `${where}.trace`, errors, rec.verdict === "confirmed" ? 2 : 0);
   if ("evidence" in rec) {

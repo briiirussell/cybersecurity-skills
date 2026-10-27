@@ -42,6 +42,17 @@ Current versions of all skills. Agents can compare against local versions to che
 
 ## Recent Changes
 
+### 1.25.0 (2026-10-26)
+
+The findings format gets room for skill-specific fields and a rule for findings that aren't in a source file. Both are needed before the remaining audit skills move onto it (#129): a PCI gap needs its requirement number, and a cloud finding is about a bucket, not a line of code.
+
+**Added**
+- `ext`, an optional object on any record, for the producing skill's own fields (`requirement`, `account`, `masvs`, ...). Keys are snake_case; values are scalars or arrays of scalars. The validator checks the shape, the schema documents it, and `to-sarif.mjs` copies it to the SARIF result's `properties.ext`. Each skill will list its keys in its own SKILL.md.
+- "Findings about deployed resources" in `findings-format.md`: save the redacted read-only output to `<audit dir>/evidence/` and point `location` at it. Fingerprints use the resource id with slashes, since ARNs and `host:port` look like line numbers to the validator.
+- Tests for both. The findings-format example test now reads the block under "## Example".
+
+The eight skills that already use the format get the new copies; their content doesn't change.
+
 ### 1.24.0 (2026-10-26)
 
 **Changed**
