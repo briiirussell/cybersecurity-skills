@@ -1,5 +1,5 @@
 ---
-description: "Audit applications for AI prompt injection, agent security, and LLM permission boundary vulnerabilities. Use when the user mentions 'prompt injection,' 'LLM security,' 'AI security,' 'jailbreak,' 'indirect prompt injection,' 'prompt leaking,' 'AI red team,' 'LLM vulnerabilities,' 'AI input validation,' 'system prompt extraction,' 'agent security,' 'MCP security,' 'AI permissions,' 'AI privilege escalation,' or needs to secure any application with AI features, AI agents, or LLM integrations."
+description: "Audit applications for AI prompt injection, agent security, and LLM permission boundary vulnerabilities, including chatbots and agents hijacked by what they read: a malicious web page in a browsing agent, incoming emails, documents or tickets reaching an agent that can send replies, write files or call tools. Use when the user mentions 'prompt injection,' 'LLM security,' 'AI security,' 'jailbreak,' 'indirect prompt injection,' 'prompt leaking,' 'AI red team,' 'LLM vulnerabilities,' 'AI input validation,' 'system prompt extraction,' 'agent security,' 'MCP security,' 'AI permissions,' 'AI privilege escalation,' or needs to secure any application with AI features, AI agents, or LLM integrations."
 globs:
 alwaysApply: false
 ---
