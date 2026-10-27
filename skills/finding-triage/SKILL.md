@@ -104,6 +104,8 @@ Missing one? Then it isn't a finding yet:
 
 **Document a false-positive determination as carefully as a real finding.** If a future scanner or auditor flags the same thing, the prior false-positive note saves them the work.
 
+**Get an independent read.** Before confirming at High or Critical, moving a verdict up, or writing a scanner finding off as a false positive, have something other than the finder try to refute it. Scanner batches go through the fixed exclusion rules first (test, generated, vendored, docs). In Claude Code with this plugin, hand the finding to the `finding-verifier` subagent: one finding per call, the record and the code only, never your notes. In Cursor, Codex and other tools, run the same pass inline as a separate step from [references/verification.md](references/verification.md), and check your reasoning against its "Rationalizations to reject" table. When to run it, turning a scanner finding into a candidate, and merging the result: [references/independent-verification.md](references/independent-verification.md).
+
 ### Step 3 — Contextual severity
 
 The scanner's CVSS or severity rating is a starting point, not the answer. Rate **likelihood** and **impact** separately, each with a one-line reason, then pick an overall.
@@ -424,6 +426,9 @@ Things you noticed while triaging: the same pattern on a sibling route, a second
 
 - [references/severity-calibration.md](references/severity-calibration.md) — boundary + result gate, anchors, over-rating list, High/Critical checklist
 - [references/findings-format.md](references/findings-format.md) — `findings.json` verdicts and fields; `validate-findings.mjs`, `to-sarif.mjs`
+- [references/verification.md](references/verification.md) — the per-finding refutation pass, two-stage filter and rationalizations table
+- [references/independent-verification.md](references/independent-verification.md) — when triage runs the verifier, and how to use the `finding-verifier` subagent or the inline pass
+- Trail of Bits [fp-check](https://github.com/trailofbits/skills/tree/main/plugins/fp-check) (CC BY-SA 4.0) and anthropics [claude-code-security-review](https://github.com/anthropics/claude-code-security-review) (MIT) — rationalizations to reject, read-only verifier agents, exclusion rules before per-finding filtering (paraphrased)
 - Cloudflare [security-audit-skill](https://github.com/cloudflare/security-audit-skill) (MIT) — boundary-and-result requirement, verdict-shaped findings records (paraphrased)
 - Strix [severity calibration](https://github.com/usestrix/strix/blob/main/strix/skills/analysis/severity_calibration.md) (Apache-2.0) — over-rating list and High/Critical acceptance checks (paraphrased)
 - CVSS v4.0 specification — `first.org/cvss`

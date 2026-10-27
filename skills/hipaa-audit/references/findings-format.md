@@ -14,7 +14,7 @@ Any current Node (18+) runs both scripts. Nothing to install.
 
 ## Workflow
 
-1. Close every candidate with one verdict (see below) and write the record.
+1. Drop the candidates the fixed exclusion rules catch (test code, fixtures, generated, vendored, docs; see "Two stages" in `verification.md`). They get no record. Close every remaining candidate with one verdict (see below) and write the record.
 2. Sort by `fingerprint` and write `findings.json`.
 3. Validate, and fix until it passes:
    ```bash

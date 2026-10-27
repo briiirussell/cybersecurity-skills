@@ -199,7 +199,7 @@ Capture both full exchanges (request headers minus secrets, body, status, respon
 
 ## Verify Every Finding (refutation pass — before the report)
 
-Every candidate goes through a per-finding refutation pass before it can be reported. Run it as a subagent where the platform supports it; otherwise run it as a separate step that does **not** look at the original discovery reasoning. The verifier is told: *you did not write this — try to refute it.* It re-reads every cited `file:line`, names the strongest control that actually runs on the path, and returns one verdict. Full procedure and the verifier prompt: [references/verification.md](references/verification.md).
+Every candidate goes through a per-finding refutation pass before it can be reported. Run it as a subagent where the platform supports it; otherwise run it as a separate step that does **not** look at the original discovery reasoning. The verifier is told: *you did not write this — try to refute it.* It re-reads every cited `file:line`, names the strongest control that actually runs on the path, and returns one verdict. Full procedure and the verifier prompt: [references/verification.md](references/verification.md). Apply its fixed exclusion rules (test, generated, vendored, docs) first; in Claude Code, dispatch the plugin's read-only `finding-verifier` subagent once per candidate.
 
 **Three verdicts** (shared vocabulary — the old "Potential" label is retired):
 

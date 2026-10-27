@@ -179,6 +179,8 @@ That's one step on Claude Code 2.1.275 or later. On older versions, add the mark
 /plugin install cybersecurity-skills
 ```
 
+The plugin also ships one subagent, `finding-verifier`. Audit skills hand it one candidate finding at a time, and it tries to disprove the finding in a fresh, read-only context. Cursor and Codex don't get the subagent; they follow the same steps from `verification.md`.
+
 ### Option 3: Claude Code (project-level, manual)
 
 ```bash

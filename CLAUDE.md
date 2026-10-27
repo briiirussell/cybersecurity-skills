@@ -19,6 +19,8 @@ skills/
 └── <skill-name>/
     ├── SKILL.md             # Canonical skill (35 skills)
     └── references/          # Skill-specific references + GENERATED copies of shared/ files
+agents/
+└── finding-verifier.md      # Read-only plugin subagent (Claude Code only); lint checks name/description/read-only tools
 shared/                      # Source of truth for files several skills need (findings schema,
 │                            # validators, to-sarif, severity calibration, verification, ...)
 └── manifest.json            # Which skills get a copy of each file in skills/<skill>/references/

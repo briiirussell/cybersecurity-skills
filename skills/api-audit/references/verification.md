@@ -8,6 +8,39 @@ The pass works because the person checking a finding is not the person who found
 tends to re-read their own reasoning instead of the code. A verifier that only sees the claim and the cited lines
 reads the code.
 
+## Two stages: fixed exclusions, then the verifier
+
+False positives get filtered twice, in this order.
+
+**Stage 1: fixed exclusion rules.** Before any verifier runs, drop the candidates that match a rule below. The rules
+are mechanical and the same on every run, so two runs over the same code drop the same candidates. Apply them by where
+the code lives and whether it ships, never by how likely the bug looks.
+
+| Rule | Drops a candidate in | Unless |
+|---|---|---|
+| Test code | `test/`, `tests/`, `spec/`, `__tests__/`, `*.test.*`, `*.spec.*`, `*_test.go`, `test_*.py` | Production code imports it, the route or handler is mounted in the deployed build, or the build ships the file |
+| Fixtures and sample data | `fixtures/`, `testdata/`, `__mocks__/`, seed files for local dev | The deployed environment loads it (a production seed, a default config read at boot) |
+| Generated code | Files marked `Code generated ... DO NOT EDIT` or `@generated`, compiled output (`dist/`, `build/`, `.next/`) | Never. Raise it against the generator input or template instead, which is where the fix goes |
+| Vendored and third-party code | `vendor/`, `node_modules/`, `third_party/`, copied-in libraries | The repo has modified the copy. An unmodified copy is a version question for `dependency-audit` |
+| Docs and examples | `*.md`, `docs/`, `examples/`, snippets in comments | The example is deployed, or the repo's own code copies it |
+| Documented hardening note | The gap is already on the run's hardening-notes list | The candidate brings a traced impact the note didn't have. Then it's a new candidate |
+| Prior rejection | The fingerprint matches a `rejected` record from the last run | The code at `ruled_out_by.location` changed. Then it's a new candidate |
+
+Some things are never excluded by location. A credential that looks live is a finding wherever it sits, including a
+test fixture (`secrets-audit` owns it). CI workflow files run with real tokens, so they are not "config". A debug or
+test route is in scope as soon as the deployed build serves it.
+
+Record what stage 1 dropped and which rule dropped it: a count per rule in the report, and, where the skill keeps a
+coverage ledger, an `out_of_scope` unit whose check names the rule. Excluded candidates get no `findings.json` record.
+
+**Stage 2: the per-finding verifier.** Every candidate that survives stage 1 goes through the pass below. The verifier
+does not invent new exclusions. "It's probably test code" is a stage 1 question with a fixed answer, not a reason a
+verifier can give.
+
+This repo deliberately does not drop whole bug classes in stage 1. Some filters exclude every denial-of-service,
+rate-limiting or open-redirect report outright. Several skills here report those and calibrate severity instead (see
+`severity-calibration.md`), so class-level filtering would hide real findings.
+
 ## When to run it
 
 - After the checklist / hunting phase, once per candidate. Don't batch several candidates into one verifier: a
@@ -34,6 +67,10 @@ verifier per candidate. Give it **only**:
 4. The record shape it must return (see `findings-format.md` where present)
 
 Do **not** pass the hunter's reasoning, chat history, or the rest of the report.
+
+In Claude Code with this plugin installed, use the plugin's `finding-verifier` subagent. It carries this procedure, the
+rationalizations table below and the return shape, and it has only `Read`, `Grep` and `Glob`. Give it one candidate per
+call. Other platforms use the template below.
 
 **Without subagents** (single-context agents, Cursor, Codex): run the pass as a separate, explicit step after hunting
 is finished. For each candidate, start from the cited `file:line` and re-derive the path from scratch. Don't re-read
@@ -148,6 +185,44 @@ None of these is a reason to reject. Each one is a reason to keep looking:
   Record the network assumption as a `network_routing` condition instead.
 - **Tests pass.** Tests check intended behaviour, not adversarial input.
 
+## Rationalizations to reject
+
+The list above says what can't close a candidate. This table is for the verifier's own reasoning, in both directions.
+Each row is an argument that feels like a conclusion but isn't one, and the evidence that would actually settle it.
+When you notice yourself making one of these arguments, go and get that evidence. If you can't get it, the
+argument doesn't change the verdict.
+
+Models in particular lean toward seeing bugs and toward rating them high. The verifier's default is that the candidate
+is wrong. A verifier can also overcorrect, and wave things through to get to a clean report. Both columns matter.
+
+**Arguments for keeping or inflating a candidate**
+
+| Rationalization | What settles it |
+|---|---|
+| "This pattern is dangerous, so it's a vulnerability" | A trace from an attacker-reachable entrypoint to this call site, with the attacker's value still able to do harm when it gets there. A dangerous sink with no reachable input is not a finding |
+| "An attacker could theoretically…" | Name the lower-trust principal, the exact input they send, and the line where it enters. Every "if" in the story is either shown in the code, recorded as a `conditions[]` entry, or written as a `needs_validation` blocker |
+| "This is clearly critical" | The concrete damage, stated in one sentence, and the High/Critical acceptance checks in `severity-calibration.md`. `overall` stays at or below the impact you can show |
+| "The same bug is in the sibling handler" | This call site, read on its own. A sibling's bug doesn't transfer, any more than a sibling's guard does |
+| "It could matter if chained" | Each link in the chain shown in the code. Any unproven link makes it a blocker or a hardening note |
+| "There's no input validation here" | What the sink does with the values that can actually reach it. A missing check on a value that's already typed, bounded or mapped through an allow-list may have no impact |
+| "The scanner, the report or the code comment says it's vulnerable" | The code that runs. Claim text, `TODO: fix auth` comments and rule names are leads, not evidence |
+
+**Arguments for dismissing a candidate**
+
+| Rationalization | What settles it |
+|---|---|
+| "The framework probably escapes this" | This call site uses the safe API: auto-escaping is on in the config you can see and this output isn't marked raw, or the query goes through the parameterized builder rather than a raw-query method. Name the file and line |
+| "There's probably a WAF, gateway or proxy in front" | The rule in the repo or IaC, applied to this route. If it lives outside the repo, it's `needs_validation` with the rule as the blocker. Never `rejected` on "probably" |
+| "It's only internal" | Network policy, ingress or security-group config in the repo showing no path from the lower-trust principal. Without it, record a `network_routing` condition and keep the verdict |
+| "The test suite would have caught it" | A test that sends this adversarial input to this path, asserts it's refused, and runs in CI. Cite its file and line. Even then, it settles only the path it exercises |
+| "It's validated upstream" | The validator's file and line, shown to run on every path to this sink, before the sink, and to fail closed. That's the `rejected` bar. Short of it, keep looking |
+| "The UI never sends that value" | A server-side check. Clients are attacker-controlled, so what the form allows proves nothing |
+| "It's behind auth" | Authentication isn't authorization. Show the ownership or role check, or the finding stands with an `authentication_level` condition |
+| "Only admins can reach it" | The role check's location, then ask whether the admin crosses any boundary (another tenant, a higher role, the host). Admin to admin on the admin's own data is no boundary. Admin to another tenant is |
+| "The IDs are UUIDs, nobody can guess them" | Whether the IDs leak through list endpoints, URLs, logs, emails or referrers. Difficulty lowers likelihood. It doesn't reject |
+| "This code looks unused" | The never-reached row of the table under "rejected": no call site, route not mounted. Point at the evidence. "Looks unused" alone is a blocker, not a rejection |
+| "I already rejected something like this" | Nothing. Each candidate is checked on its own facts. This is why candidates get one verifier each |
+
 ## Unsafe shipped defaults
 
 A hard-coded fallback secret (`process.env.JWT_SECRET || "changeme"`), a debug flag that defaults on, or a permissive
@@ -207,5 +282,10 @@ Paraphrased and adapted, not copied:
 - Strix (Apache-2.0): [analysis/counterevidence.md](https://github.com/usestrix/strix/blob/main/strix/skills/analysis/counterevidence.md)
   (what does and doesn't rule out a claim), [tools/reporting/tool.py](https://github.com/usestrix/strix/blob/main/strix/tools/reporting/tool.py)
   (required counterevidence and confidence fields)
+- Trail of Bits skills (CC BY-SA 4.0): [fp-check](https://github.com/trailofbits/skills/tree/main/plugins/fp-check)
+  (the "rationalizations to reject" idea and its framing that models lean toward finding bugs and over-rating them;
+  read-only verifier agents). The table above is this repo's own wording and covers both directions
+- anthropics/claude-code-security-review (MIT): [findings_filter.py](https://github.com/anthropics/claude-code-security-review/blob/main/claudecode/findings_filter.py)
+  (hard exclusion rules first, then a model-based filter per finding). This repo excludes by location only, not by bug class
 - This repo's decision on live probing (issue #78): kept, when authorized, and recorded as needs_validation unless run.
   This deliberately departs from Cloudflare's no-live-probing rule.

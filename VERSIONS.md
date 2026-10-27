@@ -6,7 +6,7 @@ Current versions of all skills. Agents can compare against local versions to che
 |-------|---------|--------------|
 | agent-supply-chain-audit | 1.0.1 | 2026-10-26 |
 | ai-risk-management | 1.1.2 | 2026-10-26 |
-| api-audit | 1.1.5 | 2026-10-26 |
+| api-audit | 1.1.6 | 2026-10-27 |
 | breach-patterns | 1.0.4 | 2026-10-26 |
 | business-logic-testing | 1.0.2 | 2026-10-26 |
 | cloud-audit | 1.2.0 | 2026-10-26 |
@@ -15,14 +15,14 @@ Current versions of all skills. Agents can compare against local versions to che
 | csf-mapping | 1.0.2 | 2026-10-26 |
 | dependency-audit | 1.2.3 | 2026-10-26 |
 | disk-forensics | 1.0.1 | 2026-10-26 |
-| finding-triage | 1.1.2 | 2026-10-26 |
+| finding-triage | 1.2.0 | 2026-10-27 |
 | hipaa-audit | 1.1.0 | 2026-10-27 |
 | iam-audit | 1.1.0 | 2026-10-26 |
 | incident-triage | 1.1.0 | 2026-10-26 |
 | log-watch | 1.0.1 | 2026-10-26 |
 | mobile-audit | 1.1.0 | 2026-10-27 |
 | osint-recon | 1.0.2 | 2026-10-26 |
-| owasp-audit | 1.3.2 | 2026-10-26 |
+| owasp-audit | 1.3.3 | 2026-10-27 |
 | patch-sweep | 1.0.2 | 2026-10-26 |
 | pci-audit | 1.1.0 | 2026-10-27 |
 | personal-opsec | 1.0.1 | 2026-10-26 |
@@ -41,6 +41,22 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.0 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.37.0 (2026-10-27)
+
+finding-triage gets an adversarial verifier (#130). finding-triage 1.2.0, owasp-audit 1.3.3, api-audit 1.1.6.
+
+**Added**
+- **`finding-verifier` subagent** (`agents/finding-verifier.md`). A read-only plugin agent (Read, Grep, Glob) that takes one candidate finding, tries to disprove it, and returns one `findings.json` record with counterevidence. It never runs code, and it treats comments and the finding's own text as claims to check. Claude Code only; the Cursor and Codex adapters follow the same steps from `verification.md`.
+- **Rationalizations to reject** (`shared/verification.md`). Arguments for inflating a candidate ("an attacker could theoretically…") and for dismissing one ("there's probably a WAF", "it's only internal"), each with the evidence that would settle it. It complements the v1.26.1 table of valid rejections.
+- **Two-stage filter** (`shared/verification.md`). Fixed exclusion rules run first: test code, fixtures, generated and vendored code, docs and examples, known hardening notes, prior rejections. Each has a carve-out (live-looking credentials, CI workflows and test routes the deployed build serves are never excluded). Then the per-finding verifier runs on what's left. The rules exclude by where code lives, not by bug class, so denial-of-service and rate-limit findings still get verified.
+- **Agent lint.** `lint-skills.mjs` checks `agents/*.md` for a name matching the file, a description, and read-only tools only (no Write, Edit or Bash). A self-test covers it.
+
+**Changed**
+- finding-triage: a "Get an independent read" step, with `references/independent-verification.md`.
+- owasp-audit, api-audit: the verifier step points to the subagent and the exclusion rules.
+- `findings-format.md`: workflow step 1 applies the exclusions first.
+- README and CLAUDE.md mention the subagent.
 
 ### 1.36.0 (2026-10-27)
 
