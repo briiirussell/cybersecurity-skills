@@ -80,6 +80,7 @@ allowed-tools: Read, Grep, Glob     # Pre-approved: run WITHOUT a permission pro
 - Keep SKILL.md under 500 lines
 - Move reference material to separate files if needed
 - Define output formats explicitly
+- Standard sections, in this order: title + `Cross-references:` line, `## When to use` (with **Not for:** near-misses), `## Authorization`, the workflow, `## Output Format`, `## Boundaries`, `## References`. The lint requires `## Authorization`, `## Boundaries` and `## References`, and fails `## Report Format` / `## Output format` spellings. `templates/skill-template.md` has the skeleton, including the shared findings-format step
 
 ## Build Commands
 

@@ -5,12 +5,12 @@ Current versions of all skills. Agents can compare against local versions to che
 | Skill | Version | Last Updated |
 |-------|---------|--------------|
 | agent-supply-chain-audit | 1.0.1 | 2026-10-26 |
-| ai-risk-management | 1.1.1 | 2026-10-26 |
-| api-audit | 1.1.3 | 2026-10-26 |
+| ai-risk-management | 1.1.2 | 2026-10-26 |
+| api-audit | 1.1.4 | 2026-10-26 |
 | breach-patterns | 1.0.4 | 2026-10-26 |
-| business-logic-testing | 1.0.1 | 2026-10-26 |
-| cloud-audit | 1.1.2 | 2026-10-26 |
-| container-audit | 1.0.2 | 2026-10-26 |
+| business-logic-testing | 1.0.2 | 2026-10-26 |
+| cloud-audit | 1.1.3 | 2026-10-26 |
+| container-audit | 1.0.3 | 2026-10-26 |
 | crypto-audit | 1.0.3 | 2026-10-26 |
 | csf-mapping | 1.0.2 | 2026-10-26 |
 | dependency-audit | 1.2.2 | 2026-10-26 |
@@ -22,11 +22,11 @@ Current versions of all skills. Agents can compare against local versions to che
 | log-watch | 1.0.1 | 2026-10-26 |
 | mobile-audit | 1.0.1 | 2026-10-26 |
 | osint-recon | 1.0.2 | 2026-10-26 |
-| owasp-audit | 1.3.0 | 2026-10-26 |
+| owasp-audit | 1.3.1 | 2026-10-26 |
 | patch-sweep | 1.0.2 | 2026-10-26 |
 | pci-audit | 1.0.3 | 2026-10-26 |
 | personal-opsec | 1.0.1 | 2026-10-26 |
-| privacy-engineering | 1.0.3 | 2026-10-26 |
+| privacy-engineering | 1.0.4 | 2026-10-26 |
 | prompt-injection | 1.1.3 | 2026-10-26 |
 | recon | 1.0.1 | 2026-10-26 |
 | red-team-engagement | 1.0.1 | 2026-10-26 |
@@ -37,10 +37,30 @@ Current versions of all skills. Agents can compare against local versions to che
 | soc-operations | 1.0.4 | 2026-10-26 |
 | threat-hunting | 1.0.4 | 2026-10-26 |
 | threat-modeling | 1.0.4 | 2026-10-26 |
-| vuln-research | 1.0.2 | 2026-10-26 |
+| vuln-research | 1.0.3 | 2026-10-26 |
 | web-pentest | 1.1.3 | 2026-10-26 |
 
 ## Recent Changes
+
+### 1.24.0 (2026-10-26)
+
+**Changed**
+- `templates/skill-template.md` now matches how the skills are written (#128). It adds:
+  - a `Cross-references:` line, and `## When to use` with a **Not for:** list of near-misses and their owners (which double as trigger-eval near-misses)
+  - a skill-specific `## Authorization` section
+  - a "Verify, then record" step for the shared findings format: verdicts, verification, severity calibration, `findings.json`, validation, SARIF, dispositions, and the `shared/manifest.json` entries to add
+  - `allowed-tools` guidance in the frontmatter comments
+  - the standard section order: `## Output Format`, `## Boundaries`, `## References`
+  - a closing checklist for trigger prompts, issue-form dropdowns, README and versions
+- Section names are now the same everywhere:
+  - `## Report Format` → `## Output Format` in owasp-audit, api-audit and container-audit
+  - `## Output format` → `## Output Format` in ai-risk-management and privacy-engineering
+  - `## References & Sources` → `## References` in api-audit
+  - `## Refusal boundaries` / `## Sources` → `## Boundaries` / `## References` in business-logic-testing
+  - cross-references to "owasp-audit's Report Format" updated in cloud-audit, privacy-engineering and vuln-research
+
+**Added**
+- Lint errors for a skill without `## Boundaries` or `## References`, and for an output section spelled anything but `## Output Format`. Self-tests cover both. CLAUDE.md and CONTRIBUTING describe the standard sections.
 
 ### 1.23.8 (2026-10-26)
 

@@ -181,7 +181,7 @@ The Omnibus also changed other details (a grace period for machine-readable mark
 - ISO/IEC 42001 — AI management system standard
 - ISO/IEC 23894 — AI risk management
 
-## Output format
+## Output Format
 
 ```markdown
 # AI Risk Assessment

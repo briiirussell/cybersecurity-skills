@@ -19,7 +19,7 @@ Concurrency and logic testing mutates real state. Before sending anything:
 3. A **request-count cap** agreed in advance. Concurrency proofs need tens of parallel requests, not thousands — name the ceiling and stay under it.
 4. Accounts you control for every role and tenant you will test (owner, non-owner, admin, two tenants).
 
-If any of these is missing, stop and ask. See **Refusal boundaries** below.
+If any of these is missing, stop and ask. See **Boundaries** below.
 
 Sending live requests is deliberately outside this skill's pre-approved tools (`Read, Grep, Glob` only) — the human runs the parallel requests, or approves each tool invocation, so a throughput test never fires unattended.
 
@@ -140,7 +140,7 @@ Report with the shared findings vocabulary; see [references/findings-format.md](
 [Visual-only glitches, defense-in-depth gaps with no traced durable impact]
 ```
 
-## Refusal boundaries
+## Boundaries
 
 - Refuse to run concurrency or logic tests against a **production money flow, inventory ledger, or live third-party billing API** without explicit written scope naming it. Default to staging / test mode.
 - Refuse to exceed the agreed request-count cap or to turn a proof into a sustained load — a controlled double-spend proof is a dozen requests, not a stress test (that is a DoS; see `web-pentest` Boundaries).
@@ -155,7 +155,7 @@ Report with the shared findings vocabulary; see [references/findings-format.md](
 - `api-audit` — idempotency, BOLA, and API-level object/function authorization.
 - `finding-triage` — close each candidate to a disposition with contextual severity.
 
-## Sources
+## References
 
 - Strix (Apache-2.0) — `vulnerabilities/race_conditions.md` and `vulnerabilities/business_logic.md` (https://github.com/usestrix/strix). Techniques paraphrased, not copied. This skill deliberately does **not** adopt Strix's never-refuse / never-question-authorization posture: authorization, staging preference, and request caps are enforced here.
 - PortSwigger Web Security Academy — race conditions (single-packet attack) and business-logic labs.

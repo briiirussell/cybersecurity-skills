@@ -123,7 +123,7 @@ EPSS is empirically tuned; it correlates better with actual exploitation than CV
 - Code path is genuinely unreachable in your usage
 - Vulnerable component is in an internal-only service with no untrusted input
 - Compensating controls reduce exploitation likelihood / impact enough to justify
-- See the Accepted Risk disposition in `owasp-audit`'s Report Format — three required fields (why, compensating controls, re-evaluation trigger). No exceptions.
+- See the Accepted Risk disposition in `owasp-audit`'s Output Format — three required fields (why, compensating controls, re-evaluation trigger). No exceptions.
 
 ### Step 7 — Document and close the loop
 
