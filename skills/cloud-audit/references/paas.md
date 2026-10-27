@@ -4,6 +4,8 @@ Companion to the "PaaS (Vercel / Netlify / Heroku / Render / Railway / Fly)" sec
 
 CLI flags drift between versions. Run `<cli> <command> --help` once before scripting against it.
 
+Save the output that backs a finding to `<audit dir>/evidence/<platform>-<command>-<app>.json` (pretty-printed, values redacted) and point the record's `location` and `evidence[]` at that file and line, as in `cloud-audit`'s "Verify, then record" step. Fingerprints use the platform as the provider: `cloud-audit/manual-prod-deploy/render/<team>/<service>`.
+
 ## Render (REST API)
 
 Create an API key in the dashboard (Account Settings → API Keys) and keep it in an env var.
@@ -53,7 +55,7 @@ fly secrets list -a <app>          # names and digests, not values
 ```bash
 railway list          # projects you can see
 railway status        # linked project, environment, service
-railway variables     # prints VALUES — use the dashboard to list names instead
+railway variables     # prints VALUES — use the dashboard to list names instead; never save this output to evidence
 ```
 - The service's Settings → Source shows repo, branch, and "Wait for CI"; Deployments shows each deploy's trigger and commit. Railway's public API is GraphQL (`https://backboard.railway.com/graphql/v2`) if you need to script it.
 - Check 3: services with only a `*.up.railway.app` domain.

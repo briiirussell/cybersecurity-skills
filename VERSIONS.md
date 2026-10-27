@@ -9,7 +9,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | api-audit | 1.1.5 | 2026-10-26 |
 | breach-patterns | 1.0.4 | 2026-10-26 |
 | business-logic-testing | 1.0.2 | 2026-10-26 |
-| cloud-audit | 1.1.3 | 2026-10-26 |
+| cloud-audit | 1.2.0 | 2026-10-26 |
 | container-audit | 1.0.3 | 2026-10-26 |
 | crypto-audit | 1.0.3 | 2026-10-26 |
 | csf-mapping | 1.0.2 | 2026-10-26 |
@@ -41,6 +41,23 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.1.3 | 2026-10-26 |
 
 ## Recent Changes
+
+### 1.27.0 (2026-10-26)
+
+cloud-audit moves onto the shared findings format (#129). cloud-audit 1.2.0.
+
+**Changed**
+- **Verify, then record.** A new step after the audit categories:
+  - Save the redacted, read-only output behind each finding to `evidence/` and point `location` at the decisive line, since cloud findings are about resources, not source lines.
+  - Run the refutation pass. The strongest control is often account-level: Block Public Access, an SCP, a private subnet with no route out, deployment protection.
+  - Close each candidate as confirmed, needs validation or rejected. There are cloud examples for each verdict, and unsafe IaC module defaults count as confirmed.
+  - Rate severity by what the resource holds, not the benchmark ID.
+- **Confidence.** Config read from the API is evidence, not reproduction. Only an authorized, non-destructive request, such as an anonymous `curl -sI` returning 200, sets `reproduced`. IaC-only findings cap at medium.
+- **Fingerprints** are built from the resource: `cloud-audit/<class>/<provider>/<account>/<resource>`, or the IaC file and resource address. ARNs are written with slashes.
+- **`ext` keys:** `provider`, `account`, `region`, `resource`.
+- **Output Format** is rendered from `findings.json`. It has confirmed findings, needs validation, hardening notes, "Rejected (do not re-raise)", a coverage table, a PaaS deployment inventory and the remediation plan.
+- **`references/paas.md`** gets the evidence-file rule, and a warning never to save `railway variables` output, which prints values.
+- The skill now gets copies of the six shared findings files.
 
 ### 1.26.6 (2026-10-26)
 
