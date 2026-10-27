@@ -8,7 +8,10 @@
     "here's our branch protection export, does it pass CC8.1?\n{\"required_pull_request_reviews\": null, \"enforce_admins\": {\"enabled\": false}, \"required_status_checks\": {\"strict\": true, \"contexts\": [\"ci\"]}}",
     "should we do a Type 1 or a Type 2 first?",
     "is our Statement of Applicability ok? we excluded secure coding and web filtering",
-    "ISO 27001 surveillance audit next month, what evidence do we need for Annex A 8.32?"
+    "ISO 27001 surveillance audit next month, what evidence do we need for Annex A 8.32?",
+    "we're going for FedRAMP Moderate, help me fill in the SSP implementation statements for AC-2",
+    "what changes for us with FedRAMP 20x versus Rev5?",
+    "our POA&M has 40 overdue items, which ones actually matter?"
   ],
   "near_miss": [
     {
@@ -38,6 +41,10 @@
     {
       "prompt": "which CSF 2.0 subcategories does our incident response plan cover?",
       "owner": "csf-mapping"
+    },
+    {
+      "prompt": "check our Terraform for S3 buckets without encryption",
+      "owner": "cloud-audit"
     }
   ]
 }
