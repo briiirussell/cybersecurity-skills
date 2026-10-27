@@ -49,6 +49,13 @@ Current versions of all skills. Agents can compare against local versions to che
 
 ## Recent Changes
 
+### 1.52.4 (2026-10-27)
+
+README skill map: the connector lines are now drawn from the column positions. Docs only.
+
+**Fixed**
+- The arrows above the family boxes were hand-drawn for an older layout. There were eight arrows for seven columns, so the last one pointed at nothing, and the joins above and below the boxes didn't line up. Now every arrow lands on a column, and both joins meet the trunk cleanly.
+
 ### 1.52.3 (2026-10-27)
 
 prompt-injection description names indirect injection through what an agent reads (a malicious web page in a browsing agent; emails, documents or tickets reaching an agent that can act). prompt-injection 1.2.1.
