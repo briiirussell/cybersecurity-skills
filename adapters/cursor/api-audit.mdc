@@ -240,7 +240,7 @@ Each record is one of the three verdict shapes with a stable `fingerprint` (root
 - For rate-limit fixes: hit the endpoint at 10× the configured rate; observe 429 not 200
 - For CORS fixes: send the request with `Origin: https://evil.com`; observe the browser blocks, not the server
 
-`tsc --noEmit` + build success ≠ fix verified. See also `owasp-audit`'s Verify Fixes at Runtime + Second-Opinion Pass — same playbook applies.
+`tsc --noEmit` + build success ≠ fix verified. See also `owasp-audit`'s Verify Fixes at Runtime + Second-Opinion Pass — same playbook applies — and `finding-triage`'s fix verification before a record becomes `Fixed`.
 
 ## Output Format
 

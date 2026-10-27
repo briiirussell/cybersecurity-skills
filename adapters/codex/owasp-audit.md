@@ -345,7 +345,7 @@ Don't report these as findings:
 
 ## Verify Fixes at Runtime
 
-After applying a fix, exercise the affected code path — do not stop at typecheck or build. Modern frameworks have runtime-only failure modes that compile cleanly:
+After applying a fix, exercise the affected code path — do not stop at typecheck or build. `finding-triage`'s fix verification (re-run the original check, look for variants, make sure the sink didn't just move, add a regression test) decides when the record becomes `Fixed`. Modern frameworks have runtime-only failure modes that compile cleanly:
 
 - **Edge / Node split runtimes.** Next.js middleware, Cloudflare Workers, Vercel Edge — Node-only imports (`node:crypto`, `node:fs`) build successfully but throw on first request.
 - **Lazy module loads.** Adapters/plugins loaded via `import()` or runtime DI surface only when the codepath runs.
@@ -431,7 +431,7 @@ pre-existing issues noted during a diff review.
 
 ### Dispositions (confirmed findings only)
 
-- **Fixed** — remediation shipped. Closed pending runtime verification.
+- **Fixed** — set only after the fix shipped and its check passed (`finding-triage` Step 7).
 - **Deferred** — acknowledged and scheduled. Say whether the next deploy is gated on it (release blocker) or not. Severity doesn't change because you deferred it.
 - **Accepted Risk** — not planned at the current configuration. Must record (1) why the fix doesn't apply (cost tier, version constraint, topology, vendor limitation), (2) compensating controls, (3) the re-evaluation trigger. An Accepted Risk entry without all three is a real finding being silently dropped.
 - **Mitigated (platform/config)** — a control outside the code (WAF rule, platform setting, network policy) now blocks the path. Name it and how it was verified; the code fix may still be scheduled.

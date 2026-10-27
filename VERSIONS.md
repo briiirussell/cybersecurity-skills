@@ -6,7 +6,7 @@ Current versions of all skills. Agents can compare against local versions to che
 |-------|---------|--------------|
 | agent-supply-chain-audit | 1.0.1 | 2026-10-26 |
 | ai-risk-management | 1.1.2 | 2026-10-26 |
-| api-audit | 1.1.6 | 2026-10-27 |
+| api-audit | 1.1.7 | 2026-10-27 |
 | breach-patterns | 1.0.4 | 2026-10-26 |
 | business-logic-testing | 1.0.2 | 2026-10-26 |
 | cloud-audit | 1.2.0 | 2026-10-26 |
@@ -15,14 +15,14 @@ Current versions of all skills. Agents can compare against local versions to che
 | csf-mapping | 1.0.2 | 2026-10-26 |
 | dependency-audit | 1.2.3 | 2026-10-26 |
 | disk-forensics | 1.0.1 | 2026-10-26 |
-| finding-triage | 1.2.0 | 2026-10-27 |
+| finding-triage | 1.3.0 | 2026-10-27 |
 | hipaa-audit | 1.1.0 | 2026-10-27 |
 | iam-audit | 1.1.0 | 2026-10-26 |
 | incident-triage | 1.1.0 | 2026-10-26 |
 | log-watch | 1.0.1 | 2026-10-26 |
 | mobile-audit | 1.1.0 | 2026-10-27 |
 | osint-recon | 1.0.2 | 2026-10-26 |
-| owasp-audit | 1.3.3 | 2026-10-27 |
+| owasp-audit | 1.3.4 | 2026-10-27 |
 | patch-sweep | 1.0.2 | 2026-10-26 |
 | pci-audit | 1.1.0 | 2026-10-27 |
 | personal-opsec | 1.0.1 | 2026-10-26 |
@@ -41,6 +41,19 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.0 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.38.0 (2026-10-27)
+
+finding-triage checks that a fix actually works before closing the finding (#133). finding-triage 1.3.0, owasp-audit 1.3.4, api-audit 1.1.7.
+
+**Added**
+- **Fix verification** (`finding-triage/references/fix-verification.md`). The bar: the original claim, re-checked against the fixed code, would now close as `rejected` with the fix as `ruled_out_by`. The steps: re-run the original reproduction or trace, check sibling code paths for the same bug, make sure the fix didn't just move the sink (a table of common ways it does), add a regression test, then set `Fixed`. Includes an example record that passes the validator.
+- **Recording a fix.** finding-triage writes `ext.fixed_in`, `ext.fix_verified_on` and `ext.regression_test` on the record, and `ext.regressed_after` when a fixed finding comes back. The fingerprint stays the same so re-runs recognize it.
+
+**Changed**
+- finding-triage: new Step 7, "Verify the fix before closing it". `Fixed` still waits for the fix to ship (v1.26.4).
+- `findings-format.md`: re-runs re-check `Fixed` records against the fix and reopen regressions.
+- owasp-audit: the `Fixed` disposition now points to that check instead of "closed pending runtime verification". owasp-audit and api-audit's "Verify Fixes at Runtime" sections link it.
 
 ### 1.37.0 (2026-10-27)
 
