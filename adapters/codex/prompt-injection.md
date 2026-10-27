@@ -8,6 +8,10 @@ Audit applications that use AI features, LLM integrations, or AI agents for prom
 
 Cross-references: `threat-modeling` for design-time AI risk modeling on new AI features (before this skill applies); `owasp-audit` for the XSS / output-rendering patterns that overlap when LLM output reaches the browser (sanitize on render, JSON-LD breakout); `api-audit` for the API surface that LLM tools and MCP servers expose; `ai-risk-management` for the broader governance frame this skill sits within — prompt injection is the security slice of AI risk; AI RMF covers the rest (fairness, robustness, transparency, drift, lifecycle); `agent-supply-chain-audit` for the same hidden-instruction and tool-poisoning checks applied to the developer's own coding-agent environment (skills, plugins, hooks, MCP servers, `CLAUDE.md` / `AGENTS.md`); `log-watch` and `personal-opsec` for two everyday agents that read attacker-controlled text — a log-review agent and a personal inbox assistant.
 
+## Authorization
+
+Audit only AI features, agents and integrations the user owns or is authorized to test. Source and prompt review needs nothing more. For live tests, use a test or staging deployment and test accounts, keep payloads benign (a canary string, not a real exfiltration), and never aim an injection at production users, third-party AI services you don't control, or other people's agents. See Boundaries.
+
 ## Background
 
 Prompt injection is the #1 vulnerability in LLM-integrated applications (OWASP Top 10 for LLM Applications 2025, LLM01). It occurs when untrusted input influences the instructions an LLM follows, causing it to ignore its system prompt, leak secrets, or take unauthorized actions.

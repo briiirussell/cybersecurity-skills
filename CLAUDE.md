@@ -34,7 +34,9 @@ scripts/
 └── test/                    # node:test suites + fixtures (run with npm test)
 package.json                 # npm test / npm run build — no dependencies, Node >= 21
 .github/
-├── workflows/ci.yml   # lint, adapter drift, tests, SkillSpector
+├── workflows/ci.yml   # lint, versions, plugin validate, adapter drift, tests, SkillSpector (+ weekly on main)
+├── workflows/links.yml  # weekly link check; opens a broken-links issue
+├── dependabot.yml     # weekly grouped bumps for the pinned actions
 └── scripts/           # SkillSpector baseline splitter + SARIF merge
 .skillspector-baseline.yaml
 docs/
@@ -71,6 +73,9 @@ allowed-tools: Read, Grep, Glob     # Pre-approved: run WITHOUT a permission pro
 ```bash
 node scripts/build-adapters.mjs    # Generate Cursor + Codex adapters and copy shared/ files into skills/*/references/ (also: npm run build)
 node scripts/lint-skills.mjs       # Frontmatter, size, cross-reference, link and allowed-tools lint (CI runs this)
+node scripts/check-versions.mjs --base origin/development   # Versions in sync + bumped vs the base (CI runs this on PRs)
+npm run check                      # Everything CI runs locally except SkillSpector and plugin validate
+node .github/scripts/plugin-validate.mjs  # claude plugin validate, strict with named exceptions (needs the claude CLI)
 npm test                           # node:test suites in scripts/test/ — validators, to-sarif, build (CI runs this; Node >= 21)
 node .github/scripts/skillspector-baseline.mjs --check   # Validate .skillspector-baseline.yaml
 ```
@@ -91,7 +96,7 @@ CI (`.github/workflows/ci.yml`) also fails on stale adapters and on SkillSpector
 
 ## Guidelines
 
-- All skills must include an authorization check before taking action
+- All skills must include an authorization check before taking action: a level-2 heading containing "Authorization" (`## Authorization`, `## Authorization and Mode`, ...) that says whose systems the skill may touch and what needs the owner's go-ahead. The lint fails a skill without one.
 - Skills should refuse destructive or malicious use cases
 - Focus on educational value and professional security workflows
 - Keep descriptions "pushy" — include all relevant trigger phrases so the skill activates when needed

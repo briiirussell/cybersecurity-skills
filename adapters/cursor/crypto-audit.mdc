@@ -12,6 +12,10 @@ Most crypto failures are not "they used MD5." Most failures are: right primitive
 
 Cross-references: `owasp-audit` A04 (baseline) + A07 (timing-safe comparison), `secrets-audit` (key storage), `iam-audit` (KMS / HSM patterns).
 
+## Authorization
+
+Review code, configuration and key-management setup the user owns or is authorized to audit. TLS probing (`testssl.sh`, `openssl s_client`) is a live check: run it only against endpoints the user is authorized to test; it isn't pre-approved, so it prompts every time. Never try to recover keys, crack hashes or decrypt data you weren't given access to.
+
 ## Don't roll your own
 
 The default audit verdict for any custom encryption scheme is "use libsodium / Tink / WebCrypto instead." There are < 50 people on Earth who can design new crypto safely, and they don't work at your company. Unless an explicit threat model says otherwise, custom crypto is a finding.

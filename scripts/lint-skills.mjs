@@ -8,6 +8,7 @@
  *   - `name` does not match the folder, or is not lowercase-hyphen (max 64)
  *   - `description` outside 200–1024 characters
  *   - SKILL.md is 500 lines or longer
+ *   - no level-2 heading containing "Authorization" (e.g. `## Authorization`, `## Authorization and Mode`)
  *   - `allowed-tools` pre-approves WebFetch together with unscoped Bash
  *   - a Bash grant pre-approves a write: unscoped Bash, a write verb in the rule, a prefix
  *     that also matches a destructive subcommand (`heroku releases:*` → `releases:rollback`),
@@ -20,7 +21,7 @@
  *     (the request would be ambiguous between skills; SkillSpector TR2). Keep the
  *     phrase in the skill that owns the work and narrow or drop it in the other.
  *
- * Usage: node scripts/lint-skills.mjs [--quiet]
+ * Usage: node scripts/lint-skills.mjs [--quiet] [--skills-dir <dir>]
  */
 
 import { readFileSync, readdirSync, existsSync, statSync } from "node:fs";
@@ -28,9 +29,12 @@ import { join, dirname, basename, normalize, relative } from "node:path";
 import { checkGrant } from "./grant-check.mjs";
 
 const ROOT = new URL("..", import.meta.url).pathname;
-const SKILLS_DIR = join(ROOT, "skills");
+// --skills-dir <dir> lints another tree (the self-tests in scripts/test/ use it); shared/ still comes from the repo.
+const SKILLS_ARG = process.argv.indexOf("--skills-dir");
+const SKILLS_DIR = SKILLS_ARG > 0 ? process.argv[SKILLS_ARG + 1] : join(ROOT, "skills");
 const QUIET = process.argv.includes("--quiet");
 
+const AUTH_HEADING = /^##\s+.*\bauthori[sz]ation\b/im; // every skill needs one (CLAUDE.md)
 const MAX_LINES = 500; // SKILL.md must be strictly under this
 const DESC_MIN = 200;
 const DESC_MAX = 1024;
@@ -205,6 +209,8 @@ function lintSkill(name) {
 
   // Body checks run on prose only (fenced code removed).
   const prose = stripFences(content);
+  if (!AUTH_HEADING.test(prose.join("\n")))
+    err(file, "no `## Authorization` section; say whose systems the skill may touch and what needs the owner's go-ahead (CLAUDE.md)");
   prose.forEach((line, i) => {
     const ln = i + 1;
     if (i < 5) return; // frontmatter

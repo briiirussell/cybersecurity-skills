@@ -10,6 +10,10 @@ Privacy and security overlap but are not the same. Security protects against una
 
 Cross-references: `owasp-audit` for the security side, `iam-audit` for access control to personal data, `secrets-audit` for credential handling, `incident-triage` for the response side of a privacy breach (72-hour GDPR notification clock starts when you find out, not when you finish investigating), `security-comms` for the customer-disclosure draft.
 
+## Authorization
+
+Review systems the user's organization owns or has engaged them to review. Trace data flows through schemas, code, configs and synthetic records, not by pulling real personal data. If you find personal data where it shouldn't be, record the location and category without copying the values. Legal conclusions (lawful basis, whether a breach is notifiable) belong to the DPO and counsel.
+
 ## Regulatory landscape (engineering-relevant subset)
 
 The skill produces compliant technical implementations. Final compliance determinations stay with counsel; this skill is the technical execution layer.

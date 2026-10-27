@@ -13,6 +13,10 @@ Three modes — pick the one that matches the engagement:
 
 Cross-references: `cloud-audit` for the cloud-provider audit (broader than IAM), `container-audit` for K8s RBAC and ServiceAccounts (orchestration-layer identity), `personal-opsec` for the individual operator's own accounts — hardware-key MFA, recovery paths, SIM-swap protection — which org IAM doesn't reach.
 
+## Authorization
+
+Audit only identity providers, cloud accounts and applications the user owns or is authorized to review, with read access granted for that purpose. The pre-approved commands read policies and findings. Never change a role, remove a user, rotate credentials or try a privilege-escalation path live during the audit: report the path and the fix, and let the owner act.
+
 ## Mode 1 — Audit existing IAM
 
 ### Cloud provider IAM

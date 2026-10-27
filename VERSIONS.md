@@ -5,42 +5,112 @@ Current versions of all skills. Agents can compare against local versions to che
 | Skill | Version | Last Updated |
 |-------|---------|--------------|
 | agent-supply-chain-audit | 1.0.1 | 2026-10-26 |
-| ai-risk-management | 1.1.0 | 2026-10-26 |
-| api-audit | 1.1.2 | 2026-10-26 |
-| breach-patterns | 1.0.3 | 2026-10-26 |
+| ai-risk-management | 1.1.1 | 2026-10-26 |
+| api-audit | 1.1.3 | 2026-10-26 |
+| breach-patterns | 1.0.4 | 2026-10-26 |
 | business-logic-testing | 1.0.1 | 2026-10-26 |
-| cloud-audit | 1.1.1 | 2026-10-26 |
-| container-audit | 1.0.1 | 2026-10-26 |
-| crypto-audit | 1.0.2 | 2026-10-26 |
-| csf-mapping | 1.0.1 | 2026-10-26 |
-| dependency-audit | 1.2.1 | 2026-10-26 |
+| cloud-audit | 1.1.2 | 2026-10-26 |
+| container-audit | 1.0.2 | 2026-10-26 |
+| crypto-audit | 1.0.3 | 2026-10-26 |
+| csf-mapping | 1.0.2 | 2026-10-26 |
+| dependency-audit | 1.2.2 | 2026-10-26 |
 | disk-forensics | 1.0.1 | 2026-10-26 |
 | finding-triage | 1.1.1 | 2026-10-26 |
-| hipaa-audit | 1.0.1 | 2026-10-26 |
-| iam-audit | 1.0.2 | 2026-10-26 |
+| hipaa-audit | 1.0.2 | 2026-10-26 |
+| iam-audit | 1.0.3 | 2026-10-26 |
 | incident-triage | 1.1.0 | 2026-10-26 |
 | log-watch | 1.0.1 | 2026-10-26 |
 | mobile-audit | 1.0.1 | 2026-10-26 |
-| osint-recon | 1.0.1 | 2026-10-26 |
+| osint-recon | 1.0.2 | 2026-10-26 |
 | owasp-audit | 1.3.0 | 2026-10-26 |
 | patch-sweep | 1.0.2 | 2026-10-26 |
-| pci-audit | 1.0.2 | 2026-10-26 |
-| personal-opsec | 1.0.0 | 2026-10-26 |
-| privacy-engineering | 1.0.2 | 2026-10-26 |
-| prompt-injection | 1.1.2 | 2026-10-26 |
+| pci-audit | 1.0.3 | 2026-10-26 |
+| personal-opsec | 1.0.1 | 2026-10-26 |
+| privacy-engineering | 1.0.3 | 2026-10-26 |
+| prompt-injection | 1.1.3 | 2026-10-26 |
 | recon | 1.0.1 | 2026-10-26 |
 | red-team-engagement | 1.0.1 | 2026-10-26 |
 | scanner-pipeline | 1.0.2 | 2026-10-26 |
-| secrets-audit | 1.1.1 | 2026-10-26 |
-| security-comms | 1.0.2 | 2026-10-26 |
-| siem-detection | 1.0.2 | 2026-10-26 |
-| soc-operations | 1.0.3 | 2026-10-26 |
-| threat-hunting | 1.0.3 | 2026-10-26 |
-| threat-modeling | 1.0.3 | 2026-10-26 |
-| vuln-research | 1.0.1 | 2026-10-26 |
+| secrets-audit | 1.1.2 | 2026-10-26 |
+| security-comms | 1.0.3 | 2026-10-26 |
+| siem-detection | 1.0.3 | 2026-10-26 |
+| soc-operations | 1.0.4 | 2026-10-26 |
+| threat-hunting | 1.0.4 | 2026-10-26 |
+| threat-modeling | 1.0.4 | 2026-10-26 |
+| vuln-research | 1.0.2 | 2026-10-26 |
 | web-pentest | 1.1.3 | 2026-10-26 |
 
 ## Recent Changes
+
+### 1.23.3 (2026-10-26)
+
+Weekly checks for problems that show up without a PR: broken external links, new SkillSpector rules, and outdated action pins. Repo tooling only; no skill content changes. Closes #122.
+
+**Added**
+
+- `.github/workflows/links.yml`: every Monday, lychee (pinned action and binary) checks every link in the README, `CONTRIBUTING.md`, docs, `shared/` and skills, internal `#anchors` included. 403 and 429 count as OK, since some sites block or rate-limit CI runners. A failing run opens or updates one `broken-links` issue, and the next clean run closes it. It runs on a schedule rather than on PRs because external sites break on their own timeline. It can also be run on demand. A local run against v1.23.2 found 373 links and 0 errors.
+- `.github/dependabot.yml`: one grouped PR a week against `development` for the SHA-pinned GitHub Actions. Those PRs skip the version-bump check (#120).
+
+**Changed**
+
+- `ci.yml` also runs every Monday on `main` (the full workflow, including SkillSpector and the code-scanning upload).
+- `docs/security-scanning.md` has a new "Scheduled checks" section. It notes that `SKILLSPECTOR_REF` and `CLAUDE_CODE_VERSION` are still bumped by hand. `CLAUDE.md` lists the new files.
+
+### 1.23.2 (2026-10-26)
+
+CI now runs Claude Code's own plugin validator, and the repo's checkers get self-tests, so none of them can quietly stop catching problems. Repo tooling plus one README line; no skill content changes. Closes #121.
+
+**Added**
+
+- **Plugin validate** CI job: installs a pinned Claude Code CLI and runs `claude plugin validate --json .` through `.github/scripts/plugin-validate.mjs`. That is `--strict` with named exceptions. Any error, or any warning not in the script's `ALLOWED` list (each entry has a reason), fails the job. The one accepted warning is the root `CLAUDE.md`, which is contributor guidance and not plugin context.
+- `scripts/test/self-test.test.mjs`: 7 tests that feed known-bad fixtures to each checker.
+  - The lint: name mismatch, short description, missing Authorization section, WebFetch with unscoped Bash, destructive grant, broken link, unknown cross-reference, 500+ lines, and a shared trigger phrase. A clean fixture must pass.
+  - The SkillSpector baseline check: missing reason, unknown skill, wildcard-only message and a bad `*/` target, plus slicing that must not leak another skill's rules.
+  - `merge-sarif.mjs`: one run, rewritten paths, de-duplicated rules, remapped indexes and dropped baselined results.
+  - The plugin-validate filter.
+- `npm run check`: lint, baseline check, version check, adapter drift and tests in one command, mirroring CI except the SkillSpector and plugin-validate jobs, which need extra tools.
+
+**Changed**
+
+- `scripts/lint-skills.mjs` takes `--skills-dir <dir>`, and `.github/scripts/skillspector-baseline.mjs` reads `SKILLSPECTOR_BASELINE`, so the self-tests can point them at fixtures.
+- `.claude-plugin/marketplace.json`: dropped `metadata.repository`, which Claude Code doesn't recognize (`plugin.json` already has `repository`).
+- README: the plugin install is now one line, `/plugin install cybersecurity-skills --marketplace briiirussell/cybersecurity-skills` (Claude Code 2.1.275+), with the two-step form kept for older versions.
+- `docs/security-scanning.md`, `CLAUDE.md` and `CONTRIBUTING.md` document the new checks and `npm run check`.
+
+### 1.23.1 (2026-10-26)
+
+CI now enforces the per-merge versioning rule. Until now it was checked only by hand. Repo tooling only; no skill content changes. Closes #120.
+
+**Added**
+
+- `scripts/check-versions.mjs`, a new **Version check** CI job. On every run it fails when:
+  - `plugin.json` and `marketplace.json` versions differ
+  - `VERSIONS.md` has no `### X.Y.Z (date)` entry for the current version
+  - a skill folder has no `VERSIONS.md` row, or a row has no folder
+  - a row isn't x.y.z
+
+  On a PR (`--base origin/<base branch>`) it also fails when the repo version isn't higher than the base branch's, or when a file under `skills/<name>/` changed and that skill's row wasn't bumped. Generated copies of `shared/` files are exempt, since they follow the `shared/` change. Dependabot PRs skip the bump check.
+- `scripts/test/check-versions.test.mjs`: 7 tests. I also replayed the check against five past releases (v1.19.5, v1.19.6, v1.19.7, v1.20.0, v1.23.0); all pass.
+
+**Changed**
+
+- `CONTRIBUTING.md` PR checklist gains a version-bump item. `CLAUDE.md` and `docs/security-scanning.md` list the new check.
+
+### 1.23.0 (2026-10-26)
+
+Every skill now has an Authorization section, and the lint fails a skill without one. `CLAUDE.md` always required an authorization check, but only 13 of 35 skills had a heading for it. The others had a line in Boundaries, an inline paragraph, or nothing. Closes #119.
+
+**Changed**
+
+- The lint (`scripts/lint-skills.mjs`) fails when `SKILL.md` has no level-2 heading containing "Authorization". `## Authorization`, `## Authorization Check`, `## Authorization and Mode` and `## Step 0 — Authorization and scope` all pass.
+- **New `## Authorization` sections** (PATCH each), written for what each skill actually touches:
+  - Audit skills (cloud, container, IAM, crypto, secrets, prompt-injection) say which systems are in scope, that pre-approved commands only read, and which actions (key checks, TLS probes, live injection tests, privilege-escalation paths) need the owner first.
+  - Data-handling skills (HIPAA, PCI, privacy) say never to copy real PHI, PAN or personal data into the transcript; record the location instead.
+  - Advisory skills (security-comms, csf-mapping, threat-modeling, ai-risk-management, soc-operations) state whose organization they work for and who signs off.
+  - Skills: **ai-risk-management** (1.1.1), **breach-patterns** (1.0.4), **cloud-audit** (1.1.2), **container-audit** (1.0.2), **crypto-audit** (1.0.3), **csf-mapping** (1.0.2), **hipaa-audit** (1.0.2), **iam-audit** (1.0.3), **pci-audit** (1.0.3), **privacy-engineering** (1.0.3), **prompt-injection** (1.1.3), **secrets-audit** (1.1.2), **security-comms** (1.0.3), **siem-detection** (1.0.3), **soc-operations** (1.0.4), **threat-hunting** (1.0.4), **threat-modeling** (1.0.4), **vuln-research** (1.0.2).
+- **Inline authorization text promoted to a heading** (PATCH each): **api-audit** (1.1.3) and **dependency-audit** (1.2.2). api-audit also says live requests stay non-destructive.
+- **Headings renamed** (PATCH each): **osint-recon** (1.0.2) "Ethics Check" → "Authorization and Ethics Check", with written authorization required for organization assessments. **personal-opsec** (1.0.1) "Consent and scope" → "Authorization: consent and scope".
+- `CLAUDE.md`, `CONTRIBUTING.md` and `docs/security-scanning.md` describe the rule.
 
 ### 1.22.0 (2026-10-26)
 

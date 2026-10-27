@@ -123,8 +123,10 @@ CI (`.github/workflows/ci.yml`) runs on every PR into `development` or `main` an
 
 Enforced by CI:
 
-- [ ] Skill lint passes — `node scripts/lint-skills.mjs` (`name` matches directory, `description` 200–1024 chars, `SKILL.md` under 500 lines, cross-referenced skills exist, relative links resolve, no `WebFetch` + unscoped `Bash`, no `Bash` grant whose prefix also matches a destructive subcommand)
+- [ ] Skill lint passes — `node scripts/lint-skills.mjs` (`name` matches directory, `description` 200–1024 chars, `SKILL.md` under 500 lines, an `## Authorization` section, cross-referenced skills exist, relative links resolve, no `WebFetch` + unscoped `Bash`, no `Bash` grant whose prefix also matches a destructive subcommand)
 - [ ] Adapters and shared copies regenerated and committed — `node scripts/build-adapters.mjs` leaves no diff; shared content edited in `shared/`, not in `skills/*/references/` copies
+- [ ] Versions bumped — repo version in `.claude-plugin/plugin.json` and `marketplace.json`, a `### X.Y.Z (date)` entry in `VERSIONS.md`, and the row of every skill you changed (fix = PATCH, improvement = MINOR, new skill = 1.0.0). `node scripts/check-versions.mjs --base origin/development` checks this
+- [ ] `npm run check` passes (lint, baseline check, version check, adapter drift, tests — the CI checks that need no extra tools)
 - [ ] Tests pass — `npm test` (add or update a test in `scripts/test/` if you changed a validator, `to-sarif.mjs`, or the build)
 - [ ] SkillSpector scan is clean — any new finding is fixed, or covered by a narrow rule **with a reason** in `.skillspector-baseline.yaml` (see [docs/security-scanning.md](docs/security-scanning.md))
 

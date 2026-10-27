@@ -10,6 +10,10 @@ Most secret leaks aren't "we forgot to redact" — they're "we never had a syste
 
 Cross-references: `dependency-audit` (CI-related secrets risk in build-time exposure), `iam-audit` (workload identity federation as the alternative to long-lived keys), `owasp-audit` A02 (in-source secret patterns), `agent-supply-chain-audit` (the skills, hooks, and MCP servers that sit next to these agent configs and can read them), `incident-triage` and `threat-hunting` (the exfiltration-collector domains below as egress indicators), `scanner-pipeline` (gitleaks / trufflehog across full history and a whole fleet of repos, on a schedule), `personal-opsec` (the operator's own machine, where agent tokens and pasted secrets actually live).
 
+## Authorization
+
+Scan only repositories, CI systems and machines the user owns or is authorized to audit. Never print a full secret: give the type, location, and prefix plus last four. Checking that a key is live ("Verify it's live" below) uses the key, so ask first, use the provider's read-only identity call, and never use a found credential to read data. Rotation and history rewrites are the owner's call and always prompt.
+
 ## Part 1 — Find leaked secrets
 
 ### Provider key prefixes (high-confidence patterns)

@@ -17,6 +17,10 @@ When to use:
 
 Cross-references: `owasp-audit` (code-level checklist that lines up with the threats this surfaces), `api-audit` (API-specific category mapping), `iam-audit` (identity decisions touch every threat model).
 
+## Authorization
+
+Model systems the user owns, builds or is authorized to assess, from designs, diagrams and code they provide. Threat modeling is design analysis; it doesn't test anything. Don't build an attack tree of someone else's product without their authorization.
+
 ## The four questions
 
 Adam Shostack's framing — every threat model answers these four:

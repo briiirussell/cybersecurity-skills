@@ -8,10 +8,12 @@ Every PR into `development` or `main`, and every push to either branch, runs [`.
 
 | Job | Command | Fails when |
 |---|---|---|
-| Skill lint | `node scripts/lint-skills.mjs` | `name` ≠ folder; description outside 200–1024 chars; `SKILL.md` ≥ 500 lines; a cross-referenced skill has no folder; a relative link doesn't resolve; two skills share a trigger phrase; `allowed-tools` pairs `WebFetch` with unscoped `Bash`; a `Bash` grant would pre-approve a write (see below) |
+| Skill lint | `node scripts/lint-skills.mjs` | `name` ≠ folder; description outside 200–1024 chars; `SKILL.md` ≥ 500 lines; no `## Authorization` section; a cross-referenced skill has no folder; a relative link doesn't resolve; two skills share a trigger phrase; `allowed-tools` pairs `WebFetch` with unscoped `Bash`; a `Bash` grant would pre-approve a write (see below) |
+| Version check | `node scripts/check-versions.mjs` (PRs: `--base origin/<base branch>`) | `plugin.json` and `marketplace.json` versions differ; `VERSIONS.md` has no entry for the version, or a skill folder has no row (or a row has no folder); on a PR, the repo version isn't higher than the base's, or a skill changed without a row bump (generated `shared/` copies excepted). Dependabot PRs skip the bump check |
 | Baseline check | `node .github/scripts/skillspector-baseline.mjs --check` | a baseline rule lacks `id`, `path`, `message` or `reason`, or names a skill that doesn't exist |
 | Adapter drift | `node scripts/build-adapters.mjs`, then `git diff --exit-code adapters/ skills/` | generated adapters or the `shared/` → `skills/*/references/` copies are stale |
-| Tests | `npm test` (`node --test "scripts/test/*.test.mjs"`, Node ≥ 21) | a validator, `to-sarif` or build test fails |
+| Plugin validate | `claude plugin validate --json .` via `.github/scripts/plugin-validate.mjs` (CLI pinned in the workflow) | any manifest or content error, or any warning not listed in `ALLOWED` in that script with a reason. Only the root `CLAUDE.md` warning is accepted: it's contributor guidance, not plugin context |
+| Tests | `npm test` (`node --test "scripts/test/*.test.mjs"`, Node ≥ 21) | a validator, `to-sarif`, build, grant-check or version-check test fails, or a self-test shows a checker (lint, baseline check, SARIF merge, plugin-validate) no longer catches a known-bad fixture |
 | SkillSpector | per-skill `skillspector scan … --no-llm --baseline … --fail-on-findings --format sarif` | any finding that the baseline doesn't cover |
 
 The lint also **fails** when two skills claim the same single-quoted trigger phrase, for example `'security review'` in both `owasp-audit` and `threat-modeling`, because the same request could activate either skill. SkillSpector's TR2 rule looks for the same thing. Fix it by keeping the phrase in the skill that owns the work and narrowing or dropping it in the other (v1.19.5 did this for seven phrases).
@@ -19,11 +21,17 @@ The lint also **fails** when two skills claim the same single-quoted trigger phr
 Run the lint locally before you push:
 
 ```bash
-node scripts/lint-skills.mjs
-node .github/scripts/skillspector-baseline.mjs --check
-npm test
-node scripts/build-adapters.mjs && git status --short adapters/ skills/
+npm run check   # lint, baseline check, version check, adapter drift, tests
 ```
+
+### Scheduled checks
+
+Some problems arrive without a PR, so two things run every Monday:
+
+- **CI on `main`** (`ci.yml` `schedule`). The full workflow runs, including SkillSpector and the code-scanning upload, so a new upstream rule or a drifted pin shows up within a week.
+- **Link check** (`.github/workflows/links.yml`). [lychee](https://github.com/lycheeverse/lychee) checks every link in the README, docs, `shared/` and skills, internal anchors included. 403 and 429 count as OK, because some sites block CI runners or rate-limit them. A failing run opens one issue labelled `broken-links`, or updates it if it's already open. The next clean run closes it. The check doesn't block PRs, since external sites break on their own schedule. Run it on demand from the Actions tab (`workflow_dispatch`).
+
+[Dependabot](../.github/dependabot.yml) opens one grouped PR a week against `development` for the SHA-pinned actions. Those PRs skip the version-bump check, and the pin changes ship with the next versioned release. Dependabot doesn't see the SkillSpector commit (`SKILLSPECTOR_REF`) or the Claude Code CLI version (`CLAUDE_CODE_VERSION`) in `ci.yml`; bump those by hand, deliberately.
 
 ## SkillSpector
 
