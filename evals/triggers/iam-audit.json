@@ -1,0 +1,32 @@
+{
+  "skill": "iam-audit",
+  "should_fire": [
+    "design least-privilege roles for our AWS organization",
+    "we're migrating from Okta to Entra ID, help me plan it",
+    "should we use RBAC or ABAC for our app's authorization model?",
+    "set up just-in-time access and break-glass accounts",
+    "way too many people have admin, how do we clean up privilege creep?"
+  ],
+  "near_miss": [
+    {
+      "prompt": "check our API endpoints for IDOR",
+      "owner": "api-audit"
+    },
+    {
+      "prompt": "for my own accounts, should I get a YubiKey and lock down recovery codes?",
+      "owner": "personal-opsec"
+    },
+    {
+      "prompt": "audit for public S3 buckets",
+      "owner": "cloud-audit"
+    },
+    {
+      "prompt": "is our JWT signing crypto sound?",
+      "owner": "crypto-audit"
+    },
+    {
+      "prompt": "a service account key was found in the repo, how do we find any others?",
+      "owner": "secrets-audit"
+    }
+  ]
+}

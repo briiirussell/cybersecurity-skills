@@ -1,0 +1,32 @@
+{
+  "skill": "mobile-audit",
+  "should_fire": [
+    "audit our iOS app against MASVS",
+    "is our Android app storing tokens insecurely in SharedPreferences?",
+    "should we add certificate pinning to the app?",
+    "check the deeplink handling\n```xml\n<intent-filter>\n  <action android:name=\"android.intent.action.VIEW\"/>\n  <data android:scheme=\"myapp\" android:host=\"reset\"/>\n</intent-filter>\n```",
+    "how do we detect jailbroken devices?"
+  ],
+  "near_miss": [
+    {
+      "prompt": "audit the REST API the app calls for BOLA",
+      "owner": "api-audit"
+    },
+    {
+      "prompt": "pentest our web app, we have authorization",
+      "owner": "web-pentest"
+    },
+    {
+      "prompt": "find API keys committed in the source",
+      "owner": "secrets-audit"
+    },
+    {
+      "prompt": "threat model the new in-app payment feature",
+      "owner": "threat-modeling"
+    },
+    {
+      "prompt": "check our gradle dependencies for known CVEs",
+      "owner": "dependency-audit"
+    }
+  ]
+}

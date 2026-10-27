@@ -1,0 +1,32 @@
+{
+  "skill": "soc-operations",
+  "should_fire": [
+    "design our SOC tiers and escalation criteria",
+    "write runbooks for our analysts",
+    "our analysts have alert fatigue, how do we fix the triage workflow?",
+    "what MTTD and MTTR targets should we track?",
+    "shift handoff template for the SOC"
+  ],
+  "near_miss": [
+    {
+      "prompt": "write the Sigma rule for this",
+      "owner": "siem-detection"
+    },
+    {
+      "prompt": "build a hunt hypothesis for beaconing",
+      "owner": "threat-hunting"
+    },
+    {
+      "prompt": "triage this incident now, we're compromised",
+      "owner": "incident-triage"
+    },
+    {
+      "prompt": "board report on security posture",
+      "owner": "security-comms"
+    },
+    {
+      "prompt": "watch my logs, I have no SIEM",
+      "owner": "log-watch"
+    }
+  ]
+}

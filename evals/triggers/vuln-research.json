@@ -1,0 +1,32 @@
+{
+  "skill": "vuln-research",
+  "should_fire": [
+    "is CVE-2021-44228 relevant to us?",
+    "is there a public PoC for this CVE, and is it in CISA KEV?",
+    "should we drop everything and patch this zero-day?",
+    "reachability analysis: do we actually call the vulnerable function?",
+    "what's the EPSS score and the exposure window for this one?"
+  ],
+  "near_miss": [
+    {
+      "prompt": "patch all our repos against it",
+      "owner": "patch-sweep"
+    },
+    {
+      "prompt": "run npm audit",
+      "owner": "dependency-audit"
+    },
+    {
+      "prompt": "what severity should this scanner finding get?",
+      "owner": "finding-triage"
+    },
+    {
+      "prompt": "lessons learned from famous breaches",
+      "owner": "breach-patterns"
+    },
+    {
+      "prompt": "we got hit, active incident",
+      "owner": "incident-triage"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "skill": "business-logic-testing",
+  "should_fire": [
+    "can someone apply the same coupon code twice by sending requests in parallel?",
+    "test our checkout for a double spend race condition",
+    "what happens if I send a negative quantity to the cart? test the logic",
+    "check whether refunds in a different currency can be abused for arbitrage",
+    "is this TOCTOU exploitable?\n```py\nbal = get_balance(uid)\nif bal >= amt:\n    charge_card(uid, amt)  # slow network call\n    set_balance(uid, bal - amt)\n```"
+  ],
+  "near_miss": [
+    {
+      "prompt": "find SQL injection in this codebase",
+      "owner": "owasp-audit"
+    },
+    {
+      "prompt": "enumerate subdomains for the target in scope",
+      "owner": "recon"
+    },
+    {
+      "prompt": "check our GraphQL API for broken object level authorization",
+      "owner": "api-audit"
+    },
+    {
+      "prompt": "use Burp to test session handling on the authorized target",
+      "owner": "web-pentest"
+    },
+    {
+      "prompt": "threat model the new payments feature design",
+      "owner": "threat-modeling"
+    }
+  ]
+}

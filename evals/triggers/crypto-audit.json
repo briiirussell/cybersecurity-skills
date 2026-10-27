@@ -1,0 +1,32 @@
+{
+  "skill": "crypto-audit",
+  "should_fire": [
+    "is our password hashing ok? we use PBKDF2 with 1000 iterations",
+    "review this encryption\n```python\ncipher = AES.new(key, AES.MODE_ECB)\nct = cipher.encrypt(pad(data, 16))\n```",
+    "we reuse the same nonce for AES-GCM, how bad is that?",
+    "check our TLS configuration and cipher suites",
+    "how should we handle key rotation for our encrypted database columns?"
+  ],
+  "near_miss": [
+    {
+      "prompt": "OWASP Top 10 review of the whole app",
+      "owner": "owasp-audit"
+    },
+    {
+      "prompt": "an API key is hard-coded in config.js and pushed to GitHub",
+      "owner": "secrets-audit"
+    },
+    {
+      "prompt": "PCI Requirement 3: how are we allowed to store card numbers?",
+      "owner": "pci-audit"
+    },
+    {
+      "prompt": "set up SAML SSO with Okta for the app",
+      "owner": "iam-audit"
+    },
+    {
+      "prompt": "does the openssl version we ship have known CVEs?",
+      "owner": "dependency-audit"
+    }
+  ]
+}

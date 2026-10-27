@@ -1,0 +1,32 @@
+{
+  "skill": "osint-recon",
+  "should_fire": [
+    "investigate this domain using public sources for our threat intel report",
+    "what does our company's digital footprint look like online?",
+    "OSINT on the phishing infrastructure that targeted us",
+    "look up public records tied to this fraud account, we're authorized to investigate",
+    "gather open source intelligence on this threat actor"
+  ],
+  "near_miss": [
+    {
+      "prompt": "port scan and fingerprint the hosts for the pentest",
+      "owner": "recon"
+    },
+    {
+      "prompt": "audit my own accounts for SIM swap risk",
+      "owner": "personal-opsec"
+    },
+    {
+      "prompt": "find leaked credentials in our git history",
+      "owner": "secrets-audit"
+    },
+    {
+      "prompt": "hunt for this actor's TTPs in our logs",
+      "owner": "threat-hunting"
+    },
+    {
+      "prompt": "test the web app for IDOR",
+      "owner": "web-pentest"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "skill": "threat-hunting",
+  "should_fire": [
+    "hunt for beaconing in our proxy logs",
+    "hypothesis-driven hunt for living-off-the-land binaries",
+    "look for lateral movement that no alert caught",
+    "plan a hunt with the PEAK framework",
+    "search our EDR for persistence"
+  ],
+  "near_miss": [
+    {
+      "prompt": "write a detection rule for it",
+      "owner": "siem-detection"
+    },
+    {
+      "prompt": "we've been breached, contain it",
+      "owner": "incident-triage"
+    },
+    {
+      "prompt": "analyze this memory dump",
+      "owner": "disk-forensics"
+    },
+    {
+      "prompt": "what breach lessons apply to us?",
+      "owner": "breach-patterns"
+    },
+    {
+      "prompt": "red team engagement plan",
+      "owner": "red-team-engagement"
+    }
+  ]
+}

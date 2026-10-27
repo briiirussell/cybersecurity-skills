@@ -1,0 +1,32 @@
+{
+  "skill": "patch-sweep",
+  "should_fire": [
+    "a Next.js RCE just dropped, which of our 25 apps are affected? patch them all",
+    "Rails CVE and we have 12 Heroku apps, sweep them",
+    "patch every repo against these advisories and confirm production is fixed",
+    "which of our sites run the vulnerable version?",
+    "mass dependency update across the fleet for this security release"
+  ],
+  "near_miss": [
+    {
+      "prompt": "is this one CVE reachable in our code?",
+      "owner": "vuln-research"
+    },
+    {
+      "prompt": "run npm audit on this project",
+      "owner": "dependency-audit"
+    },
+    {
+      "prompt": "audit our Vercel deployment settings",
+      "owner": "cloud-audit"
+    },
+    {
+      "prompt": "set up weekly scanners across all repos",
+      "owner": "scanner-pipeline"
+    },
+    {
+      "prompt": "we were compromised through that CVE, help us respond",
+      "owner": "incident-triage"
+    }
+  ]
+}
