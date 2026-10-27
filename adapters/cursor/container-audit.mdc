@@ -141,7 +141,7 @@ Close every candidate from the checklists with one verdict, using the shared for
 A misconfiguration is a finding only when you can name who gains what. Write down the gate from [references/severity-calibration.md](references/severity-calibration.md): the lower-trust principal (a repo reader, anyone who can pull the image, a namespace user who can create pods, an attacker with code execution in an internet-facing pod), the boundary crossed (container to node, namespace to cluster, repo to production secret), and the result.
 
 **`confirmed`** — the config is in the repo or in saved cluster output and the path to the result is traced. Examples:
-- `kind: Secret` in `k8s/db-secret.yaml` with a base64 `data:` value that decodes to the production DB password: anyone with repo read gets the database. Rate by the authority, as in the keys table of the severity file.
+- `kind: Secret` in `k8s/database.yaml` with a base64 `data:` value that decodes to the production DB password: anyone with repo read gets the database. Rate by the authority, as in the keys table of the severity file.
 - A `ClusterRoleBinding` that binds `system:authenticated` to a role with `get` on `secrets` cluster-wide: any pod's service account token reads every secret.
 - A shipped Helm chart whose `values.yaml` defaults to `privileged: true` and a `hostPath: /` mount. Confirmed with a `system_configuration` condition ("deployments that don't override `securityContext.privileged`") and confidence `medium`.
 
@@ -164,7 +164,7 @@ Escape paths that need code execution in the container first (privileged, `hostP
 
 **Fingerprint:** `container-audit/<class>/<file or resource>/<name>`, no line numbers, image tags or digests:
 - `container-audit/privileged-container/charts/agent/values.yaml/securityContext.privileged`
-- `container-audit/secret-in-git/k8s/db-secret.yaml/db-credentials`
+- `container-audit/secret-in-git/k8s/database.yaml/db-credentials`
 - `container-audit/rbac-wildcard/cluster/prod-eks/ClusterRoleBinding/ci-deployer`
 - `container-audit/CVE-2024-3094/image/registry.example.com/api/xz-utils`
 
