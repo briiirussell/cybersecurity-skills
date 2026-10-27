@@ -525,6 +525,24 @@ rules:
     path: "prompt-injection/SKILL.md"
     message: "*'npx -y pkg'*"
     reason: "Advises pinning MCP servers to an exact version or digest, not `npx -y pkg`"
+  - id: "EA2"
+    path: "prompt-injection/SKILL.md"
+    message: "*no confirmation*"
+    reason: "Verdict example: an agent holding send_email with no confirmation gate is what the auditor records as a confirmed finding"
+
+  # --- hipaa-audit / privacy-engineering (findings format, v1.35.0+) ---------
+  - id: "RA2"
+    path: "hipaa-audit/SKILL.md"
+    message: "*register entry to*"
+    reason: "Tells the owner to save a redacted BAA register entry as audit evidence; an evidence file, not session persistence"
+  - id: "TM1"
+    path: "privacy-engineering/SKILL.md"
+    message: "*DELETE /account`*"
+    reason: "Verdict example: an account-deletion endpoint that skips vendor deletion calls is the erasure gap the auditor records; documentation, not a tool call"
+  - id: "EA3"
+    path: "privacy-engineering/SKILL.md"
+    message: "*beyond the stated*"
+    reason: "Describes personal data sent to a vendor beyond the stated purpose as a GDPR finding; not the skill's own scope"
 
   # --- api-audit / business-logic-testing ------------------------------------
   - id: "E1"

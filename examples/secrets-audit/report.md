@@ -23,7 +23,7 @@ None. The only provider-format keys in the tree are AWS's published example pair
 |---|---|---|---|
 | App JWT (HS256 signing secret) | `src/config.js:5` (`jwtSecret`) | Is `JWT_SECRET` set to a non-empty, high-entropy value in every deployed environment, and has it ever run on the default? | In each deployment run `node -e 'console.log((process.env.JWT_SECRET\|\|"").length)'`. Expect 32+; 0 means the default is in effect. Confirm in the secret store that the value isn't the default from `src/config.js:5`. On staging, sign an HS256 token for a test user you own with the default and call `GET /api/notes`; expect 401. |
 
-`secrets-audit:jwt-hmac-default:src/config.js:jwtSecret`: `config.js:5` falls back to a hardcoded 8-character default when `JWT_SECRET` is unset. Because it uses `||`, an empty string also selects the default, and `.env.example:3` ships `JWT_SECRET=` empty. Nothing at startup rejects a missing or default secret.
+`secrets-audit/jwt-hmac-default/src/config.js/jwtSecret`: `config.js:5` falls back to a hardcoded 8-character default when `JWT_SECRET` is unset. Because it uses `||`, an empty string also selects the default, and `.env.example:3` ships `JWT_SECRET=` empty. Nothing at startup rejects a missing or default secret.
 
 If the default is live, any internet client can sign a token with any `sub` (`auth.js:27–28`). User ids are sequential (`db.js:8`), and `requireAdmin` looks up the role for that `sub` (`auth.js:36`), so the forged token would also reach `/api/admin/*`.
 
@@ -33,10 +33,10 @@ If the check fails, set a new secret (this logs everyone out), treat every token
 
 | Fingerprint | Location | Ruled out by |
 |---|---|---|
-| `secrets-audit:aws-access-key-id:.env.example:last4-MPLE` | `.env.example:6` (`AWS_ACCESS_KEY_ID`, `AKIA…MPLE`) | AWS's documented example key ID: it's the sample value in the AWS CLI user guide and the STS `get-access-key-info` reference, so it can't authenticate. Nothing in the repo reads it (no AWS SDK, no S3 code). |
-| `secrets-audit:aws-secret-access-key:.env.example:last4-EKEY` | `.env.example:7` (`AWS_SECRET_ACCESS_KEY`, `wJal…EKEY`) | AWS's documented example secret: the sample paired with the key ID above in the AWS CLI `aws configure` docs. |
-| `secrets-audit:error-response-secret-leak:src/app.js:errorHandler` | `src/app.js:17` | The handler returns only `err.message` and `err.stack`. No error path carries `config.jwtSecret` or `process.env`: the secret is used only at `auth.js:18` and `auth.js:27`, and verify errors are caught at `auth.js:30`. There is no crash reporter. The stack-trace disclosure itself belongs to `owasp-audit`. |
-| `secrets-audit:generic-high-entropy:package-lock.json:integrity` | `package-lock.json:21` (first of 105) | All 105 hits from the 40-character sweep are `sha512` integrity digests. Every `resolved` URL is `registry.npmjs.org` with no userinfo, and there's no `_authToken`. |
+| `secrets-audit/aws-access-key-id/.env.example/AWS_ACCESS_KEY_ID` | `.env.example:6` (`AWS_ACCESS_KEY_ID`, `AKIA…MPLE`) | AWS's documented example key ID: it's the sample value in the AWS CLI user guide and the STS `get-access-key-info` reference, so it can't authenticate. Nothing in the repo reads it (no AWS SDK, no S3 code). |
+| `secrets-audit/aws-secret-access-key/.env.example/AWS_SECRET_ACCESS_KEY` | `.env.example:7` (`AWS_SECRET_ACCESS_KEY`, `wJal…EKEY`) | AWS's documented example secret: the sample paired with the key ID above in the AWS CLI `aws configure` docs. |
+| `secrets-audit/error-response-secret-leak/src/app.js/errorHandler` | `src/app.js:17` | The handler returns only `err.message` and `err.stack`. No error path carries `config.jwtSecret` or `process.env`: the secret is used only at `auth.js:18` and `auth.js:27`, and verify errors are caught at `auth.js:30`. There is no crash reporter. The stack-trace disclosure itself belongs to `owasp-audit`. |
+| `secrets-audit/generic-high-entropy/package-lock.json/integrity` | `package-lock.json:21` (first of 105) | All 105 hits from the 40-character sweep are `sha512` integrity digests. Every `resolved` URL is `registry.npmjs.org` with no userinfo, and there's no `_authToken`. |
 
 ### Hardening notes (not findings)
 

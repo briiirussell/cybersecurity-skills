@@ -38,7 +38,7 @@ Every record has exactly one `verdict`. Each verdict has its own shape, and unkn
 |---|---|---|---|
 | `confirmed` | Complete entrypoint → sink trace with impact, or a working PoC | `severity`, `conditions[]`. Optional: `disposition`, `reproduced` | Yes |
 | `needs_validation` | The code supports the claim, but one decisive fact lives outside it (proxy, IdP, deploy config, feature flag) | `blockers[]` (non-empty), `validation_plan` | **No** |
-| `rejected` | A named control at a named location runs on every attacker-reachable path before the sink | `ruled_out_by {control, location}` | **No** |
+| `rejected` | A named control at a named location runs on every attacker-reachable path before the sink, or the claim is ruled out by reachability or a known-inert value | `ruled_out_by {control, location}` | **No** |
 
 `needs_validation` is not a parking spot for a hunch. If you can't name the blocker and a check the owner can run to settle it, the candidate is either rejected or not ready to record. The old "Potential" label is retired.
 
@@ -56,6 +56,7 @@ Common to all three shapes:
 | `title` | string | One line, specific |
 | `cwe` | string, optional | `CWE-639` |
 | `owasp_category` | string, optional | `A01:2025`, `API1:2023` |
+| `ext` | object, optional | The producing skill's own fields (see "Skill-specific fields" below) |
 | `location` | `{file, line}` | Primary location. `file` is repo-relative, `line` ≥ 1 |
 | `trace[]` | `{kind, file, line, description}` | `kind` ∈ `entrypoint` \| `propagation` \| `sink`. A non-empty trace starts with `entrypoint`, ends with `sink`, and has neither in the middle. `confirmed` needs ≥ 2 steps; the others may be `[]` |
 | `evidence[]` | `{file, line, description}` | `confirmed` needs ≥ 1 |
@@ -73,7 +74,9 @@ Common to all three shapes:
 
 `needs_validation` only: `blockers[]` (non-empty strings, one per decisive fact) and `validation_plan` (a concrete check the owner can run locally and/or against the deployment).
 
-`rejected` only: `ruled_out_by.control` (what the control does) and `ruled_out_by.location` (`{file, line}` where it runs).
+`rejected` only: `ruled_out_by.control` (what the control does) and `ruled_out_by.location` (`{file, line}` where it runs). When nothing runs because the code is never reached, the value is a published example, or the guard is inside a dependency, `control` states that fact and `location` points at its evidence: the only call site, the declaring manifest line, the line holding the value, or the lockfile pin. `verification.md` has the table.
+
+A hard-coded fallback or other unsafe shipped default is `confirmed`, not `needs_validation`; the deployment fact caps confidence instead. See "Unsafe shipped defaults" in `verification.md`.
 
 ### Rules the validator enforces
 
@@ -83,6 +86,30 @@ Common to all three shapes:
 - Every `line` is an integer ≥ 1.
 - Trace order (entrypoint first, sink last). `overall` ≤ impact. `high` confidence on `confirmed` needs `reproduced: true`.
 - `needs_validation` has non-empty `blockers` and `validation_plan`. `rejected` has `ruled_out_by`.
+
+### Skill-specific fields (`ext`)
+
+Some skills need fields the common shape doesn't have: the PCI DSS requirement a gap is against, the cloud account and region of a resource, the MASVS control, the HIPAA standard. Those go in `ext`, never as new top-level fields (the validator rejects unknown fields). Each skill lists its `ext` keys in its own SKILL.md.
+
+- Keys are snake_case (`requirement`, `in_cde`, `account`). Values are a non-empty string, a number, a boolean, or a non-empty array of those. No nesting, no `null`, no empty `ext` (leave it out instead).
+- Don't repeat what already has a field. The CWE goes in `cwe`, the OWASP category in `owasp_category`, the file in `location`.
+- `to-sarif.mjs` copies `ext` into the SARIF result's `properties.ext` unchanged.
+
+```json
+"ext": { "requirement": "8.4.2", "in_cde": true }
+```
+
+### Findings about deployed resources
+
+Not every finding lives in a source file. A cloud bucket policy, an IdP setting, a live host's TLS configuration or a decompiled app binary still needs a `location`. Save the read-only output that shows the problem into the audit's output directory, then point `location` and `evidence[]` at that file and line:
+
+```text
+security-audit/evidence/aws-s3-get-bucket-policy-prod-assets.json   # aws s3api get-bucket-policy ... > this file
+```
+
+- Redact before saving. Never write a secret value, a session token or customer data into an evidence file.
+- Record the command and the time it ran in the evidence `description`, so the owner can run it again.
+- Build the fingerprint from the resource's own id, with slashes: `cloud-audit/s3-public-read/aws/123456789012/prod-assets`. ARNs and `host:port` contain `:<digits>`, which the validator reads as a line number.
 
 ## Fingerprints
 
@@ -190,9 +217,11 @@ node references/validate-coverage.mjs coverage.json --findings findings.json
 
 A unit is `{id, surface, boundary, owasp_category, status, reviewed_paths[], checks[{invariant, method, result}], finding_fingerprints[], unresolved[]}`. All fields are required; `owasp_category` may be `null`. `status` ∈ `planned`, `in_progress`, `blocked`, `covered`, `candidate`, `deferred`, `out_of_scope`, `not_applicable`. Units have unique ids, and `reviewed_paths` follow the same safe-path rule (globs allowed). The validator also requires:
 
-- `covered`: at least one reviewed path and at least one check
-- `candidate`: at least one finding fingerprint
+- `covered`: at least one reviewed path and at least one check. With `--findings`, it may list only `rejected` fingerprints
+- `candidate`: at least one finding fingerprint. A unit with a confirmed or needs_validation finding stays `candidate`
 - `blocked`: at least one unresolved item
+
+Unit ids use the same characters as fingerprints and may also start with `.`, for dotfiles.
 
 `coverage.schema.json` documents the shape.
 

@@ -1,6 +1,6 @@
 [
   {
-    "fingerprint": "secrets-audit:aws-access-key-id:.env.example:last4-MPLE",
+    "fingerprint": "secrets-audit/aws-access-key-id/.env.example/AWS_ACCESS_KEY_ID",
     "verdict": "rejected",
     "skill": "secrets-audit",
     "title": "AWS access key ID AKIA…MPLE in .env.example (AWS_ACCESS_KEY_ID) is AWS's published documentation example",
@@ -19,7 +19,7 @@
     }
   },
   {
-    "fingerprint": "secrets-audit:aws-secret-access-key:.env.example:last4-EKEY",
+    "fingerprint": "secrets-audit/aws-secret-access-key/.env.example/AWS_SECRET_ACCESS_KEY",
     "verdict": "rejected",
     "skill": "secrets-audit",
     "title": "AWS secret access key wJal…EKEY in .env.example (AWS_SECRET_ACCESS_KEY) is AWS's published documentation example",
@@ -37,7 +37,7 @@
     }
   },
   {
-    "fingerprint": "secrets-audit:error-response-secret-leak:src/app.js:errorHandler",
+    "fingerprint": "secrets-audit/error-response-secret-leak/src/app.js/errorHandler",
     "verdict": "rejected",
     "skill": "secrets-audit",
     "title": "Global error handler returns err.message and err.stack to clients: checked for secret / process.env exposure",
@@ -57,7 +57,7 @@
     }
   },
   {
-    "fingerprint": "secrets-audit:generic-high-entropy:package-lock.json:integrity",
+    "fingerprint": "secrets-audit/generic-high-entropy/package-lock.json/integrity",
     "verdict": "rejected",
     "skill": "secrets-audit",
     "title": "105 40+ char base64 matches in package-lock.json are npm integrity hashes",
@@ -74,7 +74,7 @@
     }
   },
   {
-    "fingerprint": "secrets-audit:jwt-hmac-default:src/config.js:jwtSecret",
+    "fingerprint": "secrets-audit/jwt-hmac-default/src/config.js/jwtSecret",
     "verdict": "needs_validation",
     "skill": "secrets-audit",
     "title": "JWT signing secret falls back to a hardcoded default when JWT_SECRET is unset or empty, and .env.example ships it empty",

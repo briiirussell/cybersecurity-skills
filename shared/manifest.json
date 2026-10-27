@@ -9,7 +9,17 @@
       "owasp-audit",
       "api-audit",
       "dependency-audit",
-      "secrets-audit"
+      "secrets-audit",
+      "cloud-audit",
+      "container-audit",
+      "iam-audit",
+      "crypto-audit",
+      "mobile-audit",
+      "web-pentest",
+      "prompt-injection",
+      "pci-audit",
+      "hipaa-audit",
+      "privacy-engineering"
     ],
     "validate-findings.mjs": [
       "agent-supply-chain-audit",
@@ -19,7 +29,17 @@
       "owasp-audit",
       "api-audit",
       "dependency-audit",
-      "secrets-audit"
+      "secrets-audit",
+      "cloud-audit",
+      "container-audit",
+      "iam-audit",
+      "crypto-audit",
+      "mobile-audit",
+      "web-pentest",
+      "prompt-injection",
+      "pci-audit",
+      "hipaa-audit",
+      "privacy-engineering"
     ],
     "to-sarif.mjs": [
       "agent-supply-chain-audit",
@@ -29,7 +49,17 @@
       "owasp-audit",
       "api-audit",
       "dependency-audit",
-      "secrets-audit"
+      "secrets-audit",
+      "cloud-audit",
+      "container-audit",
+      "iam-audit",
+      "crypto-audit",
+      "mobile-audit",
+      "web-pentest",
+      "prompt-injection",
+      "pci-audit",
+      "hipaa-audit",
+      "privacy-engineering"
     ],
     "findings-format.md": [
       "agent-supply-chain-audit",
@@ -39,7 +69,17 @@
       "owasp-audit",
       "api-audit",
       "dependency-audit",
-      "secrets-audit"
+      "secrets-audit",
+      "cloud-audit",
+      "container-audit",
+      "iam-audit",
+      "crypto-audit",
+      "mobile-audit",
+      "web-pentest",
+      "prompt-injection",
+      "pci-audit",
+      "hipaa-audit",
+      "privacy-engineering"
     ],
     "severity-calibration.md": [
       "agent-supply-chain-audit",
@@ -50,7 +90,15 @@
       "dependency-audit",
       "secrets-audit",
       "prompt-injection",
-      "web-pentest"
+      "web-pentest",
+      "cloud-audit",
+      "container-audit",
+      "iam-audit",
+      "crypto-audit",
+      "mobile-audit",
+      "pci-audit",
+      "hipaa-audit",
+      "privacy-engineering"
     ],
     "coverage.schema.json": [
       "owasp-audit",
@@ -65,7 +113,18 @@
       "finding-triage",
       "owasp-audit",
       "api-audit",
-      "web-pentest"
+      "web-pentest",
+      "secrets-audit",
+      "dependency-audit",
+      "cloud-audit",
+      "container-audit",
+      "iam-audit",
+      "crypto-audit",
+      "mobile-audit",
+      "prompt-injection",
+      "pci-audit",
+      "hipaa-audit",
+      "privacy-engineering"
     ],
     "recon-and-coverage.md": [
       "owasp-audit",

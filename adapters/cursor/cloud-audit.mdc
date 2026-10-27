@@ -10,7 +10,7 @@ Audit cloud infrastructure configurations for misconfigurations, excessive permi
 
 Cross-references: `iam-audit` for the consultant-style IAM deep-dive (design / audit / migrate across identity providers and federation patterns) — this skill includes an IAM section but stays at the cloud-posture level; for role design, JIT access, workload identity federation, and migration plans, invoke `iam-audit`. `container-audit` for Kubernetes-specific posture sitting on top of cloud. `secrets-audit` for secrets-manager hygiene and rotation. `patch-sweep` for responding to a CVE wave across a fleet of PaaS apps (this skill's PaaS section is the posture half of that). `scanner-pipeline` for running Supabase's security advisor and the other scanners on a schedule.
 
-Findings use the shared dispositions: Fixed / Deferred / Accepted Risk / Mitigated (platform/config) / Requires major migration, per `owasp-audit`'s Output Format.
+Findings are recorded in the shared `findings.json` format (see [Verify, then record](#verify-then-record)). Dispositions, usually set later by `finding-triage`: Fixed / Deferred / Accepted Risk / Mitigated (platform/config) / Requires major migration.
 
 ## Authorization
 
@@ -185,36 +185,108 @@ Raise this when what's serving production can't be rebuilt from the production b
 
 Why it matters: patches merged to the branch never reach production, nobody can say what code is live, and a rollback goes to an unknown state. Severity follows what's live: a vulnerable framework in the manual deploy makes it as severe as that vulnerability; with nothing known-vulnerable, it's a medium. Remediation is an owner decision — redeploy from git after fixing the build, adopt the deployed code into the branch, or retire the project — never a silent `vercel deploy --prod` over someone else's deploy. For a fleet of these, run `patch-sweep`.
 
+## Verify, then record
+
+Close every candidate from the categories above with one verdict, as defined in [references/findings-format.md](references/findings-format.md), then write `findings.json`.
+
+**1. Save the evidence first.** Most of these findings are about deployed resources, not files. For each one, save the read-only command output, redacted, to `<audit dir>/evidence/<name>.json` (or `.txt`), pretty-printed (`| jq .`) so line numbers stay put. Name the file after the command and resource: `evidence/aws-s3api-get-bucket-policy-prod-uploads.json`, `evidence/vercel-deployments-acme-web.json`. Point `location`, `trace[]` and `evidence[]` at that file and the line of the decisive field (`"Principal": "*"`, `"CidrIp": "0.0.0.0/0"`, `"source": "cli"`), with the path repo-relative like any other location (`security-audit/evidence/...`). For an account-only audit with no repository, make paths relative to the audit directory and say so in the report header. For IaC-only findings, point at the `.tf` / CloudFormation / Pulumi file and line instead.
+
+Never save a secret value. Strip env var and config var values, tokens, presigned URLs, connection-string passwords and key material before writing the file. Keep the identifiers needed to find the resource (account ID, ARN, bucket name, project ID); shorten access key IDs to the last 4 (`AKIA…7QXZ`).
+
+**2. Run the refutation pass** in [references/verification.md](references/verification.md) on every candidate before it is confirmed. For a cloud finding, the "path" is: who can reach it (internet, any authenticated principal in the provider, another tenant, a CI job) → the rule that lets them in → the resource and what it holds. Look for the strongest control that sits in front of it: account-level Block Public Access, an SCP or organization policy, a VPC endpoint policy, a private subnet with no route to an internet gateway, deployment protection, an IdP condition. Write the path as `trace[]` over the evidence files: `entrypoint` = the rule or setting that lets the principal in, `propagation` = what links it to the resource (the group attached to the instance's ENI, the route table), `sink` = the resource and what it holds.
+
+**3. Pick the verdict.**
+
+| Verdict | What it looks like here |
+|---|---|
+| `confirmed` | The saved output shows the exposure and what sits behind it. Examples: `get-bucket-policy` grants `s3:GetObject` to `"Principal": "*"`, `get-public-access-block` shows `RestrictPublicBuckets: false` at bucket and account level, and the bucket holds customer uploads. A security group allows `0.0.0.0/0` on 5432 and is attached to an RDS instance with `PubliclyAccessible: true`. Production on Vercel is a `source: cli` deployment from 96 days ago, its commit is not on the production branch, and it serves a Next.js version with a known CVE. |
+| `needs_validation` | The config supports the claim, but one fact lives somewhere you didn't or couldn't read. Examples: Terraform opens 22 to `0.0.0.0/0`, but there's no state or account access to show it's applied and attached (blocker: is the module deployed; plan: `aws ec2 describe-security-groups --group-ids <id>` and `aws ec2 describe-network-interfaces --filters Name=group-id,Values=<id>`). A preview environment's `DATABASE_URL` host looks like production, but the env var can only be pulled by the owner (plan: the host-only `vercel env pull` command from check 5). Any check you describe but don't run, because it wasn't authorized, is `needs_validation` with the exact command in `validation_plan`. |
+| `rejected` | A named control at a named location stops it on every path. Examples: a bucket policy grants `"Principal": "*"`, but the account-level public access block (`aws s3control get-public-access-block`, saved to evidence) has `RestrictPublicBuckets: true`, so `ruled_out_by.location` is that evidence file and line. A wide-open security group is attached to nothing (`describe-network-interfaces` returns `[]`), and `ruled_out_by` points at that saved output. |
+
+An unsafe default in an IaC module you were given (a module that creates buckets public unless `block_public = true` is passed) is `confirmed`, with a `system_configuration` condition ("deployments that don't override `block_public`") and confidence `medium`.
+
+Gaps with no traced impact are hardening notes, not records: VPC flow logs off, KMS rotation off, no S3 lifecycle policy, versioning off on a bucket with no traced loss scenario, GuardDuty off with nothing else wrong. They go in the report's hardening section with no severity.
+
+**4. Calibrate severity** with [references/severity-calibration.md](references/severity-calibration.md), on `confirmed` records only, and rate by what the exposed resource holds and allows, not by the benchmark ID. A public bucket of marketing images is Low or a hardening note; a public bucket of customer documents is High. `overall` ≤ demonstrated impact.
+
+Confidence: config read from the live API is evidence, not reproduction. Set `"reproduced": true` (and allow `high` confidence) only when you demonstrated the exposure with an authorized, non-destructive request: an anonymous `curl -sI` that returns 200 for an object, the generated `*.vercel.app` URL answering 200 while the custom domain sits behind a WAF. IaC-only findings cap at `medium`.
+
+**5. Fingerprint by resource, not by line.** Form: `cloud-audit/<class>/<provider>/<account>/<resource>`, or `cloud-audit/<class>/<IaC file>/<resource address>` for IaC. Write ARNs and `host:port` with slashes; the validator rejects `:<digits>` segments.
+
+```
+cloud-audit/public-bucket/aws/123456789012/prod-uploads
+cloud-audit/open-ingress/aws/123456789012/sg-0a1b2c3d/5432
+cloud-audit/iam-wildcard/aws/123456789012/role/deploy        # arn:aws:iam::123456789012:role/deploy
+cloud-audit/manual-prod-deploy/vercel/acme-team/acme-web
+cloud-audit/iam-wildcard/infra/iam.tf/aws_iam_policy.deploy
+```
+
+Classes in use: `public-bucket`, `open-ingress`, `public-database`, `iam-wildcard`, `root-no-mfa`, `stale-access-key`, `imdsv1`, `logging-disabled`, `manual-prod-deploy`, `git-deploy-broken`, `legacy-project`, `duplicate-project`, `preview-exposure`, `review-app-live-keys`, `rls-disabled`, `repo-security-defaults`. Add a new one when none fits.
+
+**6. Domain fields go under `ext`:**
+
+| Key | Value |
+|---|---|
+| `provider` | `aws`, `gcp`, `azure`, `vercel`, `netlify`, `heroku`, `render`, `railway`, `fly`, `supabase`, `github` |
+| `account` | Account ID, project ID, subscription ID, or PaaS team / org slug |
+| `region` | `us-east-1`, `europe-west1`, `global` (omit for PaaS without regions) |
+| `resource` | The resource as the provider prints it (ARN, bucket name, `sg-…`, project name, deployment URL) |
+
+**7. Write and validate.** Set `skill: "cloud-audit"`, sort by fingerprint, write `findings.json`, and fix until it passes:
+
+```bash
+node references/validate-findings.mjs findings.json
+node references/to-sarif.mjs findings.json -o findings.sarif   # optional
+```
+
+On a re-run, load the previous `findings.json` and match by fingerprint. A `rejected` record stays rejected unless the control it names changed (re-read that evidence first).
+
 ## Output Format
+
+Write `findings.json` first. The report is rendered from it and never changes a verdict, severity, blocker or impact the JSON doesn't already say. No "Potential" or "Possible" labels: an item is a confirmed finding, a needs-validation item, a rejected record, or a hardening note.
 
 ```markdown
 # Cloud Security Audit Report
-## Account(s): [account ID(s)]
-## Provider: [AWS/GCP/Azure/Vercel/Heroku/Render/...]
-## Regions: [audited regions]
-## Date: [date]
+## Provider(s): [AWS / GCP / Azure / Vercel / Heroku / Render / ...]
+## Account(s) / team(s): [IDs or slugs]   ## Regions: [audited regions]   ## Date: [date]
+## Scope: [full | partial — what was left out and why]   ## Access: [read-only role / CLI identity used]
+## findings.json: [path] — validated: [yes]   ## Evidence: [audit dir]/evidence/
 
 ### Summary
-- Total findings: X
-- Critical: X | High: X | Medium: X | Low: X
+- Confirmed: [N] (Critical [n] | High [n] | Medium [n] | Low [n])
+- Needs validation: [N]   Rejected: [N]   Hardening notes: [N]
 
-### Findings
+### Confirmed findings
+#### [SEVERITY] [Category]: [Title]  `fingerprint`
+**Provider / account / region:** [ext.provider / ext.account / ext.region]
+**Resource:** [ext.resource]
+**Evidence:** `evidence/<file>:<line>` — [the decisive lines, redacted]
+**Confidence:** [medium | high (reproduced)]   **Conditions:** [from conditions[]]
+**What and why it matters:** [who can reach it → the rule that lets them in → what the resource holds]
+**Fix:** [specific command or IaC change; note availability impact]
+**Verify the fix:** [the read-only command that shows it's closed]
 
-#### [SEVERITY] [Category]: [Title]
-**Resource:** [resource ARN/ID, or platform team/project/deployment URL]
-**Region:** [region]
+### Needs validation
+| Finding | Blocker | Check for the owner to run |
+|---|---|---|
 
-**Issue:** [What the misconfiguration is]
+### Hardening notes (not findings)
+- [gap] — [why it isn't a finding] — [effort]
 
-**Risk:** [What an attacker could do]
+### Rejected (do not re-raise)
+| Fingerprint | Ruled out by | Location |
+|---|---|---|
 
-**Evidence:** [CLI output or IaC snippet]
+### Coverage
+| Category | Accounts / teams checked | Not checked (and why) |
+|---|---|---|
+| IAM / Network / Storage / Compute / Logging / Secrets / PaaS / Supabase / Repo defaults | | |
 
-**Remediation:** [Specific fix command or IaC change]
+### PaaS deployment inventory
+| Team | Project / app | Repo + production branch | Source of live deploy (git / cli) | Deployed sha = branch HEAD? | Domains |
+|---|---|---|---|---|---|
 
----
-
-### Prioritized Action Plan
+### Prioritized remediation plan
 1. [Critical — immediate]
 2. [High — this week]
 3. [Medium — this month]
@@ -241,9 +313,17 @@ Why it matters: patches merged to the branch never reach production, nobody can 
 - [Heroku CLI commands](https://devcenter.heroku.com/articles/heroku-cli-commands); [Render API](https://api-docs.render.com/)
 - [GitHub REST — vulnerability alerts](https://docs.github.com/en/rest/repos/repos#check-if-vulnerability-alerts-are-enabled-for-a-repository)
 - [Supabase database advisors](https://supabase.com/docs/guides/database/database-advisors)
+- Shared references (copied into `references/` at build time): [findings-format.md](references/findings-format.md), [findings.schema.json](references/findings.schema.json), [validate-findings.mjs](references/validate-findings.mjs), [to-sarif.mjs](references/to-sarif.mjs), [severity-calibration.md](references/severity-calibration.md), [verification.md](references/verification.md)
+- Per-platform PaaS commands: [references/paas.md](references/paas.md)
 
 ## Reference files
 
 This skill links to supporting files under `references/`. They are not inlined in this adapter; open them on GitHub (or in `skills/cloud-audit/references/` if you have the repo checked out):
 
+- [references/findings-format.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/cloud-audit/references/findings-format.md)
+- [references/findings.schema.json](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/cloud-audit/references/findings.schema.json)
 - [references/paas.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/cloud-audit/references/paas.md)
+- [references/severity-calibration.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/cloud-audit/references/severity-calibration.md)
+- [references/to-sarif.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/cloud-audit/references/to-sarif.mjs)
+- [references/validate-findings.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/cloud-audit/references/validate-findings.mjs)
+- [references/verification.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/cloud-audit/references/verification.md)

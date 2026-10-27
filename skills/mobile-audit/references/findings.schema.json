@@ -1,0 +1,222 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/briiirussell/cybersecurity-skills/blob/main/shared/findings.schema.json",
+  "title": "cybersecurity-skills findings.json",
+  "description": "An array of finding records, one per candidate, sorted by fingerprint. Each record takes exactly one of three shapes selected by `verdict`. Some rules cannot be expressed in JSON Schema (sort order, unique fingerprints, path safety, trace order, overall <= impact, high confidence needs reproduction); validate-findings.mjs enforces those, so treat that script as authoritative. The three-verdict record shape is adapted from cloudflare/security-audit-skill report-schema.json (MIT, Copyright (c) Cloudflare, Inc.); field names, enums and rules here are this repo's own.",
+  "type": "array",
+  "items": { "$ref": "#/$defs/record" },
+
+  "$defs": {
+    "record": {
+      "type": "object",
+      "required": ["verdict"],
+      "properties": {
+        "verdict": { "enum": ["confirmed", "needs_validation", "rejected"] }
+      },
+      "oneOf": [
+        { "$ref": "#/$defs/confirmed" },
+        { "$ref": "#/$defs/needs_validation" },
+        { "$ref": "#/$defs/rejected" }
+      ]
+    },
+
+    "confirmed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fingerprint", "verdict", "skill", "title", "location", "trace", "evidence", "counterevidence", "confidence", "severity", "conditions"],
+      "properties": {
+        "fingerprint": { "$ref": "#/$defs/fingerprint" },
+        "verdict": { "const": "confirmed" },
+        "skill": { "$ref": "#/$defs/skill" },
+        "title": { "$ref": "#/$defs/text" },
+        "cwe": { "$ref": "#/$defs/cwe" },
+        "owasp_category": { "$ref": "#/$defs/text" },
+        "ext": { "$ref": "#/$defs/ext" },
+        "location": { "$ref": "#/$defs/location" },
+        "trace": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/trace_step" } },
+        "evidence": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/evidence" } },
+        "counterevidence": { "$ref": "#/$defs/text" },
+        "confidence": { "$ref": "#/$defs/confidence" },
+        "reproduced": {
+          "type": "boolean",
+          "description": "true only when the finding was demonstrated dynamically (PoC, test, request/response). A static-only trace caps confidence at medium, so confidence `high` requires reproduced: true."
+        },
+        "severity": { "$ref": "#/$defs/severity" },
+        "conditions": { "type": "array", "items": { "$ref": "#/$defs/condition" } },
+        "disposition": {
+          "enum": ["Fixed", "Deferred", "Accepted Risk", "Mitigated (platform/config)", "Requires major migration"],
+          "description": "What happened to the finding. A false positive is not a disposition: record it as verdict `rejected`."
+        }
+      }
+    },
+
+    "needs_validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fingerprint", "verdict", "skill", "title", "location", "trace", "evidence", "counterevidence", "confidence", "blockers", "validation_plan"],
+      "properties": {
+        "fingerprint": { "$ref": "#/$defs/fingerprint" },
+        "verdict": { "const": "needs_validation" },
+        "skill": { "$ref": "#/$defs/skill" },
+        "title": { "$ref": "#/$defs/text" },
+        "cwe": { "$ref": "#/$defs/cwe" },
+        "owasp_category": { "$ref": "#/$defs/text" },
+        "ext": { "$ref": "#/$defs/ext" },
+        "location": { "$ref": "#/$defs/location" },
+        "trace": { "type": "array", "items": { "$ref": "#/$defs/trace_step" } },
+        "evidence": { "type": "array", "items": { "$ref": "#/$defs/evidence" } },
+        "counterevidence": { "$ref": "#/$defs/text" },
+        "confidence": { "$ref": "#/$defs/confidence" },
+        "blockers": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/text" },
+          "description": "Each decisive fact that lives outside the code (proxy, IdP, deploy config, runtime flag) and would settle the verdict."
+        },
+        "validation_plan": {
+          "$ref": "#/$defs/text",
+          "description": "A concrete check the owner can run (locally and/or against the deployment) that resolves every blocker."
+        }
+      }
+    },
+
+    "rejected": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fingerprint", "verdict", "skill", "title", "location", "trace", "evidence", "counterevidence", "confidence", "ruled_out_by"],
+      "properties": {
+        "fingerprint": { "$ref": "#/$defs/fingerprint" },
+        "verdict": { "const": "rejected" },
+        "skill": { "$ref": "#/$defs/skill" },
+        "title": { "$ref": "#/$defs/text" },
+        "cwe": { "$ref": "#/$defs/cwe" },
+        "owasp_category": { "$ref": "#/$defs/text" },
+        "ext": { "$ref": "#/$defs/ext" },
+        "location": { "$ref": "#/$defs/location" },
+        "trace": { "type": "array", "items": { "$ref": "#/$defs/trace_step" } },
+        "evidence": { "type": "array", "items": { "$ref": "#/$defs/evidence" } },
+        "counterevidence": { "$ref": "#/$defs/text" },
+        "confidence": { "$ref": "#/$defs/confidence" },
+        "ruled_out_by": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["control", "location"],
+          "description": "The specific control that runs on every attacker-reachable path before the sink.",
+          "properties": {
+            "control": { "$ref": "#/$defs/text" },
+            "location": { "$ref": "#/$defs/location" }
+          }
+        }
+      }
+    },
+
+    "fingerprint": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+-]{2,199}$",
+      "description": "Stable root-cause id. Never includes a line number, severity or verdict. Suggested form: <skill>/<cwe-or-class>/<repo-relative file>/<symbol or route>."
+    },
+    "skill": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+    "ext": {
+      "type": "object",
+      "minProperties": 1,
+      "description": "Fields specific to the producing skill (a PCI DSS requirement, a cloud account and region, a MASVS control). Each skill documents its keys. Flat: snake_case keys, scalar values or arrays of scalars.",
+      "propertyNames": { "pattern": "^[a-z][a-z0-9_]{0,63}$" },
+      "additionalProperties": {
+        "oneOf": [
+          { "type": "string", "minLength": 1 },
+          { "type": "number" },
+          { "type": "boolean" },
+          { "type": "array", "minItems": 1, "items": { "oneOf": [{ "type": "string", "minLength": 1 }, { "type": "number" }, { "type": "boolean" }] } }
+        ]
+      }
+    },
+    "cwe": { "type": "string", "pattern": "^CWE-[1-9][0-9]*$" },
+    "text": { "type": "string", "minLength": 1, "pattern": "\\S" },
+    "confidence": { "enum": ["high", "medium", "low"] },
+    "level": { "enum": ["critical", "high", "medium", "low"] },
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Repo-relative path with forward slashes. No leading slash, drive letter, ~, URL scheme, backslash, or `..` segment."
+    },
+    "line": { "type": "integer", "minimum": 1 },
+
+    "location": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file", "line"],
+      "properties": {
+        "file": { "$ref": "#/$defs/path" },
+        "line": { "$ref": "#/$defs/line" }
+      }
+    },
+
+    "trace_step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "file", "line", "description"],
+      "description": "A non-empty trace starts with an entrypoint and ends with a sink.",
+      "properties": {
+        "kind": { "enum": ["entrypoint", "propagation", "sink"] },
+        "file": { "$ref": "#/$defs/path" },
+        "line": { "$ref": "#/$defs/line" },
+        "description": { "$ref": "#/$defs/text" }
+      }
+    },
+
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file", "line", "description"],
+      "properties": {
+        "file": { "$ref": "#/$defs/path" },
+        "line": { "$ref": "#/$defs/line" },
+        "description": { "$ref": "#/$defs/text" }
+      }
+    },
+
+    "severity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["likelihood", "impact", "overall"],
+      "description": "overall must not exceed impact.score.",
+      "properties": {
+        "likelihood": { "$ref": "#/$defs/scored" },
+        "impact": { "$ref": "#/$defs/scored" },
+        "overall": { "$ref": "#/$defs/level" }
+      }
+    },
+
+    "scored": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["score", "reason"],
+      "properties": {
+        "score": { "$ref": "#/$defs/level" },
+        "reason": { "$ref": "#/$defs/text" }
+      }
+    },
+
+    "condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "description"],
+      "properties": {
+        "kind": {
+          "enum": [
+            "authentication_level",
+            "authorization_role",
+            "user_interaction",
+            "system_configuration",
+            "network_routing",
+            "environmental_dependency",
+            "data_state",
+            "timing_dependency",
+            "third_party_dependency"
+          ]
+        },
+        "description": { "$ref": "#/$defs/text" }
+      }
+    }
+  }
+}

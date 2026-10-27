@@ -12,6 +12,10 @@ reads the code.
 
 - After the checklist / hunting phase, once per candidate. Don't batch several candidates into one verifier: a
   verifier that rejects one candidate tends to wave the next one through.
+- **Small targets** (a few thousand lines, a dozen or more candidates): one verifier per candidate can mean 20
+  subagents for a 150-line app. There you may group candidates that share no code path, up to about five per
+  verifier, with each candidate written up and closed separately. Two candidates stay in separate verifiers when they
+  touch the same handler or control, or when either one would be confirmed at High or Critical.
 - Again whenever a verdict would move **up** (rejected → needs_validation, needs_validation → confirmed, or a
   severity increase) or the evidence changes materially. **An upgrade needs a new, independent verifier.** The verifier
   that produced the lower verdict does not get to overturn itself.
@@ -108,6 +112,20 @@ support the claim and a single external fact decides it.
 - Keep rejected records in `findings.json`. Re-runs read them so the same claim isn't raised again. A rejection
   suppresses **only that exact claim** (same fingerprint). A sibling path or a changed control is a new candidate.
 
+Some rejections have no guard to point at. `ruled_out_by` then names the fact that rules the claim out and
+`location` points at the evidence for it:
+
+| Why it's ruled out | `control` | `location` |
+|---|---|---|
+| Never reached: the vulnerable function or package is never called | "`_.template` is never called; lodash is used only for `merge` and `pick`" | The only import or call site of the package. If nothing imports it, the line in the manifest or lockfile that declares it |
+| Known-inert value: a vendor's published example key, a documented test card, a placeholder | "AWS's documented example access key ID; it can't authenticate" | The line where the value appears |
+| Control inside a dependency: the library's own guard runs on every path | "jsonwebtoken 9.0.2 `verify()` rejects `alg: none` when a secret is given" | The lockfile or manifest line that pins that version |
+
+A control inside a dependency rejects only when the installed version is pinned and that version's behaviour is the
+one you checked: read in the vendored or installed source, the changelog, or the advisory's fixed-in version. If the
+range in the manifest could resolve to a version without the guard and there's no lockfile, it's `needs_validation`
+with the resolved version as the blocker. "The library probably handles it" is not a rejection (see below).
+
 ## What does NOT rule out a candidate
 
 None of these is a reason to reject. Each one is a reason to keep looking:
@@ -124,10 +142,28 @@ None of these is a reason to reject. Each one is a reason to keep looking:
 - **Missing information.** "I couldn't find where this is called" is a blocker or an unresolved coverage item. It isn't
   a rejection.
 - **Difficulty.** "Requires guessing a UUID" or "requires a race" lowers likelihood. It doesn't remove the finding.
-- **The setting is operator-configurable.** If the shipped default is unsafe, the default is the finding.
+- **The setting is operator-configurable.** If the shipped default is unsafe, the default is the finding (see "Unsafe
+  shipped defaults" below).
 - **"It's internal."** Internal services get reached through SSRF, compromised neighbours, and misrouted ingress.
   Record the network assumption as a `network_routing` condition instead.
 - **Tests pass.** Tests check intended behaviour, not adversarial input.
+
+## Unsafe shipped defaults
+
+A hard-coded fallback secret (`process.env.JWT_SECRET || "changeme"`), a debug flag that defaults on, or a permissive
+default config is **`confirmed`**, not `needs_validation`, whichever skill finds it. The code shows what happens
+whenever the setting is missing, and missing is the state a new deployment starts in.
+
+- Record a `system_configuration` condition: "deployments that don't set `JWT_SECRET`, or set it empty".
+- Rate severity by what the default gives an attacker, as if it were live. Whether production overrides it is a
+  deployment fact you can't see, so it caps `confidence` at `medium`. It doesn't lower the verdict or the severity.
+- Put the owner's check (is the variable set, and to what length) in the finding's fix-verification text, not in a
+  `validation_plan`.
+- If you *can* see the deployment and it sets a strong value, the record is still `confirmed`, since a fresh deploy
+  or a new environment gets the default. Rate likelihood lower and say why.
+
+The same root cause should get the same verdict and severity from every skill that sees it. A hard-coded JWT fallback
+that lets anyone forge an admin token is an authentication bypass to any account, wherever it's reported.
 
 ## Hardening notes are not verdicts
 

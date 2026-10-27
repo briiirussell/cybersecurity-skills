@@ -179,21 +179,102 @@ Engineering input to a DPIA:
 
 This skill produces the engineering inputs; legal / privacy counsel produces the DPIA itself.
 
+### Verify, then record
+
+A gap against a mandatory obligation (an Art 17 erasure path that misses a store, tracking that fires before consent,
+personal data sent to a vendor beyond the stated purpose) is a finding: the obligation is the intended control. Rate
+it by the exposure it creates for the personal data, not by the size of a possible fine. A gap with no exposure (a
+record of processing that doesn't list a basis, a retention period that isn't written down but is enforced) is a
+documentation gap, and a defense-in-depth gap is a hardening note. Neither goes in `findings.json`. Close every
+candidate with one verdict, as defined in [references/findings-format.md](references/findings-format.md):
+
+- **`confirmed`**: a trace from where personal data enters to where it ends up in breach of the obligation, with no
+  control on the way. Examples: `DELETE /account` removes the `users` row, but nothing calls the Segment deletion API
+  or removes the Algolia record, so the user's profile stays searchable; `Sentry.init({ sendDefaultPii: true })` plus
+  `setUser({ email })` ships every user's email and IP to the error tracker; the analytics snippet loads in the page
+  head, before the consent banner records a choice.
+- **`needs_validation`**: the code supports the claim but one fact lives with legal or in a console. Examples: whether
+  a DPA is on file for a vendor that receives personal data; the vendor's retention setting, set in its dashboard;
+  backup retention, set in the cloud console; whether the CDN caches authenticated profile pages. A DSAR or cookie
+  check you describe but don't run is also `needs_validation`.
+- **`rejected`**: a named control at a named location covers every path. Examples: `jobs/erase-user.ts` fans out to
+  every vendor SDK the inventory found; a Sentry `beforeSend` hook strips `user.email` and cookies before any event
+  leaves. A control inside a dependency counts: for an SDK whose default is `sendDefaultPii: false` and is never
+  overridden, `ruled_out_by.location` is the lockfile line that pins the SDK, and `control` names the default and the
+  version. "Not reachable" (a vendor SDK that's installed but never initialized) points at the dependency declaration.
+
+1. Run the refutation pass in [references/verification.md](references/verification.md) before confirming anything.
+   A privacy notice, a DPA, or "legal approved it" does not rule out a data flow the code performs; a documented
+   retention period doesn't rule out a store that never purges.
+2. Calibrate severity with [references/severity-calibration.md](references/severity-calibration.md). The affected
+   principal is the data subject. Sensitive personal data (Practice 1) reaching an ad vendor sits higher than an email
+   in an error tracker under a DPA. A static trace caps confidence at `medium`; `high` needs a reproduced check
+   (`"reproduced": true`), such as a test-account DSAR whose export or deletion you inspected.
+3. Fingerprint as `privacy-engineering/<class>/<file or resource>/<symbol or name>`, with `<class>` one of
+   `classification`, `minimization`, `logging-pii`, `consent`, `lawful-basis`, `dsar-access`, `deletion-fanout`,
+   `retention`, `vendor-sharing`, `transfer`, `breach-scoping`. Examples:
+   `privacy-engineering/deletion-fanout/src/routes/account.ts/deleteAccount`,
+   `privacy-engineering/vendor-sharing/src/lib/sentry.ts/Sentry.init`,
+   `privacy-engineering/retention/aws/rds/prod-users-db/backup-retention`. No line numbers; write ARNs and `host:port`
+   with slashes. Use `cwe` where one fits (`CWE-359` exposure of private personal information, `CWE-532` personal data
+   in logs, `CWE-212` data not removed before transfer).
+4. Put domain fields under `ext`:
+
+   | `ext` key | Value | Example |
+   |---|---|---|
+   | `obligation` | Regulation and article or section the gap is against | `"GDPR Art. 17(1)"`, `"CCPA 1798.105"`, `"GDPR Art. 7(3)"` |
+   | `data_class` | Classification from Practice 1 | `"personal"`, `"sensitive_personal"` |
+   | `processor` | The vendor or sub-processor involved, when there is one | `"Segment"`, `"Sentry"` |
+
+5. Findings about deployed resources rather than files (a cloud backup policy, a vendor dashboard setting, the cookies
+   a staging page sets before consent): save the read-only output, redacted, to `<audit dir>/evidence/<name>.json` or
+   `.txt` and point `location` and `evidence[]` at that file and line. Never save a personal data value or a secret;
+   record field names and categories, not contents.
+6. Write `findings.json` sorted by fingerprint and validate it:
+   ```bash
+   node references/validate-findings.mjs findings.json
+   ```
+   Optionally export SARIF: `node references/to-sarif.mjs findings.json -o findings.sarif`.
+
 ## Output Format
+
+Write `findings.json` first and validate it. The report is rendered from it and never changes a verdict or severity
+the JSON doesn't already say.
 
 ```markdown
 # Privacy Engineering Audit / Implementation Report
-## Scope: [system / product / data flow]
-## Regulation context: [GDPR / CCPA / both / other]
-## Date: [date]
+## Scope: [system / product / data flow]   ## Regulation context: [GDPR / CCPA / both / other]   ## Date: [date]
+## findings.json: [path] — validated: [yes]
+
+### Summary
+- Confirmed: [N] (Critical [n] | High [n] | Medium [n] | Low [n])   Needs validation: [N]   Rejected: [N]
+
+### Confirmed findings
+#### [SEVERITY] [Title]  `fingerprint`
+**Location:** `path:line`   **Obligation:** [ext.obligation]   **Data class:** [ext.data_class]   **Processor:** [ext.processor]
+**Confidence:** [medium | high (reproduced)]
+**Data flow:** [where the personal data enters → where it ends up]
+**Exposure:** [whose data, which fields, who can now see or keep it]
+**Fix:** [concrete change]
+**Verify the fix:** [the DSAR, deletion or consent check that proves it]
+
+### Needs validation
+| Finding | Blockers | Check for the owner (engineering or legal) to run |
+|---|---|---|
+
+### Hardening notes (not findings)
+- [gap] — [why it isn't a finding] — [effort]
+
+### Documentation gaps (not findings)
+- [record of processing, retention schedule, or DPIA input that's missing, with no exposure in the code]
+
+### Rejected (do not re-raise)
+| Fingerprint | Ruled out by | Location |
+|---|---|---|
 
 ### Data inventory
 | Data store | Classification | Categories of PI | Lawful basis | Retention |
 |------------|----------------|------------------|--------------|-----------|
-
-### Findings
-| ID | Severity | Practice | Issue |
-|----|----------|----------|-------|
 
 ### DSAR pipeline status
 - [ ] Access — implemented and tested end-to-end
@@ -209,11 +290,14 @@ This skill produces the engineering inputs; legal / privacy counsel produces the
 ### Consent records (if applicable)
 [State: present / partial / missing. Storage location. Fields captured.]
 
-### Action items
-[Prioritized with owner and deadline]
+### Remediation plan
+| Priority | Item | Owner | Deadline |
+|---|---|---|---|
 ```
 
-Disposition rule (Fixed / Deferred / Accepted Risk) per `owasp-audit`'s Output Format. Accepted-risk decisions for privacy findings often need legal sign-off as well as engineering — note this in the writeup.
+Dispositions for confirmed findings (set later, usually by `finding-triage`): Fixed / Deferred / Accepted Risk /
+Mitigated (platform/config) / Requires major migration. Accepted-risk decisions for privacy findings often need legal
+sign-off as well as engineering; note this in the writeup.
 
 ## Boundaries
 
@@ -236,3 +320,16 @@ Disposition rule (Fixed / Deferred / Accepted Risk) per `owasp-audit`'s Output F
 - "Privacy Engineering" — Bibi Lin, M. Selvi, A. Acar (academic / practitioner overview)
 - "The Algorithmic Foundations of Differential Privacy" — Dwork & Roth (for the anonymization / differential-privacy slice)
 - Data Privacy Framework (EU-US, US-UK, US-Swiss) — current cross-border transfer mechanisms
+- Shared references (copied into `references/` at build time): findings-format.md, findings.schema.json,
+  validate-findings.mjs, to-sarif.mjs, severity-calibration.md, verification.md
+
+## Reference files
+
+This skill links to supporting files under `references/`. They are not inlined in this adapter; open them on GitHub (or in `skills/privacy-engineering/references/` if you have the repo checked out):
+
+- [references/findings-format.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/privacy-engineering/references/findings-format.md)
+- [references/findings.schema.json](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/privacy-engineering/references/findings.schema.json)
+- [references/severity-calibration.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/privacy-engineering/references/severity-calibration.md)
+- [references/to-sarif.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/privacy-engineering/references/to-sarif.mjs)
+- [references/validate-findings.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/privacy-engineering/references/validate-findings.mjs)
+- [references/verification.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/privacy-engineering/references/verification.md)

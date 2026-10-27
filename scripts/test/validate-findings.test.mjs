@@ -180,6 +180,27 @@ test("rejected requires ruled_out_by {control, location}", () => {
   expectError(r2, /ruled_out_by: missing required field "control"/);
 });
 
+test("ext: optional skill-specific fields on any verdict, flat and snake_case", () => {
+  for (const make of [confirmed, needsValidation, rejected]) {
+    const r = make();
+    r.ext = { requirement: "8.4.2", in_cde: true, accounts: ["123456789012", "210987654321"], count: 3 };
+    assert.deepEqual(validateFindings([r]), [], r.verdict);
+  }
+  const r = confirmed();
+  r.ext = {};
+  expectError(r, /ext: must not be empty/);
+  r.ext = { Requirement: "8.4.2" };
+  expectError(r, /must be snake_case/);
+  r.ext = { nested: { a: 1 } };
+  expectError(r, /ext\.nested: must be a non-empty string/);
+  r.ext = { list: [] };
+  expectError(r, /ext\.list: must be/);
+  r.ext = { blank: "" };
+  expectError(r, /ext\.blank: must be/);
+  r.ext = ["8.4.2"];
+  expectError(r, /ext: must be an object/);
+});
+
 test("invalid fixture fails with several distinct problems", () => {
   const errors = validateFindings(load("findings.invalid.json"));
   assert.ok(errors.length >= 8, errors.join("\n"));
@@ -211,7 +232,7 @@ test("CLI: reads stdin with -", () => {
 
 test("the example in shared/findings-format.md validates", () => {
   const md = readFileSync(join(HERE, "..", "..", "shared", "findings-format.md"), "utf8");
-  const m = md.match(/```json\n([\s\S]*?)\n```/);
+  const m = md.slice(md.indexOf("\n## Example\n")).match(/```json\n([\s\S]*?)\n```/);
   assert.ok(m, "findings-format.md has a ```json example");
   assert.deepEqual(validateFindings(JSON.parse(m[1])), []);
 });

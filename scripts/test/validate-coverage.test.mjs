@@ -85,6 +85,35 @@ test("fingerprint cross-check against findings.json", () => {
   assert.deepEqual(validateCoverage([u]), [], "no cross-check without findings");
 });
 
+test("a covered unit may list only rejected findings; others keep it at candidate", () => {
+  const byVerdict = (v) => findings.find((r) => r.verdict === v).fingerprint;
+  const u = unit("covered");
+  u.finding_fingerprints = [byVerdict("rejected")];
+  assert.deepEqual(validateCoverage([u], findings), []);
+  for (const v of ["confirmed", "needs_validation"]) {
+    u.finding_fingerprints = [byVerdict(v)];
+    expectError([u], new RegExp(`status "covered" but .* is ${v}`), findings);
+    assert.deepEqual(validateCoverage([{ ...u, status: "candidate" }], findings), [], v);
+  }
+});
+
+test("ids may start with a dot (dotfiles) but not with other punctuation", () => {
+  const u = unit("covered");
+  u.id = ".env.example:JWT_SECRET:repo-reader-to-token-forgery:A04";
+  assert.deepEqual(validateCoverage([u]), []);
+  for (const bad of ["#PUT:x", "src/app/[id]/route.ts:PUT", "-x"]) {
+    u.id = bad;
+    assert.ok(validateCoverage([u]).length > 0, bad);
+  }
+});
+
+test("the unit example in shared/recon-and-coverage.md validates", () => {
+  const md = readFileSync(join(HERE, "..", "..", "shared", "recon-and-coverage.md"), "utf8");
+  const m = md.match(/```json\n(\{\n  "id"[\s\S]*?)\n```/);
+  assert.ok(m, "recon-and-coverage.md has a unit example");
+  assert.deepEqual(validateCoverage([JSON.parse(m[1])]), []);
+});
+
 test("CLI: exit codes", () => {
   const ok = run(join(FIX, "coverage.valid.json"), "--findings", join(FIX, "findings.valid.json"));
   assert.equal(ok.status, 0, ok.stderr);

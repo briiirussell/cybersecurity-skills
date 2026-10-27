@@ -193,7 +193,7 @@ Exceptional Conditions is new.
 
 ### A03: Software Supply Chain Failures
 - Supply chain covers more than known-CVE versions: the build, the registry, and everything that runs at install or CI time.
-- Run `npm audit` (Node), `pip audit` (Python), or equivalent
+- Run `npm audit` (Node), `pip audit` (Python), or equivalent. These query the registry, so they need network. In a no-network run, read the lockfile for versions you know are vulnerable, record each one as `needs_validation` with "advisory data not checked" as the blocker and the audit command as the plan, and mark the A03 advisory unit `deferred` (the run is then partial). Don't call A03 clean from the lockfile alone.
 - Check lock files for known vulnerable dependency versions
 - Flag dependencies with critical CVEs
 - Run `npm audit --omit=dev` alongside `npm audit` and triage by reachability:
@@ -382,7 +382,7 @@ Render from `findings.json` + `coverage.json` + `hardening-notes.md`. Never hand
 ### Summary
 - Confirmed: X (Critical X | High X | Medium X | Low X)
 - Needs validation: X   Rejected: X   Hardening notes: X
-- Units: X covered, X not applicable, X deferred, X out of scope
+- Units: X covered, X candidate, X not applicable, X deferred, X out of scope
 
 ### Confirmed findings
 ### Needs validation

@@ -6,41 +6,316 @@ Current versions of all skills. Agents can compare against local versions to che
 |-------|---------|--------------|
 | agent-supply-chain-audit | 1.0.1 | 2026-10-26 |
 | ai-risk-management | 1.1.2 | 2026-10-26 |
-| api-audit | 1.1.4 | 2026-10-26 |
+| api-audit | 1.1.5 | 2026-10-26 |
 | breach-patterns | 1.0.4 | 2026-10-26 |
 | business-logic-testing | 1.0.2 | 2026-10-26 |
-| cloud-audit | 1.1.3 | 2026-10-26 |
-| container-audit | 1.0.3 | 2026-10-26 |
-| crypto-audit | 1.0.3 | 2026-10-26 |
+| cloud-audit | 1.2.0 | 2026-10-26 |
+| container-audit | 1.1.0 | 2026-10-26 |
+| crypto-audit | 1.1.0 | 2026-10-27 |
 | csf-mapping | 1.0.2 | 2026-10-26 |
-| dependency-audit | 1.2.2 | 2026-10-26 |
+| dependency-audit | 1.2.3 | 2026-10-26 |
 | disk-forensics | 1.0.1 | 2026-10-26 |
-| finding-triage | 1.1.1 | 2026-10-26 |
-| hipaa-audit | 1.0.2 | 2026-10-26 |
-| iam-audit | 1.0.3 | 2026-10-26 |
+| finding-triage | 1.1.2 | 2026-10-26 |
+| hipaa-audit | 1.1.0 | 2026-10-27 |
+| iam-audit | 1.1.0 | 2026-10-26 |
 | incident-triage | 1.1.0 | 2026-10-26 |
 | log-watch | 1.0.1 | 2026-10-26 |
-| mobile-audit | 1.0.1 | 2026-10-26 |
+| mobile-audit | 1.1.0 | 2026-10-27 |
 | osint-recon | 1.0.2 | 2026-10-26 |
-| owasp-audit | 1.3.1 | 2026-10-26 |
+| owasp-audit | 1.3.2 | 2026-10-26 |
 | patch-sweep | 1.0.2 | 2026-10-26 |
-| pci-audit | 1.0.3 | 2026-10-26 |
+| pci-audit | 1.1.0 | 2026-10-27 |
 | personal-opsec | 1.0.1 | 2026-10-26 |
-| privacy-engineering | 1.0.4 | 2026-10-26 |
-| prompt-injection | 1.1.3 | 2026-10-26 |
+| privacy-engineering | 1.1.0 | 2026-10-27 |
+| prompt-injection | 1.2.0 | 2026-10-27 |
 | recon | 1.0.1 | 2026-10-26 |
 | red-team-engagement | 1.0.1 | 2026-10-26 |
 | scanner-pipeline | 1.0.2 | 2026-10-26 |
-| secrets-audit | 1.1.2 | 2026-10-26 |
+| secrets-audit | 1.1.3 | 2026-10-26 |
 | security-comms | 1.0.3 | 2026-10-26 |
 | siem-detection | 1.0.3 | 2026-10-26 |
 | soc-operations | 1.0.4 | 2026-10-26 |
 | threat-hunting | 1.0.4 | 2026-10-26 |
 | threat-modeling | 1.0.4 | 2026-10-26 |
 | vuln-research | 1.0.3 | 2026-10-26 |
-| web-pentest | 1.1.3 | 2026-10-26 |
+| web-pentest | 1.2.0 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.36.0 (2026-10-27)
+
+privacy-engineering moves onto the shared findings format (#129). privacy-engineering 1.1.0. With this, all ten skills on #129's list write `findings.json`. Eighteen skills now use the format.
+
+**Changed**
+- **Verify, then record.** A new section after Practice 8. A gap against a GDPR or CCPA obligation is a finding, rated by the exposure for the personal data rather than the size of a possible fine. The data subject is the affected principal.
+  - **Confirmed:** account deletion that skips the Segment and Algolia deletion calls; Sentry set to send every user's email and IP; analytics loading before the user makes a consent choice.
+  - **Needs validation:** whether a DPA is on file; vendor or backup retention settings.
+  - **Rejected:** an erase job that reaches every vendor; a Sentry `beforeSend` scrubber; an SDK that's installed but never initialized, pointing at its dependency declaration.
+- **Paperwork doesn't reject a flow.** A notice, a DPA or legal sign-off doesn't reject a data flow the code actually performs. Evidence files record field names, never personal data values.
+- **Fingerprints:** `privacy-engineering/<class>/<file or resource>/<name>`.
+- **`ext` keys:** `obligation` (e.g. `GDPR Art. 17(1)`), `data_class`, `processor`.
+- **Output Format** is rendered from `findings.json`. It has "Rejected (do not re-raise)" and a "Documentation gaps (not findings)" section, and keeps the data inventory, DSAR, vendor and consent sections.
+- The skill now gets copies of the six shared findings files.
+- **SkillSpector baseline.** Two new rules for verdict examples that describe what to flag.
+
+### 1.35.0 (2026-10-27)
+
+hipaa-audit moves onto the shared findings format (#129). hipaa-audit 1.1.0.
+
+**Changed**
+- **Verify, then record.** A gap against a required Security Rule specification is a finding, rated by ePHI exposure.
+  - **Addressable specs:** one with neither the control nor a documented alternative is treated like a required spec. One with a documented equivalent or rationale (§164.306(d)(3)) is `rejected`, pointing at that document.
+  - **Breach status:** rejecting an addressable spec doesn't change it. Unencrypted ePHI is still "unsecured", and the report says so under Breach response readiness.
+  - **Confirmed:** a shared `phi_admin` database role; Mixpanel receiving PHI with no BAA on record; a full patient record returned to a scheduling view (minimum necessary); a shipped `PHI_AUDIT_LOG=false` default.
+  - **Needs validation:** a vendor's BAA status when no register was provided; RDS encryption for a console-created database, with the exact `describe-db-instances` check.
+  - **Rejected:** no idle logoff, but the risk analysis documents MDM screen lock as the equivalent; a Sentry `beforeSend` hook that strips request data.
+- **Encryption wording.** The "treat as required" wording on encryption is replaced by the implement-or-document rule.
+- **Fingerprints:** `hipaa-audit/<class>/<file or resource>/<name>`, with 11 named classes, built from the resource rather than the evidence file.
+- **`ext` keys:** `standard` (e.g. `164.312(b)`), `addressable`, `rule` (security, privacy or breach-notification).
+- **Output Format** is rendered from `findings.json`. It has "Rejected (do not re-raise)", a PHI flow map and an addressable-specifications table.
+- The skill now gets copies of the six shared findings files.
+- **SkillSpector baseline.** One new rule: saving a redacted BAA register entry as evidence was read as session persistence.
+
+### 1.34.0 (2026-10-27)
+
+pci-audit moves onto the shared findings format (#129). pci-audit 1.1.0.
+
+**Changed**
+- **Verify, then record.** A gap against a PCI DSS requirement is a finding, since the requirement is the intended control. Severity rates the exposure for cardholder data, not the audit consequence.
+  - **Confirmed:** `logger.info(req.body)` logging a posted `cardNumber` (Req 3.5.1); an IdP export allowing password-only sign-in to the CDE admin console (8.4.2); a shipped `LOG_REQUEST_BODIES=true` default.
+  - **Needs validation:** Sentry scrubbing set in the dashboard, not the repo; whether the staging seed really runs with `--sanitize`.
+  - **Rejected:** a Stripe Elements iframe where the server only reads `paymentMethodId`; a published test PAN in a fixture.
+- **Compensating controls.** A compensating control rejects a candidate only when its worksheet exists and there's evidence it works. Without that evidence, it's `needs_validation`.
+- **Documentation gaps (not findings).** A new report section for gaps with no exposure to card data: a missing policy, overdue training. They're kept apart from hardening notes.
+- **Evidence.** IdP and MFA policies, firewall rules, log retention, AoCs and written policies go in `evidence/`. Never save PAN, CVV, track data, PIN blocks or credentials there.
+- **Fingerprints:** `pci-audit/<class>/<file or resource>/<name>`, with 13 named classes. Deployed resources are fingerprinted by the resource, not the evidence file.
+- **`ext` keys:** `requirement` (e.g. `8.4.2`), `scope` (cde, connected-to or security-impacting), `data_element`.
+- **Output Format** is rendered from `findings.json`. It has "Rejected (do not re-raise)". The old audit checklist moved into the report template.
+- The skill now gets copies of the six shared findings files.
+
+### 1.33.0 (2026-10-27)
+
+prompt-injection moves onto the shared findings format (#129). prompt-injection 1.2.0.
+
+**Changed**
+- **Step 9, "Verify, then record".** A finding is what a steered model can reach, not the fact that it can be steered.
+  - **Confirmed:** a viewer-writable comment reaches an admin assistant that holds an ungated `send_email`; LLM output goes into `dangerouslySetInnerHTML`; a shipped MCP tool description carries a hidden instruction.
+  - **Needs validation:** a hosted guardrail whose policy isn't in the repo; a production prompt pulled from a registry.
+  - **Rejected:** an `authorize(user, tool, args)` check in the tool dispatcher; a pinned sanitizer.
+- **What doesn't reject.** System-prompt instructions, delimiters, the provider's safety training and a model-based classifier on its own lower likelihood but never reject a candidate.
+- **Hardening notes and the CWE.** A jailbreak that only affects the person typing is a hardening note. A leaked system prompt is a finding only if it holds a secret. Prompt injection uses CWE-1427.
+- **Evidence.** Live canary transcripts and remote MCP `tools/list` output go in `evidence/`.
+- **Fingerprints:** `prompt-injection/<class>/<file>/<symbol>`, with ten named classes.
+- **`ext` keys:** `owasp_llm` (e.g. `LLM01:2025`), `category`, `untrusted_source`.
+- **Output Format** is rendered from `findings.json`. It has "Rejected (do not re-raise)" and keeps the integration map, defense assessment and remediation sections. The "Potential" and "Possible" labels are gone.
+- The skill now gets copies of the five shared findings files it didn't already have.
+- **SkillSpector baseline.** One new rule, for the "no confirmation gate" verdict example, which describes what to flag.
+
+### 1.32.0 (2026-10-27)
+
+web-pentest moves onto the shared findings format (#129). web-pentest 1.2.0.
+
+**Changed**
+- **Verify, then record.** A new step after the paired-evidence rule:
+  - **Confirmed:** paired evidence holds, for example a non-owner and the owner both get 200 on the same order id. A paired capture against an authorized target sets `reproduced: true`, so high confidence is allowed.
+  - **Needs validation:** the isolating control wasn't captured, or a WAF, proxy or IdP fact decides it, like a `Host:`-poisoned reset link not yet seen in the mail.
+  - **Rejected:** the control held on every path (403 or 404 for a non-owner, `state` validated).
+- **Evidence.** Both request/response exchanges are saved, redacted, to `evidence/`, and `location` points there. Combined-mode findings also cite the source handler in `trace[]`.
+- **Fingerprints:** `web-pentest/<wstg-or-class>/<endpoint or resource>/<parameter or operation>`, with `host:port` written as `host/port`.
+- **`ext` keys:** `wstg`, `endpoint`, `mode` (black-box, grey-box or combined).
+- **Output Format** is rendered from `findings.json`. It has a verdict and severity summary, confirmed findings, needs validation, hardening notes, "Rejected (do not re-raise)" and "Out of scope / not tested". The old per-finding `VERDICT` framing is gone.
+- The skill now gets copies of the four shared findings files it didn't already have.
+
+### 1.31.0 (2026-10-27)
+
+mobile-audit moves onto the shared findings format (#129). mobile-audit 1.1.0.
+
+**Changed**
+- **Verify, then record.** A new section after runtime testing:
+  - **Decompiled binaries.** Save redacted `strings`, jadx, apktool, otool, readelf or manifest-dump output, or a proxied request/response, to `evidence/` and point `location` at it. A hard-coded key's evidence is the call site that uses it, never the key.
+  - **Confirmed:** an extracted AES key traced to its decrypt call; cleartext login captured through a shipped `NSAllowsArbitraryLoads=true`, an unsafe default.
+  - **Needs validation:** an exported activity whose risk depends on backend authorization; a cleartext exception not yet seen in traffic.
+  - **Rejected:** a token log behind `BuildConfig.DEBUG` with `debuggable="false"`; a publishable Firebase or Maps key with its restrictions in place.
+  - MASVS-RESILIENCE gaps with no traced impact are hardening notes.
+- **Fingerprints:** `mobile-audit/<masvs-or-class>/<file or resource>/<symbol>`. Decompiled code uses the class or symbol, not the evidence file name.
+- **`ext` keys:** `masvs`, `platform`, `source` (source, decompiled or runtime).
+- **Output Format** is rendered from `findings.json`. It has "Rejected (do not re-raise)", and the MASVS category table becomes a coverage table with verdict counts.
+- The skill now gets copies of the six shared findings files.
+
+### 1.30.0 (2026-10-27)
+
+crypto-audit moves onto the shared findings format (#129). crypto-audit 1.1.0.
+
+**Changed**
+- **Verify, then record.** A new step after the checklist, with examples for each verdict:
+  - **Confirmed:** a fixed GCM IV reused with one key, `Math.random()` session tokens, a `JWT_SECRET || 'dev-secret'` fallback (an unsafe shipped default), unsalted SHA-256 passwords.
+  - **Needs validation:** `nginx.conf` allows TLS 1.0, but a CDN may terminate TLS first. The check is a `testssl.sh` run.
+  - **Rejected:** `jwt.verify` without `algorithms`, ruled out by the pinned `jsonwebtoken` version (a control inside a dependency); MD5 used only for an ETag, ruled out at its only call site.
+- **Hardening notes.** bcrypt cost 10, correct CBC+HMAC, extra TLS 1.2 CBC suites and no KMS rotation are hardening notes. Custom crypto is a finding only when you trace what it fails to protect.
+- **Fingerprints:** `crypto-audit/<class>/<file or resource>/<symbol or name>`. A live TLS endpoint is written as `host/<name>/<port>`.
+- **`ext` keys:** `primitive`, `library`, `standard`.
+- **Output Format** is rendered from `findings.json`. It has "Rejected (do not re-raise)" and keeps the TLS posture and key inventory sections. "Verify Fixes at Runtime" is unchanged.
+- The skill now gets copies of the six shared findings files.
+
+### 1.29.0 (2026-10-26)
+
+iam-audit moves onto the shared findings format (#129). iam-audit 1.1.0.
+
+**Changed**
+- **Verify, then record.** A new step covering Audit mode and the current-state inventory of a migration:
+  - Save the redacted IAM and IdP exports to `evidence/` and point `location` at the decisive statement.
+  - Run the refutation pass. The strongest controls are SCPs, permissions boundaries, organization conditions like `aws:PrincipalOrgID`, and Conditional Access.
+  - Examples for each verdict: a GitHub OIDC role trusting `repo:acme/*` with `iam:PassRole` on an admin role is confirmed. `iam:CreatePolicyVersion` behind SCPs you can't see needs validation. A `Principal: "*"` trust limited by organization ID is rejected.
+- **Reproduction.** A provider's read-only policy simulator returning "allowed" counts as `reproduced`: `simulate-principal-policy`, `gcloud policy-troubleshoot iam`, Entra What If. The escalation itself is never exercised.
+- **Severity notes.** Escalation paths that start from someone who is already admin aren't findings. Missing MFA is rated by what the affected accounts can reach.
+- **Fingerprints:** `iam-audit/<class>/<provider>/<tenant>/<principal or policy>`, or the file and symbol for app authorization and IaC.
+- **`ext` keys:** `provider`, `tenant`, `principal`.
+- **Output Format** is rendered from `findings.json`. It has "Rejected (do not re-raise)" and a privileged access inventory. Design and migration advice goes in its own Recommendations table, not in findings.
+- The skill now gets copies of the six shared findings files.
+
+### 1.28.0 (2026-10-26)
+
+container-audit moves onto the shared findings format (#129). container-audit 1.1.0.
+
+**Changed**
+- **Verify, then record.** A new step after the checklists:
+  - Run the refutation pass. The strongest controls are an admission policy, a namespace Pod Security Standards (PSS) label, a Helm value that overrides the default, or a later build stage that discards the layer.
+  - Name the principal, the boundary and the result before calling anything a finding.
+  - Examples for each verdict: a committed `kind: Secret` with the live database password, and a `system:authenticated` binding that can read every secret, are confirmed. A namespace label set outside the repo needs validation. A Kyverno `Enforce` policy, or a build-arg used only in the builder stage, gets the candidate rejected.
+  - Shipped Helm defaults like `privileged: true` are confirmed, with confidence capped at medium.
+- **Hardening notes.** Running as root, a tag instead of a digest, and missing limits are hardening notes on their own. A missing NetworkPolicy is a finding only when you name what it exposes. Image CVEs follow dependency-audit's reachability rule.
+- **Cluster evidence.** Live-cluster findings point at saved, redacted output. Strip Secret `.data` before saving.
+- **Fingerprints:** `container-audit/<class>/<file or resource>/<name>`. Image references are written without the tag.
+- **`ext` keys:** `resource`, `cis`, `pss`.
+- **Output Format** is rendered from `findings.json`. It has "Rejected (do not re-raise)", a cluster posture table and a remediation plan. "Verify Fixes at Runtime" is unchanged.
+- The skill now gets copies of the six shared findings files.
+
+### 1.27.0 (2026-10-26)
+
+cloud-audit moves onto the shared findings format (#129). cloud-audit 1.2.0.
+
+**Changed**
+- **Verify, then record.** A new step after the audit categories:
+  - Save the redacted, read-only output behind each finding to `evidence/` and point `location` at the decisive line, since cloud findings are about resources, not source lines.
+  - Run the refutation pass. The strongest control is often account-level: Block Public Access, an SCP, a private subnet with no route out, deployment protection.
+  - Close each candidate as confirmed, needs validation or rejected. There are cloud examples for each verdict, and unsafe IaC module defaults count as confirmed.
+  - Rate severity by what the resource holds, not the benchmark ID.
+- **Confidence.** Config read from the API is evidence, not reproduction. Only an authorized, non-destructive request, such as an anonymous `curl -sI` returning 200, sets `reproduced`. IaC-only findings cap at medium.
+- **Fingerprints** are built from the resource: `cloud-audit/<class>/<provider>/<account>/<resource>`, or the IaC file and resource address. ARNs are written with slashes.
+- **`ext` keys:** `provider`, `account`, `region`, `resource`.
+- **Output Format** is rendered from `findings.json`. It has confirmed findings, needs validation, hardening notes, "Rejected (do not re-raise)", a coverage table, a PaaS deployment inventory and the remediation plan.
+- **`references/paas.md`** gets the evidence-file rule, and a warning never to save `railway variables` output, which prints values.
+- The skill now gets copies of the six shared findings files.
+
+### 1.26.6 (2026-10-26)
+
+owasp-audit fix from the worked-example run (#159). owasp-audit 1.3.2.
+
+**Fixed**
+- **A03 without network.** A03 said to run `npm audit`, which queries the registry, so a static no-network run couldn't do the check and had no instructions for that case. It now says:
+  - record versions the lockfile shows as vulnerable as `needs_validation`, with "advisory data not checked" as the blocker and the audit command as the plan;
+  - mark the A03 advisory unit `deferred`, which makes the run partial;
+  - never call A03 clean from the lockfile alone.
+- **Report summary.** The unit count line includes `candidate`, matching the v1.26.0 coverage rule.
+
+This is the last of the #159 fixes. The others shipped in v1.26.0 through v1.26.5.
+
+### 1.26.5 (2026-10-26)
+
+api-audit fix from the worked-example run (#159). api-audit 1.1.5.
+
+**Fixed**
+- **Classes outside API1–API10.** SQL injection, command injection, path traversal, XSS in an HTML response and crypto misuse have no OWASP API Security Top 10 category, and the skill didn't say what to put in the heading or in `owasp_category`. They now use the matching web Top 10:2025 category, such as `A05:2025` for injection, rather than being stretched into API8 or API10. The worked example already did this for its two SQL injections.
+- **"Items checked and found clean".** It now says `covered` and `not_applicable` units, and that a unit with a confirmed or needs_validation finding stays `candidate`. This matches the v1.26.0 coverage rule.
+
+### 1.26.4 (2026-10-26)
+
+finding-triage fixes from the worked-example run (#159). finding-triage 1.1.2.
+
+**Fixed**
+- **"Fix now" versus `Fixed`.** The disposition table said a Fix now decision is "recorded as Fixed". But writing `Fixed` before the fix ships is false, and `to-sarif.mjs` drops Fixed records, so the alert would vanish while the bug was still live.
+  - A Fix now finding now keeps `disposition` unset until the change has shipped and its verification passed.
+  - The writeup records the commit or release.
+  - The final checklist asks about any early `Fixed`.
+  The worked example already did this by hand.
+
+**Added**
+- **"Related candidates (not triaged here)".** A new section in the session output for things noticed while triaging, such as a sibling route or a second call site. Each gets a location, why it's related, and the skill that should review it. None gets a verdict or severity until someone triages it.
+
+### 1.26.3 (2026-10-26)
+
+dependency-audit fixes from the worked-example run (#159). dependency-audit 1.2.3.
+
+**Fixed**
+- **Fingerprint form.** The skill wrote `dependency-audit/<ecosystem>/<package>/<advisory>`, while `findings-format.md` and the worked example use `dependency-audit/<advisory>/<lockfile>/<package>`. The skill now uses the shared form.
+- **Report template.** It now has the "Rejected (do not re-raise)" table that `findings-format.md` requires. Most advisories in a real audit end up there; the example had 40 never-called ones.
+- **The Latest column.** The "Latest" column in the stack inventory couldn't be filled without a permission prompt. `Bash(npm view:*)` and `Bash(npm outdated:*)`, both read-only, are now pre-approved. An offline run writes "not checked" instead of guessing.
+
+**Changed**
+- **Rejection rules.** "Never called" and "guard inside the dependency" rejections follow the v1.26.1 table. A never-called advisory points at the package's only call site, or at its manifest line. A library guard rejects only with a checked lockfile pin; otherwise it's `needs_validation`. The skill now gets a copy of `verification.md`.
+- **Docs.** The `docs/security-scanning.md` grant table lists the two new rules.
+
+### 1.26.2 (2026-10-26)
+
+secrets-audit fixes from the worked-example run (#159). secrets-audit 1.1.3.
+
+**Fixed**
+- **Fingerprint form.** The skill wrote `secrets-audit:<type>:<file>:last4-XXXX` and `findings-format.md` wrote `secrets-audit/<type>/<file>/<VAR>`. The skill now uses the shared slash form, with the variable name as the last part. If the value has no variable name, it uses the enclosing symbol or `last4-XXXX`. The worked example's five fingerprints are renamed to match, and its SARIF is regenerated.
+- **Report template.** It now has the "Rejected (do not re-raise)" section that `findings-format.md` requires.
+- **Value printing.** The generic 40-character and high-entropy greps printed every match, which the skill tells agents not to do. The provider sweeps now list files (`-l`), the 40-character sweep counts per file, and the env-file sweep masks values to first and last 4.
+- **Cross-reference.** "`owasp-audit` A02 (in-source secret patterns)" was ambiguous after the 2025 renumbering. It now reads A04:2025 Cryptographic Failures, where owasp-audit checks hard-coded secrets.
+
+**Changed**
+- **Verdicts follow the v1.26.1 rules.** A hard-coded fallback secret is `confirmed`, with confidence capped at medium. A vendor's published example value is `rejected`, pointing at the line that holds it.
+- The skill now links `verification.md` for the refutation pass, and gets a copy of it.
+
+### 1.26.1 (2026-10-26)
+
+Closes the verdict and severity gaps that the worked-example runs hit (#159). Where the guides were silent, the runs made different calls on the same facts. Shared guides only; the skills that ship them get the new copies.
+
+**Added**
+- **Rejections with no guard to point at** (`verification.md`, `findings-format.md`). There's now a table for each kind, saying what `ruled_out_by.control` states and where `location` points:
+  - never reached: point at the only call site, or the manifest line if nothing imports the package;
+  - a known-inert value, like AWS's documented example key: point at the line holding the value;
+  - a control inside a dependency: point at the lockfile pin.
+  A dependency's guard rejects a candidate only when the installed version is pinned and checked. Otherwise the candidate is `needs_validation`.
+- **Unsafe shipped defaults** (`verification.md`). A hard-coded fallback secret or a permissive default is `confirmed` in every skill:
+  - it gets a `system_configuration` condition;
+  - severity is rated as if the default were live;
+  - the unseen deployment caps confidence at medium.
+  The worked examples split three ways on exactly this. `examples/README.md` now says how a run today would record it.
+- **Missing rate limiting** (`severity-calibration.md`). It's a finding when repeated requests do concrete harm: password guessing with no lockout, OTP brute force, paid sends. It's `needs_validation` when an unseen gateway might limit it, and a hardening note elsewhere.
+- **Availability anchors** (`severity-calibration.md`). A crash or hang from one unauthenticated request is High. It's Medium when it needs an account, hits only one worker of several, or the platform restarts it quickly. It's Low when only the attacker's own request suffers.
+- **Verifier batching for small targets** (`verification.md`). Up to about five candidates that share no code path may go to one verifier. Candidates touching the same handler, and any High or Critical candidate, each still get their own verifier.
+
+### 1.26.0 (2026-10-26)
+
+Fixes the coverage ledger instructions that the worked examples tripped over (#159). Following them as written could list a confirmed vulnerability under "Items checked and found clean", and the owasp-audit example did exactly that for 11 units.
+
+**Fixed**
+- `covered` versus `candidate` in `shared/recon-and-coverage.md`. The guide said both "covered means no candidate came out of it" and "once its candidates have verdicts it can move to covered". Now there is one rule:
+  - a unit whose candidates were all rejected becomes `covered`, keeping the rejected fingerprints;
+  - a unit with any confirmed or needs_validation finding stays `candidate` for good;
+  - "Items checked and found clean" is built from `covered` and `not_applicable` units only.
+- The unit id example (`src/app/api/invoices/[id]/route.ts#PUT:...`) used `#`, `[` and `]`, which the validator rejects. The new example passes, and the guide says which characters to drop. Its `owasp_category` is now `A01:2025`, as the skills write it.
+- Unit ids may now start with `.`, so a dotfile like `.env.example` can be an id prefix.
+
+**Added**
+- `validate-coverage.mjs --findings` fails a `covered` unit that lists a confirmed or needs_validation fingerprint. Tests cover the new rule, dotfile ids, and the guide's example.
+
+**Changed**
+- `examples/owasp-audit/`: the 11 affected units are now `candidate`, and their rows are gone from the report's clean list (21 covered, 11 candidate).
+
+### 1.25.0 (2026-10-26)
+
+The findings format gets room for skill-specific fields and a rule for findings that aren't in a source file. Both are needed before the remaining audit skills move onto it (#129): a PCI gap needs its requirement number, and a cloud finding is about a bucket, not a line of code.
+
+**Added**
+- `ext`, an optional object on any record, for the producing skill's own fields (`requirement`, `account`, `masvs`, ...). Keys are snake_case; values are scalars or arrays of scalars. The validator checks the shape, the schema documents it, and `to-sarif.mjs` copies it to the SARIF result's `properties.ext`. Each skill will list its keys in its own SKILL.md.
+- "Findings about deployed resources" in `findings-format.md`: save the redacted read-only output to `<audit dir>/evidence/` and point `location` at it. Fingerprints use the resource id with slashes, since ARNs and `host:port` look like line numbers to the validator.
+- Tests for both. The findings-format example test now reads the block under "## Example".
+
+The eight skills that already use the format get the new copies; their content doesn't change.
 
 ### 1.24.0 (2026-10-26)
 
