@@ -181,7 +181,7 @@ Engineering input to a DPIA:
 
 This skill produces the engineering inputs; legal / privacy counsel produces the DPIA itself.
 
-## Output format
+## Output Format
 
 ```markdown
 # Privacy Engineering Audit / Implementation Report
@@ -215,7 +215,7 @@ This skill produces the engineering inputs; legal / privacy counsel produces the
 [Prioritized with owner and deadline]
 ```
 
-Disposition rule (Fixed / Deferred / Accepted Risk) per `owasp-audit`'s Report Format. Accepted-risk decisions for privacy findings often need legal sign-off as well as engineering — note this in the writeup.
+Disposition rule (Fixed / Deferred / Accepted Risk) per `owasp-audit`'s Output Format. Accepted-risk decisions for privacy findings often need legal sign-off as well as engineering — note this in the writeup.
 
 ## Boundaries
 

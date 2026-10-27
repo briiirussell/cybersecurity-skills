@@ -96,7 +96,9 @@ skills/your-skill-name/
 
 - **Imperative form** — "Check for X" / "Run Y" / "Report findings as Z"
 - **Under 500 lines** in `SKILL.md` — offload depth to `references/`
-- **Define the output format** explicitly — agents drift without a template
+- **Define the output format** explicitly — agents drift without a template. Call the section `## Output Format`
+- **Keep the standard sections** from the template: a `Cross-references:` line, `## When to use` with its **Not for:** near-misses, `## Authorization`, the workflow, `## Output Format`, `## Boundaries`, `## References`. The lint fails a skill without `## Authorization`, `## Boundaries` or `## References`
+- **Reporting findings?** Use the shared format (verdicts, severity calibration, verification, `findings.json`); the template's "Verify, then record" step shows how, and which `shared/manifest.json` entries to add
 - **Include an authorization check** for any offensive skill — it should refuse if the user can't confirm authorization
 - **Anti-pattern bullets > prose** — `OWASP A01: missing role check on /api/admin/*` beats a paragraph about access control
 

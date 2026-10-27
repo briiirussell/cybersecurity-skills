@@ -10,7 +10,7 @@ Audit cloud infrastructure configurations for misconfigurations, excessive permi
 
 Cross-references: `iam-audit` for the consultant-style IAM deep-dive (design / audit / migrate across identity providers and federation patterns) — this skill includes an IAM section but stays at the cloud-posture level; for role design, JIT access, workload identity federation, and migration plans, invoke `iam-audit`. `container-audit` for Kubernetes-specific posture sitting on top of cloud. `secrets-audit` for secrets-manager hygiene and rotation. `patch-sweep` for responding to a CVE wave across a fleet of PaaS apps (this skill's PaaS section is the posture half of that). `scanner-pipeline` for running Supabase's security advisor and the other scanners on a schedule.
 
-Findings use the shared dispositions: Fixed / Deferred / Accepted Risk / Mitigated (platform/config) / Requires major migration, per `owasp-audit`'s Report Format.
+Findings use the shared dispositions: Fixed / Deferred / Accepted Risk / Mitigated (platform/config) / Requires major migration, per `owasp-audit`'s Output Format.
 
 ## Authorization
 

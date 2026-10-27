@@ -240,7 +240,7 @@ Each record is one of the three verdict shapes with a stable `fingerprint` (root
 
 `tsc --noEmit` + build success ≠ fix verified. See also `owasp-audit`'s Verify Fixes at Runtime + Second-Opinion Pass — same playbook applies.
 
-## Report Format
+## Output Format
 
 Render the report from the validated `findings.json`. The header states the run profile and whether coverage is partial (always partial for a diff-scoped run). Use these sections, in order:
 
@@ -284,7 +284,7 @@ Dispositions on a confirmed finding (what happens to it): `Fixed` | `Deferred` |
 - Never run a BOLA/BOPLA proof-of-concept against a live production endpoint without explicit written authorization.
 - Refuse mass-scanning, credential-stuffing, or any active abuse-flow exploitation.
 
-## References & Sources
+## References
 
 - OWASP API Security Top 10 (2023); OWASP Cheat Sheets: REST Security, GraphQL Security
 - CWE-639 (Authorization Bypass Through User-Controlled Key), CWE-915 (Improperly Controlled Modification of Dynamically-Determined Object Attributes)

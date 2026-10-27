@@ -139,7 +139,7 @@ kube-bench run --targets master,node,policies
 - `readOnlyRootFilesystem: true` — verify the app doesn't write outside declared `emptyDir` mounts; log writes, PID files, and tmp files are common breakers
 - Image-policy enforcement — try to deploy an unsigned / off-list image; verify admission rejects it
 
-## Report Format
+## Output Format
 
 ```markdown
 # Container Security Audit

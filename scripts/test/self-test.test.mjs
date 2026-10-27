@@ -21,8 +21,9 @@ const DESC = (extra = "") =>
   `Self-test skill used only by scripts/test/self-test.test.mjs to prove that the lint still rejects what it should. ` +
   `It is long enough to pass the description length rule on its own. ${extra}Use when the user mentions 'self test fixture'.`;
 
-const skill = ({ name, desc = DESC(), tools = "Read, Grep, Glob", body = "## Authorization\n\nOwn systems only.\n" }) =>
-  `---\nname: ${name}\ndescription: "${desc}"\nallowed-tools: ${tools}\n---\n\n# ${name}\n\n${body}`;
+const STANDARD = "\n## Boundaries\n\nRead-only.\n\n## References\n\n- None.\n";
+const skill = ({ name, desc = DESC(), tools = "Read, Grep, Glob", body = "## Authorization\n\nOwn systems only.\n", standard = STANDARD }) =>
+  `---\nname: ${name}\ndescription: "${desc}"\nallowed-tools: ${tools}\n---\n\n# ${name}\n\n${body}${standard}`;
 
 function lintTree(skills) {
   const dir = tmp();
@@ -51,6 +52,8 @@ test("lint: every rule still fires", () => {
     "broken-link": skill({ name: "broken-link", body: "## Authorization\n\nOwn.\n\nSee [x](references/missing.md).\n" }),
     "bad-xref": skill({ name: "bad-xref", body: "## Authorization\n\nOwn.\n\nCross-references: `no-such-skill` for more.\n" }),
     "too-long": skill({ name: "too-long", body: "## Authorization\n\nOwn.\n" + "line\n".repeat(500) }),
+    "no-sections": skill({ name: "no-sections", standard: "" }),
+    "report-format": skill({ name: "report-format", body: "## Authorization\n\nOwn.\n\n## Report Format\n\nA table.\n" }),
     "dup-phrase-a": skill({ name: "dup-phrase-a", desc: DESC("Also 'shared trigger phrase'. ") }),
     "dup-phrase-b": skill({ name: "dup-phrase-b", desc: DESC("Also 'shared trigger phrase'. ") }),
   });
@@ -64,6 +67,8 @@ test("lint: every rule still fires", () => {
     "broken-link": /relative link "references\/missing.md" does not resolve/,
     "bad-xref": /`no-such-skill` has no skills\/no-such-skill\/ folder/,
     "too-long": /lines \(must be under 500\)/,
+    "no-sections": /no `## Boundaries` section/,
+    "report-format": /"## Report Format" should be "## Output Format"/,
   };
   for (const [folder, re] of Object.entries(expect)) {
     const lines = r.stderr.split("\n").filter((l) => l.includes(`/${folder}/SKILL.md`));
