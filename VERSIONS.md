@@ -12,7 +12,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | cicd-security | 1.0.0 | 2026-10-27 |
 | cloud-audit | 1.2.0 | 2026-10-26 |
 | container-audit | 1.1.0 | 2026-10-26 |
-| control-audit | 1.1.0 | 2026-10-27 |
+| control-audit | 1.2.0 | 2026-10-27 |
 | crypto-audit | 1.1.2 | 2026-10-27 |
 | csf-mapping | 1.0.3 | 2026-10-27 |
 | dependency-audit | 1.2.4 | 2026-10-27 |
@@ -47,6 +47,19 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.49.0 (2026-10-27)
+
+control-audit adds NIST SP 800-53 Rev. 5 and FedRAMP (#140). control-audit 1.2.0. This finishes #140.
+
+**Added**
+- **NIST 800-53 and FedRAMP** (`references/nist-800-53.md`). It covers:
+  - SP 800-53 Rev. 5 (Release 5.2.0), with the control families and the SP 800-53B Low / Moderate / High baselines
+  - the SSP, SAR and POA&M artifacts, and OSCAL
+  - FedRAMP's 2026 changes: the Consolidated Rules (mandatory from 1 January 2027), Classes A–D replacing Low/Moderate/High, the Rev5 certification sunset, and 20x Key Security Indicators
+  - facts that rest only on secondary sources are marked "(verify)"
+- Control enhancements are written with a dot in fingerprints (`AC-2(1)` → `AC-2.1`), because the validator doesn't allow parentheses.
+- The skill's scope step and trigger phrases cover NIST 800-53 and FedRAMP.
 
 ### 1.48.0 (2026-10-27)
 

@@ -1,5 +1,5 @@
 ---
-description: "Control-level audit readiness for SOC 2 and ISO/IEC 27001:2022. Scope the audit (criteria, systems, period, Type 1 vs Type 2, Stage 1/2), build the control inventory, write an evidence request per control (artifact, owner, sample, test method), test what the repo and configs show (CC8.1 / A.8.32 change management via branch protection, access), hand technical checks to the owning skill, and record control gaps in the shared findings format with a control matrix. Use when the user mentions 'SOC 2,' 'SOC 2 Type 2,' 'SOC 2 readiness,' 'Trust Services Criteria,' 'ISO 27001,' 'ISO 27001:2022,' 'ISMS,' 'Statement of Applicability,' 'Annex A controls,' 'certification audit,' 'control matrix,' 'evidence request list,' 'PBC list,' 'audit readiness,' 'control testing,' 'audit evidence,' or is getting ready for an external auditor."
+description: "Control-level audit readiness for SOC 2, ISO/IEC 27001:2022 and NIST SP 800-53 Rev. 5 / FedRAMP. Scope the audit (criteria or baseline, systems, period, Type 1 vs Type 2), build the control inventory, write an evidence request per control (artifact, owner, sample, test method), test what the repo and configs show (CC8.1 / A.8.32 / CM-3 change management via branch protection), hand technical checks to the owning skill, and record control gaps in the shared findings format with a control matrix. Use when the user mentions 'SOC 2,' 'SOC 2 Type 2,' 'Trust Services Criteria,' 'ISO 27001,' 'ISMS,' 'Statement of Applicability,' 'Annex A controls,' 'NIST 800-53,' 'FedRAMP,' 'FedRAMP 20x,' 'SSP,' 'POA&M,' 'control matrix,' 'evidence request list,' 'PBC list,' 'audit readiness,' 'control testing,' or is getting ready for an external auditor or assessor."
 globs:
 alwaysApply: false
 ---
@@ -17,6 +17,7 @@ Cross-references: `csf-mapping` (crosswalk a control set to NIST CSF 2.0, and go
 - "We have a SOC 2 Type 2 in six months, where are we?" or "the auditor sent a PBC list, help us answer it"
 - Building or reviewing a control matrix, and writing evidence requests per control
 - "Our ISO 27001 Stage 2 is in May" or "is our Statement of Applicability defensible?"
+- Writing or reviewing an SSP and POA&M against an 800-53 baseline, or getting ready for FedRAMP (Rev5 or 20x)
 - Readiness review before fieldwork: which controls lack evidence, which failed in the period, which are only on paper
 - Re-running after remediation, matched by fingerprint
 
@@ -39,10 +40,10 @@ Write `scope.md` before anything else. Most readiness work that goes wrong went 
 | Decision | What to pin down |
 |---|---|
 | Framework and version | See the framework table below. Name the version in the report header |
-| Criteria or baseline | SOC 2: Security (the common criteria) is always in; add Availability, Confidentiality, Processing Integrity, Privacy only where customers or contracts need them. ISO 27001: all of clauses 4–10, plus the Annex A controls the Statement of Applicability includes |
+| Criteria or baseline | SOC 2: Security (the common criteria) is always in; add Availability, Confidentiality, Processing Integrity, Privacy only where customers or contracts need them. ISO 27001: all of clauses 4–10, plus the Annex A controls the Statement of Applicability includes. 800-53: the 800-53B baseline from the FIPS 199 categorization (Low / Moderate / High, plus privacy), tailored; FedRAMP: the Rev5 baseline or the 20x class being pursued |
 | System boundary | The service, its infrastructure, software, people, procedures and data. List every in-scope system by name |
 | Third parties | Subservice organizations (cloud host, IdP, payroll) and whether each is carved out or included; the complementary controls you rely on them for, and the ones your customers must run (CUECs) |
-| Audit period | SOC 2 Type 1: a single date (design only). Type 2: a period, commonly 3 to 12 months (design and operating effectiveness); a first Type 2 is often 3 to 6 months. ISO 27001: Stage 1 then Stage 2, with records showing the ISMS has run (an internal audit and a management review at least), then yearly surveillance |
+| Audit period | SOC 2 Type 1: a single date (design only). Type 2: a period, commonly 3 to 12 months (design and operating effectiveness); a first Type 2 is often 3 to 6 months. ISO 27001: Stage 1 then Stage 2, with records showing the ISMS has run (an internal audit and a management review at least), then yearly surveillance. 800-53 / FedRAMP: an initial assessment, then continuous monitoring (monthly scans, annual assessment) |
 | What exists already | Prior reports, an existing control matrix, policies, a GRC tool export. Start from the organization's controls, not a blank list |
 
 Frameworks this skill carries a reference for:
@@ -51,6 +52,7 @@ Frameworks this skill carries a reference for:
 |---|---|---|
 | SOC 2 | [references/soc2.md](references/soc2.md) | AICPA 2017 Trust Services Criteria with the 2022 revised points of focus |
 | ISO/IEC 27001 | [references/iso27001.md](references/iso27001.md) | ISO/IEC 27001:2022 with Amendment 1:2024; the 2013 transition ended 31 October 2025. Build the inventory from the Statement of Applicability |
+| NIST SP 800-53 / FedRAMP | [references/nist-800-53.md](references/nist-800-53.md) | SP 800-53 Rev. 5 Release 5.2.0 (August 2025) with 800-53B baselines; FedRAMP Rev5 baselines or 20x Key Security Indicators under the Consolidated Rules for 2026 (mandatory 1 January 2027). FedRAMP rules are moving fast: check `fedramp.gov` first. Build the inventory from the SSP |
 
 For a crosswalk between frameworks, or to NIST CSF 2.0, map each control here to its CSF subcategory with `csf-mapping` and keep the mapping in a `csf` column of the control matrix. One control, evidenced once, can satisfy several frameworks; say which.
 
@@ -61,7 +63,7 @@ One row per control the organization operates, not per criterion. A criterion is
 | Field | Example |
 |---|---|
 | Control ID | `CHG-02` (the organization's own ID) |
-| Framework refs | `CC8.1`, `A.8.32` |
+| Framework refs | `CC8.1`, `A.8.32`, `CM-3` |
 | Control as operated | "Every merge to `main` needs one approving review from someone other than the author; CI must pass" |
 | Owner | Role, not a person's name: "Engineering manager, platform" |
 | Frequency | Per event / daily / weekly / monthly / quarterly / annual |
@@ -174,14 +176,19 @@ control-audit/soc2/CC6.2/okta-workforce
 control-audit/soc2/CC8.1/github/acme/api
 control-audit/soc2/A1.2/aws/123456789012/prod-db
 control-audit/iso27001/A.5.18/okta-workforce
+control-audit/fedramp/SC-28.1/aws/123456789012/prod-db
 ```
+
+Framework slugs: `soc2`, `iso27001`, `nist80053`, `fedramp`.
 
 **`ext` fields** (flat, snake_case; don't repeat anything that already has a field):
 
 | Key | Value | Example |
 |---|---|---|
-| `framework` | Framework and version | `"soc2-tsc-2017"`, `"iso27001-2022"` |
-| `control_id` | The framework control or criterion | `"CC6.2"`, `"A.8.32"`, `"clause-9.2"` |
+| `framework` | Framework and version | `"soc2-tsc-2017"`, `"iso27001-2022"`, `"nist-800-53r5-5.2.0"`, `"fedramp-rev5-moderate"` |
+| `control_id` | The framework control or criterion | `"CC6.2"`, `"A.8.32"`, `"clause-9.2"`, `"AC-2.3"` |
+| `responsibility` | 800-53 / FedRAMP: who implements it | `"system"`, `"inherited"`, `"hybrid"`, `"customer"` |
+| `poam_id` | 800-53 / FedRAMP: the POA&M row tracking it, if any | `"V-0142"` |
 | `org_control_id` | The organization's own control ID, if any | `"IAM-04"` |
 | `test_method` | How it was tested | `"inspection"`, `"reperformance"` |
 | `evidence_request` | The request ID that holds or would hold the evidence | `"ER-IAM-03-1"` |
@@ -263,7 +270,8 @@ The control matrix counts records from `findings.json` and entries from the docu
 
 ## Boundaries
 
-- This is readiness, not an audit opinion or a certificate. A SOC 2 report is issued by an independent CPA firm, and an ISO/IEC 27001 certificate by an accredited certification body. The readiness review prepares for those and does not replace them
+- This is readiness, not an audit opinion or a certificate. A SOC 2 report is issued by an independent CPA firm, an ISO/IEC 27001 certificate by an accredited certification body, and a FedRAMP assessment by a recognized independent assessor (3PAO), with the ATO decided by the agency. The readiness review prepares for those and does not replace them
+- Severity is not a POA&M risk rating either; keep the assessor's rating in the POA&M and `ext.poam_id`
 - Severity is not a nonconformity grade. A major nonconformity for a missing management review is still a documentation gap here, and the report says it will block certification
 - Severity reflects exposure. Don't inflate a paperwork gap to High to get budget, and don't call a live exposure a documentation gap because the auditor might not sample it
 - Never fabricate, backdate or edit evidence, and never pick samples to avoid known exceptions. The auditor picks samples. If evidence doesn't exist, the row says so
@@ -277,7 +285,9 @@ The control matrix counts records from `findings.json` and entries from the docu
 - AICPA, SOC 2 Reporting on an Examination of Controls at a Service Organization (Guide, 2022 edition)
 - COSO, Internal Control — Integrated Framework (2013): the 17 principles behind CC1–CC5
 - ISO/IEC 27001:2022 and Amendment 1:2024, ISO/IEC 27002:2022 — `iso.org` (copyrighted; the reference file paraphrases control titles)
-- Framework detail: [references/soc2.md](references/soc2.md), [references/iso27001.md](references/iso27001.md)
+- NIST SP 800-53 Rev. 5 (Release 5.2.0), SP 800-53A, SP 800-53B, and OSCAL — `csrc.nist.gov`, `pages.nist.gov/OSCAL`
+- FedRAMP Consolidated Rules for 2026, Rev5 baselines and FedRAMP 20x Key Security Indicators — `fedramp.gov`
+- Framework detail: [references/soc2.md](references/soc2.md), [references/iso27001.md](references/iso27001.md), [references/nist-800-53.md](references/nist-800-53.md)
 - Shared references (copied into `references/` at build time): [references/findings-format.md](references/findings-format.md), [references/verification.md](references/verification.md), [references/severity-calibration.md](references/severity-calibration.md), [references/findings.schema.json](references/findings.schema.json)
 
 ## Reference files
@@ -287,6 +297,7 @@ This skill links to supporting files under `references/`. They are not inlined i
 - [references/findings-format.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/control-audit/references/findings-format.md)
 - [references/findings.schema.json](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/control-audit/references/findings.schema.json)
 - [references/iso27001.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/control-audit/references/iso27001.md)
+- [references/nist-800-53.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/control-audit/references/nist-800-53.md)
 - [references/severity-calibration.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/control-audit/references/severity-calibration.md)
 - [references/soc2.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/control-audit/references/soc2.md)
 - [references/to-sarif.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/control-audit/references/to-sarif.mjs)
