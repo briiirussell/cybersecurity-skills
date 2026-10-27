@@ -10,7 +10,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | breach-patterns | 1.0.4 | 2026-10-26 |
 | business-logic-testing | 1.0.2 | 2026-10-26 |
 | cloud-audit | 1.2.0 | 2026-10-26 |
-| container-audit | 1.0.3 | 2026-10-26 |
+| container-audit | 1.1.0 | 2026-10-26 |
 | crypto-audit | 1.0.3 | 2026-10-26 |
 | csf-mapping | 1.0.2 | 2026-10-26 |
 | dependency-audit | 1.2.3 | 2026-10-26 |
@@ -41,6 +41,23 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.1.3 | 2026-10-26 |
 
 ## Recent Changes
+
+### 1.28.0 (2026-10-26)
+
+container-audit moves onto the shared findings format (#129). container-audit 1.1.0.
+
+**Changed**
+- **Verify, then record.** A new step after the checklists:
+  - Run the refutation pass. The strongest controls are an admission policy, a namespace Pod Security Standards (PSS) label, a Helm value that overrides the default, or a later build stage that discards the layer.
+  - Name the principal, the boundary and the result before calling anything a finding.
+  - Examples for each verdict: a committed `kind: Secret` with the live database password, and a `system:authenticated` binding that can read every secret, are confirmed. A namespace label set outside the repo needs validation. A Kyverno `Enforce` policy, or a build-arg used only in the builder stage, gets the candidate rejected.
+  - Shipped Helm defaults like `privileged: true` are confirmed, with confidence capped at medium.
+- **Hardening notes.** Running as root, a tag instead of a digest, and missing limits are hardening notes on their own. A missing NetworkPolicy is a finding only when you name what it exposes. Image CVEs follow dependency-audit's reachability rule.
+- **Cluster evidence.** Live-cluster findings point at saved, redacted output. Strip Secret `.data` before saving.
+- **Fingerprints:** `container-audit/<class>/<file or resource>/<name>`. Image references are written without the tag.
+- **`ext` keys:** `resource`, `cis`, `pss`.
+- **Output Format** is rendered from `findings.json`. It has "Rejected (do not re-raise)", a cluster posture table and a remediation plan. "Verify Fixes at Runtime" is unchanged.
+- The skill now gets copies of the six shared findings files.
 
 ### 1.27.0 (2026-10-26)
 
