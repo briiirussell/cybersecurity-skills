@@ -175,13 +175,15 @@ Full rules, examples and the publishable-vs-secret key table: [references/severi
 
 | Disposition | When to choose | Required fields |
 |---|---|---|
-| **Fix now** (recorded as **Fixed**) | Patch / mitigation deployable within the severity's SLA | Fix description, deploy plan, verification method |
+| **Fix now** (open until shipped, then **Fixed**) | Patch / mitigation deployable within the severity's SLA | Fix description, deploy plan, verification method, owner, target date |
 | **Defer** (**Deferred**) | Severity warrants action, but operational constraints make immediate fix infeasible | Reason for deferral, new deadline, who owns, alerting if conditions change before deadline |
 | **Accept risk** (**Accepted Risk**) | Fix isn't planned at current configuration | (1) Why fix doesn't apply, (2) Compensating controls, (3) Re-evaluation trigger |
 | **Mitigated (platform/config)** | The code is unchanged but a platform or configuration control now blocks the path (WAF rule, egress policy, IdP setting, feature flag off, network policy) | The control, where it's configured, evidence it's active, what would remove it, owner of that config |
 | **Requires major migration** | The real fix is an architectural change — framework or major-version upgrade, auth model rework, data-model change — that can't land in the SLA | Migration scope, interim mitigation, target milestone, owner, re-evaluation date |
 | **False positive** | Not actually a vulnerability (verdict `rejected`) | Evidence for the determination, the named control + location, scanner rule ID to suppress (with care) |
 | **Hardening note** | No traced impact — not a finding | One line: what's missing, why it would help, effort. No severity, no SLA |
+
+**On Fix now:** a decision to fix is not a fix. Leave `disposition` unset in `findings.json` while the fix is planned or in review. The record stays open, and `to-sarif.mjs` keeps alerting on it. Set `Fixed` only once the change has shipped and the template's Verification step passed against it; record the commit or release in the writeup. Writing `Fixed` early makes the SARIF drop the alert while the bug is still live.
 
 **On Defer:** severity does NOT change because you decided to defer. Recording a "High deferred to Q3" is honest; downgrading a High to Medium because Q3 is far away is risk-laundering.
 
@@ -360,6 +362,7 @@ Before submitting:
 - For Mitigated: is there evidence the control is active today, and a named owner of it?
 - Does the severity reflect your environment, or just the scanner's default?
 - If the input was a `findings.json` record: did you write back the verdict, severity and disposition, and does the validator still pass?
+- Is any record marked `Fixed` whose fix hasn't shipped and been verified? Clear the disposition until it has.
 
 ## When to escalate
 
@@ -396,6 +399,12 @@ The primary output is the disposition writeup itself (templates above). For a tr
 
 ### Hardening notes (not findings)
 - [one line each — gap, why it would help, effort]
+
+### Related candidates (not triaged here)
+| Candidate | Location | Why it's related | Hand to |
+|-----------|----------|------------------|---------|
+
+Things you noticed while triaging: the same pattern on a sibling route, a second call site of the vulnerable function, the control that would have caught it missing elsewhere. They have no verdict yet, so don't give them a severity or a `findings.json` record in this session. Name the skill that should review them (`owasp-audit`, `api-audit`, `dependency-audit`, ...), or triage each one separately.
 
 ### Escalations
 [Findings that need senior review or approval]
