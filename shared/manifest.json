@@ -66,7 +66,8 @@
       "owasp-audit",
       "api-audit",
       "web-pentest",
-      "secrets-audit"
+      "secrets-audit",
+      "dependency-audit"
     ],
     "recon-and-coverage.md": [
       "owasp-audit",

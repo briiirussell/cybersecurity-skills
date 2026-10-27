@@ -323,7 +323,14 @@ For a PR or a lockfile diff, follow [references/diff-review.md](references/diff-
 
 ## Output Format
 
-**Write `findings.json` first, validate it, then render the markdown from it.** Record every candidate as `confirmed`, `needs_validation`, or `rejected` per [references/findings-format.md](references/findings-format.md), and run `node references/validate-findings.mjs findings.json` until it exits 0. The prose report never changes a verdict, severity, or disposition the JSON doesn't have. Score severity on confirmed records only, using [references/severity-calibration.md](references/severity-calibration.md). Fingerprint by root cause, for example `dependency-audit/<ecosystem>/<package>/<advisory-id>` or `dependency-audit/ci/<workflow-file>/<handoff>`, with no versions or line numbers in it.
+**Write `findings.json` first, validate it, then render the markdown from it.** Record every candidate as `confirmed`, `needs_validation`, or `rejected` per [references/findings-format.md](references/findings-format.md), and run `node references/validate-findings.mjs findings.json` until it exits 0. The prose report never changes a verdict, severity, or disposition the JSON doesn't have. Score severity on confirmed records only, using [references/severity-calibration.md](references/severity-calibration.md). Fingerprint by root cause in the shared form, `dependency-audit/<advisory-id>/<lockfile>/<package>` (for example `dependency-audit/GHSA-29mw-wpgm-hmr9/package-lock.json/lodash`), or `dependency-audit/ci/<workflow-file>/<handoff>` for CI findings. No versions or line numbers in it.
+
+**Rejections** follow the table in [references/verification.md](references/verification.md):
+
+- **Never called:** an advisory whose vulnerable function the code never calls is `rejected`. `ruled_out_by.location` points at the package's only import or call site, or at its manifest line if nothing imports it.
+- **Guard inside the dependency:** the library's own guard rules it out only when the lockfile pins a version you checked. Point at that lockfile line. If the version isn't pinned, it's `needs_validation`.
+
+Rejected records go in the report's "Rejected (do not re-raise)" table, so the next run doesn't raise them again.
 
 **Dispositions** for confirmed findings: `Fixed` | `Deferred` | `Accepted Risk` | `Mitigated (platform/config)` | `Requires major migration`. `False Positive` means there is no finding (the record is `rejected`). Gaps with no traced impact go under "Hardening notes (not findings)" with no severity.
 
@@ -340,6 +347,8 @@ For a PR or a lockfile diff, follow [references/diff-review.md](references/diff-
 | Component | Version | Latest | Status |
 |-----------|---------|--------|--------|
 (include agent extensions: MCP servers, skills, plugins — source, version/commit, launch command)
+
+Latest comes from `npm view <package> version` or `npm outdated --json` (both need network). In an offline run, write "not checked" rather than guessing.
 
 ### Known Vulnerabilities (CVEs)
 | Package | Installed | Vuln | Severity | Where reachable | CVE | Fix Version | Disposition |
@@ -377,6 +386,10 @@ For CI/release trust handoffs (Step 5b), each row names the lower-trust actor, t
 
 ### Hardening Notes (not findings)
 - [gap with no traced impact, e.g. workflow without `permissions:` and no reachable privileged step — no severity]
+
+### Rejected (do not re-raise)
+| Fingerprint | Package | Ruled out by | Location |
+|-------------|---------|--------------|----------|
 
 ### Prioritized Action Plan
 1. [Critical — actively exploited CVEs, RCE vulnerabilities]
@@ -420,3 +433,4 @@ This skill links to supporting files under `references/`. They are not inlined i
 - [references/source-redirection.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/dependency-audit/references/source-redirection.md)
 - [references/to-sarif.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/dependency-audit/references/to-sarif.mjs)
 - [references/validate-findings.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/dependency-audit/references/validate-findings.mjs)
+- [references/verification.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/dependency-audit/references/verification.md)

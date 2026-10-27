@@ -13,7 +13,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | container-audit | 1.0.3 | 2026-10-26 |
 | crypto-audit | 1.0.3 | 2026-10-26 |
 | csf-mapping | 1.0.2 | 2026-10-26 |
-| dependency-audit | 1.2.2 | 2026-10-26 |
+| dependency-audit | 1.2.3 | 2026-10-26 |
 | disk-forensics | 1.0.1 | 2026-10-26 |
 | finding-triage | 1.1.1 | 2026-10-26 |
 | hipaa-audit | 1.0.2 | 2026-10-26 |
@@ -41,6 +41,19 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.1.3 | 2026-10-26 |
 
 ## Recent Changes
+
+### 1.26.3 (2026-10-26)
+
+dependency-audit fixes from the worked-example run (#159). dependency-audit 1.2.3.
+
+**Fixed**
+- **Fingerprint form.** The skill wrote `dependency-audit/<ecosystem>/<package>/<advisory>`, while `findings-format.md` and the worked example use `dependency-audit/<advisory>/<lockfile>/<package>`. The skill now uses the shared form.
+- **Report template.** It now has the "Rejected (do not re-raise)" table that `findings-format.md` requires. Most advisories in a real audit end up there; the example had 40 never-called ones.
+- **The Latest column.** The "Latest" column in the stack inventory couldn't be filled without a permission prompt. `Bash(npm view:*)` and `Bash(npm outdated:*)`, both read-only, are now pre-approved. An offline run writes "not checked" instead of guessing.
+
+**Changed**
+- **Rejection rules.** "Never called" and "guard inside the dependency" rejections follow the v1.26.1 table. A never-called advisory points at the package's only call site, or at its manifest line. A library guard rejects only with a checked lockfile pin; otherwise it's `needs_validation`. The skill now gets a copy of `verification.md`.
+- **Docs.** The `docs/security-scanning.md` grant table lists the two new rules.
 
 ### 1.26.2 (2026-10-26)
 
