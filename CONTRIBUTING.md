@@ -4,9 +4,10 @@ Thanks for your interest in contributing. The highest-signal contribution to thi
 
 ## What to contribute
 
-- **Field feedback issues** — "I ran `owasp-audit` against a Next.js + Drizzle app and it missed X. Here's the pattern and a suggested grep." Open an [issue](https://github.com/briiirussell/cybersecurity-skills/issues/new) with the framework, the missing pattern, and (if you have it) a concrete code shape it should match against.
+- **Field feedback issues** — "I ran `owasp-audit` against a Next.js + Drizzle app and it missed X. Here's the pattern and a suggested grep." Open a [field report](https://github.com/briiirussell/cybersecurity-skills/issues/new?template=field-report.yml) with the framework, the missing pattern, and (if you have it) a concrete code shape it should match against.
 - **PRs that close a feedback gap** — Take an open issue, add the bullet/grep/section to the relevant `SKILL.md`, regenerate adapters, open a PR referencing the issue.
 - **New skills** — A new skill should cover a distinct domain (not a re-slice of an existing one). Check the [skill map](README.md#how-skills-work-together) first to make sure it fits.
+- **Trophy case** — If a skill found a real bug, [tell me](https://github.com/briiirussell/cybersecurity-skills/issues/new?template=trophy-case.yml). It's how I know which checks are earning their place.
 - **Adapter fixes** — Cursor / Codex output bugs, build script improvements.
 
 ## Workflow
@@ -34,8 +35,7 @@ This repo uses a `main` + `development` model:
    Files in `shared/` are copied into `skills/<skill>/references/` per `shared/manifest.json`. Edit `shared/`, never the copies.
 5. **Run the checks CI runs**:
    ```bash
-   node scripts/lint-skills.mjs
-   npm test        # node:test suites in scripts/test/ (Node >= 21, no dependencies)
+   npm run check   # lint, baseline, versions, trigger eval, adapter drift, tests (Node >= 21, no dependencies)
    ```
 6. **Commit and push**
 7. **Open a PR into `development`** — not `main`. The release cut promotes `development` → `main`.
@@ -96,7 +96,9 @@ skills/your-skill-name/
 
 - **Imperative form** — "Check for X" / "Run Y" / "Report findings as Z"
 - **Under 500 lines** in `SKILL.md` — offload depth to `references/`
-- **Define the output format** explicitly — agents drift without a template
+- **Define the output format** explicitly — agents drift without a template. Call the section `## Output Format`
+- **Keep the standard sections** from the template: a `Cross-references:` line, `## When to use` with its **Not for:** near-misses, `## Authorization`, the workflow, `## Output Format`, `## Boundaries`, `## References`. The lint fails a skill without `## Authorization`, `## Boundaries` or `## References`
+- **Reporting findings?** Use the shared format (verdicts, severity calibration, verification, `findings.json`); the template's "Verify, then record" step shows how, and which `shared/manifest.json` entries to add
 - **Include an authorization check** for any offensive skill — it should refuse if the user can't confirm authorization
 - **Anti-pattern bullets > prose** — `OWASP A01: missing role check on /api/admin/*` beats a paragraph about access control
 
@@ -109,7 +111,23 @@ node scripts/lint-skills.mjs
 
 The build regenerates `adapters/cursor/your-skill-name.mdc` and `adapters/codex/your-skill-name.md`, and copies the `shared/` files listed for your skill in `shared/manifest.json` into `skills/your-skill-name/references/`. To link a shared file (e.g. `references/findings.schema.json`), add your skill to that file's list in the manifest first. The lint checks frontmatter, size, cross-references, links and `allowed-tools`.
 
-### 7. Test locally
+### 7. Add trigger prompts
+
+Create `evals/triggers/your-skill-name.json`:
+
+```json
+{
+  "skill": "your-skill-name",
+  "should_fire": ["five or more prompts a real user would type, casual ones and one with pasted code or config"],
+  "near_miss": [{ "prompt": "a prompt that sounds close but belongs elsewhere", "owner": "other-skill" }]
+}
+```
+
+Write the prompts the way people actually ask, not by copying phrases from your description. `node scripts/eval-triggers.mjs --verbose` ranks every prompt against every description and lists the ones that land on the wrong skill. It's a cheap proxy for routing, so a miss is a hint to sharpen a description, not proof the model will misroute. See [evals/README.md](evals/README.md).
+
+Also add the skill to the `skill` dropdown in the issue forms (`.github/ISSUE_TEMPLATE/field-report.yml`, `bug.yml`, `trophy-case.yml`). A test fails until you do.
+
+### 8. Test locally
 
 ```bash
 cp -r skills/your-skill-name ~/.claude/skills/
@@ -119,6 +137,9 @@ Run a real scenario against it. Iterate until the output is what you'd want to r
 
 ## PR checklist
 
+The PR templates carry these checklists. For a new skill, add `?template=new-skill.md` to the compare URL. For a change to one skill, add `?template=skill-update.md`. The default template covers tooling and docs.
+
+
 CI (`.github/workflows/ci.yml`) runs on every PR into `development` or `main` and enforces the first group automatically. Run the commands locally first.
 
 Enforced by CI:
@@ -126,7 +147,8 @@ Enforced by CI:
 - [ ] Skill lint passes — `node scripts/lint-skills.mjs` (`name` matches directory, `description` 200–1024 chars, `SKILL.md` under 500 lines, an `## Authorization` section, cross-referenced skills exist, relative links resolve, no `WebFetch` + unscoped `Bash`, no `Bash` grant whose prefix also matches a destructive subcommand)
 - [ ] Adapters and shared copies regenerated and committed — `node scripts/build-adapters.mjs` leaves no diff; shared content edited in `shared/`, not in `skills/*/references/` copies
 - [ ] Versions bumped — repo version in `.claude-plugin/plugin.json` and `marketplace.json`, a `### X.Y.Z (date)` entry in `VERSIONS.md`, and the row of every skill you changed (fix = PATCH, improvement = MINOR, new skill = 1.0.0). `node scripts/check-versions.mjs --base origin/development` checks this
-- [ ] `npm run check` passes (lint, baseline check, version check, adapter drift, tests — the CI checks that need no extra tools)
+- [ ] Trigger prompts added or updated — `evals/triggers/<skill>.json` (5+ should-fire, 5+ near-misses with an `owner`); `node scripts/eval-triggers.mjs --verbose` shows which prompts land on the wrong skill. If you edited a description, check you didn't steal another skill's prompts
+- [ ] `npm run check` passes (lint, baseline check, version check, trigger eval, adapter drift, tests — the CI checks that need no extra tools)
 - [ ] Tests pass — `npm test` (add or update a test in `scripts/test/` if you changed a validator, `to-sarif.mjs`, or the build)
 - [ ] SkillSpector scan is clean — any new finding is fixed, or covered by a narrow rule **with a reason** in `.skillspector-baseline.yaml` (see [docs/security-scanning.md](docs/security-scanning.md))
 

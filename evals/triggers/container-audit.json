@@ -1,0 +1,32 @@
+{
+  "skill": "container-audit",
+  "should_fire": [
+    "review this Dockerfile\n```Dockerfile\nFROM ubuntu:latest\nRUN apt-get update && apt-get install -y curl\nCOPY . /app\nENV AWS_SECRET_ACCESS_KEY=abc123\nUSER root\nCMD [\"/app/start.sh\"]\n```",
+    "are any of our Kubernetes pods running privileged? check the manifests",
+    "do we need network policies in our cluster?",
+    "set up Kyverno to enforce pod security standards",
+    "should we switch our images to distroless?"
+  ],
+  "near_miss": [
+    {
+      "prompt": "audit our AWS IAM and S3 configuration",
+      "owner": "cloud-audit"
+    },
+    {
+      "prompt": "run trivy and osv-scanner on every repo each week",
+      "owner": "scanner-pipeline"
+    },
+    {
+      "prompt": "check our npm lockfile for known CVEs",
+      "owner": "dependency-audit"
+    },
+    {
+      "prompt": "find leaked tokens in our git history",
+      "owner": "secrets-audit"
+    },
+    {
+      "prompt": "analyze this disk image from the compromised node",
+      "owner": "disk-forensics"
+    }
+  ]
+}

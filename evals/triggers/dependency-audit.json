@@ -1,0 +1,32 @@
+{
+  "skill": "dependency-audit",
+  "should_fire": [
+    "run npm audit and tell me what actually matters",
+    "are any of these packages vulnerable?\n```json\n{\"dependencies\": {\"lodash\": \"4.17.15\", \"axios\": \"0.21.0\", \"next\": \"14.0.1\"}}\n```",
+    "npm audit fix broke the build, help",
+    "review our GitHub Actions workflows for supply chain risk like unpinned actions and cache poisoning",
+    "could we get hit by dependency confusion with our internal package names?"
+  ],
+  "near_miss": [
+    {
+      "prompt": "patch the same CVE across all 40 of our repos",
+      "owner": "patch-sweep"
+    },
+    {
+      "prompt": "research CVE-2024-3094: is the xz backdoor reachable for us, is there a PoC?",
+      "owner": "vuln-research"
+    },
+    {
+      "prompt": "is this Claude skill I downloaded malicious?",
+      "owner": "agent-supply-chain-audit"
+    },
+    {
+      "prompt": "set up osv-scanner in CI with SARIF output to code scanning",
+      "owner": "scanner-pipeline"
+    },
+    {
+      "prompt": "is this one Dependabot alert a false positive, and what severity is it really?",
+      "owner": "finding-triage"
+    }
+  ]
+}

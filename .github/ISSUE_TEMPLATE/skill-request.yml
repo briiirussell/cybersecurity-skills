@@ -1,0 +1,40 @@
+name: Skill request
+description: Propose a new skill for a job none of the current skills cover.
+title: "[new skill] <name>: <one-line purpose>"
+labels: [new-skill]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check the [skill map](https://github.com/briiirussell/cybersecurity-skills#how-skills-work-together) first. A lot of requests turn out to be a section in an existing skill, which is easier to keep sharp than a new one.
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What does someone need done, and what do they type when they ask for it?
+    validations:
+      required: true
+  - type: textarea
+    id: overlap
+    attributes:
+      label: Why existing skills don't cover it
+      description: Name the closest skills and say where they stop. Which skill would the request land on today?
+    validations:
+      required: true
+  - type: textarea
+    id: triggers
+    attributes:
+      label: Example prompts
+      description: Five or so things a user would actually say. These seed `evals/triggers/<skill>.json`.
+  - type: textarea
+    id: outline
+    attributes:
+      label: Rough outline
+      description: Methodology steps, tools it would run (read-only?), output, and frameworks or references it should follow.
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - label: This is for authorized, defensive, research or CTF use. It isn't malware, EDR or detection evasion, C2, or mass targeting.
+          required: true

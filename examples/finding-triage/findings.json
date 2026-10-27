@@ -1,0 +1,138 @@
+[
+  {
+    "fingerprint": "finding-triage/CWE-209/src/app.js/errorHandler",
+    "verdict": "confirmed",
+    "skill": "finding-triage",
+    "title": "Global Express error handler returns err.message and err.stack to any client, pre-auth on any route",
+    "cwe": "CWE-209",
+    "owasp_category": "A10:2025",
+    "location": {
+      "file": "src/app.js",
+      "line": 17
+    },
+    "trace": [
+      {
+        "kind": "entrypoint",
+        "file": "src/routes/preview.js",
+        "line": 8,
+        "description": "POST /api/preview, any signed-up user (requireAuth); body.url passes the http(s) prefix check at line 11"
+      },
+      {
+        "kind": "propagation",
+        "file": "src/routes/preview.js",
+        "line": 12,
+        "description": "axios.get(url) rejects on DNS failure, connection refusal, timeout or non-2xx status; the error carries Node's message (e.g. getaddrinfo ENOTFOUND <host>, connect ECONNREFUSED <ip>:<port>)"
+      },
+      {
+        "kind": "propagation",
+        "file": "src/routes/preview.js",
+        "line": 16,
+        "description": "catch block forwards the raw error with next(err); no mapping to a generic message"
+      },
+      {
+        "kind": "sink",
+        "file": "src/app.js",
+        "line": 17,
+        "description": "res.status(500).json({ error: err.message, stack: err.stack }) for every error from every route; no NODE_ENV switch"
+      }
+    ],
+    "evidence": [
+      {
+        "file": "src/app.js",
+        "line": 17,
+        "description": "Error handler serializes err.message and err.stack into the response body unconditionally"
+      },
+      {
+        "file": "src/app.js",
+        "line": 14,
+        "description": "Comment states errors are returned on purpose so the frontend can show them; there is no production branch"
+      },
+      {
+        "file": "src/app.js",
+        "line": 5,
+        "description": "express.json() runs before every router, so a malformed JSON body to any route (including unauthenticated /api/users/*) reaches the same handler: pre-auth trigger"
+      },
+      {
+        "file": "src/routes/users.js",
+        "line": 10,
+        "description": "Duplicate-email signup throws a SqliteError (UNIQUE constraint failed: users.email) that reaches the handler unauthenticated and discloses schema detail"
+      }
+    ],
+    "counterevidence": "Looked for anything that sanitizes errors before the response: no NODE_ENV check, no second error handler, no try/catch that rewrites messages, and preview.js:16 forwards the raw axios error. requireAuth (src/auth.js:22) gates /api/preview only, not the global handler; express.json parse errors and users.js errors are reachable without a token, as is a login with a known email and no password (scryptSync TypeError at src/auth.js:13). The handler sends only message and stack, not axios err.config or headers, so no request secrets leak. What can't be seen from the code: whether a reverse proxy or platform in front of staging/production rewrites 500 bodies. The ZAP alert in the input is an illustrative alert, not captured output, so it is not counted as reproduction.",
+    "confidence": "medium",
+    "severity": {
+      "likelihood": {
+        "score": "high",
+        "reason": "Anonymous client can trigger it on any route with a malformed JSON body; no precondition beyond reaching the API"
+      },
+      "impact": {
+        "score": "low",
+        "reason": "Discloses absolute install paths, module names, SQLite schema fragments, and (via /api/preview) whether internal hostnames resolve and their internal IP/port state; no credentials, tokens or user data"
+      },
+      "overall": "low"
+    },
+    "conditions": [
+      {
+        "kind": "network_routing",
+        "description": "Assumes no reverse proxy or platform layer replaces 500 response bodies in the deployed environment; not visible in the repo"
+      },
+      {
+        "kind": "authentication_level",
+        "description": "None for stack/path/schema disclosure (malformed JSON, signup errors); any signed-up user for the internal-network detail via /api/preview (open signup at src/routes/users.js:7)"
+      }
+    ]
+  },
+  {
+    "fingerprint": "finding-triage/CWE-89/src/routes/notes.js/listNotes",
+    "verdict": "rejected",
+    "skill": "finding-triage",
+    "title": "semgrep tainted-sql-string on ORDER BY in GET /api/notes (sort is allow-listed)",
+    "cwe": "CWE-89",
+    "owasp_category": "A05:2025",
+    "location": {
+      "file": "src/routes/notes.js",
+      "line": 15
+    },
+    "trace": [
+      {
+        "kind": "entrypoint",
+        "file": "src/routes/notes.js",
+        "line": 13,
+        "description": "GET /api/notes reads req.query.sort (default 'newest') and uses it only as a key into SORT_COLUMNS"
+      },
+      {
+        "kind": "propagation",
+        "file": "src/routes/notes.js",
+        "line": 14,
+        "description": "Missing key returns 400 before the query is built"
+      },
+      {
+        "kind": "sink",
+        "file": "src/routes/notes.js",
+        "line": 15,
+        "description": "Template literal interpolates order, the looked-up map value, not the request value"
+      }
+    ],
+    "evidence": [
+      {
+        "file": "src/routes/notes.js",
+        "line": 9,
+        "description": "SORT_COLUMNS is a constant map of three fixed ORDER BY clauses"
+      },
+      {
+        "file": "src/routes/notes.js",
+        "line": 15,
+        "description": "owner_id is bound as a ? parameter; only the map value is interpolated"
+      }
+    ],
+    "counterevidence": "Tried to get an attacker-chosen string into the template. Arrays and objects from Express 4's qs parser stringify to keys that aren't in the map (400), and a single-element array like sort[]=title only selects an allowed value. Inherited Object.prototype keys pass the truthiness check at line 14 but interpolate fixed text: constructor/toString/valueOf give 'function ...() { [native code] }' (SQLite syntax error), and __proto__ gives '[object Object]' (SQLite reads it as a bracket-quoted column name: no such column). Both are 500s with no attacker-shaped SQL and no data returned. qs 6.7.0 (package-lock.json) builds arrays/objects, not attacker text, for sort[] and sort[k]. The only way to make a lookup return attacker text would be prototype pollution elsewhere in the process; that is a separate candidate (the PATCH handler's _.merge at src/routes/notes.js:43, lodash 4.17.15) and not this claim. Sibling GET /api/notes/search at src/routes/notes.js:22 interpolates req.query.q directly and is NOT covered by this rejection.",
+    "confidence": "high",
+    "ruled_out_by": {
+      "control": "SORT_COLUMNS allow-list lookup; the request value is used only as a key and an unknown key returns 400 before the query is built, so only fixed clause strings reach the template",
+      "location": {
+        "file": "src/routes/notes.js",
+        "line": 13
+      }
+    }
+  }
+]

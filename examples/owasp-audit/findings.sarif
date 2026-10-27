@@ -1,0 +1,1965 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "cybersecurity-skills",
+          "informationUri": "https://github.com/briiirussell/cybersecurity-skills",
+          "rules": [
+            {
+              "id": "owasp-audit/CVE-2020-28168/package-lock.json/axios",
+              "shortDescription": {
+                "text": "axios 0.21.0 (lockfile marks it \"Critical security vulnerability fixed in v0.21.1\") is used on a user-controlled URL; a redirect may bypass an egress proxy"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-918",
+                  "owasp/A03:2025"
+                ],
+                "skill": "owasp-audit"
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/918.html"
+            },
+            {
+              "id": "owasp-audit/CVE-2022-24999/package-lock.json/qs",
+              "shortDescription": {
+                "text": "Express 4.17.1 resolves qs 6.7.0, affected by CVE-2022-24999 (query-string __proto__ process hang), reachable pre-auth"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-1321",
+                  "owasp/A03:2025"
+                ],
+                "skill": "owasp-audit"
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/1321.html"
+            },
+            {
+              "id": "owasp-audit/CWE-1321/src/routes/notes.js/PATCH-note-merge",
+              "shortDescription": {
+                "text": "Prototype pollution through _.merge of the JSON request body in PATCH /api/notes/:id"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-1321",
+                  "owasp/A08:2025"
+                ],
+                "skill": "owasp-audit"
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/1321.html"
+            },
+            {
+              "id": "owasp-audit/CWE-209/src/app.js/error-handler",
+              "shortDescription": {
+                "text": "Global error handler returns err.message and err.stack to any client, including anonymous ones"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-209",
+                  "owasp/A02:2025"
+                ],
+                "skill": "owasp-audit",
+                "security-severity": "3.0"
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/209.html"
+            },
+            {
+              "id": "owasp-audit/CWE-307/src/routes/users.js/POST-login",
+              "shortDescription": {
+                "text": "No rate limiting or lockout on POST /api/users/login (online password guessing)"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-307",
+                  "owasp/A07:2025"
+                ],
+                "skill": "owasp-audit",
+                "security-severity": "5.5"
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/307.html"
+            },
+            {
+              "id": "owasp-audit/CWE-321/src/config.js/jwtSecret",
+              "shortDescription": {
+                "text": "JWT signing secret falls back to the hard-coded string \"changeme\" when JWT_SECRET is unset or empty"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-321",
+                  "owasp/A04:2025"
+                ],
+                "skill": "owasp-audit",
+                "security-severity": "8.0"
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/321.html"
+            },
+            {
+              "id": "owasp-audit/CWE-613/src/auth.js/requireAuth-user-id-reuse",
+              "shortDescription": {
+                "text": "A deleted user's still-valid JWT authenticates as whoever next receives the reused user id"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-613",
+                  "owasp/A07:2025"
+                ],
+                "skill": "owasp-audit",
+                "security-severity": "3.0"
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/613.html"
+            },
+            {
+              "id": "owasp-audit/CWE-639/src/routes/notes.js/GET-note-by-id",
+              "shortDescription": {
+                "text": "Any user can read any other user's note by id (IDOR)"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-639",
+                  "owasp/A01:2025"
+                ],
+                "skill": "owasp-audit",
+                "security-severity": "8.0"
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/639.html"
+            },
+            {
+              "id": "owasp-audit/CWE-89/src/routes/notes.js/GET-search",
+              "shortDescription": {
+                "text": "SQL injection in note search via the q query parameter"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-89",
+                  "owasp/A05:2025"
+                ],
+                "skill": "owasp-audit",
+                "security-severity": "8.0"
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/89.html"
+            },
+            {
+              "id": "owasp-audit/CWE-915/src/routes/notes.js/PATCH-note",
+              "shortDescription": {
+                "text": "PATCH /api/notes/:id merges the request body into the row, so id and owner_id are attacker-controlled and any note can be overwritten or taken over"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-915",
+                  "owasp/A01:2025"
+                ],
+                "skill": "owasp-audit",
+                "security-severity": "8.0"
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/915.html"
+            },
+            {
+              "id": "owasp-audit/CWE-918/src/routes/preview.js/POST-preview",
+              "shortDescription": {
+                "text": "Link preview fetches any user-supplied http(s) URL server-side (SSRF)"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-918",
+                  "owasp/A01:2025"
+                ],
+                "skill": "owasp-audit",
+                "security-severity": "5.5"
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/918.html"
+            }
+          ]
+        }
+      },
+      "originalUriBaseIds": {
+        "%SRCROOT%": {
+          "description": {
+            "text": "Repository root"
+          }
+        }
+      },
+      "results": [
+        {
+          "ruleId": "owasp-audit/CVE-2020-28168/package-lock.json/axios",
+          "ruleIndex": 0,
+          "level": "note",
+          "message": {
+            "text": "Needs validation: axios 0.21.0 (lockfile marks it \"Critical security vulnerability fixed in v0.21.1\") is used on a user-controlled URL; a redirect may bypass an egress proxy. Blockers: Whether the production runtime routes outbound HTTP through an egress proxy (HTTP_PROXY/HTTPS_PROXY, which axios 0.21.0 honours by default) that is relied on to block internal or metadata destinations; Whether the installed axios 0.21.0 sends a cross-host redirect hop directly instead of through the configured proxy (the CVE-2020-28168 behaviour). Validation plan: 1) In the production container: `printenv | grep -iE '^(https?|no)_proxy='`. If nothing prints, there is no proxy control. Close this as rejected, ruled out by the absence of a proxy (the direct-SSRF finding still applies). 2) If a proxy is set: run `npm ls axios` (expect axios@0.21.0) and `npm audit --omit=dev`. Then, locally, point HTTP_PROXY at a stub proxy that answers every request with a 302 to http://127.0.0.1:9999/internal, run a stub server on 9999, and call require('axios').get('http://preview.test/'). Confirmed: the stub on 9999 receives the request directly, so the redirect hop skipped the proxy. Rejected: the proxy receives the redirected request for 127.0.0.1:9999/internal. Upgrading axios (>= 0.21.1, ideally current 1.x) closes this either way."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 38
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "cybersecuritySkills/v1": "owasp-audit/CVE-2020-28168/package-lock.json/axios"
+          },
+          "properties": {
+            "verdict": "needs_validation",
+            "confidence": "low",
+            "skill": "owasp-audit"
+          },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/preview.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 8
+                          }
+                        },
+                        "message": {
+                          "text": "POST /api/preview, behind requireAuth only"
+                        }
+                      },
+                      "kinds": [
+                        "entrypoint"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/preview.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 11
+                          }
+                        },
+                        "message": {
+                          "text": "The url from req.body is checked only against /^https?:\\/\\//. No host allow-list and no redirect restriction"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/preview.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 12
+                          }
+                        },
+                        "message": {
+                          "text": "axios.get(url, {timeout, maxContentLength}) with no maxRedirects, proxy or beforeRedirect option. axios resolves to 0.21.0 (package-lock.json:37-41)"
+                        }
+                      },
+                      "kinds": [
+                        "sink"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "relatedLocations": [
+            {
+              "id": 0,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 41
+                }
+              },
+              "message": {
+                "text": "npm deprecation on axios 0.21.0: 'Critical security vulnerability fixed in v0.21.1 ... axios/axios/pull/3410'"
+              }
+            },
+            {
+              "id": 1,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package.json",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 11
+                }
+              },
+              "message": {
+                "text": "axios pinned to exactly 0.21.0"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "owasp-audit/CVE-2022-24999/package-lock.json/qs",
+          "ruleIndex": 1,
+          "level": "note",
+          "message": {
+            "text": "Needs validation: Express 4.17.1 resolves qs 6.7.0, affected by CVE-2022-24999 (query-string __proto__ process hang), reachable pre-auth. Blockers: Whether the installed qs 6.7.0, called through Express 4.17.1's default extended query parser, blocks the event loop on a[__proto__]b&a[__proto__]&a[length]=100000000. This needs node_modules or npm audit, and both were out of scope here. Validation plan: Locally, from the repo root: `npm ci && npm audit --omit=dev` (look for qs, GHSA for CVE-2022-24999). Then `PORT=3999 node src/app.js &` and run `curl -s -m 5 -o /dev/null -w '%{http_code}\\n' 'http://localhost:3999/healthz?a[__proto__]b&a[__proto__]&a[length]=100000000'; curl -s -m 5 http://localhost:3999/healthz`. Confirmed: the first curl times out (exit 28) and the plain /healthz also stalls while node sits at 100% CPU. Rejected: both return quickly (200 / 'ok') and npm audit doesn't list qs."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 821
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "cybersecuritySkills/v1": "owasp-audit/CVE-2022-24999/package-lock.json/qs"
+          },
+          "properties": {
+            "verdict": "needs_validation",
+            "confidence": "medium",
+            "skill": "owasp-audit"
+          },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/app.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 12
+                          }
+                        },
+                        "message": {
+                          "text": "GET /healthz, no auth. Every router mounted at app.js:7-10 also receives the raw query string before any route-level requireAuth"
+                        }
+                      },
+                      "kinds": [
+                        "entrypoint"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "package-lock.json",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 346
+                          }
+                        },
+                        "message": {
+                          "text": "express 4.17.1 (lock lines 320-321) depends on qs 6.7.0. app.js sets no 'query parser' override, so Express keeps its default extended (qs) parser"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "package-lock.json",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 821
+                          }
+                        },
+                        "message": {
+                          "text": "node_modules/qs resolves to 6.7.0. It is the only qs entry, with no nested patched copy"
+                        }
+                      },
+                      "kinds": [
+                        "sink"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "relatedLocations": [
+            {
+              "id": 0,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 821
+                }
+              },
+              "message": {
+                "text": "\"version\": \"6.7.0\" under node_modules/qs (line 820)"
+              }
+            },
+            {
+              "id": 1,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 346
+                }
+              },
+              "message": {
+                "text": "express 4.17.1 dependencies: \"qs\": \"6.7.0\""
+              }
+            },
+            {
+              "id": 2,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/app.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 4
+                }
+              },
+              "message": {
+                "text": "app = express() with only express.json() added. No app.set('query parser', ...) and no query-string length limit"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "owasp-audit/CWE-1321/src/routes/notes.js/PATCH-note-merge",
+          "ruleIndex": 2,
+          "level": "note",
+          "message": {
+            "text": "Needs validation: Prototype pollution through _.merge of the JSON request body in PATCH /api/notes/:id. Blockers: Whether lodash 4.17.15's _.merge writes '__proto__' or 'constructor.prototype' keys from a JSON.parse'd source through to Object.prototype. The library code is not vendored in the repo. Validation plan: In the repo root after `npm ci`, run: node -e \"const _=require('lodash'); console.log(_.VERSION); _.merge({}, JSON.parse('{\\\"__proto__\\\":{\\\"polluted1\\\":1}}')); _.merge({}, JSON.parse('{\\\"constructor\\\":{\\\"prototype\\\":{\\\"polluted2\\\":1}}}')); console.log(({}).polluted1, ({}).polluted2)\". Confirmed: '4.17.15' then a 1 for either value. Then rate impact via the notes.js:13 -> :15 ORDER BY gadget, e.g. pollute a key 'x' and call GET /api/notes?sort=x. Rejected: '4.17.15' then 'undefined undefined', ruled out by lodash's merge key guard at the pinned version."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/notes.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 43
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "cybersecuritySkills/v1": "owasp-audit/CWE-1321/src/routes/notes.js/PATCH-note-merge"
+          },
+          "properties": {
+            "verdict": "needs_validation",
+            "confidence": "low",
+            "skill": "owasp-audit"
+          },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/notes.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 40
+                          }
+                        },
+                        "message": {
+                          "text": "PATCH /api/notes/:id behind requireAuth (notes.js:7). The caller must own the note (notes.js:41-42)"
+                        }
+                      },
+                      "kinds": [
+                        "entrypoint"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/app.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 5
+                          }
+                        },
+                        "message": {
+                          "text": "express.json parses the body with JSON.parse, which keeps \"__proto__\" as an own key. No schema or key filtering"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/notes.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 43
+                          }
+                        },
+                        "message": {
+                          "text": "_.merge(note, req.body) deep-merges the whole untrusted body into a plain row object"
+                        }
+                      },
+                      "kinds": [
+                        "sink"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "relatedLocations": [
+            {
+              "id": 0,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/notes.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 43
+                }
+              },
+              "message": {
+                "text": "const updated = _.merge(note, req.body); with no allow-list of keys"
+              }
+            },
+            {
+              "id": 1,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 554
+                }
+              },
+              "message": {
+                "text": "lodash resolves to 4.17.15 (package.json:15 pins 4.17.15)"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "owasp-audit/CWE-209/src/app.js/error-handler",
+          "ruleIndex": 3,
+          "level": "note",
+          "message": {
+            "text": "Global error handler returns err.message and err.stack to any client, including anonymous ones. Severity low (likelihood high: Anonymous and trivial: repeat a signup, or send malformed JSON; impact low: Leaks absolute server paths, dependency layout and DB constraint names ('UNIQUE constraint failed: users.email', which also confirms registered emails), plus internal fetch error text for signed-in users. No further exploit traced)."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/app.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 17
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "cybersecuritySkills/v1": "owasp-audit/CWE-209/src/app.js/error-handler"
+          },
+          "properties": {
+            "verdict": "confirmed",
+            "confidence": "medium",
+            "skill": "owasp-audit",
+            "security-severity": "3.0"
+          },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/users.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 7
+                          }
+                        },
+                        "message": {
+                          "text": "POST /api/users/signup, unauthenticated (also any route behind express.json at app.js:5, when sent a malformed JSON body)"
+                        }
+                      },
+                      "kinds": [
+                        "entrypoint"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/users.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 10
+                          }
+                        },
+                        "message": {
+                          "text": "The INSERT throws synchronously when the email already exists (email TEXT UNIQUE, db.js:9). There is no try/catch, so Express 4 passes the throw to next(err)"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/app.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 15
+                          }
+                        },
+                        "message": {
+                          "text": "The only error handler: a 4-arg middleware with no env gating and no status or message mapping"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/app.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 17
+                          }
+                        },
+                        "message": {
+                          "text": "res.status(500).json({ error: err.message, stack: err.stack }) sends the raw message and the full stack trace to the caller"
+                        }
+                      },
+                      "kinds": [
+                        "sink"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "relatedLocations": [
+            {
+              "id": 0,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/app.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 14
+                }
+              },
+              "message": {
+                "text": "Comment: 'Errors go back to the client so the frontend can show them.' The exposure is intentional"
+              }
+            },
+            {
+              "id": 1,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/app.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 17
+                }
+              },
+              "message": {
+                "text": "err.stack goes into the response body, with no NODE_ENV check"
+              }
+            },
+            {
+              "id": 2,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/preview.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 16
+                }
+              },
+              "message": {
+                "text": "axios errors (internal network error text) reach the same handler through next(err)"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "owasp-audit/CWE-307/src/routes/users.js/POST-login",
+          "ruleIndex": 4,
+          "level": "warning",
+          "message": {
+            "text": "No rate limiting or lockout on POST /api/users/login (online password guessing). Severity medium (likelihood medium: Anonymous and unbounded, with enumerable emails, but success depends on the victim's password being in a guessing list; impact high: A correct guess returns a valid 7-day JWT for the victim, including an admin if the admin's password is weak)."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/users.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 15
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "cybersecuritySkills/v1": "owasp-audit/CWE-307/src/routes/users.js/POST-login"
+          },
+          "properties": {
+            "verdict": "confirmed",
+            "confidence": "medium",
+            "skill": "owasp-audit",
+            "security-severity": "5.5"
+          },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/users.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 15
+                          }
+                        },
+                        "message": {
+                          "text": "POST /api/users/login, anonymous (router mounted at app.js:7 with only express.json in front of it). email and password come from req.body (line 16)"
+                        }
+                      },
+                      "kinds": [
+                        "entrypoint"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/users.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 17
+                          }
+                        },
+                        "message": {
+                          "text": "User looked up by email. No attempt counter, lockout column or delay"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/users.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 18
+                          }
+                        },
+                        "message": {
+                          "text": "checkPassword (src/auth.js:11-14, synchronous scryptSync). On a match, line 19 returns a 7-day JWT"
+                        }
+                      },
+                      "kinds": [
+                        "sink"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "relatedLocations": [
+            {
+              "id": 0,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/app.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 5
+                }
+              },
+              "message": {
+                "text": "The only global middleware is express.json({limit:'100kb'}). No rate-limit, slow-down or brute-force middleware"
+              }
+            },
+            {
+              "id": 1,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package.json",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 10
+                }
+              },
+              "message": {
+                "text": "The dependencies are axios, better-sqlite3, express, jsonwebtoken and lodash. No limiter package, here or in package-lock.json"
+              }
+            },
+            {
+              "id": 2,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/db.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 7
+                }
+              },
+              "message": {
+                "text": "The users table has id, email, password_hash and role only. No failed-attempt or lockout state"
+              }
+            },
+            {
+              "id": 3,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/users.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 9
+                }
+              },
+              "message": {
+                "text": "The only password rule is length >= 8. No complexity or breached-password check"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "owasp-audit/CWE-321/src/config.js/jwtSecret",
+          "ruleIndex": 5,
+          "level": "error",
+          "message": {
+            "text": "JWT signing secret falls back to the hard-coded string \"changeme\" when JWT_SECRET is unset or empty. Severity high (likelihood medium: Exploitable whenever the operator doesn't export a non-empty JWT_SECRET. That is the shipped default path (no dotenv, empty .env.example, no startup check). No account needed; impact critical: An anonymous client forges a valid session for any user id, including admins: read/write of every user's notes, plus listing and deleting any account through /api/admin)."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/config.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 5
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "cybersecuritySkills/v1": "owasp-audit/CWE-321/src/config.js/jwtSecret"
+          },
+          "properties": {
+            "verdict": "confirmed",
+            "confidence": "medium",
+            "skill": "owasp-audit",
+            "security-severity": "8.0"
+          },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/auth.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 22
+                          }
+                        },
+                        "message": {
+                          "text": "requireAuth reads the Bearer token from the attacker's Authorization header. It runs on notes (notes.js:7), preview (preview.js:8) and admin (admin.js:6)"
+                        }
+                      },
+                      "kinds": [
+                        "entrypoint"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/config.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 5
+                          }
+                        },
+                        "message": {
+                          "text": "jwtSecret = process.env.JWT_SECRET || \"changeme\". An unset or empty env var silently becomes the public literal"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/auth.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 27
+                          }
+                        },
+                        "message": {
+                          "text": "jwt.verify(token, config.jwtSecret) accepts any HS256 token signed with \"changeme\". The app's own tokens are signed the same way (auth.js:18)"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/auth.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 28
+                          }
+                        },
+                        "message": {
+                          "text": "req.user.id comes from the forged claims.sub, with no check that the user exists"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/auth.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 36
+                          }
+                        },
+                        "message": {
+                          "text": "requireAdmin looks up the DB role for the forged id, so a forged sub equal to an admin's id passes line 37"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/admin.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 14
+                          }
+                        },
+                        "message": {
+                          "text": "DELETE /api/admin/users/:id deletes any user and their notes (line 13). GET /api/admin/users (line 9) lists every email and role"
+                        }
+                      },
+                      "kinds": [
+                        "sink"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "relatedLocations": [
+            {
+              "id": 0,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/config.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 5
+                }
+              },
+              "message": {
+                "text": "Hard-coded fallback literal \"changeme\" for the JWT secret"
+              }
+            },
+            {
+              "id": 1,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": ".env.example",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 3
+                }
+              },
+              "message": {
+                "text": "The template ships JWT_SECRET= empty. An empty string is falsy, so it also falls through to \"changeme\""
+              }
+            },
+            {
+              "id": 2,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/app.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 20
+                }
+              },
+              "message": {
+                "text": "The app starts without checking that JWT_SECRET is present or strong. Nothing loads .env (no dotenv), so a plain npm start runs on the fallback"
+              }
+            },
+            {
+              "id": 3,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/db.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 8
+                }
+              },
+              "message": {
+                "text": "users.id is INTEGER PRIMARY KEY, so ids to forge are sequential and easy to guess"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "owasp-audit/CWE-613/src/auth.js/requireAuth-user-id-reuse",
+          "ruleIndex": 6,
+          "level": "note",
+          "message": {
+            "text": "A deleted user's still-valid JWT authenticates as whoever next receives the reused user id. Severity low (likelihood low: Needs an admin to delete the attacker while they hold the highest id, then a new signup inside the token's lifetime. The attacker can't pick the victim or force the deletion; impact high: Full read/create/edit/delete of another real user's notes. Admin routes stay out of reach because requireAdmin re-checks the DB role)."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/auth.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 28
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "cybersecuritySkills/v1": "owasp-audit/CWE-613/src/auth.js/requireAuth-user-id-reuse"
+          },
+          "properties": {
+            "verdict": "confirmed",
+            "confidence": "medium",
+            "skill": "owasp-audit",
+            "security-severity": "3.0"
+          },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/auth.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 22
+                          }
+                        },
+                        "message": {
+                          "text": "requireAuth runs on every notes route (notes.js:7) and takes the Bearer token"
+                        }
+                      },
+                      "kinds": [
+                        "entrypoint"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/auth.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 27
+                          }
+                        },
+                        "message": {
+                          "text": "jwt.verify checks only the signature and exp. No jti, token version or revocation list"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/auth.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 28
+                          }
+                        },
+                        "message": {
+                          "text": "req.user.id = claims.sub, with no lookup to check that the users row still exists or is the same account"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/admin.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 14
+                          }
+                        },
+                        "message": {
+                          "text": "Admin DELETE /api/admin/users/:id removes the users row (and its notes at :13). Nothing invalidates the user's tokens"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/db.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 8
+                          }
+                        },
+                        "message": {
+                          "text": "users.id is INTEGER PRIMARY KEY without AUTOINCREMENT, so SQLite assigns max(rowid)+1 and hands out the id of a deleted highest-id row again"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/users.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 10
+                          }
+                        },
+                        "message": {
+                          "text": "Open signup inserts a new user, who receives the reused id"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/notes.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 15
+                          }
+                        },
+                        "message": {
+                          "text": "WHERE owner_id = req.user.id returns the new account's notes to the old token. The same scoping lets it create (:35), edit (:41-45) and delete (:50) notes as the new user"
+                        }
+                      },
+                      "kinds": [
+                        "sink"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "relatedLocations": [
+            {
+              "id": 0,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/config.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 6
+                }
+              },
+              "message": {
+                "text": "jwtExpiresIn: \"7d\". Old tokens stay valid for up to 7 days from issue"
+              }
+            },
+            {
+              "id": 1,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/auth.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 18
+                }
+              },
+              "message": {
+                "text": "The token holds only sub and role. Nothing binds it to one account instance"
+              }
+            },
+            {
+              "id": 2,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/db.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 8
+                }
+              },
+              "message": {
+                "text": "id INTEGER PRIMARY KEY, no AUTOINCREMENT"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "owasp-audit/CWE-639/src/routes/notes.js/GET-note-by-id",
+          "ruleIndex": 7,
+          "level": "error",
+          "message": {
+            "text": "Any user can read any other user's note by id (IDOR). Severity high (likelihood high: Open signup, a trivially obtained token, and sequential integer ids that can be enumerated in a loop; impact high: Fully defeats the per-user ownership control: reads the title and body of every other user's private notes)."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/notes.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 28
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "cybersecuritySkills/v1": "owasp-audit/CWE-639/src/routes/notes.js/GET-note-by-id"
+          },
+          "properties": {
+            "verdict": "confirmed",
+            "confidence": "medium",
+            "skill": "owasp-audit",
+            "security-severity": "8.0"
+          },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/notes.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 27
+                          }
+                        },
+                        "message": {
+                          "text": "GET /api/notes/:id behind requireAuth (notes.js:7), which only authenticates. The attacker controls req.params.id"
+                        }
+                      },
+                      "kinds": [
+                        "entrypoint"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/notes.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 28
+                          }
+                        },
+                        "message": {
+                          "text": "SELECT * FROM notes WHERE id = ? binds only the id. There is no owner_id or shared predicate, and line 30 returns the whole row"
+                        }
+                      },
+                      "kinds": [
+                        "sink"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "relatedLocations": [
+            {
+              "id": 0,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/notes.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 28
+                }
+              },
+              "message": {
+                "text": "The query filters on id alone. req.user.id is never used in this handler"
+              }
+            },
+            {
+              "id": 1,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/notes.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 30
+                }
+              },
+              "message": {
+                "text": "res.json(note) returns the full row: owner_id, title, body, shared, created_at"
+              }
+            },
+            {
+              "id": 2,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/db.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 14
+                }
+              },
+              "message": {
+                "text": "notes.id is INTEGER PRIMARY KEY, so ids are sequential and easy to enumerate"
+              }
+            },
+            {
+              "id": 3,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/notes.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 41
+                }
+              },
+              "message": {
+                "text": "The sibling PATCH /:id adds AND owner_id = ?, and DELETE at line 50 does too. Ownership was clearly intended"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "owasp-audit/CWE-89/src/routes/notes.js/GET-search",
+          "ruleIndex": 8,
+          "level": "error",
+          "message": {
+            "text": "SQL injection in note search via the q query parameter. Severity high (likelihood high: Open self-signup provides the auth, the payload is one GET parameter, and SQL errors come back verbatim; impact high: Fully defeats the per-user owner_id boundary: reads every user's notes and the whole users table (emails, scrypt password hashes, roles). Read-only, because prepare() blocks stacked statements)."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/notes.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 22
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "cybersecuritySkills/v1": "owasp-audit/CWE-89/src/routes/notes.js/GET-search"
+          },
+          "properties": {
+            "verdict": "confirmed",
+            "confidence": "medium",
+            "skill": "owasp-audit",
+            "security-severity": "8.0"
+          },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/notes.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 20
+                          }
+                        },
+                        "message": {
+                          "text": "GET /api/notes/search (router mounted at src/app.js:8). The only guard is router.use(requireAuth) at notes.js:7"
+                        }
+                      },
+                      "kinds": [
+                        "entrypoint"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/notes.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 21
+                          }
+                        },
+                        "message": {
+                          "text": "q = req.query.q || \"\" goes through as-is: no validation, type check, escaping or length limit"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/notes.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 22
+                          }
+                        },
+                        "message": {
+                          "text": "q is interpolated into a template-literal SQL string (title LIKE '%${q}%'), then passed to db.prepare(...).all() with no bound parameters"
+                        }
+                      },
+                      "kinds": [
+                        "sink"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "relatedLocations": [
+            {
+              "id": 0,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/notes.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 22
+                }
+              },
+              "message": {
+                "text": "`SELECT * FROM notes WHERE owner_id = ${req.user.id} AND title LIKE '%${q}%'` is built by string interpolation. The sibling queries at lines 15, 28, 35, 41 and 50 use ? placeholders"
+              }
+            },
+            {
+              "id": 1,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/users.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 7
+                }
+              },
+              "message": {
+                "text": "POST /api/users/signup is open with no invite or approval, so anyone can get the JWT that requireAuth wants"
+              }
+            },
+            {
+              "id": 2,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/db.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 7
+                }
+              },
+              "message": {
+                "text": "users table (id, email, password_hash, role) shares the database with notes (6 columns), so q=' UNION SELECT id,email,password_hash,role,0,'' FROM users-- matches the column count"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "owasp-audit/CWE-915/src/routes/notes.js/PATCH-note",
+          "ruleIndex": 9,
+          "level": "error",
+          "message": {
+            "text": "PATCH /api/notes/:id merges the request body into the row, so id and owner_id are attacker-controlled and any note can be overwritten or taken over. Severity high (likelihood high: One request from any user who owns a note (anyone can create one). Victim ids are sequential and can be read through GET /:id; impact high: Fully defeats the per-note ownership control: overwrites any user's note (title, body, shared) and moves it into the attacker's account, so the victim loses it)."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/notes.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 43
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "cybersecuritySkills/v1": "owasp-audit/CWE-915/src/routes/notes.js/PATCH-note"
+          },
+          "properties": {
+            "verdict": "confirmed",
+            "confidence": "medium",
+            "skill": "owasp-audit",
+            "security-severity": "8.0"
+          },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/notes.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 40
+                          }
+                        },
+                        "message": {
+                          "text": "PATCH /api/notes/:id, behind express.json() (app.js:5) and requireAuth (notes.js:7)"
+                        }
+                      },
+                      "kinds": [
+                        "entrypoint"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/notes.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 41
+                          }
+                        },
+                        "message": {
+                          "text": "Ownership check: SELECT * WHERE id = req.params.id AND owner_id = req.user.id loads the caller's own note as a plain row object that includes id and owner_id"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/notes.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 43
+                          }
+                        },
+                        "message": {
+                          "text": "_.merge(note, req.body) mutates that same row object in place with every body key, including id and owner_id. updated and note are the same object"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/notes.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 45
+                          }
+                        },
+                        "message": {
+                          "text": "UPDATE notes SET owner_id=?, title=?, body=?, shared=? WHERE id=? runs with updated.owner_id ... note.id. note.id now holds the id from the body, not the one that passed the check"
+                        }
+                      },
+                      "kinds": [
+                        "sink"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "relatedLocations": [
+            {
+              "id": 0,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/notes.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 43
+                }
+              },
+              "message": {
+                "text": "Unfiltered _.merge of req.body into the row loaded by the ownership check. No allow-list, and id/owner_id are not stripped"
+              }
+            },
+            {
+              "id": 1,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/notes.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 45
+                }
+              },
+              "message": {
+                "text": "The WHERE clause binds note.id, which is the merged attacker-supplied value, not req.params.id. Ownership was only checked against req.params.id at line 41"
+              }
+            },
+            {
+              "id": 2,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/notes.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 28
+                }
+              },
+              "message": {
+                "text": "GET /:id has no owner filter, so victim note ids can be found (sequential INTEGER PRIMARY KEY, db.js:14)"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "owasp-audit/CWE-918/src/routes/preview.js/POST-preview",
+          "ruleIndex": 10,
+          "level": "warning",
+          "message": {
+            "text": "Link preview fetches any user-supplied http(s) URL server-side (SSRF). Severity medium (likelihood high: Any self-registered user. One request with an IP-literal URL, no bypass needed; impact medium: Defeats the server's network boundary for GET requests: reaches loopback/private hosts, returns internal page titles, and gives a port-scan oracle. Only <title> is read back, so credential theft is not demonstrated)."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/preview.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 12
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "cybersecuritySkills/v1": "owasp-audit/CWE-918/src/routes/preview.js/POST-preview"
+          },
+          "properties": {
+            "verdict": "confirmed",
+            "confidence": "medium",
+            "skill": "owasp-audit",
+            "security-severity": "5.5"
+          },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/preview.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 8
+                          }
+                        },
+                        "message": {
+                          "text": "POST /api/preview, guarded only by requireAuth (any signed-up user, open signup at users.js:7)"
+                        }
+                      },
+                      "kinds": [
+                        "entrypoint"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/preview.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 10
+                          }
+                        },
+                        "message": {
+                          "text": "url taken straight from req.body"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/preview.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 11
+                          }
+                        },
+                        "message": {
+                          "text": "The only check is the scheme regex /^https?:\\/\\//. Any host, IP literal, port or path passes"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/preview.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 12
+                          }
+                        },
+                        "message": {
+                          "text": "axios.get(url, { timeout: 5000, maxContentLength: 1_000_000 }) makes the request from the server"
+                        }
+                      },
+                      "kinds": [
+                        "sink"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "relatedLocations": [
+            {
+              "id": 0,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/preview.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 11
+                }
+              },
+              "message": {
+                "text": "Only the scheme is checked. No allow-list, and no deny-list for loopback, RFC 1918, link-local, CGNAT or IPv6 ranges, so http://127.0.0.1:<port>/, http://10.x/ and http://169.254.169.254/ all pass"
+              }
+            },
+            {
+              "id": 1,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/preview.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 14
+                }
+              },
+              "message": {
+                "text": "The <title> of the fetched page goes back to the caller, so internal HTML pages leak their titles"
+              }
+            },
+            {
+              "id": 2,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/app.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 17
+                }
+              },
+              "message": {
+                "text": "The error handler returns err.message and err.stack. Connection-refused, timeout and status-code errors tell the attacker whether an internal host or port is open"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

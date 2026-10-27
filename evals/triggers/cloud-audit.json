@@ -1,0 +1,32 @@
+{
+  "skill": "cloud-audit",
+  "should_fire": [
+    "audit our AWS account for public S3 buckets and wide-open security groups",
+    "is production on Vercel actually built from main, or has someone been deploying by hand?",
+    "old preview deployments are still live on vercel.app, is that a problem?",
+    "check our GCP project for security misconfigurations",
+    "are the Supabase RLS policies on our tables actually enabled?"
+  ],
+  "near_miss": [
+    {
+      "prompt": "harden this Dockerfile and our Kubernetes manifests",
+      "owner": "container-audit"
+    },
+    {
+      "prompt": "design least-privilege roles and Okta SSO for our engineers",
+      "owner": "iam-audit"
+    },
+    {
+      "prompt": "a Next.js CVE dropped, patch all 30 of our apps",
+      "owner": "patch-sweep"
+    },
+    {
+      "prompt": "set up an agent that reads CloudTrail every hour and pages me if something looks off",
+      "owner": "log-watch"
+    },
+    {
+      "prompt": "write Sigma rules for suspicious console logins",
+      "owner": "siem-detection"
+    }
+  ]
+}

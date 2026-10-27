@@ -1,0 +1,32 @@
+{
+  "skill": "csf-mapping",
+  "should_fire": [
+    "map our security program to NIST CSF 2.0 and show the gaps",
+    "what CSF tier are we at today, and what should the target be?",
+    "build a one-year security roadmap in governance language",
+    "turn these technical findings into a CISO report organized by Govern, Identify, Protect, Detect, Respond and Recover",
+    "how mature is our cybersecurity program?"
+  ],
+  "near_miss": [
+    {
+      "prompt": "write the customer email about last week's incident",
+      "owner": "security-comms"
+    },
+    {
+      "prompt": "assess our AI system against the NIST AI RMF",
+      "owner": "ai-risk-management"
+    },
+    {
+      "prompt": "are we HIPAA compliant for the patient data we store?",
+      "owner": "hipaa-audit"
+    },
+    {
+      "prompt": "we're breached right now, help with containment",
+      "owner": "incident-triage"
+    },
+    {
+      "prompt": "design SOC analyst tiers and the on-call rotation",
+      "owner": "soc-operations"
+    }
+  ]
+}

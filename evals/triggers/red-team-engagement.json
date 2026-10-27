@@ -1,0 +1,32 @@
+{
+  "skill": "red-team-engagement",
+  "should_fire": [
+    "plan a red team engagement starting from assumed breach",
+    "write rules of engagement for our red team",
+    "build an ATT&CK emulation plan for FIN7",
+    "how do we deconflict with the blue team during the exercise?",
+    "run a purple team exercise next quarter"
+  ],
+  "near_miss": [
+    {
+      "prompt": "enumerate subdomains for the target",
+      "owner": "recon"
+    },
+    {
+      "prompt": "web app pentest of staging",
+      "owner": "web-pentest"
+    },
+    {
+      "prompt": "threat hunt for lateral movement",
+      "owner": "threat-hunting"
+    },
+    {
+      "prompt": "build SOC runbooks",
+      "owner": "soc-operations"
+    },
+    {
+      "prompt": "write detection rules for Mimikatz",
+      "owner": "siem-detection"
+    }
+  ]
+}

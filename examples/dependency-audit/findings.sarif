@@ -1,0 +1,750 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "cybersecurity-skills",
+          "informationUri": "https://github.com/briiirussell/cybersecurity-skills",
+          "rules": [
+            {
+              "id": "dependency-audit/CWE-915/src/routes/notes.js/patchNote",
+              "shortDescription": {
+                "text": "PATCH /api/notes/:id merges the request body into the row with _.merge, letting any user overwrite and take ownership of another user's note"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-915",
+                  "owasp/API3:2023"
+                ],
+                "skill": "dependency-audit",
+                "security-severity": "8.0"
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/915.html"
+            },
+            {
+              "id": "dependency-audit/GHSA-27r3-jxmh-p828/package-lock.json/body-parser",
+              "shortDescription": {
+                "text": "body-parser 1.19.0: one unauthenticated compressed request with trailing bytes crashes the process (GHSA-27r3-jxmh-p828)"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-248"
+                ],
+                "skill": "dependency-audit",
+                "security-severity": "8.0"
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/248.html"
+            },
+            {
+              "id": "dependency-audit/GHSA-3p68-rc4w-qgx5/package-lock.json/axios",
+              "shortDescription": {
+                "text": "axios 0.21.0: NO_PROXY matching is a literal string compare (GHSA-3p68-rc4w-qgx5, GHSA-m7pr-hjqh-92cm, GHSA-pmwg-cvhr-8vh7, GHSA-pjwm-pj3p-43mv)"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-918"
+                ],
+                "skill": "dependency-audit"
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/918.html"
+            },
+            {
+              "id": "dependency-audit/GHSA-4w2v-q235-vp99/package-lock.json/axios",
+              "shortDescription": {
+                "text": "axios 0.21.0: a redirect from the previewed URL bypasses a configured egress proxy (CVE-2020-28168)"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-918"
+                ],
+                "skill": "dependency-audit"
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/918.html"
+            },
+            {
+              "id": "dependency-audit/GHSA-hrpp-h998-j3pp/package-lock.json/qs",
+              "shortDescription": {
+                "text": "qs 6.7.0 via Express query parsing: an unauthenticated query string hangs the process (CVE-2022-24999)"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-1321"
+                ],
+                "skill": "dependency-audit",
+                "security-severity": "8.0"
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/1321.html"
+            },
+            {
+              "id": "dependency-audit/GHSA-p92q-9vqr-4j8v/package-lock.json/axios",
+              "shortDescription": {
+                "text": "axios 0.21.0: proxy credentials can leak to an attacker-chosen redirect target (GHSA-p92q-9vqr-4j8v, GHSA-j5f8-grm9-p9fc)"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-201"
+                ],
+                "skill": "dependency-audit"
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/201.html"
+            }
+          ]
+        }
+      },
+      "originalUriBaseIds": {
+        "%SRCROOT%": {
+          "description": {
+            "text": "Repository root"
+          }
+        }
+      },
+      "results": [
+        {
+          "ruleId": "dependency-audit/CWE-915/src/routes/notes.js/patchNote",
+          "ruleIndex": 0,
+          "level": "error",
+          "message": {
+            "text": "PATCH /api/notes/:id merges the request body into the row with _.merge, letting any user overwrite and take ownership of another user's note. Severity high (likelihood high: Any self-registered user; one PATCH with {\"id\": <victim note id>, \"owner_id\": <own id>}; ids are sequential; impact high: Fully defeats the per-owner write check: overwrites another user's note title/body and moves it into the attacker's account)."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/notes.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 43
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "cybersecuritySkills/v1": "dependency-audit/CWE-915/src/routes/notes.js/patchNote"
+          },
+          "properties": {
+            "verdict": "confirmed",
+            "confidence": "medium",
+            "skill": "dependency-audit",
+            "security-severity": "8.0"
+          },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/notes.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 40
+                          }
+                        },
+                        "message": {
+                          "text": "PATCH /api/notes/:id with a JSON body; any authenticated user (open signup at src/routes/users.js:7)"
+                        }
+                      },
+                      "kinds": [
+                        "entrypoint"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/notes.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 41
+                          }
+                        },
+                        "message": {
+                          "text": "Ownership check loads the caller's own note by req.params.id"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/notes.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 43
+                          }
+                        },
+                        "message": {
+                          "text": "_.merge(note, req.body) mutates that row object in place, so body keys id and owner_id overwrite note.id and note.owner_id"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/notes.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 45
+                          }
+                        },
+                        "message": {
+                          "text": "UPDATE notes SET owner_id = ?, title = ?, body = ? ... WHERE id = ? runs with updated.owner_id and note.id, both now attacker-chosen"
+                        }
+                      },
+                      "kinds": [
+                        "sink"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "relatedLocations": [
+            {
+              "id": 0,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/notes.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 43
+                }
+              },
+              "message": {
+                "text": "const updated = _.merge(note, req.body); no allow-list of editable fields"
+              }
+            },
+            {
+              "id": 1,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/notes.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 45
+                }
+              },
+              "message": {
+                "text": ".run(updated.owner_id, updated.title, updated.body, updated.shared, note.id)"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "dependency-audit/GHSA-27r3-jxmh-p828/package-lock.json/body-parser",
+          "ruleIndex": 1,
+          "level": "error",
+          "message": {
+            "text": "body-parser 1.19.0: one unauthenticated compressed request with trailing bytes crashes the process (GHSA-27r3-jxmh-p828). Severity high (likelihood high: Unauthenticated, one request, any path; parsing runs before routing; the advisory describes the payload shape publicly; impact high: Terminates the single Node process, so the whole API is down for every user until something restarts it, and the request can be repeated; no data is read or changed)."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 104
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "cybersecuritySkills/v1": "dependency-audit/GHSA-27r3-jxmh-p828/package-lock.json/body-parser"
+          },
+          "properties": {
+            "verdict": "confirmed",
+            "confidence": "medium",
+            "skill": "dependency-audit",
+            "security-severity": "8.0"
+          },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/app.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 5
+                          }
+                        },
+                        "message": {
+                          "text": "express.json() is mounted app-wide before every router, so any client can send a JSON body with Content-Encoding: gzip to any path, no token needed"
+                        }
+                      },
+                      "kinds": [
+                        "entrypoint"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "package-lock.json",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 320
+                          }
+                        },
+                        "message": {
+                          "text": "express 4.17.1 provides express.json from its bundled body-parser; the json parser defaults to inflate: true (body-parser lib/types/json.js:56) and pipes req into zlib.createGunzip (lib/read.js:165-167)"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "package-lock.json",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 104
+                          }
+                        },
+                        "message": {
+                          "text": "body-parser 1.19.0 (< 1.20.9): per the advisory, trailing bytes after one valid compressed frame reach the finished decoder, which emits an error with no listener; it is re-thrown as an uncaught exception and terminates the process"
+                        }
+                      },
+                      "kinds": [
+                        "sink"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "relatedLocations": [
+            {
+              "id": 0,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 104
+                }
+              },
+              "message": {
+                "text": "node_modules/body-parser resolved to 1.19.0; advisory range < 1.20.9"
+              }
+            },
+            {
+              "id": 1,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/app.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 5
+                }
+              },
+              "message": {
+                "text": "express.json({ limit: \"100kb\" }) with no inflate: false"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "dependency-audit/GHSA-3p68-rc4w-qgx5/package-lock.json/axios",
+          "ruleIndex": 2,
+          "level": "note",
+          "message": {
+            "text": "Needs validation: axios 0.21.0: NO_PROXY matching is a literal string compare (GHSA-3p68-rc4w-qgx5, GHSA-m7pr-hjqh-92cm, GHSA-pmwg-cvhr-8vh7, GHSA-pjwm-pj3p-43mv). Blockers: Is HTTP_PROXY / HTTPS_PROXY (or http_proxy / https_proxy) set in the production environment? axios 0.21.0 reads them in lib/adapters/http.js:99-145 when config.proxy is unset, and neither src/ nor .env.example sets them.; Is NO_PROXY / no_proxy set, and does the egress policy depend on it?. Validation plan: Check the production env for *_proxy and no_proxy. If either is missing, reject this record. If both are set, from staging POST /api/preview with http://localhost.:<port>/ and http://[::ffff:7f00:1]/ and check the proxy logs for those requests."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 37
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "cybersecuritySkills/v1": "dependency-audit/GHSA-3p68-rc4w-qgx5/package-lock.json/axios"
+          },
+          "properties": {
+            "verdict": "needs_validation",
+            "confidence": "low",
+            "skill": "dependency-audit"
+          },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/preview.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 10
+                          }
+                        },
+                        "message": {
+                          "text": "POST /api/preview: any authenticated user supplies url, including forms like localhost., [::1], 127.0.0.2 or [::ffff:7f00:1]"
+                        }
+                      },
+                      "kinds": [
+                        "entrypoint"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/preview.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 12
+                          }
+                        },
+                        "message": {
+                          "text": "axios.get(url); 0.21.0 compares parsed.hostname to each NO_PROXY entry by string (lib/adapters/http.js:105-125)"
+                        }
+                      },
+                      "kinds": [
+                        "sink"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "dependency-audit/GHSA-4w2v-q235-vp99/package-lock.json/axios",
+          "ruleIndex": 3,
+          "level": "note",
+          "message": {
+            "text": "Needs validation: axios 0.21.0: a redirect from the previewed URL bypasses a configured egress proxy (CVE-2020-28168). Blockers: Is HTTP_PROXY / HTTPS_PROXY (or http_proxy / https_proxy) set in the production environment? axios 0.21.0 reads them in lib/adapters/http.js:99-145 when config.proxy is unset, and neither src/ nor .env.example sets them.; If a proxy is set, is it relied on to block internal and metadata addresses (169.254.169.254, RFC 1918)?. Validation plan: Run `printenv | grep -i _proxy` in the production runtime (or check the platform's env settings). If a proxy is set, from staging POST /api/preview with a URL on a host you control that 302-redirects to http://169.254.169.254/latest/meta-data/ and check whether the proxy logs the second request. If no proxy is set, reject this record."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 37
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "cybersecuritySkills/v1": "dependency-audit/GHSA-4w2v-q235-vp99/package-lock.json/axios"
+          },
+          "properties": {
+            "verdict": "needs_validation",
+            "confidence": "medium",
+            "skill": "dependency-audit"
+          },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/preview.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 10
+                          }
+                        },
+                        "message": {
+                          "text": "POST /api/preview: any authenticated user supplies url"
+                        }
+                      },
+                      "kinds": [
+                        "entrypoint"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/preview.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 12
+                          }
+                        },
+                        "message": {
+                          "text": "axios.get(url) follows redirects (default maxRedirects) through follow-redirects"
+                        }
+                      },
+                      "kinds": [
+                        "sink"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ruleId": "dependency-audit/GHSA-hrpp-h998-j3pp/package-lock.json/qs",
+          "ruleIndex": 4,
+          "level": "error",
+          "message": {
+            "text": "qs 6.7.0 via Express query parsing: an unauthenticated query string hangs the process (CVE-2022-24999). Severity high (likelihood high: Unauthenticated, one GET request, and the advisory publishes the payload; impact high: A hung event loop stops the single process from serving anyone, and the request can be repeated; no data is read or changed)."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 820
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "cybersecuritySkills/v1": "dependency-audit/GHSA-hrpp-h998-j3pp/package-lock.json/qs"
+          },
+          "properties": {
+            "verdict": "confirmed",
+            "confidence": "medium",
+            "skill": "dependency-audit",
+            "security-severity": "8.0"
+          },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/app.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 12
+                          }
+                        },
+                        "message": {
+                          "text": "GET /healthz (no auth) or any other path; Express runs its query middleware as the first router layer on every request, e.g. /healthz?a[__proto__]=b&a[__proto__]&a[length]=100000000"
+                        }
+                      },
+                      "kinds": [
+                        "entrypoint"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "package-lock.json",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 320
+                          }
+                        },
+                        "message": {
+                          "text": "express 4.17.1 default 'query parser' is 'extended' (lib/application.js:77, :144), which calls qs.parse(str, { allowPrototypes: true }) (lib/utils.js:291-293)"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "package-lock.json",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 820
+                          }
+                        },
+                        "message": {
+                          "text": "qs 6.7.0 (>= 6.7.0 < 6.7.3): per the advisory, an __proto__ key in the query string causes a Node process hang"
+                        }
+                      },
+                      "kinds": [
+                        "sink"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "relatedLocations": [
+            {
+              "id": 0,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 820
+                }
+              },
+              "message": {
+                "text": "node_modules/qs resolved to 6.7.0; fix backported in 6.7.3"
+              }
+            },
+            {
+              "id": 1,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/app.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 4
+                }
+              },
+              "message": {
+                "text": "express() with default settings; no app.set('query parser', ...) override anywhere in src/"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "dependency-audit/GHSA-p92q-9vqr-4j8v/package-lock.json/axios",
+          "ruleIndex": 5,
+          "level": "note",
+          "message": {
+            "text": "Needs validation: axios 0.21.0: proxy credentials can leak to an attacker-chosen redirect target (GHSA-p92q-9vqr-4j8v, GHSA-j5f8-grm9-p9fc). Blockers: Does the production HTTP_PROXY / HTTPS_PROXY value carry credentials (http://user:pass@proxy:port)?. Validation plan: Inspect the production env for *_proxy values containing '@'. If none, reject this record. If present, from staging POST /api/preview with an http:// URL on a host you control that redirects to an https:// URL you also control, and check whether that server receives a Proxy-Authorization header."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 37
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "cybersecuritySkills/v1": "dependency-audit/GHSA-p92q-9vqr-4j8v/package-lock.json/axios"
+          },
+          "properties": {
+            "verdict": "needs_validation",
+            "confidence": "medium",
+            "skill": "dependency-audit"
+          },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/preview.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 10
+                          }
+                        },
+                        "message": {
+                          "text": "POST /api/preview: any authenticated user chooses the origin, so they control the redirect"
+                        }
+                      },
+                      "kinds": [
+                        "entrypoint"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/preview.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 12
+                          }
+                        },
+                        "message": {
+                          "text": "axios.get(url) with redirects on; 0.21.0 puts Proxy-Authorization into options.headers when the proxy URL has credentials (lib/adapters/http.js:136-157)"
+                        }
+                      },
+                      "kinds": [
+                        "sink"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

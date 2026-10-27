@@ -1,0 +1,337 @@
+[
+  {
+    "fingerprint": "api-audit/CWE-1321/src/routes/notes.js/PATCH-notes-id-merge",
+    "verdict": "rejected",
+    "skill": "api-audit",
+    "title": "Prototype pollution through _.merge(note, req.body) in PATCH /api/notes/:id",
+    "cwe": "CWE-1321",
+    "owasp_category": "API3:2023",
+    "location": { "file": "src/routes/notes.js", "line": 43 },
+    "trace": [
+      { "kind": "entrypoint", "file": "src/routes/notes.js", "line": 40, "description": "PATCH /api/notes/:id, any authenticated user" },
+      { "kind": "propagation", "file": "src/app.js", "line": 5, "description": "express.json() parses the body; JSON.parse creates own __proto__ / constructor keys" },
+      { "kind": "sink", "file": "src/routes/notes.js", "line": 43, "description": "_.merge(note, req.body) with lodash 4.17.15" }
+    ],
+    "evidence": [
+      { "file": "package-lock.json", "line": 554, "description": "lodash pinned at 4.17.15 with an integrity hash" }
+    ],
+    "counterevidence": "The path is reachable by any user on their own note. lodash 4.17.15's merge skips the __proto__ key (safeGet guard, added in 4.17.11 for CVE-2018-16487) and a function-valued constructor key (added in 4.17.12 for CVE-2019-10744), so the write lands on the note object, not Object.prototype. Later lodash advisories (zipObjectDeep, template, trim ReDoS) are not merge. No in-app gadget was found either: config, req.user and DB rows all carry the read properties as own properties. The control lives in the pinned dependency, not in this repo's source, so this rests on lodash's published source history rather than a file read here. Owner check after npm ci: node -e 'const _=require(\"lodash\");_.merge({},JSON.parse(\"{\\\"__proto__\\\":{\\\"p\\\":1},\\\"constructor\\\":{\\\"prototype\\\":{\\\"q\\\":1}}}\"));console.log(({}).p,({}).q)' must print 'undefined undefined'. The mass-assignment bug on the same line is a separate, confirmed finding.",
+    "confidence": "medium",
+    "ruled_out_by": {
+      "control": "lodash 4.17.15 merge (baseMerge/safeGet) refuses __proto__ and function-valued constructor keys; version fixed by the lockfile pin",
+      "location": { "file": "package-lock.json", "line": 554 }
+    }
+  },
+  {
+    "fingerprint": "api-audit/CWE-209/src/app.js/errorHandler",
+    "verdict": "confirmed",
+    "skill": "api-audit",
+    "title": "Global error handler returns err.message and err.stack to any client, and turns login into an email-enumeration oracle",
+    "cwe": "CWE-209",
+    "owasp_category": "API8:2023",
+    "location": { "file": "src/app.js", "line": 17 },
+    "trace": [
+      { "kind": "entrypoint", "file": "src/routes/users.js", "line": 15, "description": "POST /api/users/login, unauthenticated, body {email} with no password" },
+      { "kind": "propagation", "file": "src/routes/users.js", "line": 18, "description": "checkPassword(undefined, hash) runs only when the email exists" },
+      { "kind": "propagation", "file": "src/auth.js", "line": 13, "description": "crypto.scryptSync(undefined, ...) throws TypeError; Express 4 forwards synchronous throws to the error handler" },
+      { "kind": "sink", "file": "src/app.js", "line": 17, "description": "res.status(500).json({ error: err.message, stack: err.stack })" }
+    ],
+    "evidence": [
+      { "file": "src/app.js", "line": 17, "description": "Message and stack returned for every error, no environment check, err.status ignored" },
+      { "file": "src/app.js", "line": 5, "description": "Malformed JSON bodies (unauthenticated) raise body-parser errors that reach the same handler and leak node_modules paths" },
+      { "file": "src/routes/users.js", "line": 18, "description": "Unknown email returns 401; known email with no password returns 500, a reliable oracle" }
+    ],
+    "counterevidence": "Looked for input validation, auth or a uniform-error branch ahead of the sink. The only candidate is the 401 branch at users.js:18, and it never runs on the known-email path because the throw happens first. Weighed against: signup already reveals taken emails through the UNIQUE constraint error (db.js:9 via users.js:10), so enumeration is partly available anyway; the login oracle still adds a side-effect-free check that creates no account. Impact kept low: no data read, no takeover.",
+    "confidence": "medium",
+    "reproduced": false,
+    "severity": {
+      "likelihood": { "score": "high", "reason": "One unauthenticated request with no special conditions" },
+      "impact": { "score": "low", "reason": "Account enumeration plus internal path and dependency disclosure; no direct follow-on" },
+      "overall": "low"
+    },
+    "conditions": [
+      { "kind": "network_routing", "description": "No proxy in front of the app rewrites 5xx bodies (none in the repo)" }
+    ]
+  },
+  {
+    "fingerprint": "api-audit/CWE-285/src/auth.js/requireAdmin-role-claim",
+    "verdict": "rejected",
+    "skill": "api-audit",
+    "title": "Admin authorization trusts the JWT role claim / admin endpoints reachable by non-admins (BFLA)",
+    "cwe": "CWE-285",
+    "owasp_category": "API5:2023",
+    "location": { "file": "src/auth.js", "line": 28 },
+    "trace": [
+      { "kind": "entrypoint", "file": "src/routes/admin.js", "line": 8, "description": "GET /api/admin/users (and DELETE /api/admin/users/:id at admin.js:12)" },
+      { "kind": "propagation", "file": "src/auth.js", "line": 28, "description": "req.user.role copied from the token claim" },
+      { "kind": "sink", "file": "src/routes/admin.js", "line": 9, "description": "Admin handler lists every user" }
+    ],
+    "evidence": [
+      { "file": "src/auth.js", "line": 28, "description": "role claim copied into req.user but never read for an authorization decision" }
+    ],
+    "counterevidence": "Searched every use of role: no code reads req.user.role. requireAdmin re-reads the role from the users table by the verified sub. admin.js:6 registers requireAuth+requireAdmin before any route, the admin router is mounted once (app.js:10), and HEAD rides the GET route through the same middleware. Missing user row returns 403. No route lets a regular user write users.role: signup inserts only email and password_hash. Token forgery via the default secret is a separate confirmed finding and was excluded here.",
+    "confidence": "high",
+    "ruled_out_by": {
+      "control": "requireAdmin looks up the caller's role in the users table and returns 403 unless it is exactly 'admin'; applied router-wide by admin.js:6",
+      "location": { "file": "src/auth.js", "line": 36 }
+    }
+  },
+  {
+    "fingerprint": "api-audit/CWE-307/src/routes/users.js/login-signup-rate-limit",
+    "verdict": "needs_validation",
+    "skill": "api-audit",
+    "title": "No rate limiting or lockout on POST /api/users/login and /signup (online password guessing; synchronous scrypt blocks the event loop)",
+    "cwe": "CWE-307",
+    "owasp_category": "API4:2023",
+    "location": { "file": "src/routes/users.js", "line": 15 },
+    "trace": [
+      { "kind": "entrypoint", "file": "src/routes/users.js", "line": 15, "description": "POST /api/users/login, unauthenticated, unlimited attempts" },
+      { "kind": "propagation", "file": "src/routes/users.js", "line": 18, "description": "checkPassword on every attempt for a known email" },
+      { "kind": "sink", "file": "src/auth.js", "line": 13, "description": "crypto.scryptSync blocks the single Node thread per attempt (signup does the same at auth.js:7 via users.js:10)" }
+    ],
+    "evidence": [
+      { "file": "src/app.js", "line": 5, "description": "Only express.json is mounted globally; no limiter anywhere in src/ or package.json" },
+      { "file": "src/routes/users.js", "line": 9, "description": "Password policy is length >= 8 only" },
+      { "file": "src/routes/users.js", "line": 10, "description": "Signup hashes before the INSERT, so even duplicate-email signups cost a full scrypt with no account needed" }
+    ],
+    "counterevidence": "No rate-limit, throttle or lockout control exists in the repo. The strongest in-code control is the !user short-circuit at users.js:18, which skips scrypt for unknown emails; it does nothing against guessing a known email's password and does not touch signup. The repo has no deploy, proxy or platform config, so whether an edge limiter exists cannot be read from the code.",
+    "confidence": "medium",
+    "blockers": [
+      "Whether anything in front of the deployment (reverse proxy, WAF, API gateway, platform firewall) rate-limits POST /api/users/login and POST /api/users/signup before traffic reaches Node, and whether that limit is per IP or per account"
+    ],
+    "validation_plan": "Against staging (or production with written authorization), using a test account you own: (1) Check edge config (nginx limit_req, Cloudflare/AWS WAF rate rules, gateway throttling) for rules on the two paths. (2) From one IP send 200 POST /api/users/login with the test email and wrong passwords over ~60 s. All 401 with no 429/block/slowdown -> confirmed; 429s or blocks after N requests -> mitigated at the edge (record as rejected, ruled out by that rule). (3) Repeat from a second IP after the first is blocked: if it succeeds, the limit is per IP only and distributed guessing remains (stays confirmed at reduced likelihood). (4) While sending ~50 concurrent signups with random emails, poll GET /healthz from another client: latency well above baseline that recovers when load stops confirms the event-loop exhaustion path."
+  },
+  {
+    "fingerprint": "api-audit/CWE-347/src/auth.js/requireAuth-jwt-alg",
+    "verdict": "rejected",
+    "skill": "api-audit",
+    "title": "jwt.verify without an algorithms allow-list accepts alg:none or algorithm-confusion tokens",
+    "cwe": "CWE-347",
+    "owasp_category": "API2:2023",
+    "location": { "file": "src/auth.js", "line": 27 },
+    "trace": [
+      { "kind": "entrypoint", "file": "src/auth.js", "line": 22, "description": "requireAuth reads the Bearer token" },
+      { "kind": "sink", "file": "src/auth.js", "line": 27, "description": "jwt.verify(token, config.jwtSecret) with no options, jsonwebtoken 8.5.1" }
+    ],
+    "evidence": [
+      { "file": "src/config.js", "line": 5, "description": "Secret is always a truthy, non-PEM string (env value or 'changeme')" }
+    ],
+    "counterevidence": "Because the secret is always a non-empty, non-PEM string, jsonwebtoken 8.5.1 takes its 'signature required' branch (alg:none with an empty signature fails) and defaults the allowed list to HS256/384/512, so RS/HS confusion has no public key to abuse. CVE-2022-23540 needs a falsy secret and CVE-2022-23541 a key-lookup callback; neither applies at this call site. Errors fall to the 401 catch at auth.js:30-31. The rejecting check itself lives in the library (node_modules not installed), so confidence is medium; owner check after npm ci: send an alg:none token and an RS256-signed token, both must return 401. The guessable default secret is a separate confirmed finding.",
+    "confidence": "medium",
+    "ruled_out_by": {
+      "control": "Call site always passes a fixed non-empty HMAC string secret, which puts jsonwebtoken 8.5.1 on its signature-required, HS-only path; any verify error returns 401",
+      "location": { "file": "src/config.js", "line": 5 }
+    }
+  },
+  {
+    "fingerprint": "api-audit/CWE-613/src/auth.js/requireAuth-no-revocation",
+    "verdict": "confirmed",
+    "skill": "api-audit",
+    "title": "Tokens outlive account deletion, and SQLite rowid reuse can hand a deleted user's token the next new user's account",
+    "cwe": "CWE-613",
+    "owasp_category": "API2:2023",
+    "location": { "file": "src/auth.js", "line": 28 },
+    "trace": [
+      { "kind": "entrypoint", "file": "src/routes/admin.js", "line": 14, "description": "Admin deletes a user row; nothing revokes that user's tokens" },
+      { "kind": "propagation", "file": "src/auth.js", "line": 28, "description": "requireAuth trusts claims.sub without checking the user still exists; tokens live 7 days (config.js:6)" },
+      { "kind": "propagation", "file": "src/db.js", "line": 8, "description": "id INTEGER PRIMARY KEY without AUTOINCREMENT: SQLite assigns max(rowid)+1, reusing a deleted highest id" },
+      { "kind": "propagation", "file": "src/routes/users.js", "line": 10, "description": "Next signup inserts without an explicit id and receives the reused id" },
+      { "kind": "sink", "file": "src/routes/notes.js", "line": 15, "description": "Notes handlers scope by req.user.id, so the old token reads and writes the new user's notes" }
+    ],
+    "evidence": [
+      { "file": "src/auth.js", "line": 27, "description": "Only signature and expiry are checked; no DB lookup, token version or denylist" },
+      { "file": "src/config.js", "line": 6, "description": "jwtExpiresIn: 7d" },
+      { "file": "src/db.js", "line": 8, "description": "No AUTOINCREMENT on users.id" }
+    ],
+    "counterevidence": "The only DB-backed check is requireAdmin (auth.js:36-37), which runs only on /api/admin, a different path. better-sqlite3 enforces foreign keys by default, so a deleted user whose id is not reused cannot create notes and sees an empty list; without reuse the residual access is token-gated routes like /api/preview. The reuse path needs the deleted user to have held the highest id and the next signup to land inside the 7-day window, which lowers likelihood but does not remove the finding. Admin delete clears the old notes first (admin.js:13), so exposure is of what the new user creates.",
+    "confidence": "medium",
+    "reproduced": false,
+    "severity": {
+      "likelihood": { "score": "low", "reason": "Requires deletion of the highest-id user, a following signup, and a token issued within 7 days" },
+      "impact": { "score": "medium", "reason": "Full read/write over one other user's notes for the token's remaining lifetime" },
+      "overall": "low"
+    },
+    "conditions": [
+      { "kind": "data_state", "description": "The deleted user held the highest users.id and the next account created receives it" },
+      { "kind": "timing_dependency", "description": "The reuse happens before the deleted user's token expires (7 days)" },
+      { "kind": "authentication_level", "description": "Attacker holds a token issued before their account was deleted" }
+    ]
+  },
+  {
+    "fingerprint": "api-audit/CWE-639/src/routes/notes.js/GET-notes-id",
+    "verdict": "confirmed",
+    "skill": "api-audit",
+    "title": "GET /api/notes/:id returns any user's note to any authenticated user (BOLA)",
+    "cwe": "CWE-639",
+    "owasp_category": "API1:2023",
+    "location": { "file": "src/routes/notes.js", "line": 28 },
+    "trace": [
+      { "kind": "entrypoint", "file": "src/routes/notes.js", "line": 27, "description": "GET /api/notes/:id reads req.params.id (router-wide requireAuth at notes.js:7)" },
+      { "kind": "propagation", "file": "src/routes/notes.js", "line": 28, "description": "SELECT * FROM notes WHERE id = ? with no owner_id or shared predicate" },
+      { "kind": "sink", "file": "src/routes/notes.js", "line": 30, "description": "res.json(note) returns the full row" }
+    ],
+    "evidence": [
+      { "file": "src/routes/notes.js", "line": 28, "description": "Lookup by id only" },
+      { "file": "src/routes/notes.js", "line": 41, "description": "Sibling PATCH filters owner_id; DELETE does too (notes.js:50)" },
+      { "file": "src/db.js", "line": 18, "description": "notes.shared exists but no handler consults it" }
+    ],
+    "counterevidence": "The strongest control on the path is requireAuth (auth.js:22-33): it runs on every path and fails closed, but it only establishes identity. No other middleware is mounted (app.js), no route-level guard exists, and the schema has no row-level rule. /search is declared before /:id, so route order does not shadow this handler. Safe siblings (PATCH, DELETE) do not protect this route.",
+    "confidence": "medium",
+    "reproduced": false,
+    "severity": {
+      "likelihood": { "score": "high", "reason": "Open signup issues a token immediately; note ids are sequential integers" },
+      "impact": { "score": "high", "reason": "Reads every other user's private notes (title and body)" },
+      "overall": "high"
+    },
+    "conditions": [
+      { "kind": "authentication_level", "description": "Any account; self-signup is open" }
+    ]
+  },
+  {
+    "fingerprint": "api-audit/CWE-798/src/config.js/jwtSecret",
+    "verdict": "confirmed",
+    "skill": "api-audit",
+    "title": "JWT signing secret falls back to the hard-coded string \"changeme\", so tokens for any user, including admins, can be forged",
+    "cwe": "CWE-798",
+    "owasp_category": "API2:2023",
+    "location": { "file": "src/config.js", "line": 5 },
+    "trace": [
+      { "kind": "entrypoint", "file": "src/auth.js", "line": 22, "description": "requireAuth accepts an attacker-supplied Bearer token" },
+      { "kind": "propagation", "file": "src/config.js", "line": 5, "description": "jwtSecret: process.env.JWT_SECRET || \"changeme\"" },
+      { "kind": "propagation", "file": "src/auth.js", "line": 27, "description": "jwt.verify accepts any HS256 token signed with \"changeme\"" },
+      { "kind": "sink", "file": "src/auth.js", "line": 28, "description": "req.user.id = forged sub; requireAdmin (auth.js:36) then checks the DB role of that forged id" }
+    ],
+    "evidence": [
+      { "file": "src/config.js", "line": 5, "description": "Hard-coded fallback secret" },
+      { "file": ".env.example", "line": 3, "description": "Ships JWT_SECRET= empty; an empty string also falls through || to \"changeme\"" },
+      { "file": "package.json", "line": 10, "description": "No dotenv dependency, and no startup check refuses the default" }
+    ],
+    "counterevidence": "Looked for a startup assertion on JWT_SECRET, issuer/audience checks, or a DB-backed session check: none exist. The signature check is the strongest control and runs on every path, but it fails open when the shipped default is in use. That an operator can set JWT_SECRET does not refute it: the shipped default and the example env both lead to \"changeme\". requireAdmin re-reads the role from the DB, but trusts the forged sub, so forging an admin's id (ids are small sequential integers) passes it.",
+    "confidence": "medium",
+    "reproduced": false,
+    "severity": {
+      "likelihood": { "score": "high", "reason": "The default string is public in the source and is what the shipped .env.example produces" },
+      "impact": { "score": "critical", "reason": "Unauthenticated takeover of any account; with an admin id, list and delete every user and their notes" },
+      "overall": "critical"
+    },
+    "conditions": [
+      { "kind": "system_configuration", "description": "Process starts with JWT_SECRET unset or empty (the shipped default)" },
+      { "kind": "data_state", "description": "Admin functions require at least one users row with role 'admin' (set out of band); account takeover does not" }
+    ]
+  },
+  {
+    "fingerprint": "api-audit/CWE-89/src/routes/notes.js/GET-notes-search",
+    "verdict": "confirmed",
+    "skill": "api-audit",
+    "title": "SQL injection in GET /api/notes/search via q reads every user's notes and every password hash",
+    "cwe": "CWE-89",
+    "owasp_category": "A05:2025",
+    "location": { "file": "src/routes/notes.js", "line": 22 },
+    "trace": [
+      { "kind": "entrypoint", "file": "src/routes/notes.js", "line": 20, "description": "GET /api/notes/search, any authenticated user" },
+      { "kind": "propagation", "file": "src/routes/notes.js", "line": 21, "description": "q = req.query.q, no validation or escaping" },
+      { "kind": "sink", "file": "src/routes/notes.js", "line": 22, "description": "Template literal ... title LIKE '%${q}%' passed to db.prepare().all()" }
+    ],
+    "evidence": [
+      { "file": "src/routes/notes.js", "line": 22, "description": "q (and req.user.id) interpolated into SQL" },
+      { "file": "src/db.js", "line": 13, "description": "notes has 6 columns, users 4, so a UNION SELECT from users is straightforward" },
+      { "file": "src/app.js", "line": 17, "description": "SQLite error messages are returned to the caller, giving error-based feedback" }
+    ],
+    "counterevidence": "requireAuth runs on every path but open signup makes it no barrier. Nothing validates, casts or escapes q; qs may turn q into an array or object, but the template literal stringifies it back. better-sqlite3 compiles a single statement and .all() needs a statement that returns rows, which blocks stacked queries and writes, so the impact is read-only. It does not block OR 1=1 -- or UNION SELECT. Safe siblings (SORT_COLUMNS lookup, ? placeholders elsewhere) are on different paths.",
+    "confidence": "medium",
+    "reproduced": false,
+    "severity": {
+      "likelihood": { "score": "high", "reason": "Self-registered account plus one GET with a textbook payload" },
+      "impact": { "score": "high", "reason": "Reads all users' notes, emails, roles and salted scrypt hashes; read-only, and scrypt slows offline cracking" },
+      "overall": "high"
+    },
+    "conditions": [
+      { "kind": "authentication_level", "description": "Any account; self-signup is open" }
+    ]
+  },
+  {
+    "fingerprint": "api-audit/CWE-89/src/routes/notes.js/GET-notes-sort",
+    "verdict": "rejected",
+    "skill": "api-audit",
+    "title": "SQL injection via ORDER BY in GET /api/notes (sort interpolated into SQL)",
+    "cwe": "CWE-89",
+    "owasp_category": "A05:2025",
+    "location": { "file": "src/routes/notes.js", "line": 15 },
+    "trace": [
+      { "kind": "entrypoint", "file": "src/routes/notes.js", "line": 12, "description": "GET /api/notes, any authenticated user" },
+      { "kind": "propagation", "file": "src/routes/notes.js", "line": 13, "description": "order = SORT_COLUMNS[req.query.sort || \"newest\"]" },
+      { "kind": "sink", "file": "src/routes/notes.js", "line": 15, "description": "ORDER BY ${order} in a template literal" }
+    ],
+    "evidence": [
+      { "file": "src/routes/notes.js", "line": 9, "description": "SORT_COLUMNS constant map of three fixed strings" }
+    ],
+    "counterevidence": "Tried inherited keys (constructor, __proto__, toString, valueOf), qs arrays and objects, and the empty string. Arrays and objects coerce to keys not in the map and get 400; inherited keys pass the !order check but inject only fixed engine text (e.g. 'function Object() { [native code] }'), which is a syntax error and a 500, never attacker-controlled. The inherited-key gap is recorded as a hardening note.",
+    "confidence": "high",
+    "ruled_out_by": {
+      "control": "Value interpolated into ORDER BY can only be a property of the constant SORT_COLUMNS map; unknown keys get 400 at notes.js:14",
+      "location": { "file": "src/routes/notes.js", "line": 13 }
+    }
+  },
+  {
+    "fingerprint": "api-audit/CWE-915/src/routes/notes.js/PATCH-notes-id",
+    "verdict": "confirmed",
+    "skill": "api-audit",
+    "title": "Mass assignment in PATCH /api/notes/:id lets a user rewrite id and owner_id, taking over or planting notes in other accounts",
+    "cwe": "CWE-915",
+    "owasp_category": "API3:2023",
+    "location": { "file": "src/routes/notes.js", "line": 43 },
+    "trace": [
+      { "kind": "entrypoint", "file": "src/routes/notes.js", "line": 40, "description": "PATCH /api/notes/:id, any authenticated user" },
+      { "kind": "propagation", "file": "src/routes/notes.js", "line": 41, "description": "Ownership check proves only that the caller owns the note at req.params.id" },
+      { "kind": "propagation", "file": "src/routes/notes.js", "line": 43, "description": "_.merge(note, req.body) mutates note in place, so body id and owner_id overwrite the row object" },
+      { "kind": "sink", "file": "src/routes/notes.js", "line": 45, "description": "UPDATE ... SET owner_id = updated.owner_id ... WHERE id = note.id, both attacker-chosen" }
+    ],
+    "evidence": [
+      { "file": "src/routes/notes.js", "line": 43, "description": "Unfiltered merge of the request body" },
+      { "file": "src/routes/notes.js", "line": 45, "description": "owner_id and the WHERE id both come from the merged object" }
+    ],
+    "counterevidence": "The ownership check at notes.js:41 runs before the merge and nothing re-checks after it. No allowlist, schema validation or key stripping sits between :43 and :45. DB constraints do not help: id is not in the SET list so no PK conflict arises, and the owner_id foreign key only rejects non-existent users. Body {\"id\": <victim note>} with the caller's own note in the URL overwrites the victim note's title, body and shared and makes the caller its owner; body {\"owner_id\": <victim user>} plants a note in the victim's account.",
+    "confidence": "medium",
+    "reproduced": false,
+    "severity": {
+      "likelihood": { "score": "high", "reason": "Open signup; one PATCH; victim note ids are sequential and readable via the GET /:id BOLA" },
+      "impact": { "score": "high", "reason": "Overwrites and takes ownership of any user's note, destroying its content; plants notes in any account" },
+      "overall": "high"
+    },
+    "conditions": [
+      { "kind": "authentication_level", "description": "Any account; self-signup is open" },
+      { "kind": "data_state", "description": "Attacker owns at least one note to put in the URL (POST /api/notes creates one)" }
+    ]
+  },
+  {
+    "fingerprint": "api-audit/CWE-918/src/routes/preview.js/POST-preview",
+    "verdict": "confirmed",
+    "skill": "api-audit",
+    "title": "SSRF in POST /api/preview: any user can make the server request arbitrary internal URLs, with an error-message port-scan oracle",
+    "cwe": "CWE-918",
+    "owasp_category": "API7:2023",
+    "location": { "file": "src/routes/preview.js", "line": 12 },
+    "trace": [
+      { "kind": "entrypoint", "file": "src/routes/preview.js", "line": 8, "description": "POST /api/preview, requireAuth only" },
+      { "kind": "propagation", "file": "src/routes/preview.js", "line": 11, "description": "Only checks the string starts with http:// or https://" },
+      { "kind": "sink", "file": "src/routes/preview.js", "line": 12, "description": "axios.get(url) with no host/IP allow-list; redirects followed by default (axios 0.21.0)" }
+    ],
+    "evidence": [
+      { "file": "src/routes/preview.js", "line": 14, "description": "Returns the <title> text of the fetched page" },
+      { "file": "src/routes/preview.js", "line": 16, "description": "Failures go to next(err)" },
+      { "file": "src/app.js", "line": 17, "description": "err.message (ECONNREFUSED host:port, timeout, status code) returned to the caller" }
+    ],
+    "counterevidence": "The strongest control is the scheme regex at preview.js:11: it runs on every path but constrains neither host nor IP, and redirect targets skip it entirely. The 5 s timeout and 1 MB cap limit size and duration, not destination; the timeout actually sharpens the oracle. No proxy, interceptor, DNS pinning or egress config exists in the repo. Full-body exfiltration (e.g. cloud metadata credentials) is not claimed: only the <title> match is returned and non-2xx bodies are not echoed, and only GET with an attacker-chosen URL is possible (no IMDSv2 token header).",
+    "confidence": "medium",
+    "reproduced": false,
+    "severity": {
+      "likelihood": { "score": "high", "reason": "Open signup; a single POST with a URL; nothing to bypass" },
+      "impact": { "score": "medium", "reason": "Internal network reachability and port mapping plus <title> of internal HTML pages; no credential read shown" },
+      "overall": "medium"
+    },
+    "conditions": [
+      { "kind": "authentication_level", "description": "Any account; self-signup is open" },
+      { "kind": "network_routing", "description": "Consequence scales with what the app host can reach (internal services, admin panels, metadata endpoint)" }
+    ]
+  }
+]

@@ -108,23 +108,23 @@ The skills are organized into seven families. Most security work crosses familie
 |-------|--------------|
 | [agent-supply-chain-audit](skills/agent-supply-chain-audit/) | Audit what your AI coding agents load and trust — skills, plugins, hooks, settings, MCP servers, `CLAUDE.md` / `AGENTS.md` / `.cursor/rules`. Hidden instructions, invisible Unicode, agent snooping, unpinned MCP servers (rug pulls), exfil hooks. Covers Claude Code, Cursor, Codex, Gemini CLI, Copilot. |
 | [ai-risk-management](skills/ai-risk-management/) | NIST AI Risk Management Framework + EU AI Act — model lifecycle governance, fairness, robustness, transparency, monitoring, third-party model risk. Broader than prompt-injection. |
-| [api-audit](skills/api-audit/) | OWASP API Security Top 10 (2023) — REST / GraphQL / RPC endpoint audit. BOLA, mass assignment, BFLA, rate-limit, webhook signature, plus a deep GraphQL playbook (schema inference with introspection off, aliased owned-vs-foreign IDOR, resolver cascade, Relay node swap, federation `_entities`, subscriptions, persisted queries). Paired owner-vs-non-owner evidence, verification pass, coverage ledger, findings.json. |
+| [api-audit](skills/api-audit/) | OWASP API Security Top 10 (2023) — REST / GraphQL / RPC endpoint audit. BOLA, mass assignment, BFLA, rate-limit, webhook signature, plus a deep GraphQL playbook (schema inference with introspection off, aliased owned-vs-foreign IDOR, resolver cascade, Relay node swap, federation `_entities`, subscriptions, persisted queries). Paired owner-vs-non-owner evidence, verification pass, coverage ledger, findings.json. [Example run](examples/api-audit/report.md). |
 | [breach-patterns](skills/breach-patterns/) | Preemptive hardening — read public breach disclosures, extract the audit question each one implies, check your stack. Capital One / LastPass / Okta / Snowflake / MOVEit / Codecov / Equifax / Uber. |
 | [business-logic-testing](skills/business-logic-testing/) | The bugs scanners can't find — invariant-first testing (conservation of value, uniqueness, monotonicity, exclusivity), Actor × Action × Resource matrix, state-machine abuse, limit-slicing, and race conditions proven dynamically (HTTP/2 single-packet, idempotency-key scope, cache-before-commit). Explicit written scope required for money flows. |
 | [cloud-audit](skills/cloud-audit/) | AWS / GCP / Azure infrastructure misconfiguration, excessive IAM, public exposure, compliance gaps — plus PaaS (Vercel / Netlify / Heroku / Render / Railway / Fly): stale manual production deploys, silently broken git deploys, legacy projects still serving old code, preview exposure, repo security defaults. |
 | [container-audit](skills/container-audit/) | Docker + Kubernetes audit. Dockerfile, base images, pod security, RBAC, NetworkPolicy, secrets, image policy, runtime. |
 | [crypto-audit](skills/crypto-audit/) | Cryptography implementation review — algorithm/mode choice, KDF parameters, IV/nonce handling, authenticated encryption, signature verification, randomness, TLS posture, key lifecycle. Deeper than owasp-audit A02. |
 | [csf-mapping](skills/csf-mapping/) | NIST CSF 2.0 posture assessment — Govern / Identify / Protect / Detect / Respond / Recover. Subcategory mapping, current/target tiers, prioritized roadmap. Translates technical findings into governance language. |
-| [dependency-audit](skills/dependency-audit/) | Dependencies, frameworks, runtimes, toolchain — CVEs, security anti-patterns, supply chain risk. Fixing safely (pnpm override traps, duplicate singletons, engines floor, runtime pins that must move together), CI/release trust handoffs (cache/artifact poisoning, OIDC, digest promotion), package-source redirection, agent-extension pinning. |
+| [dependency-audit](skills/dependency-audit/) | Dependencies, frameworks, runtimes, toolchain — CVEs, security anti-patterns, supply chain risk. Fixing safely (pnpm override traps, duplicate singletons, engines floor, runtime pins that must move together), CI/release trust handoffs (cache/artifact poisoning, OIDC, digest promotion), package-source redirection, agent-extension pinning. [Example run](examples/dependency-audit/report.md). |
 | [disk-forensics](skills/disk-forensics/) | Disk image analysis, evidence recovery, timeline reconstruction. Explicit Authorization Check covering lawful basis, chain of custody, privacy scope. |
-| [finding-triage](skills/finding-triage/) | Single-finding disposition workflow — accepts any source (or a findings.json record by fingerprint) and the confirmed / needs-validation / rejected verdicts. Boundary + result gate, severity capped at demonstrated impact, hardening notes kept out of findings. Fixed / Deferred / Accepted Risk / Mitigated (platform/config) / Requires major migration / False Positive, with ticket-ready writeups. Closes the loop on every audit skill. |
+| [finding-triage](skills/finding-triage/) | Single-finding disposition workflow — accepts any source (or a findings.json record by fingerprint) and the confirmed / needs-validation / rejected verdicts. Boundary + result gate, severity capped at demonstrated impact, hardening notes kept out of findings. Fixed / Deferred / Accepted Risk / Mitigated (platform/config) / Requires major migration / False Positive, with ticket-ready writeups. Closes the loop on every audit skill. [Example run](examples/finding-triage/report.md). |
 | [hipaa-audit](skills/hipaa-audit/) | HIPAA Security / Privacy / Breach Notification — three safeguard categories, 18 identifiers, BAA chain-of-liability, minimum-necessary, 60-day breach clock, encryption-as-safe-harbor. |
 | [iam-audit](skills/iam-audit/) | Consultant-style IAM — audit / design / migrate. Cloud IAM (AWS/GCP/Azure), identity providers (Okta/Entra/Auth0/Workspace), application authorization (RBAC/ABAC/ReBAC), workload identity, JIT access, break-glass. |
 | [incident-triage](skills/incident-triage/) | Security incident triage following NIST SP 800-61. |
 | [log-watch](skills/log-watch/) | Scheduled agent log review + paging for small teams without a SIEM — inventory the logs you already have, starter detections with thresholds (credential stuffing, new admin grants, key creation, .env/.git probing, bad webhook signatures, export spikes, CloudTrail root/IAM), a cheap-filter → strong-model pipeline with a monthly cost table, dedupe + suppression, paging. Detection only; logs treated as untrusted input. |
 | [mobile-audit](skills/mobile-audit/) | iOS + Android audit against OWASP MASVS / MASTG — storage, crypto, network, auth, platform IPC, code, resilience. |
 | [osint-recon](skills/osint-recon/) | Open source intelligence gathering and correlation. |
-| [owasp-audit](skills/owasp-audit/) | Source-code audit against OWASP Top 10:2025 — recon first (architecture + coverage ledger), category checklist with grep patterns, a per-finding refutation pass (confirmed / needs validation / rejected), coverage critic, findings.json → report. Quick / standard / deep run profiles, subagent orchestration, re-runs by fingerprint, diff / PR-scoped mode, inbound-webhook and parser-limit patterns. |
+| [owasp-audit](skills/owasp-audit/) | Source-code audit against OWASP Top 10:2025 — recon first (architecture + coverage ledger), category checklist with grep patterns, a per-finding refutation pass (confirmed / needs validation / rejected), coverage critic, findings.json → report. Quick / standard / deep run profiles, subagent orchestration, re-runs by fingerprint, diff / PR-scoped mode, inbound-webhook and parser-limit patterns. [Example run](examples/owasp-audit/report.md). |
 | [patch-sweep](skills/patch-sweep/) | Fleet-wide CVE response across many apps and deploy platforms — map repos → platform projects → live domains, find each project's real production branch, catch stale manual deploys, decide affectedness (runtime + dependency + code path), mitigate before patching, ship and confirm prod. Output: one status board row per app. |
 | [pci-audit](skills/pci-audit/) | PCI DSS v4.0.1 — scope determination first, then Req 3 (CHD storage) / 4 (transmission) / 6 (secure SDLC) / 7-8 (access) / 10 (logging) / 11 (testing) / 12 (program). |
 | [personal-opsec](skills/personal-opsec/) | Audit one person's own security setup — the founder or operator holding the keys. Walks Karpathy's 15-step checklist with read-only local checks where possible (disk encryption, firewall, DNS), adds operator-critical items (account recovery, SIM-swap / port-out PIN, registrar lock, hardware-key MFA), and the AI-agent-era layer (tokens your agents can read, MCP trust, inbox-agent prompt injection). Not awareness training. |
@@ -133,7 +133,7 @@ The skills are organized into seven families. Most security work crosses familie
 | [recon](skills/recon/) | Structured attack surface enumeration for authorized pentests, bug bounty, CTF. |
 | [red-team-engagement](skills/red-team-engagement/) | Authorized adversary emulation methodology — distinct from web-pentest. Multi-week, objective-based, assumed-breach. Heaviest authorization framing in the catalog. |
 | [scanner-pipeline](skills/scanner-pipeline/) | Set up and run real scanners per layer (gitleaks / trufflehog, semgrep, osv-scanner, trivy / checkov, Supabase advisors, ZAP / nuclei on domains you own), normalize to SARIF or findings.json, dedupe, suppress with reason + expiry, schedule in CI, and hand one finding at a time to fix agents. Works across a fleet of repos. |
-| [secrets-audit](skills/secrets-audit/) | Find leaked secrets (code, Git history, build artifacts, CI, frontend bundles, AI agent configs and session transcripts) + audit secrets-management posture (rotation, scope, workload identity). Confirms key type (publishable vs restricted vs secret) before rating; findings.json with values redacted; exfil collector-domain list for egress hunting. |
+| [secrets-audit](skills/secrets-audit/) | Find leaked secrets (code, Git history, build artifacts, CI, frontend bundles, AI agent configs and session transcripts) + audit secrets-management posture (rotation, scope, workload identity). Confirms key type (publishable vs restricted vs secret) before rating; findings.json with values redacted; exfil collector-domain list for egress hunting. [Example run](examples/secrets-audit/report.md). |
 | [security-comms](skills/security-comms/) | Translate security work for non-security audiences — board, executive, engineering, customer success, customers, legal, procurement. Seven audience archetypes, six templates (incident comms, post-mortem, breach disclosure, etc.). |
 | [siem-detection](skills/siem-detection/) | SIEM detection engineering — log source coverage, Sigma rule authoring, MITRE ATT&CK mapping, FP tuning, detection-as-code. |
 | [soc-operations](skills/soc-operations/) | Build / run / improve a SOC — alert prioritization, runbook authoring, escalation criteria, on-call structure, KPIs (MTTD / MTTR / FP rate), alert-fatigue tuning loop. |
@@ -142,6 +142,8 @@ The skills are organized into seven families. Most security work crosses familie
 | [vuln-research](skills/vuln-research/) | CVE deep-dive — pull canonical sources, confirm versions, reachability analysis, check public PoCs / CISA KEV / EPSS, decide patch / mitigate / accept-risk. |
 | [web-pentest](skills/web-pentest/) | Live web application pentest against an authorized target — OWASP WSTG-structured, nine phases from config through business logic. Combined white-box + black-box mode (code ↔ endpoint Target Map) when you have source too; every PoC carries paired baseline-vs-attack evidence. |
 <!-- SKILLS:END -->
+
+Want to see the output first? [`examples/`](examples/) has real runs of five audit skills against a small vulnerable app.
 
 Every offensive skill enforces an authorization check before doing anything; every skill refuses destructive or unauthorized use. Details in [Ethics & Authorization](#ethics--authorization).
 
@@ -229,7 +231,8 @@ Files in `shared/` (the `findings.json` schema and validator, severity calibrati
 1. Copy `templates/skill-template.md` to `skills/<your-skill>/SKILL.md`
 2. Fill in the frontmatter (`name`, `description`, `allowed-tools`)
 3. Write instructions in imperative form, under 500 lines
-4. Run the build script to generate adapters
+4. Add trigger prompts in `evals/triggers/<your-skill>.json` (see [`evals/README.md`](evals/README.md))
+5. Run the build script to generate adapters, then `npm run check`
 
 Format details and writing guidance live in [`CLAUDE.md`](CLAUDE.md). Full contribution flow in [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
@@ -240,6 +243,8 @@ Every PR is linted and scanned with [NVIDIA SkillSpector](https://github.com/NVI
     skillspector scan https://github.com/briiirussell/cybersecurity-skills --recursive --no-llm
 
 Our baseline is never applied to your scan; SkillSpector only uses an author-shipped baseline for a single skill with `--use-shipped-baseline`. `allowed-tools` lists tools pre-approved to run **without a prompt** in Claude Code — it is not a sandbox — and the Cursor / Codex adapters carry no tool restrictions at all. Details: [docs/security-scanning.md](docs/security-scanning.md). You can also point `agent-supply-chain-audit` at this repo.
+
+Found a way a skill could lead an agent to do something unsafe, like an over-broad grant or an instruction that skips the authorization check? Please report it privately. [SECURITY.md](SECURITY.md) has what's in scope and how.
 
 ## Ethics & Authorization
 
@@ -259,7 +264,7 @@ Every new skill and every skill improvement ships as its own version, one PR eac
 
 ## Contributing
 
-See [`CONTRIBUTING.md`](CONTRIBUTING.md). The short version: field feedback (PRs or issues with concrete patterns from a real audit) is the highest-signal contribution. If a skill missed something in your audit, that's exactly what I want to know.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md). The short version: field feedback (PRs or issues with concrete patterns from a real audit) is the highest-signal contribution. If a skill missed something in your audit, that's exactly what I want to know. Open a [field report](https://github.com/briiirussell/cybersecurity-skills/issues/new?template=field-report.yml). If one found something real, I'd love a [trophy case](https://github.com/briiirussell/cybersecurity-skills/issues/new?template=trophy-case.yml) entry.
 
 ## License
 

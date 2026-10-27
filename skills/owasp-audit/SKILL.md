@@ -128,7 +128,7 @@ severity, or verdict. Optional SARIF export for GitHub code scanning: `reference
 
 ### Step 7 — Render the report
 
-Render `report.md` from `findings.json`, `coverage.json`, and `hardening-notes.md` using the [Report Format](#report-format).
+Render `report.md` from `findings.json`, `coverage.json`, and `hardening-notes.md` using the [Output Format](#output-format).
 The JSON is the source of truth: prose never changes a verdict, severity, blocker, or demonstrated impact. If they
 disagree, fix the JSON, re-validate, and re-render.
 
@@ -370,7 +370,7 @@ Common things to find in the second pass:
 - Documentation drift between the fix and the report
 - **Fixes that configure third-party libraries.** When the fix is a snippet from a library's own docs (auth, crypto, HTTP client, rate-limit middleware), the snippet may be correct *and still not run on your code path*. Before declaring fixed: grep the library at the pinned version, trace from your call site to the code path the config affects. Example: enabling Better Auth's `rateLimit` doesn't help if you call `auth.api.signInEmail(...)` programmatically — that bypasses the HTTP router where the limiter attaches.
 
-## Report Format
+## Output Format
 
 Render from `findings.json` + `coverage.json` + `hardening-notes.md`. Never hand-edit a verdict or severity in prose.
 

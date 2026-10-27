@@ -9,6 +9,8 @@
  *   - `description` outside 200–1024 characters
  *   - SKILL.md is 500 lines or longer
  *   - no level-2 heading containing "Authorization" (e.g. `## Authorization`, `## Authorization and Mode`)
+ *   - no `## Boundaries` or `## References` section, or an output section not spelled `## Output Format`
+ *     (`## Report Format`, `## Output format`); see templates/skill-template.md
  *   - `allowed-tools` pre-approves WebFetch together with unscoped Bash
  *   - a Bash grant pre-approves a write: unscoped Bash, a write verb in the rule, a prefix
  *     that also matches a destructive subcommand (`heroku releases:*` → `releases:rollback`),
@@ -35,6 +37,10 @@ const SKILLS_DIR = SKILLS_ARG > 0 ? process.argv[SKILLS_ARG + 1] : join(ROOT, "s
 const QUIET = process.argv.includes("--quiet");
 
 const AUTH_HEADING = /^##\s+.*\bauthori[sz]ation\b/im; // every skill needs one (CLAUDE.md)
+// Standard section names (templates/skill-template.md). Every skill has these two:
+const REQUIRED_SECTIONS = ["## Boundaries", "## References"];
+// ...and an output section, when there is one, is spelled exactly "## Output Format".
+const OUTPUT_VARIANT = /^##\s+(?:report|output)\s+format\s*$/i;
 const MAX_LINES = 500; // SKILL.md must be strictly under this
 const DESC_MIN = 200;
 const DESC_MAX = 1024;
@@ -211,6 +217,12 @@ function lintSkill(name) {
   const prose = stripFences(content);
   if (!AUTH_HEADING.test(prose.join("\n")))
     err(file, "no `## Authorization` section; say whose systems the skill may touch and what needs the owner's go-ahead (CLAUDE.md)");
+  for (const h of REQUIRED_SECTIONS)
+    if (!prose.some((l) => l.trim() === h)) err(file, `no \`${h}\` section (standard section names: templates/skill-template.md)`);
+  prose.forEach((l, i) => {
+    if (OUTPUT_VARIANT.test(l.trim()) && l.trim() !== "## Output Format")
+      err(file, `line ${i + 1}: "${l.trim()}" should be "## Output Format" (standard section names: templates/skill-template.md)`);
+  });
   prose.forEach((line, i) => {
     const ln = i + 1;
     if (i < 5) return; // frontmatter

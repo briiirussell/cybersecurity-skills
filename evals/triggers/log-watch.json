@@ -1,0 +1,32 @@
+{
+  "skill": "log-watch",
+  "should_fire": [
+    "I don't have a SIEM, can an agent just read my Vercel logs every night and ping me if something's off?",
+    "set up a cron job that checks CloudTrail and pages me on suspicious logins",
+    "alert me if someone is credential stuffing our login",
+    "cheap log monitoring for a three-person startup on Heroku and Sentry",
+    "watch my Supabase auth logs for anything weird"
+  ],
+  "near_miss": [
+    {
+      "prompt": "write Splunk detection rules mapped to ATT&CK",
+      "owner": "siem-detection"
+    },
+    {
+      "prompt": "design SOC runbooks and the shift handoff",
+      "owner": "soc-operations"
+    },
+    {
+      "prompt": "hunt for beaconing in the proxy logs",
+      "owner": "threat-hunting"
+    },
+    {
+      "prompt": "is production on Vercel built from main?",
+      "owner": "cloud-audit"
+    },
+    {
+      "prompt": "set up gitleaks in CI",
+      "owner": "scanner-pipeline"
+    }
+  ]
+}

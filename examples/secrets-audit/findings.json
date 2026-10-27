@@ -1,0 +1,101 @@
+[
+  {
+    "fingerprint": "secrets-audit:aws-access-key-id:.env.example:last4-MPLE",
+    "verdict": "rejected",
+    "skill": "secrets-audit",
+    "title": "AWS access key ID AKIA…MPLE in .env.example (AWS_ACCESS_KEY_ID) is AWS's published documentation example",
+    "cwe": "CWE-798",
+    "location": { "file": ".env.example", "line": 6 },
+    "trace": [],
+    "evidence": [
+      { "file": ".env.example", "line": 6, "description": "AWS_ACCESS_KEY_ID=AKIA…MPLE; matched the AKIA[A-Z0-9]{16} long-term IAM user key prefix sweep" },
+      { "file": ".env.example", "line": 1, "description": "File header says the values below are placeholders" }
+    ],
+    "counterevidence": "WebSearch: the full value is the sample access key ID AWS uses in the AWS CLI user guide (aws configure, cli-authentication-user) and the STS get-access-key-info reference, so it's a public placeholder, not an issued credential. No liveness check was made (static-only run, and a documented example doesn't need one). Nothing in the repo reads AWS_ACCESS_KEY_ID: no aws-sdk / @aws-sdk in package.json or package-lock.json, and no S3 code in src/.",
+    "confidence": "high",
+    "ruled_out_by": {
+      "control": "Value is AWS's documented example key ID (AWS CLI user guide sample values), which cannot authenticate; the file is labelled placeholders on line 1",
+      "location": { "file": ".env.example", "line": 6 }
+    }
+  },
+  {
+    "fingerprint": "secrets-audit:aws-secret-access-key:.env.example:last4-EKEY",
+    "verdict": "rejected",
+    "skill": "secrets-audit",
+    "title": "AWS secret access key wJal…EKEY in .env.example (AWS_SECRET_ACCESS_KEY) is AWS's published documentation example",
+    "cwe": "CWE-798",
+    "location": { "file": ".env.example", "line": 7 },
+    "trace": [],
+    "evidence": [
+      { "file": ".env.example", "line": 7, "description": "AWS_SECRET_ACCESS_KEY=wJal…EKEY (40 chars); matched the generic high-entropy env-file sweep" }
+    ],
+    "counterevidence": "WebSearch: the exact 40-char value is the sample secret paired with AKIAIOSFODNN7EXAMPLE in the AWS CLI user guide (aws configure and ~/.aws/credentials examples). Not live-tested. Nothing in the repo consumes it (no AWS SDK dependency, no S3 code).",
+    "confidence": "high",
+    "ruled_out_by": {
+      "control": "Value is AWS's documented example secret access key (AWS CLI user guide sample values), which cannot authenticate",
+      "location": { "file": ".env.example", "line": 7 }
+    }
+  },
+  {
+    "fingerprint": "secrets-audit:error-response-secret-leak:src/app.js:errorHandler",
+    "verdict": "rejected",
+    "skill": "secrets-audit",
+    "title": "Global error handler returns err.message and err.stack to clients: checked for secret / process.env exposure",
+    "cwe": "CWE-209",
+    "location": { "file": "src/app.js", "line": 17 },
+    "trace": [],
+    "evidence": [
+      { "file": "src/app.js", "line": 16, "description": "console.error(err) logs the full error object" },
+      { "file": "src/app.js", "line": 17, "description": "res.status(500).json({ error: err.message, stack: err.stack })" },
+      { "file": "src/routes/preview.js", "line": 16, "description": "axios errors reach the handler via next(err); the outbound request carries no auth headers" }
+    ],
+    "counterevidence": "Looked for any path that puts a config value or process.env into an Error or a logged object. config.jwtSecret is only passed to jwt.sign / jwt.verify (src/auth.js:18, src/auth.js:27), and jwt.verify errors are caught at src/auth.js:30 and never forwarded. No code logs or serializes process.env or the config object. The axios error logged at src/app.js:16 includes err.config, but the preview request has no credentials of the server's (only the caller's own URL). No crash reporter (Sentry, Datadog, Bugsnag) is a dependency. The stack-trace disclosure itself is an information-disclosure issue for owasp-audit, not a secret leak.",
+    "confidence": "high",
+    "ruled_out_by": {
+      "control": "Handler serializes only err.message and err.stack, and no error in the codebase carries a secret or environment value",
+      "location": { "file": "src/app.js", "line": 17 }
+    }
+  },
+  {
+    "fingerprint": "secrets-audit:generic-high-entropy:package-lock.json:integrity",
+    "verdict": "rejected",
+    "skill": "secrets-audit",
+    "title": "105 40+ char base64 matches in package-lock.json are npm integrity hashes",
+    "location": { "file": "package-lock.json", "line": 21 },
+    "trace": [],
+    "evidence": [
+      { "file": "package-lock.json", "line": 21, "description": "First of 105 matches of the [A-Za-z0-9/+=]{40} sweep; all 105 are \"integrity\": \"sha512-…\" lines" }
+    ],
+    "counterevidence": "Every match is on an \"integrity\" line (105 matches, 105 sha512 integrity lines, 0 matches elsewhere). All 105 \"resolved\" URLs point at https://registry.npmjs.org with no userinfo; no _authToken or _auth entries.",
+    "confidence": "high",
+    "ruled_out_by": {
+      "control": "Matched strings are Subresource-Integrity-style sha512 package digests (public, derived from the published tarballs), not credentials",
+      "location": { "file": "package-lock.json", "line": 21 }
+    }
+  },
+  {
+    "fingerprint": "secrets-audit:jwt-hmac-default:src/config.js:jwtSecret",
+    "verdict": "needs_validation",
+    "skill": "secrets-audit",
+    "title": "JWT signing secret falls back to a hardcoded default when JWT_SECRET is unset or empty, and .env.example ships it empty",
+    "cwe": "CWE-1188",
+    "location": { "file": "src/config.js", "line": 5 },
+    "trace": [
+      { "kind": "entrypoint", "file": "src/auth.js", "line": 23, "description": "requireAuth reads the Bearer token from the Authorization header (any internet client)" },
+      { "kind": "propagation", "file": "src/auth.js", "line": 27, "description": "jwt.verify(token, config.jwtSecret): the HMAC key is the hardcoded default if JWT_SECRET is unset or empty" },
+      { "kind": "sink", "file": "src/auth.js", "line": 28, "description": "req.user = { id: claims.sub, role: claims.role } is trusted by every notes route; requireAdmin (src/auth.js:36) looks up the role for claims.sub, so a forged sub of an admin's id passes the admin check" }
+    ],
+    "evidence": [
+      { "file": "src/config.js", "line": 5, "description": "jwtSecret: process.env.JWT_SECRET || <hardcoded 8-char default>; || treats an empty string as unset" },
+      { "file": ".env.example", "line": 3, "description": "JWT_SECRET= is empty, so copying the example as-is selects the hardcoded default" },
+      { "file": "src/auth.js", "line": 18, "description": "issueToken signs with the same config.jwtSecret, 7-day expiry (src/config.js:6)" },
+      { "file": "src/db.js", "line": 8, "description": "users.id is INTEGER PRIMARY KEY (sequential), so sub values are guessable" }
+    ],
+    "counterevidence": "No startup check rejects a missing, empty or default secret. The app has no dotenv dependency, so JWT_SECRET must come from the process environment (platform, process manager, container), which isn't in the repo. If production sets a strong JWT_SECRET, the fallback is never used and this is a hardening note; if it doesn't, any client can mint a token for any user id, including an admin's.",
+    "confidence": "medium",
+    "blockers": [
+      "Is JWT_SECRET set to a non-empty, high-entropy value in every deployed environment (production and staging), and has it ever run on the default?"
+    ],
+    "validation_plan": "In each running deployment, print only the length, not the value: node -e 'console.log((process.env.JWT_SECRET||\"\").length)'. Expect 32+; a 0 means the default is in effect. Confirm in the secret store that the value isn't the default from src/config.js:5. Then, against staging with a test account you own, sign an HS256 token {sub:<your test user id>} with the default and call GET /api/notes; expect 401. If either check fails, treat every token issued so far as forgeable: set a new secret (which invalidates all sessions) and review admin DELETE /api/admin/users/:id activity."
+  }
+]

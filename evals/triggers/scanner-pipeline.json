@@ -1,0 +1,32 @@
+{
+  "skill": "scanner-pipeline",
+  "should_fire": [
+    "set up gitleaks, semgrep and osv-scanner in GitHub Actions",
+    "scan all my repos weekly and dedupe the findings",
+    "send the scanner results to code scanning as SARIF",
+    "I want tools, not an agent, to find the bugs",
+    "add a suppression file with expiry dates for scanner findings"
+  ],
+  "near_miss": [
+    {
+      "prompt": "we pushed a live Stripe key last week, find any other leaked secrets in the history",
+      "owner": "secrets-audit"
+    },
+    {
+      "prompt": "manual OWASP review of the auth code",
+      "owner": "owasp-audit"
+    },
+    {
+      "prompt": "triage this one semgrep finding",
+      "owner": "finding-triage"
+    },
+    {
+      "prompt": "which npm packages have CVEs?",
+      "owner": "dependency-audit"
+    },
+    {
+      "prompt": "scheduled agent that reads our logs and pages me",
+      "owner": "log-watch"
+    }
+  ]
+}

@@ -31,14 +31,27 @@ scripts/
 ├── build-adapters.mjs       # Adapters + manifest-driven shared/ copies
 ├── lint-skills.mjs
 ├── grant-check.mjs          # allowed-tools Bash grant check (used by the lint)
+├── eval-triggers.mjs        # offline trigger eval: ranks evals/triggers prompts against descriptions
 └── test/                    # node:test suites + fixtures (run with npm test)
+examples/
+├── target/                  # deliberately vulnerable notes-api the examples run against (do not deploy)
+└── <skill>/                 # one worked run: report.md, findings.json, findings.sarif (+ coverage.json); tested by scripts/test/examples.test.mjs
+evals/
+├── README.md                # how the trigger evals work and what the numbers mean
+├── triggers/<skill>.json    # 5+ prompts that should fire the skill, 5+ near-misses with their owner
+└── cases/<case>/            # claude plugin eval suite: prompt.md + graders/ (paid; evals.yml, on demand)
 package.json                 # npm test / npm run build — no dependencies, Node >= 21
 .github/
-├── workflows/ci.yml   # lint, versions, plugin validate, adapter drift, tests, SkillSpector (+ weekly on main)
+├── workflows/ci.yml   # lint, trigger eval, versions, plugin validate, adapter drift, tests, SkillSpector (+ weekly on main)
 ├── workflows/links.yml  # weekly link check; opens a broken-links issue
+├── workflows/evals.yml  # claude plugin eval on demand + on main (needs ANTHROPIC_API_KEY)
 ├── dependabot.yml     # weekly grouped bumps for the pinned actions
-└── scripts/           # SkillSpector baseline splitter + SARIF merge
+├── CODEOWNERS         # maintainer review on every path
+├── ISSUE_TEMPLATE/    # field report, skill request, bug, trophy case (skill dropdowns kept in sync by a test)
+├── pull_request_template.md + PULL_REQUEST_TEMPLATE/  # default, new-skill.md, skill-update.md
+└── scripts/           # SkillSpector baseline splitter, SARIF merge, plugin-validate, eval summary
 .skillspector-baseline.yaml
+SECURITY.md                  # private vulnerability reporting; what's in scope for a skills repo
 docs/
 └── security-scanning.md
 ```
@@ -67,6 +80,7 @@ allowed-tools: Read, Grep, Glob     # Pre-approved: run WITHOUT a permission pro
 - Keep SKILL.md under 500 lines
 - Move reference material to separate files if needed
 - Define output formats explicitly
+- Standard sections, in this order: title + `Cross-references:` line, `## When to use` (with **Not for:** near-misses), `## Authorization`, the workflow, `## Output Format`, `## Boundaries`, `## References`. The lint requires `## Authorization`, `## Boundaries` and `## References`, and fails `## Report Format` / `## Output format` spellings. `templates/skill-template.md` has the skeleton, including the shared findings-format step
 
 ## Build Commands
 
@@ -74,6 +88,7 @@ allowed-tools: Read, Grep, Glob     # Pre-approved: run WITHOUT a permission pro
 node scripts/build-adapters.mjs    # Generate Cursor + Codex adapters and copy shared/ files into skills/*/references/ (also: npm run build)
 node scripts/lint-skills.mjs       # Frontmatter, size, cross-reference, link and allowed-tools lint (CI runs this)
 node scripts/check-versions.mjs --base origin/development   # Versions in sync + bumped vs the base (CI runs this on PRs)
+node scripts/eval-triggers.mjs --verbose   # Offline trigger eval: which prompts route to the wrong skill (CI runs this)
 npm run check                      # Everything CI runs locally except SkillSpector and plugin validate
 node .github/scripts/plugin-validate.mjs  # claude plugin validate, strict with named exceptions (needs the claude CLI)
 npm test                           # node:test suites in scripts/test/ — validators, to-sarif, build (CI runs this; Node >= 21)
@@ -89,10 +104,12 @@ CI (`.github/workflows/ci.yml`) also fails on stale adapters and on SkillSpector
 1. Create `skills/<skill-name>/SKILL.md` using `templates/skill-template.md`
 2. Use proper frontmatter (`name`, `description`, `allowed-tools`)
 3. Write instructions in imperative form
-4. If the skill links a shared file (`references/findings.schema.json`, `references/verification.md`, ...), add it to `shared/manifest.json`
-5. Run `node scripts/build-adapters.mjs` to generate adapters and shared copies
-6. Run `node scripts/lint-skills.mjs` and `npm test`
-7. Test the skill in Claude Code by copying to `.claude/skills/`
+4. Add `evals/triggers/<skill-name>.json`: at least 5 prompts that should fire it (include a casual one and one with pasted code or config) and 5 near-misses, each naming the skill that should own it instead
+5. Add the skill to the `skill` dropdown in `.github/ISSUE_TEMPLATE/field-report.yml`, `bug.yml` and `trophy-case.yml` (sorted; a test checks)
+6. If the skill links a shared file (`references/findings.schema.json`, `references/verification.md`, ...), add it to `shared/manifest.json`
+7. Run `node scripts/build-adapters.mjs` to generate adapters and shared copies
+8. Run `npm run check`
+9. Test the skill in Claude Code by copying to `.claude/skills/`
 
 ## Guidelines
 

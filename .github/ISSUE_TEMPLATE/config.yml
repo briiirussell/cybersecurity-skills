@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security vulnerability privately
+    url: https://github.com/briiirussell/cybersecurity-skills/security/advisories/new
+    about: Over-broad grants, unsafe instructions, or prompt injection in a skill. See SECURITY.md for scope.

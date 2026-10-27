@@ -1,0 +1,821 @@
+[
+  {
+    "id": "src/routes/users.js@POST/signup:anonymous-to-admin-role:A01",
+    "surface": "POST /api/users/signup",
+    "boundary": "anonymous -> admin role",
+    "owasp_category": "A01:2025",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/routes/users.js",
+      "src/db.js",
+      "src/auth.js"
+    ],
+    "checks": [
+      {
+        "invariant": "a new account cannot choose its role",
+        "method": "read handler, INSERT column list and schema default",
+        "result": "holds: only email/password destructured (users.js:8); INSERT (email, password_hash) at users.js:10; role DEFAULT 'user' (db.js:11). Candidate closed as rejected"
+      }
+    ],
+    "finding_fingerprints": [
+      "owasp-audit/CWE-915/src/routes/users.js/POST-signup"
+    ],
+    "unresolved": []
+  },
+  {
+    "id": "src/routes/users.js@POST/signup:anonymous-to-db:A05",
+    "surface": "POST /api/users/signup, POST /api/users/login",
+    "boundary": "anonymous -> database",
+    "owasp_category": "A05:2025",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/routes/users.js"
+    ],
+    "checks": [
+      {
+        "invariant": "signup/login SQL is parameterized",
+        "method": "read every db.prepare in users.js",
+        "result": "holds: users.js:10, :11, :17 all use ? placeholders"
+      }
+    ],
+    "finding_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "id": "src/routes/users.js@POST/login:anonymous-to-any-account:A07",
+    "surface": "POST /api/users/login",
+    "boundary": "anonymous -> any user account",
+    "owasp_category": "A07:2025",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/routes/users.js",
+      "src/auth.js",
+      "src/app.js",
+      "package.json",
+      "package-lock.json",
+      "src/db.js"
+    ],
+    "checks": [
+      {
+        "invariant": "password check is constant-time over a salted slow hash",
+        "method": "read checkPassword/hashPassword",
+        "result": "holds: scrypt with 16-byte random salt (auth.js:6-8), timingSafeEqual (auth.js:14); default scrypt cost is a hardening note"
+      },
+      {
+        "invariant": "repeated guesses are throttled",
+        "method": "searched app.js, users.js, deps and schema for a limiter or lockout",
+        "result": "fails: no limiter anywhere in the repo -> confirmed CWE-307 (medium)"
+      },
+      {
+        "invariant": "unknown and known emails are indistinguishable",
+        "method": "compared the miss and hit paths at users.js:18",
+        "result": "fails on timing (scrypt skipped on miss), but signup already enumerates emails directly -> hardening note, not a separate finding"
+      }
+    ],
+    "finding_fingerprints": [
+      "owasp-audit/CWE-307/src/routes/users.js/POST-login"
+    ],
+    "unresolved": []
+  },
+  {
+    "id": "src/routes/users.js@POST/signup:anonymous-to-credential-strength:A07",
+    "surface": "POST /api/users/signup",
+    "boundary": "anonymous -> weak credentials for other users",
+    "owasp_category": "A07:2025",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/routes/users.js"
+    ],
+    "checks": [
+      {
+        "invariant": "password policy enforced server-side",
+        "method": "read users.js:9",
+        "result": "fails without a separate traced impact: only an 8-char minimum (users.js:9), no complexity or breached-password check, and no type check (an 8-element array passes the length test, then scrypt throws a 500). Weak passwords are the precondition of the CWE-307 finding; no separate record"
+      }
+    ],
+    "finding_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "id": "src/app.js@GET/healthz:anonymous:A01",
+    "surface": "GET /healthz",
+    "boundary": "anonymous -> app",
+    "owasp_category": "A01:2025",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/app.js"
+    ],
+    "checks": [
+      {
+        "invariant": "health check exposes nothing sensitive",
+        "method": "read app.js:12",
+        "result": "holds: returns the literal 'ok'"
+      }
+    ],
+    "finding_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "id": "src/app.js@express.json:anonymous-to-process:A06",
+    "surface": "express.json body parser (all routes)",
+    "boundary": "anonymous -> process memory/CPU",
+    "owasp_category": "A06:2025",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/app.js",
+      "src/routes/notes.js",
+      "src/routes/users.js",
+      "src/routes/preview.js"
+    ],
+    "checks": [
+      {
+        "invariant": "request parsers have explicit limits",
+        "method": "read app.js parser setup; grepped for urlencoded/multer/busboy",
+        "result": "holds: express.json limit 100kb (app.js:5); no urlencoded or multipart parser mounted; no uploads"
+      }
+    ],
+    "finding_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "id": "src/app.js@query-parser:anonymous-to-process:A03",
+    "surface": "Express default (qs) query parser on every request",
+    "boundary": "anonymous -> process availability",
+    "owasp_category": "A03:2025",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/app.js",
+      "package-lock.json",
+      "package.json"
+    ],
+    "checks": [
+      {
+        "invariant": "the query parser in use has no known pre-auth DoS",
+        "method": "lockfile read: express 4.17.1 -> qs 6.7.0 (package-lock.json:346, :821); no 'query parser' override",
+        "result": "undecided: depends on library code and advisory data not available offline -> needs_validation"
+      }
+    ],
+    "finding_fingerprints": [
+      "owasp-audit/CVE-2022-24999/package-lock.json/qs"
+    ],
+    "unresolved": []
+  },
+  {
+    "id": "src/app.js@error-handler:client-to-server-internals:A02",
+    "surface": "global error middleware (all routes)",
+    "boundary": "any client (incl. anonymous) -> server internals",
+    "owasp_category": "A02:2025",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/app.js",
+      "src/routes/users.js",
+      "src/routes/preview.js",
+      "src/db.js"
+    ],
+    "checks": [
+      {
+        "invariant": "errors return a generic message without stack",
+        "method": "read app.js:15-18; found anonymous throw paths (duplicate signup users.js:10, malformed JSON app.js:5)",
+        "result": "fails: message + stack returned to anyone -> confirmed CWE-209 (low)"
+      }
+    ],
+    "finding_fingerprints": [
+      "owasp-audit/CWE-209/src/app.js/error-handler"
+    ],
+    "unresolved": []
+  },
+  {
+    "id": "src/app.js@error-handler:exceptional-conditions:A10",
+    "surface": "error paths in all handlers",
+    "boundary": "any client -> availability / fail-open",
+    "owasp_category": "A10:2025",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/app.js",
+      "src/auth.js",
+      "src/routes/preview.js",
+      "src/routes/notes.js",
+      "src/routes/users.js",
+      "src/routes/admin.js"
+    ],
+    "checks": [
+      {
+        "invariant": "auth checks fail closed on error",
+        "method": "read requireAuth try/catch and requireAdmin",
+        "result": "holds: verify throw -> 401 (auth.js:30-31); missing/non-admin row -> 403 (auth.js:37)"
+      },
+      {
+        "invariant": "async rejections cannot crash the process",
+        "method": "looked for async handlers without try/catch",
+        "result": "holds: only preview.js is async and it wraps everything in try/next(err) (preview.js:9-17); all other handlers are sync, which Express 4 catches"
+      },
+      {
+        "invariant": "multi-step writes are atomic",
+        "method": "read admin DELETE",
+        "result": "fails without traced impact: two deletes outside a transaction (admin.js:13-14), admin-only -> hardening note"
+      }
+    ],
+    "finding_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "id": "src/config.js@jwtSecret:deploy-env-to-token-forgery:A04",
+    "surface": "JWT signing secret (config)",
+    "boundary": "deploy environment / anonymous -> any account",
+    "owasp_category": "A04:2025",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/config.js",
+      "src/auth.js",
+      ".env.example",
+      "src/app.js",
+      "package.json"
+    ],
+    "checks": [
+      {
+        "invariant": "the signing secret has no usable default and is asserted at startup",
+        "method": "read config.js, auth.js, app.js; grepped for JWT_SECRET and dotenv",
+        "result": "fails: falls back to \"changeme\" (config.js:5), .env.example:3 blank, no startup check -> confirmed CWE-321 (high)"
+      }
+    ],
+    "finding_fingerprints": [
+      "owasp-audit/CWE-321/src/config.js/jwtSecret"
+    ],
+    "unresolved": []
+  },
+  {
+    "id": "src/auth.js@requireAuth:anonymous-to-user:A07",
+    "surface": "requireAuth middleware",
+    "boundary": "anonymous -> authenticated user",
+    "owasp_category": "A07:2025",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/auth.js",
+      "src/config.js",
+      "package-lock.json"
+    ],
+    "checks": [
+      {
+        "invariant": "unsigned or wrongly signed tokens are rejected",
+        "method": "read requireAuth; checked CVE-2022-23540 precondition (falsy secret) against config.js:5",
+        "result": "holds: secret is always truthy; verify failure -> 401. alg:none candidate closed as rejected; missing algorithms allow-list is a hardening note"
+      },
+      {
+        "invariant": "requireAuth is mounted on every non-public router",
+        "method": "read app.js mounts and each router",
+        "result": "holds: notes.js:7, preview.js:8, admin.js:6; users router and /healthz are intentionally public"
+      }
+    ],
+    "finding_fingerprints": [
+      "owasp-audit/CWE-347/src/auth.js/requireAuth-algorithms"
+    ],
+    "unresolved": []
+  },
+  {
+    "id": "src/auth.js@requireAuth:cross-site-to-user:A01",
+    "surface": "all state-changing routes",
+    "boundary": "attacker web origin -> victim's session",
+    "owasp_category": "A01:2025",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/auth.js",
+      "src/app.js",
+      "src/routes/notes.js",
+      "src/routes/admin.js",
+      "src/routes/users.js"
+    ],
+    "checks": [
+      {
+        "invariant": "no ambient credential a cross-site request could ride",
+        "method": "read requireAuth token source; grepped for cookie/session/res.cookie",
+        "result": "holds: Bearer header only (auth.js:23-25); no cookies anywhere. CSRF candidate closed as rejected"
+      }
+    ],
+    "finding_fingerprints": [
+      "owasp-audit/CWE-352/src/app.js/state-changing-routes"
+    ],
+    "unresolved": []
+  },
+  {
+    "id": "src/auth.js@hashPassword:password-storage:A04",
+    "surface": "password hashing",
+    "boundary": "database read -> plaintext passwords",
+    "owasp_category": "A04:2025",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/auth.js"
+    ],
+    "checks": [
+      {
+        "invariant": "passwords stored with a salted slow KDF",
+        "method": "read hashPassword/checkPassword",
+        "result": "holds: scrypt + per-user random salt (auth.js:6-8); Node default cost below OWASP scrypt minimum -> hardening note"
+      }
+    ],
+    "finding_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "id": "src/routes/notes.js@GET/:user-to-other-users-notes:A01",
+    "surface": "GET /api/notes",
+    "boundary": "user -> other users' notes",
+    "owasp_category": "A01:2025",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/routes/notes.js"
+    ],
+    "checks": [
+      {
+        "invariant": "list is scoped to the caller",
+        "method": "read notes.js:12-16",
+        "result": "holds: WHERE owner_id = ? bound to req.user.id (notes.js:15)"
+      }
+    ],
+    "finding_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "id": "src/routes/notes.js@GET/:user-to-db:A05",
+    "surface": "GET /api/notes?sort=",
+    "boundary": "user -> database",
+    "owasp_category": "A05:2025",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/routes/notes.js"
+    ],
+    "checks": [
+      {
+        "invariant": "sort input cannot reach SQL text",
+        "method": "read SORT_COLUMNS lookup; reasoned array/object/inherited-key inputs",
+        "result": "holds while Object.prototype is unpolluted: allow-list map (notes.js:9, :13-14); inherited keys only yield a syntax-error 500. Candidate closed as rejected; the rejection is conditional on the open prototype-pollution needs_validation record (a polluted prototype string would be interpolated at notes.js:15)"
+      }
+    ],
+    "finding_fingerprints": [
+      "owasp-audit/CWE-89/src/routes/notes.js/GET-list-sort"
+    ],
+    "unresolved": []
+  },
+  {
+    "id": "src/routes/notes.js@GET/search:user-to-db:A05",
+    "surface": "GET /api/notes/search?q=",
+    "boundary": "user -> database / other users' data",
+    "owasp_category": "A05:2025",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/routes/notes.js",
+      "src/db.js"
+    ],
+    "checks": [
+      {
+        "invariant": "search input is bound, not interpolated",
+        "method": "read notes.js:20-24",
+        "result": "fails: q and req.user.id interpolated into SQL (notes.js:22) -> confirmed CWE-89 (high)"
+      }
+    ],
+    "finding_fingerprints": [
+      "owasp-audit/CWE-89/src/routes/notes.js/GET-search"
+    ],
+    "unresolved": []
+  },
+  {
+    "id": "src/routes/notes.js@GET/:id:user-to-other-users-note:A01",
+    "surface": "GET /api/notes/:id",
+    "boundary": "user -> another user's note",
+    "owasp_category": "A01:2025",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/routes/notes.js",
+      "src/db.js"
+    ],
+    "checks": [
+      {
+        "invariant": "note is loaded with owner_id = caller (or shared) before returning",
+        "method": "read handler; compared with sibling PATCH/DELETE predicates",
+        "result": "fails: WHERE id = ? only (notes.js:28); shared flag unused -> confirmed CWE-639 (high)"
+      }
+    ],
+    "finding_fingerprints": [
+      "owasp-audit/CWE-639/src/routes/notes.js/GET-note-by-id"
+    ],
+    "unresolved": []
+  },
+  {
+    "id": "src/routes/notes.js@POST/:user-to-other-user:A01",
+    "surface": "POST /api/notes",
+    "boundary": "user -> another user's account",
+    "owasp_category": "A01:2025",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/routes/notes.js"
+    ],
+    "checks": [
+      {
+        "invariant": "new note's owner comes from the session, not the body",
+        "method": "read notes.js:33-37",
+        "result": "holds: only title/body taken from body; owner_id = req.user.id (notes.js:35)"
+      }
+    ],
+    "finding_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "id": "src/routes/notes.js@PATCH/:id:user-to-other-users-note:A01",
+    "surface": "PATCH /api/notes/:id",
+    "boundary": "user -> another user's note",
+    "owasp_category": "A01:2025",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/routes/notes.js",
+      "src/db.js"
+    ],
+    "checks": [
+      {
+        "invariant": "the UPDATE targets only the ownership-checked row and cannot change owner_id",
+        "method": "read check (notes.js:41), merge (:43) and UPDATE binding (:44-45)",
+        "result": "fails: merge lets the body overwrite id and owner_id -> confirmed CWE-915 (high)"
+      }
+    ],
+    "finding_fingerprints": [
+      "owasp-audit/CWE-915/src/routes/notes.js/PATCH-note"
+    ],
+    "unresolved": []
+  },
+  {
+    "id": "src/routes/notes.js@PATCH/:id:user-to-process:A08",
+    "surface": "PATCH /api/notes/:id (_.merge)",
+    "boundary": "user -> process-wide object prototype",
+    "owasp_category": "A08:2025",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/routes/notes.js",
+      "src/app.js",
+      "package-lock.json",
+      "src/auth.js"
+    ],
+    "checks": [
+      {
+        "invariant": "untrusted keys cannot reach Object.prototype",
+        "method": "read merge call; lodash 4.17.15 pinned; looked for inherited-property gadgets",
+        "result": "undecided: lodash internals not vendored -> needs_validation. Gadget search: requireAdmin reads an own DB property (no gadget); SORT_COLUMNS[req.query.sort] at notes.js:13 reads inherited keys, so a polluted string would reach ORDER BY at notes.js:15 (pollution -> SQLi chain if the blocker resolves to confirmed)"
+      }
+    ],
+    "finding_fingerprints": [
+      "owasp-audit/CWE-1321/src/routes/notes.js/PATCH-note-merge"
+    ],
+    "unresolved": []
+  },
+  {
+    "id": "src/routes/notes.js@DELETE/:id:user-to-other-users-note:A01",
+    "surface": "DELETE /api/notes/:id",
+    "boundary": "user -> another user's note",
+    "owasp_category": "A01:2025",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/routes/notes.js"
+    ],
+    "checks": [
+      {
+        "invariant": "delete is scoped to the caller",
+        "method": "read notes.js:49-53",
+        "result": "holds: WHERE id = ? AND owner_id = ? (notes.js:50), 0 changes -> 404. Candidate closed as rejected"
+      }
+    ],
+    "finding_fingerprints": [
+      "owasp-audit/CWE-639/src/routes/notes.js/DELETE-note"
+    ],
+    "unresolved": []
+  },
+  {
+    "id": "src/routes/notes.js@all:stored-content-rendering:A05",
+    "surface": "note title/body and preview title in responses",
+    "boundary": "user -> other users' browsers (stored XSS)",
+    "owasp_category": "A05:2025",
+    "status": "not_applicable",
+    "reviewed_paths": [
+      "src/routes/notes.js",
+      "src/routes/preview.js",
+      "src/app.js"
+    ],
+    "checks": [
+      {
+        "invariant": "no HTML sink in this repo renders stored content",
+        "method": "read every response call",
+        "result": "holds: all responses are res.json (application/json) except the literal 'ok' at app.js:12; no templates or HTML. Rendering in a frontend is out of scope (separate unit)"
+      }
+    ],
+    "finding_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "id": "src/routes/preview.js@POST:user-to-internal-network:A01",
+    "surface": "POST /api/preview",
+    "boundary": "user -> server's internal network",
+    "owasp_category": "A01:2025",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/routes/preview.js",
+      "src/app.js",
+      "src/config.js",
+      ".env.example",
+      "package-lock.json"
+    ],
+    "checks": [
+      {
+        "invariant": "outbound fetch is restricted to allowed public destinations",
+        "method": "read URL validation and axios call; checked the A01 SSRF bypass set against the regex by reading",
+        "result": "fails: scheme-only regex (preview.js:11) -> confirmed CWE-918 (medium); read-back is limited to <title> plus the error channel (preview.js:16 -> app.js:17 returns connection-refused/timeout/status text), i.e. a host/port-scan oracle, already in the record's evidence and impact; no body read-back, so credential theft is not shown and impact stays medium"
+      },
+      {
+        "invariant": "redirects and timeouts are bounded",
+        "method": "read axios options",
+        "result": "fails: timeout 5s and 1MB cap are set, but redirects are not restricted (no maxRedirects/beforeRedirect; relies on axios 0.21.0 defaults, not read). Doesn't change the confirmed SSRF, since IP literals pass directly"
+      }
+    ],
+    "finding_fingerprints": [
+      "owasp-audit/CWE-918/src/routes/preview.js/POST-preview"
+    ],
+    "unresolved": []
+  },
+  {
+    "id": "package-lock.json@axios:user-to-internal-network:A03",
+    "surface": "axios 0.21.0 used by POST /api/preview",
+    "boundary": "user -> internal network via a vulnerable dependency",
+    "owasp_category": "A03:2025",
+    "status": "covered",
+    "reviewed_paths": [
+      "package-lock.json",
+      "package.json",
+      "src/routes/preview.js"
+    ],
+    "checks": [
+      {
+        "invariant": "runtime-reachable dependencies carry no known critical advisory",
+        "method": "lockfile read: axios 0.21.0 with npm deprecation 'Critical security vulnerability fixed in v0.21.1' (package-lock.json:41); reachable at preview.js:12",
+        "result": "undecided: impact depends on an egress proxy that the repo doesn't show -> needs_validation"
+      }
+    ],
+    "finding_fingerprints": [
+      "owasp-audit/CVE-2020-28168/package-lock.json/axios"
+    ],
+    "unresolved": []
+  },
+  {
+    "id": "src/routes/admin.js@all:user-to-admin:A01",
+    "surface": "GET /api/admin/users, DELETE /api/admin/users/:id",
+    "boundary": "user -> admin",
+    "owasp_category": "A01:2025",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/routes/admin.js",
+      "src/auth.js",
+      "src/routes/users.js",
+      "src/routes/notes.js",
+      "src/db.js"
+    ],
+    "checks": [
+      {
+        "invariant": "admin role is checked server-side from a source the user can't set",
+        "method": "read requireAdmin and every write to users",
+        "result": "holds: role read from DB per request (auth.js:36-37), mounted on the router (admin.js:6); no path writes users.role. Candidate closed as rejected"
+      }
+    ],
+    "finding_fingerprints": [
+      "owasp-audit/CWE-285/src/routes/admin.js/admin-role-check"
+    ],
+    "unresolved": []
+  },
+  {
+    "id": "src/routes/admin.js@all:admin-actions-logging:A09",
+    "surface": "admin and auth events",
+    "boundary": "insider / compromised account -> undetected actions",
+    "owasp_category": "A09:2025",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/app.js",
+      "src/routes/admin.js",
+      "src/routes/users.js"
+    ],
+    "checks": [
+      {
+        "invariant": "auth and admin events are logged and alertable",
+        "method": "grepped for console/log calls",
+        "result": "fails without traced impact: only console.error(err) at app.js:16 -> hardening note"
+      },
+      {
+        "invariant": "no secrets or passwords written to logs",
+        "method": "read the only log call",
+        "result": "holds: console.error(err) logs the error object; no request bodies or tokens logged"
+      }
+    ],
+    "finding_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "id": "secrets@.env.example:repo-reader-to-cloud:A04",
+    "surface": ".env.example and src/ secret sweep",
+    "boundary": "repo reader -> cloud / third-party accounts",
+    "owasp_category": "A04:2025",
+    "status": "covered",
+    "reviewed_paths": [
+      ".env.example",
+      "src/config.js",
+      "src/**/*.js",
+      "package.json",
+      "package-lock.json"
+    ],
+    "checks": [
+      {
+        "invariant": "no live credentials in the repo",
+        "method": "grepped for AKIA, sk_, ghp_, secret, password; read .env.example",
+        "result": "holds: AWS values are AWS's published doc placeholders and unused (candidate closed as rejected); the only real issue is the JWT fallback (separate unit)"
+      }
+    ],
+    "finding_fingerprints": [
+      "owasp-audit/CWE-798/.env.example/AWS_ACCESS_KEY_ID"
+    ],
+    "unresolved": []
+  },
+  {
+    "id": "src/app.js@headers-cors:browser-origin:A02",
+    "surface": "HTTP response headers and CORS",
+    "boundary": "other web origins -> API responses",
+    "owasp_category": "A02:2025",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/app.js",
+      "package.json"
+    ],
+    "checks": [
+      {
+        "invariant": "cross-origin reads of authenticated responses are not allowed",
+        "method": "grepped for cors / Access-Control",
+        "result": "holds: no CORS middleware, so browsers block cross-origin reads; Bearer auth means no ambient credentials"
+      },
+      {
+        "invariant": "baseline security headers set",
+        "method": "grepped for helmet / setHeader",
+        "result": "fails without traced impact (JSON-only API, no HTML sink) -> hardening note"
+      }
+    ],
+    "finding_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "id": "repo@source-tree-hygiene:A02",
+    "surface": "source tree",
+    "boundary": "reviewer -> stale vulnerable copies",
+    "owasp_category": "A02:2025",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/**",
+      "package.json",
+      "package-lock.json",
+      ".env.example",
+      "README.md"
+    ],
+    "checks": [
+      {
+        "invariant": "no sync-conflict duplicates or dead copies of route files",
+        "method": "find for '* 2.*', '*.orig', '*~', '*.bak'",
+        "result": "holds: none found"
+      }
+    ],
+    "finding_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "id": "package-lock.json@full-advisory-sweep:A03",
+    "surface": "all dependencies (npm audit, install scripts, typosquats)",
+    "boundary": "registry / build -> runtime",
+    "owasp_category": "A03:2025",
+    "status": "out_of_scope",
+    "reviewed_paths": [
+      "package-lock.json",
+      "package.json"
+    ],
+    "checks": [
+      {
+        "invariant": "full known-advisory picture",
+        "method": "not run: npm audit needs network, which the engagement excluded",
+        "result": "out of scope for this run; hand to dependency-audit. Noted while reading: better-sqlite3 has an install script (package-lock.json:71, prebuild-install); express 4.17.1 / body-parser 1.19.0 / jsonwebtoken 8.5.1 / lodash 4.17.15 are old pins whose other advisories need reachability triage"
+      }
+    ],
+    "finding_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "id": "frontend@rendering:user-to-other-users-browser:A05",
+    "surface": "any frontend that renders notes or preview titles",
+    "boundary": "user -> other users' browsers",
+    "owasp_category": "A05:2025",
+    "status": "out_of_scope",
+    "reviewed_paths": [],
+    "checks": [],
+    "finding_fingerprints": [],
+    "unresolved": [
+      "No frontend is in the repo. Note titles/bodies and fetched page titles are attacker-controlled; whoever renders them must escape them"
+    ]
+  },
+  {
+    "id": "runtime@dynamic-validation:all",
+    "surface": "running instance",
+    "boundary": "all",
+    "owasp_category": null,
+    "status": "out_of_scope",
+    "reviewed_paths": [],
+    "checks": [],
+    "finding_fingerprints": [],
+    "unresolved": [
+      "Static, read-only review by agreement: the app was not run, so no finding is reproduced and confirmed confidence is capped at medium"
+    ]
+  },
+  {
+    "id": "src/routes/notes.js@all-bound-queries:user-admin-to-db:A05",
+    "surface": "remaining db.prepare sinks: notes.js:28, :35, :41, :44-45, :50; admin.js:9, :13, :14; auth.js:36",
+    "boundary": "user/admin -> database",
+    "owasp_category": "A05:2025",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/routes/notes.js",
+      "src/routes/admin.js",
+      "src/auth.js"
+    ],
+    "checks": [
+      {
+        "invariant": "every other SQL statement binds its input",
+        "method": "read each db.prepare call outside users.js and the list/search routes",
+        "result": "holds: all use ? placeholders with .get/.run arguments; the only string-built SQL is notes.js:15 (allow-listed) and notes.js:22 (confirmed CWE-89)"
+      }
+    ],
+    "finding_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "id": "src/routes/preview.js@POST:volume-abuse:A06",
+    "surface": "POST /api/users/signup, POST /api/preview, POST /api/notes",
+    "boundary": "any (self-registered) user -> server CPU, outbound bandwidth, disk",
+    "owasp_category": "A06:2025",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/routes/users.js",
+      "src/routes/preview.js",
+      "src/routes/notes.js",
+      "src/app.js"
+    ],
+    "checks": [
+      {
+        "invariant": "costly operations are rate- or quota-limited",
+        "method": "searched for limiters and per-user quotas",
+        "result": "fails without traced impact: signup (scrypt per call), preview (outbound fetch up to 5s / 1MB each) and note creation are unlimited. No metered third-party cost is involved, so this is a hardening note; the preview fetch's security impact is the confirmed CWE-918"
+      }
+    ],
+    "finding_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "id": "src/app.js@listen:network-path-to-credentials:A04",
+    "surface": "app.listen plain HTTP (app.js:20) carrying passwords and Bearer tokens",
+    "boundary": "network path -> credentials in transit",
+    "owasp_category": "A04:2025",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/app.js",
+      "src/config.js"
+    ],
+    "checks": [
+      {
+        "invariant": "credentials only travel over TLS",
+        "method": "read app.listen and config; looked for https, HSTS, trust proxy",
+        "result": "not decidable from the repo: the app speaks plain HTTP and TLS, if any, terminates in front of it (deployment). No traced impact in code -> hardening note with an owner check (confirm HTTPS-only + HSTS at the edge)"
+      }
+    ],
+    "finding_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "id": "src/auth.js@requireAuth:deleted-user-to-live-account:A07",
+    "surface": "requireAuth + DELETE /api/admin/users/:id + POST /api/users/signup (token lifecycle)",
+    "boundary": "deleted or former user -> another live account",
+    "owasp_category": "A07:2025",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/auth.js",
+      "src/config.js",
+      "src/db.js",
+      "src/routes/admin.js",
+      "src/routes/users.js",
+      "src/routes/notes.js"
+    ],
+    "checks": [
+      {
+        "invariant": "a token stops working when its user is deleted, and cannot be re-bound to a different account",
+        "method": "read requireAuth (no user lookup), token lifetime, admin delete and users.id definition",
+        "result": "fails: requireAuth trusts claims.sub without a user lookup (auth.js:28); 7-day tokens with no revocation (config.js:6); ids are reusable (db.js:8) -> confirmed CWE-613 (low, unlikely preconditions)"
+      }
+    ],
+    "finding_fingerprints": [
+      "owasp-audit/CWE-613/src/auth.js/requireAuth-user-id-reuse"
+    ],
+    "unresolved": []
+  }
+]

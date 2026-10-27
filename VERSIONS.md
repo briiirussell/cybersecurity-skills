@@ -5,12 +5,12 @@ Current versions of all skills. Agents can compare against local versions to che
 | Skill | Version | Last Updated |
 |-------|---------|--------------|
 | agent-supply-chain-audit | 1.0.1 | 2026-10-26 |
-| ai-risk-management | 1.1.1 | 2026-10-26 |
-| api-audit | 1.1.3 | 2026-10-26 |
+| ai-risk-management | 1.1.2 | 2026-10-26 |
+| api-audit | 1.1.4 | 2026-10-26 |
 | breach-patterns | 1.0.4 | 2026-10-26 |
-| business-logic-testing | 1.0.1 | 2026-10-26 |
-| cloud-audit | 1.1.2 | 2026-10-26 |
-| container-audit | 1.0.2 | 2026-10-26 |
+| business-logic-testing | 1.0.2 | 2026-10-26 |
+| cloud-audit | 1.1.3 | 2026-10-26 |
+| container-audit | 1.0.3 | 2026-10-26 |
 | crypto-audit | 1.0.3 | 2026-10-26 |
 | csf-mapping | 1.0.2 | 2026-10-26 |
 | dependency-audit | 1.2.2 | 2026-10-26 |
@@ -22,11 +22,11 @@ Current versions of all skills. Agents can compare against local versions to che
 | log-watch | 1.0.1 | 2026-10-26 |
 | mobile-audit | 1.0.1 | 2026-10-26 |
 | osint-recon | 1.0.2 | 2026-10-26 |
-| owasp-audit | 1.3.0 | 2026-10-26 |
+| owasp-audit | 1.3.1 | 2026-10-26 |
 | patch-sweep | 1.0.2 | 2026-10-26 |
 | pci-audit | 1.0.3 | 2026-10-26 |
 | personal-opsec | 1.0.1 | 2026-10-26 |
-| privacy-engineering | 1.0.3 | 2026-10-26 |
+| privacy-engineering | 1.0.4 | 2026-10-26 |
 | prompt-injection | 1.1.3 | 2026-10-26 |
 | recon | 1.0.1 | 2026-10-26 |
 | red-team-engagement | 1.0.1 | 2026-10-26 |
@@ -37,10 +37,108 @@ Current versions of all skills. Agents can compare against local versions to che
 | soc-operations | 1.0.4 | 2026-10-26 |
 | threat-hunting | 1.0.4 | 2026-10-26 |
 | threat-modeling | 1.0.4 | 2026-10-26 |
-| vuln-research | 1.0.2 | 2026-10-26 |
+| vuln-research | 1.0.3 | 2026-10-26 |
 | web-pentest | 1.1.3 | 2026-10-26 |
 
 ## Recent Changes
+
+### 1.24.0 (2026-10-26)
+
+**Changed**
+- `templates/skill-template.md` now matches how the skills are written (#128). It adds:
+  - a `Cross-references:` line, and `## When to use` with a **Not for:** list of near-misses and their owners (which double as trigger-eval near-misses)
+  - a skill-specific `## Authorization` section
+  - a "Verify, then record" step for the shared findings format: verdicts, verification, severity calibration, `findings.json`, validation, SARIF, dispositions, and the `shared/manifest.json` entries to add
+  - `allowed-tools` guidance in the frontmatter comments
+  - the standard section order: `## Output Format`, `## Boundaries`, `## References`
+  - a closing checklist for trigger prompts, issue-form dropdowns, README and versions
+- Section names are now the same everywhere:
+  - `## Report Format` → `## Output Format` in owasp-audit, api-audit and container-audit
+  - `## Output format` → `## Output Format` in ai-risk-management and privacy-engineering
+  - `## References & Sources` → `## References` in api-audit
+  - `## Refusal boundaries` / `## Sources` → `## Boundaries` / `## References` in business-logic-testing
+  - cross-references to "owasp-audit's Report Format" updated in cloud-audit, privacy-engineering and vuln-research
+
+**Added**
+- Lint errors for a skill without `## Boundaries` or `## References`, and for an output section spelled anything but `## Output Format`. Self-tests cover both. CLAUDE.md and CONTRIBUTING describe the standard sections.
+
+### 1.23.8 (2026-10-26)
+
+**Added**
+- Worked examples (#127):
+  - `examples/target/` is notes-api, a small deliberately vulnerable Express API with planted bugs and a real vulnerable lockfile.
+  - `examples/<skill>/` holds one real run each of owasp-audit, api-audit, dependency-audit, secrets-audit and finding-triage: the rendered report, `findings.json`, SARIF from `to-sarif.mjs`, and the coverage ledger where the skill keeps one. dependency-audit also includes its raw `npm audit --json` output.
+  - Each run was a separate agent following the skill as written, static and read-only.
+- [examples/README.md](examples/README.md) summarizes the runs and what's worth noticing. For example, the same hard-coded JWT default came out critical in api-audit, high in owasp-audit and needs-validation in secrets-audit.
+- The rough edges each run hit are filed as #159.
+- `scripts/test/examples.test.mjs` checks every example's `findings.json` and `coverage.json` with the shared validators. It also checks that each cited file and line exists in the target and that the committed SARIF matches a fresh conversion, so the examples double as format regression fixtures.
+- The five skills' README rows link to their example run.
+
+### 1.23.7 (2026-10-26)
+
+**Added**
+- Issue forms (#126) in `.github/ISSUE_TEMPLATE/`:
+  - **Field report:** skill, version, what it ran against, what it missed, false positives, suggested change, agent. Redaction is called out.
+  - **Skill request:** problem, overlap with existing skills, example prompts for the trigger eval, outline, and a scope checkbox.
+  - **Skill bug**
+  - **Trophy case:** a real bug found with these skills, with an optional public link.
+  - `config.yml` sends security reports to private vulnerability reporting.
+- A new `trophy-case` label.
+- PR templates:
+  - a default for tooling and docs
+  - `new-skill.md` and `skill-update.md`, which turn the CONTRIBUTING checklist into checkboxes: authorization section, scoped grants, findings format and manifest, trigger prompts, README row/map/crossover, back-references, version bumps, adapters, `npm run check`, SkillSpector
+- `scripts/test/repo-templates.test.mjs` fails when an issue form's skill dropdown drifts from `skills/`.
+- CONTRIBUTING, CLAUDE.md and the README link to the forms and templates.
+
+### 1.23.6 (2026-10-26)
+
+**Added**
+- `SECURITY.md` (#125). It explains how to report privately through GitHub private vulnerability reporting, which is now turned on, and sets response targets. It also says what counts as a vulnerability in a skills repo:
+  - over-broad `allowed-tools` grants
+  - instructions that skip the authorization check or send data out
+  - prompt injection or hidden Unicode in skill content
+  - the plugin manifests, build and workflows
+  - the bundled scripts, when they run on untrusted input
+- It also lists what's out of scope, such as upstream tools, stale advice (that's a field report) and marked example snippets.
+- `.github/CODEOWNERS` requires maintainer review on every path, with `skills/`, `shared/`, `.github/`, `.claude-plugin/` and `scripts/` listed explicitly.
+- The README's security section links to the policy.
+- The Dependabot part of #125 already shipped in v1.23.3.
+
+### 1.23.5 (2026-10-26)
+
+**Added**
+- `claude plugin eval` routing suite (#124). `evals/cases/` holds 11 cases for the skills most likely to collide:
+  - owasp-audit vs api-audit
+  - incident-triage vs finding-triage vs breach-patterns
+  - recon vs osint-recon
+  - secrets-audit vs scanner-pipeline
+  - two everyday coding requests where no security skill should load
+- Each routing case has a `fires-<skill>` grader. It also has `quiet-<rival>` graders that check the rival skills don't load (`min: 0`, `max: 0`, `arm: both`).
+- New **Plugin evals** workflow (`.github/workflows/evals.yml`):
+  - runs on demand, and on pushes to `main` that change a skill or a case
+  - never runs on PRs
+  - pinned model and CLI, 3 runs per case, threshold 0.8, $15 cost ceiling, `--ablation none`, `--no-publish`
+  - uploads the results as an artifact
+  - skips with a notice until the repo has an `ANTHROPIC_API_KEY` secret
+- `.github/scripts/eval-summary.mjs` writes the score table to the run summary. It fails on runs that ended in an API error, because the pinned CLI (before 2.1.299) still grades those.
+- `scripts/test/eval-cases.test.mjs` checks the suite's shape on every PR at no cost: graders name real skills, prompt.md keys are valid, and each routing case has a rival.
+- `evals/results/` is git-ignored. [evals/README.md](evals/README.md) documents the suite and has a results table to record which wordings fire, with model and CLI version.
+
+### 1.23.4 (2026-10-26)
+
+**Added**
+- Offline trigger eval (#123). `evals/triggers/<skill>.json` holds at least 5 prompts that should fire each skill and 5 near-misses, each near-miss naming the skill that should own it instead. Some prompts are casual and some paste code or config. `scripts/eval-triggers.mjs` ranks all 350 prompts against every description with BM25. It needs no dependencies and makes no API calls.
+- A new CI job, **Trigger eval (offline)**, fails when:
+  - fewer than 85% of should-fire prompts rank their skill first
+  - fewer than 90% of near-misses rank their owner above the skill
+  - any skill wins fewer than 3 of its own 5
+  - two descriptions are more than 0.55 similar (TF-IDF cosine)
+  - a skill has no triggers file
+- Current scores:
+  - should-fire top-1 160/175 (91.4%)
+  - near-miss 171/175 (97.7%)
+- [evals/README.md](evals/README.md) explains the numbers, what the proxy can't see, and which misses point at descriptions worth sharpening.
+- `npm run check` runs the trigger eval. CONTRIBUTING, CLAUDE.md and the README's new-skill steps now include writing trigger prompts.
 
 ### 1.23.3 (2026-10-26)
 

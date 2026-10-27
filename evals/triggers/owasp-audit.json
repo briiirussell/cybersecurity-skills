@@ -1,0 +1,32 @@
+{
+  "skill": "owasp-audit",
+  "should_fire": [
+    "do a security review of this codebase",
+    "check this for SQL injection\n```js\napp.get('/user', (req, res) => {\n  db.query(\"SELECT * FROM users WHERE name = '\" + req.query.name + \"'\", (e, r) => res.json(r));\n});\n```",
+    "review this PR for security before I merge it",
+    "find vulnerabilities in my Flask app",
+    "check our code for XSS and SSRF"
+  ],
+  "near_miss": [
+    {
+      "prompt": "check our REST endpoints for BOLA and mass assignment",
+      "owner": "api-audit"
+    },
+    {
+      "prompt": "review our AES-GCM nonce handling",
+      "owner": "crypto-audit"
+    },
+    {
+      "prompt": "test our LLM feature for prompt injection",
+      "owner": "prompt-injection"
+    },
+    {
+      "prompt": "black-box pentest the live site, we're authorized",
+      "owner": "web-pentest"
+    },
+    {
+      "prompt": "run semgrep across all our repos every week",
+      "owner": "scanner-pipeline"
+    }
+  ]
+}

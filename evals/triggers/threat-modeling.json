@@ -1,0 +1,32 @@
+{
+  "skill": "threat-modeling",
+  "should_fire": [
+    "threat model our new file upload feature",
+    "STRIDE this architecture",
+    "what could go wrong with this design before we build it?",
+    "build an attack tree for account takeover",
+    "draw a data flow diagram and find the trust boundaries"
+  ],
+  "near_miss": [
+    {
+      "prompt": "code review for vulnerabilities",
+      "owner": "owasp-audit"
+    },
+    {
+      "prompt": "test the live app for logic flaws and race conditions",
+      "owner": "business-logic-testing"
+    },
+    {
+      "prompt": "AI governance and model risk",
+      "owner": "ai-risk-management"
+    },
+    {
+      "prompt": "audit the API for BOLA",
+      "owner": "api-audit"
+    },
+    {
+      "prompt": "DPIA for the new feature",
+      "owner": "privacy-engineering"
+    }
+  ]
+}

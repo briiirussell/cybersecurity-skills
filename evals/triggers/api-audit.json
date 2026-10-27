@@ -1,0 +1,32 @@
+{
+  "skill": "api-audit",
+  "should_fire": [
+    "review our REST endpoints for BOLA: can user A fetch user B's orders just by changing the id?",
+    "is our GraphQL API open to introspection abuse and deeply nested queries?",
+    "check this for mass assignment\n```js\napp.patch('/api/users/:id', async (req, res) => {\n  await User.update(req.body, { where: { id: req.params.id } });\n  res.json({ ok: true });\n});\n```",
+    "do we have rate limiting on the login and password reset API endpoints?",
+    "audit our API against the OWASP API Security Top 10"
+  ],
+  "near_miss": [
+    {
+      "prompt": "full OWASP Top 10 review of this Rails codebase",
+      "owner": "owasp-audit"
+    },
+    {
+      "prompt": "pentest the live staging web app with Burp, we have written authorization",
+      "owner": "web-pentest"
+    },
+    {
+      "prompt": "can two parallel requests redeem the same gift card twice?",
+      "owner": "business-logic-testing"
+    },
+    {
+      "prompt": "design RBAC roles for our admin panel",
+      "owner": "iam-audit"
+    },
+    {
+      "prompt": "our tokens are signed with AES in ECB mode and a hard-coded key, is the crypto ok?",
+      "owner": "crypto-audit"
+    }
+  ]
+}

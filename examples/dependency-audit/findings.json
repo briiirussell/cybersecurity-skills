@@ -1,0 +1,897 @@
+[
+  {
+    "fingerprint": "dependency-audit/CWE-915/src/routes/notes.js/patchNote",
+    "verdict": "confirmed",
+    "skill": "dependency-audit",
+    "title": "PATCH /api/notes/:id merges the request body into the row with _.merge, letting any user overwrite and take ownership of another user's note",
+    "cwe": "CWE-915",
+    "owasp_category": "API3:2023",
+    "location": {
+      "file": "src/routes/notes.js",
+      "line": 43
+    },
+    "trace": [
+      {
+        "kind": "entrypoint",
+        "file": "src/routes/notes.js",
+        "line": 40,
+        "description": "PATCH /api/notes/:id with a JSON body; any authenticated user (open signup at src/routes/users.js:7)"
+      },
+      {
+        "kind": "propagation",
+        "file": "src/routes/notes.js",
+        "line": 41,
+        "description": "Ownership check loads the caller's own note by req.params.id"
+      },
+      {
+        "kind": "propagation",
+        "file": "src/routes/notes.js",
+        "line": 43,
+        "description": "_.merge(note, req.body) mutates that row object in place, so body keys id and owner_id overwrite note.id and note.owner_id"
+      },
+      {
+        "kind": "sink",
+        "file": "src/routes/notes.js",
+        "line": 45,
+        "description": "UPDATE notes SET owner_id = ?, title = ?, body = ? ... WHERE id = ? runs with updated.owner_id and note.id, both now attacker-chosen"
+      }
+    ],
+    "evidence": [
+      {
+        "file": "src/routes/notes.js",
+        "line": 43,
+        "description": "const updated = _.merge(note, req.body); no allow-list of editable fields"
+      },
+      {
+        "file": "src/routes/notes.js",
+        "line": 45,
+        "description": ".run(updated.owner_id, updated.title, updated.body, updated.shared, note.id)"
+      }
+    ],
+    "counterevidence": "Found while checking the Express 'prototype pollution through lodash.merge' pattern. Prototype pollution itself is ruled out: lodash 4.17.15 merge skips __proto__ and constructor keys (safeGet, lodash.js:6609) and defines __proto__ as an own property (baseAssignValue, lodash.js:2550). The ownership check at line 41 does run, but on req.params.id; the UPDATE uses the post-merge note.id, so the check does not cover the row actually written. Note ids are sequential INTEGER PRIMARY KEYs. Not run: static trace only. This is an application bug, not a dependency advisory; owasp-audit / api-audit would also report it.",
+    "confidence": "medium",
+    "severity": {
+      "likelihood": {
+        "score": "high",
+        "reason": "Any self-registered user; one PATCH with {\"id\": <victim note id>, \"owner_id\": <own id>}; ids are sequential"
+      },
+      "impact": {
+        "score": "high",
+        "reason": "Fully defeats the per-owner write check: overwrites another user's note title/body and moves it into the attacker's account"
+      },
+      "overall": "high"
+    },
+    "conditions": [
+      {
+        "kind": "authentication_level",
+        "description": "Any user account (signup is open)"
+      },
+      {
+        "kind": "data_state",
+        "description": "The attacker needs one note of their own to pass the check at line 41"
+      }
+    ]
+  },
+  {
+    "fingerprint": "dependency-audit/GHSA-27r3-jxmh-p828/package-lock.json/body-parser",
+    "verdict": "confirmed",
+    "skill": "dependency-audit",
+    "title": "body-parser 1.19.0: one unauthenticated compressed request with trailing bytes crashes the process (GHSA-27r3-jxmh-p828)",
+    "cwe": "CWE-248",
+    "location": {
+      "file": "package-lock.json",
+      "line": 104
+    },
+    "trace": [
+      {
+        "kind": "entrypoint",
+        "file": "src/app.js",
+        "line": 5,
+        "description": "express.json() is mounted app-wide before every router, so any client can send a JSON body with Content-Encoding: gzip to any path, no token needed"
+      },
+      {
+        "kind": "propagation",
+        "file": "package-lock.json",
+        "line": 320,
+        "description": "express 4.17.1 provides express.json from its bundled body-parser; the json parser defaults to inflate: true (body-parser lib/types/json.js:56) and pipes req into zlib.createGunzip (lib/read.js:165-167)"
+      },
+      {
+        "kind": "sink",
+        "file": "package-lock.json",
+        "line": 104,
+        "description": "body-parser 1.19.0 (< 1.20.9): per the advisory, trailing bytes after one valid compressed frame reach the finished decoder, which emits an error with no listener; it is re-thrown as an uncaught exception and terminates the process"
+      }
+    ],
+    "evidence": [
+      {
+        "file": "package-lock.json",
+        "line": 104,
+        "description": "node_modules/body-parser resolved to 1.19.0; advisory range < 1.20.9"
+      },
+      {
+        "file": "src/app.js",
+        "line": 5,
+        "description": "express.json({ limit: \"100kb\" }) with no inflate: false"
+      }
+    ],
+    "counterevidence": "Looked for inflate: false (the advisory's workaround) and for anything in front of the parser that rejects Content-Encoding: none in the repo. No process.on('uncaughtException') handler. The app's error middleware (src/app.js:15) cannot catch it because the error is thrown after the response, outside the request chain. Not run: no PoC was executed, the trace is static plus the advisory text.",
+    "confidence": "medium",
+    "severity": {
+      "likelihood": {
+        "score": "high",
+        "reason": "Unauthenticated, one request, any path; parsing runs before routing; the advisory describes the payload shape publicly"
+      },
+      "impact": {
+        "score": "high",
+        "reason": "Terminates the single Node process, so the whole API is down for every user until something restarts it, and the request can be repeated; no data is read or changed"
+      },
+      "overall": "high"
+    },
+    "conditions": [
+      {
+        "kind": "network_routing",
+        "description": "Whatever sits in front of the app in production passes Content-Encoding: gzip request bodies through (most reverse proxies do)"
+      },
+      {
+        "kind": "environmental_dependency",
+        "description": "Outage length depends on the process supervisor; with no restart policy the API stays down"
+      }
+    ]
+  },
+  {
+    "fingerprint": "dependency-audit/GHSA-29mw-wpgm-hmr9/package-lock.json/lodash",
+    "verdict": "rejected",
+    "skill": "dependency-audit",
+    "title": "lodash ReDoS in toNumber, trim and trimEnd (CVE-2020-28500)",
+    "cwe": "CWE-1333",
+    "location": {
+      "file": "package-lock.json",
+      "line": 553
+    },
+    "trace": [],
+    "evidence": [
+      {
+        "file": "src/routes/notes.js",
+        "line": 43,
+        "description": "_.merge is the only lodash call"
+      }
+    ],
+    "counterevidence": "The only lodash use in src/ is _.merge at src/routes/notes.js:43 (imported at :2). The advisory names toNumber, trim and trimEnd; none are called, and merge does not call them on keys or values.",
+    "confidence": "high",
+    "ruled_out_by": {
+      "control": "toNumber / trim / trimEnd are never called",
+      "location": {
+        "file": "src/routes/notes.js",
+        "line": 43
+      }
+    }
+  },
+  {
+    "fingerprint": "dependency-audit/GHSA-35jh-r3h4-6jhm/package-lock.json/lodash",
+    "verdict": "rejected",
+    "skill": "dependency-audit",
+    "title": "lodash _.template code injection via variable option and imports key names (CVE-2021-23337, CVE-2026-4800)",
+    "cwe": "CWE-94",
+    "location": {
+      "file": "package-lock.json",
+      "line": 553
+    },
+    "trace": [],
+    "evidence": [
+      {
+        "file": "src/routes/notes.js",
+        "line": 43,
+        "description": "_.merge is the only lodash call"
+      }
+    ],
+    "counterevidence": "The only lodash use in src/ is _.merge at src/routes/notes.js:43 (imported at :2). Both advisories are in _.template, which is never called.",
+    "confidence": "high",
+    "ruled_out_by": {
+      "control": "_.template is never called",
+      "location": {
+        "file": "src/routes/notes.js",
+        "line": 43
+      }
+    }
+  },
+  {
+    "fingerprint": "dependency-audit/GHSA-3p68-rc4w-qgx5/package-lock.json/axios",
+    "verdict": "needs_validation",
+    "skill": "dependency-audit",
+    "title": "axios 0.21.0: NO_PROXY matching is a literal string compare (GHSA-3p68-rc4w-qgx5, GHSA-m7pr-hjqh-92cm, GHSA-pmwg-cvhr-8vh7, GHSA-pjwm-pj3p-43mv)",
+    "cwe": "CWE-918",
+    "location": {
+      "file": "package-lock.json",
+      "line": 37
+    },
+    "trace": [
+      {
+        "kind": "entrypoint",
+        "file": "src/routes/preview.js",
+        "line": 10,
+        "description": "POST /api/preview: any authenticated user supplies url, including forms like localhost., [::1], 127.0.0.2 or [::ffff:7f00:1]"
+      },
+      {
+        "kind": "sink",
+        "file": "src/routes/preview.js",
+        "line": 12,
+        "description": "axios.get(url); 0.21.0 compares parsed.hostname to each NO_PROXY entry by string (lib/adapters/http.js:105-125)"
+      }
+    ],
+    "evidence": [],
+    "counterevidence": "All four advisories need both a proxy env var and NO_PROXY to be set. Their effect is that a request the operator meant to send direct goes through the proxy instead, so the impact depends on what that proxy can reach. The app already lets the caller choose any host, so these only add something if the deployment uses NO_PROXY routing as part of its egress policy.",
+    "confidence": "low",
+    "blockers": [
+      "Is HTTP_PROXY / HTTPS_PROXY (or http_proxy / https_proxy) set in the production environment? axios 0.21.0 reads them in lib/adapters/http.js:99-145 when config.proxy is unset, and neither src/ nor .env.example sets them.",
+      "Is NO_PROXY / no_proxy set, and does the egress policy depend on it?"
+    ],
+    "validation_plan": "Check the production env for *_proxy and no_proxy. If either is missing, reject this record. If both are set, from staging POST /api/preview with http://localhost.:<port>/ and http://[::ffff:7f00:1]/ and check the proxy logs for those requests."
+  },
+  {
+    "fingerprint": "dependency-audit/GHSA-43fc-jf86-j433/package-lock.json/axios",
+    "verdict": "rejected",
+    "skill": "dependency-audit",
+    "title": "axios mergeConfig crashes on an own __proto__ key in a config object (CVE-2026-25639)",
+    "cwe": "CWE-1321",
+    "location": {
+      "file": "package-lock.json",
+      "line": 37
+    },
+    "trace": [],
+    "evidence": [
+      {
+        "file": "src/routes/preview.js",
+        "line": 12,
+        "description": "config is the literal { timeout: 5000, maxContentLength: 1_000_000 }"
+      }
+    ],
+    "counterevidence": "The advisory needs an attacker-supplied config object (e.g. from JSON.parse) passed to axios. The only axios call passes a string url and a literal config; nothing from req.body is spread into it. No axios.create or axios.request elsewhere in src/.",
+    "confidence": "high",
+    "ruled_out_by": {
+      "control": "Request config is a hard-coded literal; only the url string comes from the request",
+      "location": {
+        "file": "src/routes/preview.js",
+        "line": 12
+      }
+    }
+  },
+  {
+    "fingerprint": "dependency-audit/GHSA-4mjr-xmp4-gh2g/package-lock.json/qs",
+    "verdict": "rejected",
+    "skill": "dependency-audit",
+    "title": "qs.stringify throws on a parsed value with a non-callable constructor.isBuffer (CVE-2026-82417)",
+    "cwe": "CWE-248",
+    "location": {
+      "file": "package-lock.json",
+      "line": 820
+    },
+    "trace": [],
+    "evidence": [
+      {
+        "file": "src/routes/notes.js",
+        "line": 21,
+        "description": "req.query values are only read as strings"
+      }
+    ],
+    "counterevidence": "Express does call qs.parse with allowPrototypes: true, so the hostile shape can be produced. But the crash needs that value fed to qs.stringify. Nothing in src/ imports qs or re-serializes req.query, and the axios call takes a string url with no params.",
+    "confidence": "high",
+    "ruled_out_by": {
+      "control": "Parsed query objects are never passed to qs.stringify",
+      "location": {
+        "file": "src/routes/notes.js",
+        "line": 21
+      }
+    }
+  },
+  {
+    "fingerprint": "dependency-audit/GHSA-4w2v-q235-vp99/package-lock.json/axios",
+    "verdict": "needs_validation",
+    "skill": "dependency-audit",
+    "title": "axios 0.21.0: a redirect from the previewed URL bypasses a configured egress proxy (CVE-2020-28168)",
+    "cwe": "CWE-918",
+    "location": {
+      "file": "package-lock.json",
+      "line": 37
+    },
+    "trace": [
+      {
+        "kind": "entrypoint",
+        "file": "src/routes/preview.js",
+        "line": 10,
+        "description": "POST /api/preview: any authenticated user supplies url"
+      },
+      {
+        "kind": "sink",
+        "file": "src/routes/preview.js",
+        "line": 12,
+        "description": "axios.get(url) follows redirects (default maxRedirects) through follow-redirects"
+      }
+    ],
+    "evidence": [],
+    "counterevidence": "The advisory only matters when a proxy is the egress control: the redirect target is fetched without the proxy. With no proxy configured, this advisory adds nothing, because the route already fetches any http(s) URL the caller supplies (src/routes/preview.js:11 checks only the scheme). That broader SSRF is an application bug for owasp-audit, not this advisory.",
+    "confidence": "medium",
+    "blockers": [
+      "Is HTTP_PROXY / HTTPS_PROXY (or http_proxy / https_proxy) set in the production environment? axios 0.21.0 reads them in lib/adapters/http.js:99-145 when config.proxy is unset, and neither src/ nor .env.example sets them.",
+      "If a proxy is set, is it relied on to block internal and metadata addresses (169.254.169.254, RFC 1918)?"
+    ],
+    "validation_plan": "Run `printenv | grep -i _proxy` in the production runtime (or check the platform's env settings). If a proxy is set, from staging POST /api/preview with a URL on a host you control that 302-redirects to http://169.254.169.254/latest/meta-data/ and check whether the proxy logs the second request. If no proxy is set, reject this record."
+  },
+  {
+    "fingerprint": "dependency-audit/GHSA-5c9x-8gcm-mpgx/package-lock.json/axios",
+    "verdict": "rejected",
+    "skill": "dependency-audit",
+    "title": "axios request-side serialization issues: streamed upload maxBodyLength bypass, toFormData recursion DoS, AxiosURLSearchParams null byte (GHSA-5c9x-8gcm-mpgx, GHSA-62hf-57xw-28j9, GHSA-xhjh-pmcv-23jw)",
+    "location": {
+      "file": "package-lock.json",
+      "line": 37
+    },
+    "trace": [],
+    "evidence": [
+      {
+        "file": "src/routes/preview.js",
+        "line": 12,
+        "description": "axios.get(url, {...}) sends no data and no params"
+      }
+    ],
+    "counterevidence": "All three are in code that serializes or streams a request body or params object. The app makes one GET with no data, no params and no stream, so none of those paths run.",
+    "confidence": "high",
+    "ruled_out_by": {
+      "control": "The only axios call is a bodyless GET with no params, so the upload, FormData and URLSearchParams serializers never run",
+      "location": {
+        "file": "src/routes/preview.js",
+        "line": 12
+      }
+    }
+  },
+  {
+    "fingerprint": "dependency-audit/GHSA-6rw7-vpxm-498p/package-lock.json/qs",
+    "verdict": "rejected",
+    "skill": "dependency-audit",
+    "title": "qs arrayLimit bypass via bracket or comma notation (CVE-2025-15284, CVE-2026-2391)",
+    "cwe": "CWE-20",
+    "location": {
+      "file": "package-lock.json",
+      "line": 820
+    },
+    "trace": [],
+    "evidence": [
+      {
+        "file": "src/app.js",
+        "line": 4,
+        "description": "Default Express query parser"
+      }
+    ],
+    "counterevidence": "GHSA-6rw7 states the default parameterLimit of 1000 mitigates its DoS; GHSA-w7fw needs comma: true, which is off by default. Express 4.17.1 calls qs.parse with only allowPrototypes: true (lib/utils.js:292), so both defaults stand. The separate __proto__ hang in this qs version is confirmed under GHSA-hrpp-h998-j3pp.",
+    "confidence": "high",
+    "ruled_out_by": {
+      "control": "Express's default query parser keeps qs parameterLimit 1000 and comma parsing off",
+      "location": {
+        "file": "src/app.js",
+        "line": 4
+      }
+    }
+  },
+  {
+    "fingerprint": "dependency-audit/GHSA-8cf7-32gw-wr33/package-lock.json/jsonwebtoken",
+    "verdict": "rejected",
+    "skill": "dependency-audit",
+    "title": "jsonwebtoken asymmetric key/algorithm confusion: legacy key types and RSA-to-HMAC via key callback (CVE-2022-23539, CVE-2022-23541)",
+    "cwe": "CWE-327",
+    "location": {
+      "file": "package-lock.json",
+      "line": 504
+    },
+    "trace": [],
+    "evidence": [
+      {
+        "file": "src/auth.js",
+        "line": 18,
+        "description": "jwt.sign(..., config.jwtSecret, ...) with a string secret (HS256 default)"
+      },
+      {
+        "file": "src/auth.js",
+        "line": 27,
+        "description": "jwt.verify(token, config.jwtSecret): a string, not a key-retrieval function"
+      }
+    ],
+    "counterevidence": "CVE-2022-23539 needs asymmetric keys of the wrong type; CVE-2022-23541 needs one key-retrieval function serving both symmetric and asymmetric keys. The app only uses one HMAC string secret, passed directly.",
+    "confidence": "high",
+    "ruled_out_by": {
+      "control": "Single HMAC string secret passed directly to jwt.verify; no asymmetric keys, no key callback",
+      "location": {
+        "file": "src/auth.js",
+        "line": 27
+      }
+    }
+  },
+  {
+    "fingerprint": "dependency-audit/GHSA-9wv6-86v2-598j/package-lock.json/path-to-regexp",
+    "verdict": "rejected",
+    "skill": "dependency-audit",
+    "title": "path-to-regexp backtracking regex for multiple parameters in one segment (CVE-2024-45296, CVE-2024-52798, CVE-2026-4867)",
+    "cwe": "CWE-1333",
+    "location": {
+      "file": "package-lock.json",
+      "line": 760
+    },
+    "trace": [],
+    "evidence": [
+      {
+        "file": "src/routes/notes.js",
+        "line": 27,
+        "description": "\"/:id\": one parameter per segment"
+      },
+      {
+        "file": "src/routes/admin.js",
+        "line": 12,
+        "description": "\"/users/:id\": one parameter per segment"
+      }
+    ],
+    "counterevidence": "The three advisories need two (or three) parameters in one path segment separated by something other than '.', e.g. /:a-:b. Every route in src/ is a literal or a single :id segment: /, /search, /:id, /signup, /login, /users, /users/:id, /healthz.",
+    "confidence": "high",
+    "ruled_out_by": {
+      "control": "Every route pattern has at most one parameter per path segment",
+      "location": {
+        "file": "src/routes/notes.js",
+        "line": 27
+      }
+    }
+  },
+  {
+    "fingerprint": "dependency-audit/GHSA-cph5-m8f7-6c5x/package-lock.json/axios",
+    "verdict": "rejected",
+    "skill": "dependency-audit",
+    "title": "axios utils.trim ReDoS (CVE-2021-3749)",
+    "cwe": "CWE-1333",
+    "location": {
+      "file": "package-lock.json",
+      "line": 37
+    },
+    "trace": [],
+    "evidence": [
+      {
+        "file": "src/routes/preview.js",
+        "line": 12,
+        "description": "Server-side axios.get in Node uses the http adapter"
+      }
+    ],
+    "counterevidence": "The advisory text says only 'Inefficient Regular Expression Complexity'. In axios 0.21.0 utils.trim (lib/utils.js:189) is called only from helpers/parseHeaders.js:37-38, which only the XHR adapter calls (lib/adapters/xhr.js:51). The Node http adapter gets headers from Node's parser and never calls trim, so a hostile preview target cannot reach it. Confidence medium because the advisory gives no function name; this rests on reading 0.21.0 source.",
+    "confidence": "medium",
+    "ruled_out_by": {
+      "control": "In Node, axios selects the http adapter, which never calls parseHeaders/utils.trim (XHR adapter only)",
+      "location": {
+        "file": "src/routes/preview.js",
+        "line": 12
+      }
+    }
+  },
+  {
+    "fingerprint": "dependency-audit/GHSA-hrpp-h998-j3pp/package-lock.json/qs",
+    "verdict": "confirmed",
+    "skill": "dependency-audit",
+    "title": "qs 6.7.0 via Express query parsing: an unauthenticated query string hangs the process (CVE-2022-24999)",
+    "cwe": "CWE-1321",
+    "location": {
+      "file": "package-lock.json",
+      "line": 820
+    },
+    "trace": [
+      {
+        "kind": "entrypoint",
+        "file": "src/app.js",
+        "line": 12,
+        "description": "GET /healthz (no auth) or any other path; Express runs its query middleware as the first router layer on every request, e.g. /healthz?a[__proto__]=b&a[__proto__]&a[length]=100000000"
+      },
+      {
+        "kind": "propagation",
+        "file": "package-lock.json",
+        "line": 320,
+        "description": "express 4.17.1 default 'query parser' is 'extended' (lib/application.js:77, :144), which calls qs.parse(str, { allowPrototypes: true }) (lib/utils.js:291-293)"
+      },
+      {
+        "kind": "sink",
+        "file": "package-lock.json",
+        "line": 820,
+        "description": "qs 6.7.0 (>= 6.7.0 < 6.7.3): per the advisory, an __proto__ key in the query string causes a Node process hang"
+      }
+    ],
+    "evidence": [
+      {
+        "file": "package-lock.json",
+        "line": 820,
+        "description": "node_modules/qs resolved to 6.7.0; fix backported in 6.7.3"
+      },
+      {
+        "file": "src/app.js",
+        "line": 4,
+        "description": "express() with default settings; no app.set('query parser', ...) override anywhere in src/"
+      }
+    ],
+    "counterevidence": "Checked for a custom or disabled query parser (app.set('query parser', false) or a simple parser): none. Every route, including the unauthenticated /healthz and /api/users/*, passes through the query middleware before any handler, so no auth or validation runs first. Not run: no PoC was executed; the hang is taken from the advisory text and the code path from express 4.17.1 source.",
+    "confidence": "medium",
+    "severity": {
+      "likelihood": {
+        "score": "high",
+        "reason": "Unauthenticated, one GET request, and the advisory publishes the payload"
+      },
+      "impact": {
+        "score": "high",
+        "reason": "A hung event loop stops the single process from serving anyone, and the request can be repeated; no data is read or changed"
+      },
+      "overall": "high"
+    },
+    "conditions": [
+      {
+        "kind": "network_routing",
+        "description": "The query string reaches the app unmodified (no WAF or proxy rule rejecting __proto__ in query keys)"
+      }
+    ]
+  },
+  {
+    "fingerprint": "dependency-audit/GHSA-jr5f-v2jv-69x6/package-lock.json/axios",
+    "verdict": "rejected",
+    "skill": "dependency-audit",
+    "title": "axios ignores baseURL for absolute URLs, leaking instance headers (CVE-2025-27152)",
+    "cwe": "CWE-918",
+    "location": {
+      "file": "package-lock.json",
+      "line": 37
+    },
+    "trace": [],
+    "evidence": [
+      {
+        "file": "src/routes/preview.js",
+        "line": 12,
+        "description": "Default axios export; no baseURL, no instance headers"
+      }
+    ],
+    "counterevidence": "The advisory's harm is credentials or headers set on an instance with baseURL going to an absolute attacker URL. There is no axios.create, no baseURL and no default headers in src/. Fetching an absolute user URL is what this route is for; its lack of an allow-list is an app-level SSRF for owasp-audit.",
+    "confidence": "high",
+    "ruled_out_by": {
+      "control": "No baseURL or instance headers exist, so there is nothing for an absolute URL to bypass or leak",
+      "location": {
+        "file": "src/routes/preview.js",
+        "line": 12
+      }
+    }
+  },
+  {
+    "fingerprint": "dependency-audit/GHSA-p6mc-m468-83gw/package-lock.json/lodash",
+    "verdict": "rejected",
+    "skill": "dependency-audit",
+    "title": "lodash prototype pollution in pick, set, setWith, update, updateWith, zipObjectDeep (CVE-2020-8203)",
+    "cwe": "CWE-1321",
+    "location": {
+      "file": "package-lock.json",
+      "line": 553
+    },
+    "trace": [],
+    "evidence": [
+      {
+        "file": "src/routes/notes.js",
+        "line": 43,
+        "description": "_.merge(note, req.body) with user-controlled keys"
+      }
+    ],
+    "counterevidence": "The only lodash use in src/ is _.merge at src/routes/notes.js:43 (imported at :2). The advisory lists pick, set, setWith, update, updateWith and zipObjectDeep, not merge. Checked merge separately in 4.17.15 source: safeGet (lodash.js:6609) skips __proto__ and function-valued constructor, and baseAssignValue (lodash.js:2550) defines __proto__ as an own property, so {\"__proto__\":...} and {\"constructor\":{\"prototype\":...}} bodies do not reach Object.prototype. The merge is still a mass-assignment bug, recorded as dependency-audit/CWE-915/src/routes/notes.js/patchNote.",
+    "confidence": "high",
+    "ruled_out_by": {
+      "control": "None of the listed functions are called; the _.merge that is called guards __proto__/constructor in 4.17.15",
+      "location": {
+        "file": "src/routes/notes.js",
+        "line": 43
+      }
+    }
+  },
+  {
+    "fingerprint": "dependency-audit/GHSA-p92q-9vqr-4j8v/package-lock.json/axios",
+    "verdict": "needs_validation",
+    "skill": "dependency-audit",
+    "title": "axios 0.21.0: proxy credentials can leak to an attacker-chosen redirect target (GHSA-p92q-9vqr-4j8v, GHSA-j5f8-grm9-p9fc)",
+    "cwe": "CWE-201",
+    "location": {
+      "file": "package-lock.json",
+      "line": 37
+    },
+    "trace": [
+      {
+        "kind": "entrypoint",
+        "file": "src/routes/preview.js",
+        "line": 10,
+        "description": "POST /api/preview: any authenticated user chooses the origin, so they control the redirect"
+      },
+      {
+        "kind": "sink",
+        "file": "src/routes/preview.js",
+        "line": 12,
+        "description": "axios.get(url) with redirects on; 0.21.0 puts Proxy-Authorization into options.headers when the proxy URL has credentials (lib/adapters/http.js:136-157)"
+      }
+    ],
+    "evidence": [],
+    "counterevidence": "Both advisories need an authenticated proxy (user:pass in HTTP_PROXY) and a redirect that leaves the proxy. If that is configured, the attacker's own server is the origin, which is the case the advisories describe. Without proxy credentials in the env there is nothing to leak.",
+    "confidence": "medium",
+    "blockers": [
+      "Does the production HTTP_PROXY / HTTPS_PROXY value carry credentials (http://user:pass@proxy:port)?"
+    ],
+    "validation_plan": "Inspect the production env for *_proxy values containing '@'. If none, reject this record. If present, from staging POST /api/preview with an http:// URL on a host you control that redirects to an https:// URL you also control, and check whether that server receives a Proxy-Authorization header."
+  },
+  {
+    "fingerprint": "dependency-audit/GHSA-pf86-5x62-jrwf/package-lock.json/axios",
+    "verdict": "rejected",
+    "skill": "dependency-audit",
+    "title": "axios prototype-pollution gadgets (GHSA-pf86-5x62-jrwf, GHSA-w9j2-pvgh-6h63, GHSA-6chq-wfr3-2hj9, GHSA-3g43-6gmg-66jw, GHSA-898c-q2cr-xwhg, GHSA-fvcv-3m26-pcqx, GHSA-mmx7-hfxf-jppx, GHSA-7q8q-rj6j-mhjq, GHSA-xx6v-rp6x-q39c)",
+    "cwe": "CWE-1321",
+    "location": {
+      "file": "package-lock.json",
+      "line": 37
+    },
+    "trace": [],
+    "evidence": [
+      {
+        "file": "src/routes/notes.js",
+        "line": 43,
+        "description": "The only deep merge of request data into an object"
+      }
+    ],
+    "counterevidence": "Every one of these advisories says axios does not create the pollution; a separate primitive must already have polluted Object.prototype. Looked for one on request paths: express.json uses JSON.parse (own __proto__ property, no global effect); qs 6.7.0 with allowPrototypes sets __proto__ on a fresh nested object, not Object.prototype; lodash 4.17.15 _.merge skips __proto__ and constructor (safeGet, lodash.js:6609) and defines __proto__ as an own property (baseAssignValue, lodash.js:2550); no other merge, set or extend of request data in src/. GHSA-xx6v is also browser-only. Confidence medium: the 100 transitive packages were not each audited for primitives; re-open this record if one turns up.",
+    "confidence": "medium",
+    "ruled_out_by": {
+      "control": "No Object.prototype pollution primitive on any request path; lodash 4.17.15 merge guards __proto__/constructor keys (safeGet, baseAssignValue)",
+      "location": {
+        "file": "src/routes/notes.js",
+        "line": 43
+      }
+    }
+  },
+  {
+    "fingerprint": "dependency-audit/GHSA-pxg6-pf52-xh8x/package-lock.json/cookie",
+    "verdict": "rejected",
+    "skill": "dependency-audit",
+    "title": "cookie serialize accepts out-of-bounds characters in name, path and domain (CVE-2024-47764)",
+    "cwe": "CWE-74",
+    "location": {
+      "file": "package-lock.json",
+      "line": 191
+    },
+    "trace": [],
+    "evidence": [
+      {
+        "file": "src/app.js",
+        "line": 17,
+        "description": "Responses are JSON only; no cookies are set anywhere"
+      }
+    ],
+    "counterevidence": "Only reached through res.cookie / res.clearCookie with attacker-influenced name, path or domain. grep finds no res.cookie, clearCookie or cookie.serialize in src/; auth is a Bearer header (src/auth.js:23).",
+    "confidence": "high",
+    "ruled_out_by": {
+      "control": "The app never sets cookies (no res.cookie / clearCookie in src/); auth uses the Authorization header",
+      "location": {
+        "file": "src/auth.js",
+        "line": 23
+      }
+    }
+  },
+  {
+    "fingerprint": "dependency-audit/GHSA-qw6h-vgh9-j6wx/package-lock.json/express",
+    "verdict": "rejected",
+    "skill": "dependency-audit",
+    "title": "Redirect-template XSS in express, send and serve-static (CVE-2024-43796, GHSA-m6fv-jmcg-4jfg, GHSA-cm22-4g7w-348p)",
+    "cwe": "CWE-79",
+    "location": {
+      "file": "package-lock.json",
+      "line": 320
+    },
+    "trace": [],
+    "evidence": [
+      {
+        "file": "src/app.js",
+        "line": 7,
+        "description": "Routes are JSON API routers; no static middleware"
+      }
+    ],
+    "counterevidence": "All three advisories require attacker-controlled input to response.redirect() (or send's directory redirect via serve-static). grep finds no res.redirect, res.location, express.static, serve-static or res.sendFile in src/.",
+    "confidence": "high",
+    "ruled_out_by": {
+      "control": "No redirect or static-file response exists in the app",
+      "location": {
+        "file": "src/app.js",
+        "line": 7
+      }
+    }
+  },
+  {
+    "fingerprint": "dependency-audit/GHSA-qwcr-r2fm-qrc7/package-lock.json/body-parser",
+    "verdict": "rejected",
+    "skill": "dependency-audit",
+    "title": "body-parser urlencoded parser DoS (CVE-2024-45590)",
+    "cwe": "CWE-405",
+    "location": {
+      "file": "package-lock.json",
+      "line": 104
+    },
+    "trace": [],
+    "evidence": [
+      {
+        "file": "src/app.js",
+        "line": 5,
+        "description": "Only express.json() is mounted"
+      }
+    ],
+    "counterevidence": "The advisory applies when url encoding is enabled. No express.urlencoded / bodyParser.urlencoded anywhere in src/.",
+    "confidence": "high",
+    "ruled_out_by": {
+      "control": "Only the JSON body parser is mounted; the urlencoded parser is never enabled",
+      "location": {
+        "file": "src/app.js",
+        "line": 5
+      }
+    }
+  },
+  {
+    "fingerprint": "dependency-audit/GHSA-qwph-4952-7xr6/package-lock.json/jsonwebtoken",
+    "verdict": "rejected",
+    "skill": "dependency-audit",
+    "title": "jsonwebtoken accepts unsigned tokens when verify gets a falsy secret and no algorithms (CVE-2022-23540)",
+    "cwe": "CWE-347",
+    "location": {
+      "file": "package-lock.json",
+      "line": 504
+    },
+    "trace": [],
+    "evidence": [
+      {
+        "file": "src/auth.js",
+        "line": 27,
+        "description": "jwt.verify with no algorithms option"
+      }
+    ],
+    "counterevidence": "The advisory needs all three: unsigned token, no algorithms, and a falsy secret. The first two hold, but config.jwtSecret is never falsy: an unset or empty JWT_SECRET (as in .env.example) falls back to \"changeme\". With a truthy secret, jsonwebtoken 8.5.1 rejects unsigned tokens ('jwt signature is required', verify.js:101). The control that rules this out is itself a problem: a hard-coded fallback signing secret lets anyone who knows it forge tokens. That belongs to secrets-audit, not this advisory.",
+    "confidence": "high",
+    "ruled_out_by": {
+      "control": "config.jwtSecret is always truthy (env value or the \"changeme\" fallback), so 8.5.1 rejects unsigned tokens",
+      "location": {
+        "file": "src/config.js",
+        "line": 5
+      }
+    }
+  },
+  {
+    "fingerprint": "dependency-audit/GHSA-rv95-896h-c2vc/package-lock.json/express",
+    "verdict": "rejected",
+    "skill": "dependency-audit",
+    "title": "Express open redirect via malformed URLs in res.location (CVE-2024-29041)",
+    "cwe": "CWE-601",
+    "location": {
+      "file": "package-lock.json",
+      "line": 320
+    },
+    "trace": [],
+    "evidence": [
+      {
+        "file": "src/app.js",
+        "line": 7,
+        "description": "No redirecting routes"
+      }
+    ],
+    "counterevidence": "The advisory is in res.location() and res.redirect() with a user-provided URL. Neither is called anywhere in src/.",
+    "confidence": "high",
+    "ruled_out_by": {
+      "control": "No res.location / res.redirect calls in the app",
+      "location": {
+        "file": "src/app.js",
+        "line": 7
+      }
+    }
+  },
+  {
+    "fingerprint": "dependency-audit/GHSA-v422-hmwv-36x6/package-lock.json/body-parser",
+    "verdict": "rejected",
+    "skill": "dependency-audit",
+    "title": "body-parser silently skips the size check for an invalid limit value (CVE-2026-12590)",
+    "cwe": "CWE-770",
+    "location": {
+      "file": "package-lock.json",
+      "line": 104
+    },
+    "trace": [],
+    "evidence": [
+      {
+        "file": "src/app.js",
+        "line": 5,
+        "description": "limit: \"100kb\""
+      }
+    ],
+    "counterevidence": "The advisory needs an unparseable or computed limit (NaN, bad string). The limit is the literal \"100kb\", which bytes.parse accepts, so the size check stays on.",
+    "confidence": "high",
+    "ruled_out_by": {
+      "control": "Hard-coded valid limit \"100kb\"",
+      "location": {
+        "file": "src/app.js",
+        "line": 5
+      }
+    }
+  },
+  {
+    "fingerprint": "dependency-audit/GHSA-vf2m-468p-8v99/package-lock.json/axios",
+    "verdict": "rejected",
+    "skill": "dependency-audit",
+    "title": "axios streamed responses bypass maxContentLength (CVE-2026-42036)",
+    "cwe": "CWE-770",
+    "location": {
+      "file": "package-lock.json",
+      "line": 37
+    },
+    "trace": [],
+    "evidence": [
+      {
+        "file": "src/routes/preview.js",
+        "line": 12,
+        "description": "maxContentLength: 1_000_000, default responseType"
+      }
+    ],
+    "counterevidence": "The advisory applies only to responseType: 'stream'. The app uses the default (buffered) response type. In axios 0.21.0 the buffered branch checks the accumulated length against maxContentLength on every chunk and rejects past it (lib/adapters/http.js:213-224), so the 1 MB cap holds against a hostile preview target.",
+    "confidence": "high",
+    "ruled_out_by": {
+      "control": "Default buffered responseType, where axios enforces the configured maxContentLength of 1,000,000 bytes",
+      "location": {
+        "file": "src/routes/preview.js",
+        "line": 12
+      }
+    }
+  },
+  {
+    "fingerprint": "dependency-audit/GHSA-wf5p-g6vw-rhxx/package-lock.json/axios",
+    "verdict": "rejected",
+    "skill": "dependency-audit",
+    "title": "axios browser XSRF-cookie handling: token leak and cookie-name ReDoS (CVE-2023-45857, GHSA-hfxv-24rg-xrqf)",
+    "location": {
+      "file": "package-lock.json",
+      "line": 37
+    },
+    "trace": [],
+    "evidence": [
+      {
+        "file": "src/routes/preview.js",
+        "line": 12,
+        "description": "axios runs server-side in Node only"
+      }
+    ],
+    "counterevidence": "Both advisories are in the XSRF-cookie logic that reads document.cookie in standard browser environments; GHSA-hfxv says it does not affect Node HTTP adapter usage. axios is only required server-side (src/routes/preview.js:2) and this repo ships no browser bundle.",
+    "confidence": "high",
+    "ruled_out_by": {
+      "control": "axios runs only under Node's http adapter; the XSRF cookie code runs only in the browser XHR adapter",
+      "location": {
+        "file": "src/routes/preview.js",
+        "line": 12
+      }
+    }
+  },
+  {
+    "fingerprint": "dependency-audit/GHSA-xxjr-mmjv-4gpg/package-lock.json/lodash",
+    "verdict": "rejected",
+    "skill": "dependency-audit",
+    "title": "lodash _.unset / _.omit can delete properties from built-in prototypes (CVE-2025-13465, CVE-2026-2950)",
+    "cwe": "CWE-1321",
+    "location": {
+      "file": "package-lock.json",
+      "line": 553
+    },
+    "trace": [],
+    "evidence": [
+      {
+        "file": "src/routes/notes.js",
+        "line": 43,
+        "description": "_.merge is the only lodash call"
+      }
+    ],
+    "counterevidence": "The only lodash use in src/ is _.merge at src/routes/notes.js:43 (imported at :2). Both advisories are in _.unset and _.omit, which are never called.",
+    "confidence": "high",
+    "ruled_out_by": {
+      "control": "_.unset / _.omit are never called",
+      "location": {
+        "file": "src/routes/notes.js",
+        "line": 43
+      }
+    }
+  }
+]

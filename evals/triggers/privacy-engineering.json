@@ -1,0 +1,32 @@
+{
+  "skill": "privacy-engineering",
+  "should_fire": [
+    "implement right to be forgotten across backups and analytics",
+    "how do we handle a DSAR within 30 days?",
+    "do we need cookie consent for our analytics?",
+    "what does CCPA require of our app?",
+    "do a DPIA for the new feature that tracks user location"
+  ],
+  "near_miss": [
+    {
+      "prompt": "do we need a BAA for patient data?",
+      "owner": "hipaa-audit"
+    },
+    {
+      "prompt": "PCI scope for the checkout",
+      "owner": "pci-audit"
+    },
+    {
+      "prompt": "evaluate our model for bias",
+      "owner": "ai-risk-management"
+    },
+    {
+      "prompt": "draft the customer notice about the breach",
+      "owner": "security-comms"
+    },
+    {
+      "prompt": "STRIDE threat model of the new data flow",
+      "owner": "threat-modeling"
+    }
+  ]
+}

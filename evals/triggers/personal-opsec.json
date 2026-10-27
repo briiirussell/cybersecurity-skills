@@ -1,0 +1,32 @@
+{
+  "skill": "personal-opsec",
+  "should_fire": [
+    "am I secure? I'm a solo founder and I hold all the keys",
+    "should I get a YubiKey, and which accounts first?",
+    "protect me from SIM swap, how do I set a port-out PIN?",
+    "go through Karpathy's security checklist with me",
+    "which API keys on my laptop can my AI agents read?"
+  ],
+  "near_miss": [
+    {
+      "prompt": "audit our company's SSO and role design",
+      "owner": "iam-audit"
+    },
+    {
+      "prompt": "OSINT on a suspicious domain that emailed us",
+      "owner": "osint-recon"
+    },
+    {
+      "prompt": "check our MCP server config for tool poisoning before we install more",
+      "owner": "agent-supply-chain-audit"
+    },
+    {
+      "prompt": "find leaked secrets in our repo",
+      "owner": "secrets-audit"
+    },
+    {
+      "prompt": "write a security update for the board",
+      "owner": "security-comms"
+    }
+  ]
+}
