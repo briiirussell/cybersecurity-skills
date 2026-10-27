@@ -6,7 +6,7 @@ Current versions of all skills. Agents can compare against local versions to che
 |-------|---------|--------------|
 | agent-supply-chain-audit | 1.0.1 | 2026-10-26 |
 | ai-risk-management | 1.1.2 | 2026-10-26 |
-| api-audit | 1.1.4 | 2026-10-26 |
+| api-audit | 1.1.5 | 2026-10-26 |
 | breach-patterns | 1.0.4 | 2026-10-26 |
 | business-logic-testing | 1.0.2 | 2026-10-26 |
 | cloud-audit | 1.1.3 | 2026-10-26 |
@@ -41,6 +41,14 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.1.3 | 2026-10-26 |
 
 ## Recent Changes
+
+### 1.26.5 (2026-10-26)
+
+api-audit fix from the worked-example run (#159). api-audit 1.1.5.
+
+**Fixed**
+- **Classes outside API1–API10.** SQL injection, command injection, path traversal, XSS in an HTML response and crypto misuse have no OWASP API Security Top 10 category, and the skill didn't say what to put in the heading or in `owasp_category`. They now use the matching web Top 10:2025 category, such as `A05:2025` for injection, rather than being stretched into API8 or API10. The worked example already did this for its two SQL injections.
+- **"Items checked and found clean".** It now says `covered` and `not_applicable` units, and that a unit with a confirmed or needs_validation finding stays `candidate`. This matches the v1.26.0 coverage rule.
 
 ### 1.26.4 (2026-10-26)
 
