@@ -64,6 +64,10 @@ Audit only identity providers, cloud accounts and applications the user owns or 
 - Session lifetime appropriate to sensitivity (admin: short, end user: longer with refresh)
 - Logs forwarded to SIEM — sign-ins, admin changes, MFA failures
 
+### Active Directory and Entra ID: paths to Tier 0
+
+When the org runs Active Directory or a hybrid Entra tenant, list the Tier 0 assets (domain controllers, AD CS, AD FS, Entra Connect, the privileged groups and roles), then find every path from an ordinary user to one of them and the change that closes it. Use attack-path data the team already has (BloodHound / AzureHound exports, PingCastle, Defender for Identity) before collecting anything new; new collection needs the directory owner's yes. Paths are evidence from directory data, never exercised. Inventory, read-only queries, exposure classes with fixes (privileged nesting, control rights, SPN service accounts, pre-auth, delegation, certificate templates, LAPS, GPO rights, the hybrid bridge) and verdict rules: [references/ad-tier0-paths.md](references/ad-tier0-paths.md).
+
 ### Application authorization
 
 - Role definitions written down somewhere (not just in code) — `docs/roles.md` or equivalent
@@ -175,7 +179,7 @@ Classes in use: `wildcard-policy`, `admin-attachment`, `open-trust-policy`, `mis
 
 | Key | Value |
 |---|---|
-| `provider` | `aws`, `gcp`, `azure`, `entra`, `okta`, `auth0`, `google-workspace`, `cognito`, `app` |
+| `provider` | `aws`, `gcp`, `azure`, `ad`, `entra`, `okta`, `auth0`, `google-workspace`, `cognito`, `app` |
 | `tenant` | Account ID, GCP project or org ID, Entra tenant domain, Okta org domain |
 | `principal` | The user, role, group, service account or app the finding is about, as the provider prints it |
 
@@ -250,6 +254,7 @@ Write `findings.json` first (Audit mode). The report is rendered from it and nev
 - AWS IAM Best Practices
 - GCP IAM Best Practices
 - Microsoft Entra ID — privileged access strategy
+- Active Directory tiering and AD CS hardening: see [references/ad-tier0-paths.md](references/ad-tier0-paths.md) for its sources
 - NIST SP 800-63 (Digital Identity Guidelines)
 - NIST SP 800-207 (Zero Trust Architecture)
 - OWASP Authentication Cheat Sheet
@@ -263,6 +268,7 @@ Write `findings.json` first (Audit mode). The report is rendered from it and nev
 
 This skill links to supporting files under `references/`. They are not inlined in this adapter; open them on GitHub (or in `skills/iam-audit/references/` if you have the repo checked out):
 
+- [references/ad-tier0-paths.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/iam-audit/references/ad-tier0-paths.md)
 - [references/findings-format.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/iam-audit/references/findings-format.md)
 - [references/findings.schema.json](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/iam-audit/references/findings.schema.json)
 - [references/severity-calibration.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/iam-audit/references/severity-calibration.md)
