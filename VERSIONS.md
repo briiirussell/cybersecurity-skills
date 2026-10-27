@@ -22,7 +22,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | log-watch | 1.0.1 | 2026-10-26 |
 | mobile-audit | 1.0.1 | 2026-10-26 |
 | osint-recon | 1.0.2 | 2026-10-26 |
-| owasp-audit | 1.3.1 | 2026-10-26 |
+| owasp-audit | 1.3.2 | 2026-10-26 |
 | patch-sweep | 1.0.2 | 2026-10-26 |
 | pci-audit | 1.0.3 | 2026-10-26 |
 | personal-opsec | 1.0.1 | 2026-10-26 |
@@ -41,6 +41,19 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.1.3 | 2026-10-26 |
 
 ## Recent Changes
+
+### 1.26.6 (2026-10-26)
+
+owasp-audit fix from the worked-example run (#159). owasp-audit 1.3.2.
+
+**Fixed**
+- **A03 without network.** A03 said to run `npm audit`, which queries the registry, so a static no-network run couldn't do the check and had no instructions for that case. It now says:
+  - record versions the lockfile shows as vulnerable as `needs_validation`, with "advisory data not checked" as the blocker and the audit command as the plan;
+  - mark the A03 advisory unit `deferred`, which makes the run partial;
+  - never call A03 clean from the lockfile alone.
+- **Report summary.** The unit count line includes `candidate`, matching the v1.26.0 coverage rule.
+
+This is the last of the #159 fixes. The others shipped in v1.26.0 through v1.26.5.
 
 ### 1.26.5 (2026-10-26)
 
