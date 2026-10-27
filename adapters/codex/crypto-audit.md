@@ -99,6 +99,53 @@ Wrong IV / nonce handling is one of the top three sources of "the crypto looks r
 - **iOS:** CryptoKit for modern Swift code; `CommonCrypto` works but has more footguns
 - **Android:** Tink (Google) is the recommended high-level library; raw JCA has historical AES-ECB defaults
 
+## Verify, then record
+
+Close every candidate from the checklist with one verdict, using the shared format in [references/findings-format.md](references/findings-format.md). Before anything is `confirmed`, run the refutation pass in [references/verification.md](references/verification.md): open the call site, find where the key, IV, salt and parameters actually come from, and check whether the library version in use already applies a safe default.
+
+A weak primitive is a finding when you can name who gains what: the lower-trust principal (anyone who sees ciphertext, a holder of a leaked hash table, a client that sends a token, a network attacker on the path), the control it defeats (confidentiality, integrity, authentication, password secrecy) and the result. Rate severity with [references/severity-calibration.md](references/severity-calibration.md) by the data the broken control protects. Conditions such as "attacker already holds a copy of the users table" go in `conditions[]` (`data_state`); they lower likelihood, not impact.
+
+**`confirmed`** — the code shows the broken use and the result follows. Examples:
+- `createCipheriv('aes-256-gcm', key, FIXED_IV)` in `src/lib/vault.ts` with one key for every record: anyone who reads the encrypted column gets the XOR of plaintexts and can forge ciphertexts. A unit test that encrypts two values and shows the repeated keystream sets `reproduced: true`.
+- Session tokens from `Math.random()` in `src/lib/session.ts`: predictable tokens for any user's session.
+- `jwt.sign(..., process.env.JWT_SECRET || 'dev-secret')`: confirmed with a `system_configuration` condition ("deployments that don't set `JWT_SECRET`") and confidence `medium`. Anyone who reads the repo can mint tokens for those deployments.
+- Unsalted SHA-256 or PBKDF2 at 1,000 iterations for passwords, with a `data_state` condition for the hash-table leak.
+
+**`needs_validation`** — the code supports it, but one fact lives outside it. Examples:
+- `nginx.conf` allows `TLSv1 TLSv1.1`, but a CDN or load balancer may terminate TLS first. Blocker: which config serves `api.example.com`. Plan: `testssl.sh --protocols https://api.example.com` (live check, needs authorization). A TLS check described but not run stays here.
+- A KMS-wrapped data key whose key policy lives in another repo. Blocker: which principals hold `kms:Decrypt`. Plan: `aws kms get-key-policy --key-id <id> --policy-name default`.
+
+**`rejected`** — a named control at a named location rules it out. Examples:
+- `jwt.verify(token, key)` with no `algorithms` option, ruled out by the library: `control` is "jsonwebtoken 9.0.2 `verify()` rejects `alg: none` and HS/RS confusion for asymmetric keys", `ruled_out_by.location` is the `package-lock.json` line that pins 9.0.2.
+- `createHash('md5')` in `src/lib/etag.ts`, used only as a cache ETag. `ruled_out_by.location` is the only call site, which sets a response header and makes no trust decision.
+
+**Hardening notes, not records:** a weaker-than-recommended choice with no traced exposure. Examples: bcrypt cost 10 instead of 12, Encrypt-then-MAC with AES-CBC done correctly (prefer GCM), TLS 1.2 CBC suites offered next to AEAD suites, no OCSP stapling, no rotation schedule on a KMS key, missing HSTS preload. Custom crypto is a finding when you trace what it fails to protect; otherwise it's a "replace, don't patch" hardening note.
+
+**Live and cloud evidence.** TLS scans and KMS or HSM settings describe deployed resources, not files. Save the read-only output, redacted, to `<audit dir>/evidence/<name>.json` or `.txt` (`testssl.sh --jsonfile`, `sslyze --json_out`, `aws kms describe-key`) and point `location` and `evidence[]` at that file and line. Never save key material, private keys, plaintext you decrypted or a secret value.
+
+**Fingerprint:** `crypto-audit/<class>/<file or resource>/<symbol or name>`, no line numbers:
+- `crypto-audit/gcm-nonce-reuse/src/lib/vault.ts/encryptField`
+- `crypto-audit/CWE-338/src/lib/session.ts/newSessionId`
+- `crypto-audit/tls-legacy-protocol/host/api.example.com/443`
+- `crypto-audit/kms-key-policy/aws/123456789012/us-east-1/alias/app-data`
+
+Write `host:port` as `host/<host>/<port>` and ARNs with slashes: the validator rejects `:<digits>` segments.
+
+**`ext` keys** (optional, on any record):
+
+| Key | Value | Example |
+|---|---|---|
+| `primitive` | Algorithm, mode and parameters as used | `"AES-256-GCM, static 96-bit IV"`, `"PBKDF2-HMAC-SHA256, 1000 iterations"` |
+| `library` | Library and version that performs the operation | `"node:crypto (Node 20)"`, `"pycryptodome 3.20.0"` |
+| `standard` | The guidance the use departs from | `"NIST SP 800-38D 8.2"`, `"RFC 8996"`, `"OWASP Password Storage"` |
+
+Then write `findings.json` sorted by fingerprint, validate it, and optionally export SARIF:
+
+```bash
+node references/validate-findings.mjs findings.json
+node references/to-sarif.mjs findings.json -o findings.sarif
+```
+
 ## Verify Fixes at Runtime
 
 - Test encryption / decryption round-trip after every change — silent data corruption is the failure mode of crypto changes
@@ -108,34 +155,52 @@ Wrong IV / nonce handling is one of the top three sources of "the crypto looks r
 
 ## Output Format
 
+Write `findings.json` first and validate it. Render the report from it, plus your hardening-notes list. The prose never changes a verdict, severity or blocker the JSON doesn't already say.
+
 ```markdown
 # Cryptography Implementation Audit
-## Project: [name]
-## Scope: [components covered]
-## Date: [date]
+## Project: [name]   ## Date: [date]
+## Scope: [components covered; full | partial — what was left out, e.g. "no TLS scan run"]
+## findings.json: [path] — validated: [yes]
 
 ### Summary
-[2-3 paragraphs]
+- Confirmed: [N] (Critical [n] | High [n] | Medium [n] | Low [n])   Needs validation: [N]   Rejected: [N]   Hardening notes: [N]
 
-### Findings
-| ID | Severity | Component | Issue | CWE |
-|----|----------|-----------|-------|-----|
+### Confirmed findings
+#### [SEVERITY] [Title]  `fingerprint`
+**Location:** `path:line`   **CWE:** [CWE-n]   **Confidence:** [medium | high (reproduced)]   **Primitive:** [ext.primitive]
+**What and why it matters:** [principal, control defeated, result]
+**Conditions:** [e.g. data_state: attacker holds the users table]
+**Vulnerable code:** [snippet]
+**Fix:** [concrete change, including migration of existing ciphertext or hashes]
+**Verify the fix:** [round-trip test, rehash on login, testssl output; see Verify Fixes at Runtime]
 
-### Per-finding detail
-[Title, severity, file:line, description, vulnerable snippet, remediation, verification]
+### Needs validation
+| Finding | Blockers | Check for the owner to run |
+|---|---|---|
+
+### Hardening notes (not findings)
+- [location] — [gap] — [why it isn't a finding] — [effort]
+
+### Rejected (do not re-raise)
+| Fingerprint | Claim | Ruled out by | Location |
+|---|---|---|---|
 
 ### TLS posture (if applicable)
-[Output of testssl.sh / sslyze]
+[Summary of saved testssl.sh / sslyze output, with the evidence file path, or "not run"]
 
 ### Key inventory
 | Key | Purpose | Location | Algorithm | Rotation |
 |-----|---------|----------|-----------|----------|
 
-### Recommendations
-[Prioritized]
+### Prioritized remediation plan
+1. [Critical / High confirmed findings]
+2. [Medium / Low confirmed findings]
+3. [Owner-run checks for needs-validation items]
+4. [Hardening notes worth the effort]
 ```
 
-Disposition rule (Fixed / Deferred / Accepted Risk) per `owasp-audit`.
+Dispositions for confirmed findings (set later, usually by `finding-triage`): Fixed / Deferred / Accepted Risk / Mitigated (platform/config) / Requires major migration. A false positive is a `rejected` record, not a disposition.
 
 ## Boundaries
 
@@ -157,3 +222,15 @@ Disposition rule (Fixed / Deferred / Accepted Risk) per `owasp-audit`.
 - "Cryptography Engineering" — Ferguson, Schneier, Kohno (the book to read)
 - "Real-World Cryptography" — David Wong
 - libsodium / Tink / BoringSSL documentation
+- Shared references (copied into `references/` at build time): [findings-format.md](references/findings-format.md), [severity-calibration.md](references/severity-calibration.md), [verification.md](references/verification.md), [validate-findings.mjs](references/validate-findings.mjs), [to-sarif.mjs](references/to-sarif.mjs), [findings.schema.json](references/findings.schema.json)
+
+## Reference files
+
+This skill links to supporting files under `references/`. They are not inlined in this adapter; open them on GitHub (or in `skills/crypto-audit/references/` if you have the repo checked out):
+
+- [references/findings-format.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/crypto-audit/references/findings-format.md)
+- [references/findings.schema.json](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/crypto-audit/references/findings.schema.json)
+- [references/severity-calibration.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/crypto-audit/references/severity-calibration.md)
+- [references/to-sarif.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/crypto-audit/references/to-sarif.mjs)
+- [references/validate-findings.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/crypto-audit/references/validate-findings.mjs)
+- [references/verification.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/crypto-audit/references/verification.md)

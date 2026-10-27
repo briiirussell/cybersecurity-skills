@@ -12,7 +12,8 @@
       "secrets-audit",
       "cloud-audit",
       "container-audit",
-      "iam-audit"
+      "iam-audit",
+      "crypto-audit"
     ],
     "validate-findings.mjs": [
       "agent-supply-chain-audit",
@@ -25,7 +26,8 @@
       "secrets-audit",
       "cloud-audit",
       "container-audit",
-      "iam-audit"
+      "iam-audit",
+      "crypto-audit"
     ],
     "to-sarif.mjs": [
       "agent-supply-chain-audit",
@@ -38,7 +40,8 @@
       "secrets-audit",
       "cloud-audit",
       "container-audit",
-      "iam-audit"
+      "iam-audit",
+      "crypto-audit"
     ],
     "findings-format.md": [
       "agent-supply-chain-audit",
@@ -51,7 +54,8 @@
       "secrets-audit",
       "cloud-audit",
       "container-audit",
-      "iam-audit"
+      "iam-audit",
+      "crypto-audit"
     ],
     "severity-calibration.md": [
       "agent-supply-chain-audit",
@@ -65,7 +69,8 @@
       "web-pentest",
       "cloud-audit",
       "container-audit",
-      "iam-audit"
+      "iam-audit",
+      "crypto-audit"
     ],
     "coverage.schema.json": [
       "owasp-audit",
@@ -85,7 +90,8 @@
       "dependency-audit",
       "cloud-audit",
       "container-audit",
-      "iam-audit"
+      "iam-audit",
+      "crypto-audit"
     ],
     "recon-and-coverage.md": [
       "owasp-audit",
