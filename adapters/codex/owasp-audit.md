@@ -86,7 +86,8 @@ unit, read the entrypoint, follow data to every sink, and record what you checke
 Before anything reaches the report, run the per-finding refutation pass in
 [references/verification.md](references/verification.md). One fresh verifier per candidate (a subagent where
 supported; otherwise a separate step that doesn't re-read the hunting notes). It re-reads every cited `file:line`,
-names the strongest control on the path, and returns exactly one verdict:
+names the strongest control on the path, and returns exactly one verdict. Apply the fixed exclusion rules (test,
+generated, vendored, docs) first. In Claude Code, dispatch the plugin's read-only `finding-verifier` subagent per candidate.
 
 | Verdict | Bar | Severity |
 |---|---|---|
