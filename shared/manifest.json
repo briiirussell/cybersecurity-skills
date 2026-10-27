@@ -15,7 +15,8 @@
       "iam-audit",
       "crypto-audit",
       "mobile-audit",
-      "web-pentest"
+      "web-pentest",
+      "prompt-injection"
     ],
     "validate-findings.mjs": [
       "agent-supply-chain-audit",
@@ -31,7 +32,8 @@
       "iam-audit",
       "crypto-audit",
       "mobile-audit",
-      "web-pentest"
+      "web-pentest",
+      "prompt-injection"
     ],
     "to-sarif.mjs": [
       "agent-supply-chain-audit",
@@ -47,7 +49,8 @@
       "iam-audit",
       "crypto-audit",
       "mobile-audit",
-      "web-pentest"
+      "web-pentest",
+      "prompt-injection"
     ],
     "findings-format.md": [
       "agent-supply-chain-audit",
@@ -63,7 +66,8 @@
       "iam-audit",
       "crypto-audit",
       "mobile-audit",
-      "web-pentest"
+      "web-pentest",
+      "prompt-injection"
     ],
     "severity-calibration.md": [
       "agent-supply-chain-audit",
@@ -101,7 +105,8 @@
       "container-audit",
       "iam-audit",
       "crypto-audit",
-      "mobile-audit"
+      "mobile-audit",
+      "prompt-injection"
     ],
     "recon-and-coverage.md": [
       "owasp-audit",

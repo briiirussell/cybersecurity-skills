@@ -525,6 +525,10 @@ rules:
     path: "prompt-injection/SKILL.md"
     message: "*'npx -y pkg'*"
     reason: "Advises pinning MCP servers to an exact version or digest, not `npx -y pkg`"
+  - id: "EA2"
+    path: "prompt-injection/SKILL.md"
+    message: "*no confirmation*"
+    reason: "Verdict example: an agent holding send_email with no confirmation gate is what the auditor records as a confirmed finding"
 
   # --- api-audit / business-logic-testing ------------------------------------
   - id: "E1"

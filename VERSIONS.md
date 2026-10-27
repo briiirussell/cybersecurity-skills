@@ -27,7 +27,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | pci-audit | 1.0.3 | 2026-10-26 |
 | personal-opsec | 1.0.1 | 2026-10-26 |
 | privacy-engineering | 1.0.4 | 2026-10-26 |
-| prompt-injection | 1.1.3 | 2026-10-26 |
+| prompt-injection | 1.2.0 | 2026-10-27 |
 | recon | 1.0.1 | 2026-10-26 |
 | red-team-engagement | 1.0.1 | 2026-10-26 |
 | scanner-pipeline | 1.0.2 | 2026-10-26 |
@@ -41,6 +41,24 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.0 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.33.0 (2026-10-27)
+
+prompt-injection moves onto the shared findings format (#129). prompt-injection 1.2.0.
+
+**Changed**
+- **Step 9, "Verify, then record".** A finding is what a steered model can reach, not the fact that it can be steered.
+  - **Confirmed:** a viewer-writable comment reaches an admin assistant that holds an ungated `send_email`; LLM output goes into `dangerouslySetInnerHTML`; a shipped MCP tool description carries a hidden instruction.
+  - **Needs validation:** a hosted guardrail whose policy isn't in the repo; a production prompt pulled from a registry.
+  - **Rejected:** an `authorize(user, tool, args)` check in the tool dispatcher; a pinned sanitizer.
+- **What doesn't reject.** System-prompt instructions, delimiters, the provider's safety training and a model-based classifier on its own lower likelihood but never reject a candidate.
+- **Hardening notes and the CWE.** A jailbreak that only affects the person typing is a hardening note. A leaked system prompt is a finding only if it holds a secret. Prompt injection uses CWE-1427.
+- **Evidence.** Live canary transcripts and remote MCP `tools/list` output go in `evidence/`.
+- **Fingerprints:** `prompt-injection/<class>/<file>/<symbol>`, with ten named classes.
+- **`ext` keys:** `owasp_llm` (e.g. `LLM01:2025`), `category`, `untrusted_source`.
+- **Output Format** is rendered from `findings.json`. It has "Rejected (do not re-raise)" and keeps the integration map, defense assessment and remediation sections. The "Potential" and "Possible" labels are gone.
+- The skill now gets copies of the five shared findings files it didn't already have.
+- **SkillSpector baseline.** One new rule, for the "no confirmation gate" verdict example, which describes what to flag.
 
 ### 1.32.0 (2026-10-27)
 
