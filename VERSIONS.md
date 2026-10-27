@@ -20,7 +20,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | iam-audit | 1.1.0 | 2026-10-26 |
 | incident-triage | 1.1.0 | 2026-10-26 |
 | log-watch | 1.0.1 | 2026-10-26 |
-| mobile-audit | 1.0.1 | 2026-10-26 |
+| mobile-audit | 1.1.0 | 2026-10-27 |
 | osint-recon | 1.0.2 | 2026-10-26 |
 | owasp-audit | 1.3.2 | 2026-10-26 |
 | patch-sweep | 1.0.2 | 2026-10-26 |
@@ -41,6 +41,22 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.1.3 | 2026-10-26 |
 
 ## Recent Changes
+
+### 1.31.0 (2026-10-27)
+
+mobile-audit moves onto the shared findings format (#129). mobile-audit 1.1.0.
+
+**Changed**
+- **Verify, then record.** A new section after runtime testing:
+  - **Decompiled binaries.** Save redacted `strings`, jadx, apktool, otool, readelf or manifest-dump output, or a proxied request/response, to `evidence/` and point `location` at it. A hard-coded key's evidence is the call site that uses it, never the key.
+  - **Confirmed:** an extracted AES key traced to its decrypt call; cleartext login captured through a shipped `NSAllowsArbitraryLoads=true`, an unsafe default.
+  - **Needs validation:** an exported activity whose risk depends on backend authorization; a cleartext exception not yet seen in traffic.
+  - **Rejected:** a token log behind `BuildConfig.DEBUG` with `debuggable="false"`; a publishable Firebase or Maps key with its restrictions in place.
+  - MASVS-RESILIENCE gaps with no traced impact are hardening notes.
+- **Fingerprints:** `mobile-audit/<masvs-or-class>/<file or resource>/<symbol>`. Decompiled code uses the class or symbol, not the evidence file name.
+- **`ext` keys:** `masvs`, `platform`, `source` (source, decompiled or runtime).
+- **Output Format** is rendered from `findings.json`. It has "Rejected (do not re-raise)", and the MASVS category table becomes a coverage table with verdict counts.
+- The skill now gets copies of the six shared findings files.
 
 ### 1.30.0 (2026-10-27)
 

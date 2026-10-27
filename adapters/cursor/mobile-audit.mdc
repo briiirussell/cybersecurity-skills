@@ -122,37 +122,75 @@ For grey/black-box assessment, use a non-personal device:
 - Force-quit → relaunch to test session persistence and auto-login
 - Install a malicious sibling app and test IPC paths (Android Intent fuzzing)
 
+## Verify, then record
+
+Every candidate goes through the refutation pass in [references/verification.md](references/verification.md) before it reaches `findings.json`: a separate read that starts from the cited evidence and tries to disprove the claim. Close each candidate with exactly one verdict, per [references/findings-format.md](references/findings-format.md). Gaps with no traced impact are hardening notes, not records.
+
+**Citing a decompiled binary.** Mobile findings usually come from a compiled app, not source you can point a repo line at. Save the read-only tool output — `strings`, a `jadx` / `apktool` decompilation, `class-dump`, `otool -hv`, `readelf -h`, a manifest or plist dump, a proxied request/response — redacted, to `<audit dir>/evidence/<name>.txt` (or `.json`), and point `location` and each `evidence[]` entry at that file and the line within it. **Never write a secret value to an evidence file:** a hardcoded key's evidence is the decompiled call site that uses it, redacted to type + last 4 — not the key.
+
+- `confirmed` — a complete trace from attacker-reachable input (or an extracted artifact) to impact, or a runtime proof. Examples: an AES key read out of the decompiled APK with `strings`, traced to the decrypt call that uses it (evidence file saved; static-only, so `confidence: medium`); cleartext login captured over the test proxy because `NSAllowsArbitraryLoads=true` ships in `Info.plist` — a permissive shipped default, so `confirmed` at `confidence: medium` with a `system_configuration` condition for builds that don't override it, and `reproduced: true` once the request is captured.
+- `needs_validation` — the binary supports the claim but one decisive fact lives off-device. Examples: an `android:exported="true"` activity whose real risk depends on backend authorization you can't see; a `network_security_config` cleartext exception whose domain you have not yet confirmed the running app contacts. A live check you describe but don't run (a proxy capture, a Frida hook) is `needs_validation` with that capture as the plan — not `confirmed`.
+- `rejected` — a named control at a named location rules it out. Examples: a `Log.d` of a token gated behind `if (BuildConfig.DEBUG)` with `android:debuggable="false"` in the release manifest (`ruled_out_by` points at the manifest line in the evidence dump); a candidate "hardcoded key" that is a publishable Firebase/Maps identifier with its restrictions in place (see [references/severity-calibration.md](references/severity-calibration.md) §6).
+
+Severity goes on `confirmed` records only, calibrated with [references/severity-calibration.md](references/severity-calibration.md): `overall ≤ demonstrated impact`; a static-only extraction caps confidence at `medium`. MASVS-RESILIENCE gaps (root/jailbreak detection, obfuscation, anti-debugging) with no traced impact are **hardening notes, not findings** — they raise an attacker's cost, they don't cross a boundary.
+
+Record domain fields under `ext` (optional object on any record):
+
+| `ext` key | Meaning | Example |
+|---|---|---|
+| `masvs` | MASVS control id | `MASVS-STORAGE-1` |
+| `platform` | platform the finding is on | `ios` \| `android` \| `both` |
+| `source` | where the evidence came from | `source` \| `decompiled` \| `runtime` |
+
+Fingerprint: `mobile-audit/<masvs-or-class>/<file or resource>/<symbol or name>`, slash-separated, no line numbers (the validator rejects `:<digits>` segments). Examples: `mobile-audit/MASVS-NETWORK-1/Info.plist/NSAllowsArbitraryLoads`, `mobile-audit/MASVS-STORAGE-1/AndroidManifest.xml/allowBackup`, `mobile-audit/MASVS-CRYPTO-2/com/acme/app/crypto/Vault/decrypt`. For a decompiled app, use the class or symbol the code lives in, not the evidence file name, so the fingerprint stays the same when the evidence is re-captured.
+
+Write `findings.json` sorted by fingerprint, then validate and fix until it passes:
+
+```bash
+node references/validate-findings.mjs findings.json
+```
+
+Optionally export SARIF: `node references/to-sarif.mjs findings.json -o findings.sarif`. Dispositions (Fixed / Deferred / Accepted Risk / Mitigated (platform/config) / Requires major migration) are set later, usually by `finding-triage`; a false positive is a `rejected` record, not a disposition.
+
 ## Output Format
+
+Write `findings.json` first and validate it; the markdown report is rendered from the JSON and never changes a verdict or severity the JSON doesn't already say.
 
 ```markdown
 # Mobile Application Security Audit
-## App: [name + version]
-## Platform: iOS / Android / both
-## MASVS profile: L1 / L2 / R (resilience required)
-## Date: [date]
+## App: [name + version]   ## Platform: iOS / Android / both   ## MASVS profile: L1 / L2 / R
+## findings.json: [path] — validated: [yes]   ## Date: [date]
 
-### Executive summary
-[2-3 paragraphs]
+### Summary
+- Confirmed: [N] (Critical [n] | High [n] | Medium [n] | Low [n])   Needs validation: [N]   Rejected: [N]
 
-### MASVS category findings
-| Category | Findings | Severity high-water mark |
+### Confirmed findings
+#### [SEVERITY] [Title]  `fingerprint`
+**Location:** `evidence/<file>:line` (or repo `path:line`)   **MASVS:** [MASVS-X-n]   **CWE:** [CWE-n]   **Platform:** [ios | android | both]   **Confidence:** [medium | high (reproduced)]
+**What and why it matters:** [the trace, in a few lines]
+**Fix:** [concrete change]   **Verify the fix:** [the check that proves it]
+
+### Needs validation
+| Finding | Blockers | Check for the owner to run |
 |---|---|---|
-| STORAGE | N | |
-| CRYPTO | N | |
-| NETWORK | N | |
-| AUTH | N | |
-| PLATFORM | N | |
-| CODE | N | |
-| RESILIENCE | N | (only if R-profile) |
 
-### Per-finding detail
-[Title, MASVS-ID, severity, description, location, evidence, remediation, verification]
+### Hardening notes (not findings)
+- [gap] — [why it isn't a finding] — [effort]   (RESILIENCE controls usually land here)
+
+### Rejected (do not re-raise)
+| Fingerprint | Ruled out by | Location |
+|---|---|---|
+
+### MASVS category coverage
+| Category | Confirmed | Needs validation | Severity high-water mark |
+|---|---|---|---|
+| STORAGE / CRYPTO / NETWORK / AUTH / PLATFORM / CODE / RESILIENCE | | | |
 
 ### Backend API findings
 [Cross-link to api-audit / owasp-audit output]
 
-### Recommendations
-[Prioritized 30/60/90 day fixes]
+### Prioritized remediation plan
+1. [highest first — 30 / 60 / 90 day fixes]
 ```
 
 ## Boundaries
@@ -167,9 +205,21 @@ For grey/black-box assessment, use a non-personal device:
 
 - OWASP MASVS (Mobile Application Security Verification Standard)
 - OWASP MASTG (Mobile Application Security Testing Guide)
+- Shared references (copied into `references/` at build time): findings-format.md, severity-calibration.md, verification.md
 - OWASP Mobile Top 10
 - Apple Security: Apple Platform Security Guide
 - Android Security: Android Security Best Practices
 - iOS App Programming Guide — Security
 - "iOS Application Security" — David Thiel
 - "Android Hacker's Handbook"
+
+## Reference files
+
+This skill links to supporting files under `references/`. They are not inlined in this adapter; open them on GitHub (or in `skills/mobile-audit/references/` if you have the repo checked out):
+
+- [references/findings-format.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/mobile-audit/references/findings-format.md)
+- [references/findings.schema.json](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/mobile-audit/references/findings.schema.json)
+- [references/severity-calibration.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/mobile-audit/references/severity-calibration.md)
+- [references/to-sarif.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/mobile-audit/references/to-sarif.mjs)
+- [references/validate-findings.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/mobile-audit/references/validate-findings.mjs)
+- [references/verification.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/mobile-audit/references/verification.md)
