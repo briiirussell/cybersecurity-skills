@@ -530,6 +530,12 @@ rules:
     message: "*no confirmation*"
     reason: "Verdict example: an agent holding send_email with no confirmation gate is what the auditor records as a confirmed finding"
 
+  # --- hipaa-audit / privacy-engineering (findings format, v1.35.0+) ---------
+  - id: "RA2"
+    path: "hipaa-audit/SKILL.md"
+    message: "*register entry to*"
+    reason: "Tells the owner to save a redacted BAA register entry as audit evidence; an evidence file, not session persistence"
+
   # --- api-audit / business-logic-testing ------------------------------------
   - id: "E1"
     path: "api-audit/references/graphql.md"

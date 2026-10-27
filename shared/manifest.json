@@ -17,7 +17,8 @@
       "mobile-audit",
       "web-pentest",
       "prompt-injection",
-      "pci-audit"
+      "pci-audit",
+      "hipaa-audit"
     ],
     "validate-findings.mjs": [
       "agent-supply-chain-audit",
@@ -35,7 +36,8 @@
       "mobile-audit",
       "web-pentest",
       "prompt-injection",
-      "pci-audit"
+      "pci-audit",
+      "hipaa-audit"
     ],
     "to-sarif.mjs": [
       "agent-supply-chain-audit",
@@ -53,7 +55,8 @@
       "mobile-audit",
       "web-pentest",
       "prompt-injection",
-      "pci-audit"
+      "pci-audit",
+      "hipaa-audit"
     ],
     "findings-format.md": [
       "agent-supply-chain-audit",
@@ -71,7 +74,8 @@
       "mobile-audit",
       "web-pentest",
       "prompt-injection",
-      "pci-audit"
+      "pci-audit",
+      "hipaa-audit"
     ],
     "severity-calibration.md": [
       "agent-supply-chain-audit",
@@ -88,7 +92,8 @@
       "iam-audit",
       "crypto-audit",
       "mobile-audit",
-      "pci-audit"
+      "pci-audit",
+      "hipaa-audit"
     ],
     "coverage.schema.json": [
       "owasp-audit",
@@ -112,7 +117,8 @@
       "crypto-audit",
       "mobile-audit",
       "prompt-injection",
-      "pci-audit"
+      "pci-audit",
+      "hipaa-audit"
     ],
     "recon-and-coverage.md": [
       "owasp-audit",
