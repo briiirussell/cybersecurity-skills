@@ -15,13 +15,14 @@ Current versions of all skills. Agents can compare against local versions to che
 | crypto-audit | 1.1.2 | 2026-10-27 |
 | csf-mapping | 1.0.2 | 2026-10-26 |
 | dependency-audit | 1.2.4 | 2026-10-27 |
-| disk-forensics | 1.0.1 | 2026-10-26 |
+| disk-forensics | 1.0.2 | 2026-10-27 |
 | finding-triage | 1.3.1 | 2026-10-27 |
 | fuzzing-harness | 1.0.0 | 2026-10-27 |
 | hipaa-audit | 1.1.0 | 2026-10-27 |
 | iam-audit | 1.1.1 | 2026-10-27 |
-| incident-triage | 1.1.0 | 2026-10-26 |
+| incident-triage | 1.1.1 | 2026-10-27 |
 | log-watch | 1.0.1 | 2026-10-26 |
+| malware-triage | 1.0.0 | 2026-10-27 |
 | mobile-audit | 1.1.1 | 2026-10-27 |
 | native-code-review | 1.0.1 | 2026-10-27 |
 | osint-recon | 1.0.2 | 2026-10-26 |
@@ -36,15 +37,37 @@ Current versions of all skills. Agents can compare against local versions to che
 | scanner-pipeline | 1.0.4 | 2026-10-27 |
 | secrets-audit | 1.1.4 | 2026-10-27 |
 | security-comms | 1.0.3 | 2026-10-26 |
-| siem-detection | 1.0.4 | 2026-10-27 |
+| siem-detection | 1.0.5 | 2026-10-27 |
 | soc-operations | 1.0.4 | 2026-10-26 |
-| threat-hunting | 1.0.4 | 2026-10-26 |
+| threat-hunting | 1.0.5 | 2026-10-27 |
 | threat-modeling | 1.0.4 | 2026-10-26 |
 | variant-analysis | 1.0.0 | 2026-10-27 |
 | vuln-research | 1.0.4 | 2026-10-27 |
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.46.0 (2026-10-27)
+
+New skill: malware-triage (#139). malware-triage 1.0.0. Back-references: incident-triage 1.1.1, disk-forensics 1.0.2, threat-hunting 1.0.5, siem-detection 1.0.5.
+
+**Added**
+- **malware-triage 1.0.0.** Static triage of a suspicious file without running it. It covers:
+  - **Safe handling first:** never execute the sample on the analyst's machine; work on a copy in an isolated VM. Private samples aren't uploaded to public services without the owner's yes, because that can tip off the attacker and leak data. Lookups by hash are fine.
+  - **Identity and reputation:** hashes (SHA-256, imphash, ssdeep / TLSH) and reputation lookup by hash.
+  - **Static analysis:** file type, entropy and packers, strings and FLOSS, and per-format triage for PE / .NET, ELF and Mach-O.
+  - **Scripts and documents:** deobfuscating scripts and Office macros (PowerShell, JS, VBA via olevba), plus archives, ISO, LNK and OneNote containers.
+  - **Behaviour:** capa capabilities mapped to MITRE ATT&CK.
+  - **Indicators:** exported as defanged CSV or STIX 2.1.
+  - **YARA rules:** tested against the sample and a goodware set.
+  - **Hand-offs:** to siem-detection and threat-hunting.
+- Dynamic analysis only points to a sandbox (CAPE, ANY.RUN, Joe Sandbox, Hybrid Analysis) and notes the privacy trade-off.
+- **Output:** a Malware Triage Report, not `findings.json`. A verdict on a third-party file has no fix or disposition. The verdict is malicious / suspicious / likely benign / unknown, with confidence and a numbered evidence table, and "likely benign" is capped at medium confidence. Weaknesses the triage finds in the user's own systems go to the owning audit skill as findings.
+- **Grants:** read-only commands only (`file`, `strings`, hashing, `yara`, `capa`, `olevba`, `readelf`, `objdump`, three `otool` forms). FLOSS and exiftool aren't pre-approved, because each has a flag that changes the system or the file.
+
+**Changed**
+- incident-triage, disk-forensics, threat-hunting and siem-detection point to malware-triage.
+- README: new row, map cell, crossover line, and a "Where to start" mention.
 
 ### 1.45.0 (2026-10-27)
 

@@ -27,7 +27,7 @@ Not every skill is for every user on day one. A good starting point by context:
 - **A CVE wave just dropped and you run many apps:** `patch-sweep` to work out which apps are affected and ship fixes across the fleet, with `dependency-audit` for each project
 - **Want deterministic scanners in CI instead of asking an agent to "hack" your app:** `scanner-pipeline` picks the tools per layer, wires them into CI, and routes findings to `finding-triage`
 - **Securing cloud / infrastructure:** start with `cloud-audit` (AWS / GCP / Azure misconfig), then `iam-audit` if you manage identities, then `container-audit` if you run Docker / Kubernetes
-- **Responding to "something happened":** `incident-triage` for the immediate response, `disk-forensics` if you need to analyze a system afterward, `security-comms` to draft the stakeholder / customer communications
+- **Responding to "something happened":** `incident-triage` for the immediate response, `disk-forensics` if you need to analyze a system afterward, `malware-triage` for a suspicious file someone found, `security-comms` to draft the stakeholder / customer communications
 - **No SIEM, no security staff, but you have logs:** `log-watch` sets up a scheduled agent that reads the logs you already have (Vercel, Heroku, Sentry, Supabase, Stripe, CloudTrail, GitHub) and pages someone when it matters
 - **You are the security team (founder / solo operator):** `personal-opsec` audits your own accounts, devices and AI-agent setup first — the person holding the keys is usually the softest target
 - **Building a security program from scratch:** `csf-mapping` for the governance frame, `threat-modeling` before new features, `breach-patterns` to learn from public incidents
@@ -73,8 +73,8 @@ The skills are organized into seven families. Most security work crosses familie
 │-audit│ │-testing│ │patterns│ │        │ │      │ │ opsec   │ │          │
 │patch-│ │        │ │log-    │ │        │ │      │ │         │ │          │
 │ sweep│ │        │ │ watch  │ │        │ │      │ │         │ │          │
-│scan- │ │        │ │        │ │        │ │      │ │         │ │          │
-│ner-  │ │        │ │        │ │        │ │      │ │         │ │          │
+│scan- │ │        │ │malware-│ │        │ │      │ │         │ │          │
+│ner-  │ │        │ │ triage │ │        │ │      │ │         │ │          │
 │pipe- │ │        │ │        │ │        │ │      │ │         │ │          │
 │line  │ │        │ │        │ │        │ │      │ │         │ │          │
 │cicd- │ │        │ │        │ │        │ │      │ │         │ │          │
@@ -111,6 +111,7 @@ The skills are organized into seven families. Most security work crosses familie
      finding-triage → variant-analysis → scanner-pipeline (one bug → a rule → it can't come back)
      native-code-review ↔ crypto-audit (memory safety ↔ constant time and key handling)
      native-code-review ↔ fuzzing-harness (read the parser ↔ fuzz it)
+     incident-triage → malware-triage → siem-detection / threat-hunting (the sample → detections and hunts)
      breach-patterns → every audit skill (what to check)
      finding-triage ← every audit skill (closes the loop on any finding)
      security-comms ← every skill (translates output for non-security audience)
@@ -140,6 +141,7 @@ The skills are organized into seven families. Most security work crosses familie
 | [iam-audit](skills/iam-audit/) | Consultant-style IAM — audit / design / migrate. Cloud IAM (AWS/GCP/Azure), identity providers (Okta/Entra/Auth0/Workspace), application authorization (RBAC/ABAC/ReBAC), workload identity, JIT access, break-glass. Writes findings.json (confirmed / needs validation / rejected), with SARIF export. |
 | [incident-triage](skills/incident-triage/) | Security incident triage following NIST SP 800-61. |
 | [log-watch](skills/log-watch/) | Scheduled agent log review + paging for small teams without a SIEM — inventory the logs you already have, starter detections with thresholds (credential stuffing, new admin grants, key creation, .env/.git probing, bad webhook signatures, export spikes, CloudTrail root/IAM), a cheap-filter → strong-model pipeline with a monthly cost table, dedupe + suppression, paging. Detection only; logs treated as untrusted input. |
+| [malware-triage](skills/malware-triage/) | Static triage of a suspicious file without running it — safe handling, hash reputation, packers, strings / FLOSS, PE / ELF / Mach-O, script and Office macro deobfuscation, capa mapped to ATT&CK. Output: a verdict with evidence, defanged indicators (CSV / STIX 2.1), and a YARA rule tested against goodware. Hands off to siem-detection and threat-hunting. |
 | [mobile-audit](skills/mobile-audit/) | iOS + Android audit against OWASP MASVS / MASTG — storage, crypto, network, auth, platform IPC, code, resilience. Writes findings.json (confirmed / needs validation / rejected), with SARIF export. |
 | [native-code-review](skills/native-code-review/) | Memory-safety review of C, C++ and Rust — out-of-bounds writes and integer overflow into sizes, use-after-free, format strings, uninitialized memory, Rust `unsafe` soundness, FFI boundaries, parsers of untrusted input first, secrets left in memory, plus hardening flags and sanitizers. Writes findings.json (confirmed / needs validation / rejected), with SARIF export. |
 | [osint-recon](skills/osint-recon/) | Open source intelligence gathering and correlation. |

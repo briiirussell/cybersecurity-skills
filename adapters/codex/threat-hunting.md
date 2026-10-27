@@ -8,7 +8,7 @@ Hunt for adversaries who are already inside but haven't tripped an alert. Distin
 
 Hunting is hypothesis-driven, not browse-driven. "Let's look around the SIEM" is not hunting; "let's check for the specific pattern of T1059.001 (PowerShell) being launched by Office processes" is.
 
-Cross-references: `siem-detection` (queries you write here often graduate to detection rules), `incident-triage` (what to do if a hunt confirms a finding), `breach-patterns` (a rich source of hunt hypotheses), `disk-forensics` (deeper analysis on confirmed hits), `agent-supply-chain-audit` (hunting for malicious or rug-pulled AI coding-agent extensions on developer machines), `secrets-audit` (its exfiltration-collector domain list is a ready-made egress hunt: DNS / proxy hits to webhook.site, requestbin, ngrok, or chat webhooks from servers or CI runners).
+Cross-references: `siem-detection` (queries you write here often graduate to detection rules), `incident-triage` (what to do if a hunt confirms a finding), `breach-patterns` (a rich source of hunt hypotheses), `disk-forensics` (deeper analysis on confirmed hits), `agent-supply-chain-audit` (hunting for malicious or rug-pulled AI coding-agent extensions on developer machines), `secrets-audit` (its exfiltration-collector domain list is a ready-made egress hunt: DNS / proxy hits to webhook.site, requestbin, ngrok, or chat webhooks from servers or CI runners), `malware-triage` (the hashes, imphash and behaviours to hunt for, from a triaged sample).
 
 ## Authorization
 

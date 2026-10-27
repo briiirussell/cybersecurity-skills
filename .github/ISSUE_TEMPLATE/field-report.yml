@@ -32,6 +32,7 @@ body:
         - iam-audit
         - incident-triage
         - log-watch
+        - malware-triage
         - mobile-audit
         - native-code-review
         - osint-recon

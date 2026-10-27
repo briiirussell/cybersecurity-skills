@@ -8,7 +8,7 @@ allowed-tools: Read, Write, Grep, Glob, WebSearch
 
 Build, audit, and maintain SIEM detection content — the rules that fire alerts. Distinct from `incident-triage` (responds when alerts fire) and from `soc-operations` (runs the SOC that triages alerts). This skill is the engineering layer: log coverage, rule authoring, tuning, and detection-as-code workflows.
 
-Cross-references: `incident-triage` for what happens after the alert, `threat-hunting` for proactive hypothesis-driven hunts that often graduate into detection rules, `breach-patterns` for detection ideas pulled from public breach disclosures, `soc-operations` for the alert-triage operations on top of the detections engineered here, `log-watch` for small teams that don't run a SIEM yet (a scheduled agent over the logs they already have — the on-ramp to this skill). Rules over source code or HTTP responses (Semgrep, CodeQL, nuclei) belong to `variant-analysis`.
+Cross-references: `incident-triage` for what happens after the alert, `threat-hunting` for proactive hypothesis-driven hunts that often graduate into detection rules, `breach-patterns` for detection ideas pulled from public breach disclosures, `soc-operations` for the alert-triage operations on top of the detections engineered here, `log-watch` for small teams that don't run a SIEM yet (a scheduled agent over the logs they already have — the on-ramp to this skill). Rules over source code or HTTP responses (Semgrep, CodeQL, nuclei) belong to `variant-analysis`. Sample-derived behaviours, ATT&CK mappings and tested YARA rules come from `malware-triage`.
 
 ## Authorization
 
