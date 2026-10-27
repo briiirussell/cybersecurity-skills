@@ -8,7 +8,7 @@ Audit how cryptography is implemented in an application — algorithm choices, p
 
 Most crypto failures are not "they used MD5." Most failures are: right primitive, wrong mode (ECB instead of GCM), right algorithm, wrong parameter (PBKDF2 with 1,000 iterations in 2026), right library, wrong call order (init the cipher after the data was loaded).
 
-Cross-references: `owasp-audit` A04 (baseline) + A07 (timing-safe comparison), `secrets-audit` (key storage), `iam-audit` (KMS / HSM patterns), `native-code-review` (memory safety in C, C++ and Rust crypto code, and wiping secrets from memory).
+Cross-references: `owasp-audit` A04 (baseline) + A07 (timing-safe comparison), `secrets-audit` (key storage), `iam-audit` (KMS / HSM patterns), `native-code-review` (memory safety in C, C++ and Rust crypto code, and wiping secrets from memory), `fuzzing-harness` (round-trip and tamper-rejection property tests for encode/decode and sign/verify).
 
 ## Authorization
 

@@ -1,0 +1,384 @@
+---
+name: fuzzing-harness
+description: "Write and run fuzz harnesses and property-based tests for the code that handles untrusted bytes (parsers, decoders, serializers, deserializers, token and header parsing, protocol state machines), then minimize, dedupe and triage the crashes into verified findings with regression tests. Covers libFuzzer, cargo-fuzz, Go native fuzzing, Atheris, Jazzer.js and Jazzer, Hypothesis, fast-check and proptest, seed corpora and dictionaries, sanitizer builds, and CI fuzzing with ClusterFuzzLite or OSS-Fuzz. Use when the user mentions 'fuzzing,' 'fuzz harness,' 'fuzz target,' 'libFuzzer,' 'cargo fuzz,' 'go test -fuzz,' 'Atheris,' 'Jazzer,' 'property-based testing,' 'Hypothesis property test,' 'fast-check,' 'proptest,' 'seed corpus,' 'fuzzing dictionary,' 'AddressSanitizer report,' 'fuzzer crash files,' 'minimize a crash input,' 'ClusterFuzzLite,' 'OSS-Fuzz,' or wants to fuzz their parser."
+allowed-tools: Read, Grep, Glob, Write, WebSearch
+---
+
+# Fuzzing Harness — Fuzz Targets, Property Tests and Crash Triage
+
+Find the functions that turn untrusted bytes into structure, write a harness or property test for each one, run them
+with sanitizers on the user's say-so, and turn what falls out into deduplicated, verified findings that each come with a
+regression test. The main output is code in the user's repo: harnesses, property tests, seed corpora, dictionaries, CI
+jobs. That is why this skill pre-approves `Write`. Building and running them is not pre-approved: it executes the
+user's code and toolchain, so it always asks.
+
+Cross-references: `owasp-audit` (source review that points at the parsers worth fuzzing, and takes over when a crash
+turns out to be an injection or access-control bug), `web-pentest` (fuzzing a live HTTP app with Burp or ZAP; this
+skill never sends traffic to a running service), `mobile-audit` (Android intent and IPC testing on a device),
+`crypto-audit` (crypto implementations, where test vectors beat random input), `threat-modeling` (which inputs cross
+a trust boundary, used to rank targets), `vuln-research` and `dependency-audit` (a crash inside a third-party library),
+`scanner-pipeline` (the rest of the CI security jobs), `finding-triage` (dispositions after the report). For a manual
+memory-safety review of C, C++ or Rust code around a crash, hand off to `native-code-review`.
+
+## When to use
+
+- "Write a fuzzer for our packet parser / image decoder / config loader"
+- "Add property tests to this serializer" or "is `decode(encode(x)) == x` actually true?"
+- "Our fuzzer found 40 crashes, which ones matter?"
+- "Set up fuzzing in CI" or "can we get into OSS-Fuzz?"
+- A source review flagged a hand-rolled parser and the user wants it exercised instead of read
+- Input: a repo (or one package in it) the user owns, and permission to build and run code locally
+
+**Not for:** sending payloads to a running web app or API (`web-pentest`, or `api-audit` for the code review);
+Android intent fuzzing on a device (`mobile-audit`); a line-by-line OWASP review with no harness (`owasp-audit`);
+"is this CVE in our fuzzing library relevant?" (`vuln-research`); triaging a SAST or scanner alert
+(`finding-triage`); load or performance testing (not a security skill).
+
+## Authorization
+
+- Only code the user owns or is authorized to test. A third-party library they depend on is fine to fuzz locally
+  through their own build; report what you find to that project through its security policy, not in a public issue.
+- **Pre-approved:** reading the code, ranking targets, and writing harness, test, corpus, dictionary and CI files.
+  Say which files you're adding and where before you write them. Put them in test locations (`fuzz/`, `tests/`,
+  `*_test.go`, `testdata/`), never in production source.
+- **Always asks first:** installing a toolchain or fuzzing package, compiling with sanitizers, running a fuzzer or a
+  property test suite, and editing build files (`Cargo.toml`, `CMakeLists.txt`, `package.json`, `go.mod`). Each of those
+  runs or changes the user's code. Get a yes, with the time budget, per session.
+- **Keep runs local and contained.** A harness must not reach the network, a real database, a payment or email
+  provider, or files outside a temp directory. Stub those seams. Prefer a container or VM with no network and memory
+  and CPU limits for native targets.
+- **Stop at triage.** Classify the crash and decide whether it is security-relevant. Don't build a working exploit
+  from a crash, and don't run harnesses or crash inputs against systems the user doesn't control.
+
+## Workflow
+
+Inventory → rank targets → write harnesses and property tests → seeds and dictionaries → run (after a yes) →
+minimize, dedupe, triage → verify and record → regression tests and CI.
+
+### Step 1 — Inventory
+
+Don't write a second harness for a target that already has one. Search for existing harnesses, property tests and CI
+fuzzing:
+
+```bash
+rg -n -e 'LLVMFuzzerTestOneInput' -e 'fuzz_target!' -e 'func Fuzz[A-Z]\w*\(f \*testing\.F\)' \
+   -e 'atheris\.(Setup|Fuzz)' -e '@jazzer\.js|it\.fuzz\(' -e '@FuzzTest' \
+   -e '@given\(' -e 'fc\.(assert|property)\(' -e 'proptest!' .
+ls -d fuzz .clusterfuzzlite testdata/fuzz proptest-regressions .hypothesis 2>/dev/null
+# portable fallback
+grep -rnE 'LLVMFuzzerTestOneInput|fuzz_target!|func Fuzz[A-Z][A-Za-z0-9_]*\(f \*testing\.F\)|atheris\.Setup|@FuzzTest|@given\(|fc\.assert\(|proptest!' . \
+  --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=vendor --exclude-dir=target
+```
+
+Check whether the project is already on OSS-Fuzz (search `google/oss-fuzz` for `projects/<name>/`). If it is, new
+harnesses go upstream there, and crashes may already be filed.
+
+### Step 2 — Pick and rank targets
+
+Good targets take bytes or strings from outside the trust boundary and build structure from them:
+
+| Target shape | Why it pays | Look for |
+|---|---|---|
+| Binary format parsers and decoders (images, archives, fonts, packets, TLV, protobuf-ish) | Length fields, offsets and nested sizes; in C/C++ these are where memory bugs live | `parse`, `decode`, `unpack`, `read_*`, `ntohs`/`ntohl`, `memcpy` with a computed length, `binary.Read`, `struct.unpack`, `Buffer.read*` |
+| Text parsers (config, CSV, markdown, templating, URLs, MIME, headers) | Escapes, quoting, nesting depth, encodings | hand-rolled tokenizers, regexes applied to input (ReDoS), recursive descent |
+| Serializers and deserializers | Round-trip asymmetry, type confusion, unbounded allocation | `encode`/`decode`, `marshal`/`unmarshal`, `to_bytes`/`from_bytes`, custom `Deserialize` |
+| Auth and token parsing | A parser bug here is an auth bug | JWT/JWS header and claims parsing, cookie and session decoding, signature and MAC verification, SAML/XML handling, API key formats |
+| Canonicalizers and validators | A check that parses differently from the consumer is a bypass | path normalization, URL allow-lists, Unicode/IDNA folding, email and hostname validators |
+| State machines | Ordering bugs that unit tests never sequence | protocol handshakes, sessions, connection pools, undo/redo, multi-step forms |
+| `unsafe` / FFI boundaries | Rust's guarantees stop here | `unsafe`, `get_unchecked`, `from_utf8_unchecked`, `ctypes`/`cffi`, N-API addons, JNI |
+
+```bash
+rg -n -i '\b(fn|func|def|function|static|int|size_t|void)\s+\w*(parse|decode|deserial|unmarshal|unpack|from_bytes|read_)\w*' \
+   --type-add 'src:*.{c,cc,cpp,h,hpp,rs,go,py,js,ts,java,kt}' -t src
+grep -rnEi '(parse|decode|deserial|unmarshal|unpack|from_bytes)[A-Za-z0-9_]*\s*\(' . \
+  --include='*.c' --include='*.cc' --include='*.cpp' --include='*.rs' --include='*.go' --include='*.py' \
+  --include='*.js' --include='*.ts' --include='*.java' | grep -vE '_test\.|/tests?/|node_modules'
+```
+
+Rank each candidate on five things and fuzz the top three to five first. Write the ranking into the report:
+
+1. **Reach:** does untrusted input get there? (network, upload, IPC, a file a user supplies), traced from an entrypoint
+2. **Memory safety:** C/C++ and `unsafe` Rust first; managed languages still yield panics, hangs, OOMs and logic bugs
+3. **Complexity:** branching, nesting, length arithmetic, recursion
+4. **History:** past CVEs or bug fixes in the same file (`git log --oneline -- <file>`)
+5. **Harness cost:** a pure function `bytes -> result` is cheap; something that needs a server, a DB or global init
+   costs more. Expose a pure seam before you fuzz around a heavy one.
+
+### Step 3 — Write harnesses and property tests
+
+Pick the engine the project's language and test runner already support. Per-language templates, structured-input
+helpers and build commands are in [references/harness-templates.md](references/harness-templates.md).
+
+| Language | Coverage-guided fuzzing | Property-based testing |
+|---|---|---|
+| C / C++ | libFuzzer (`LLVMFuzzerTestOneInput`, `FuzzedDataProvider`) | (fuzz with an oracle instead) |
+| Rust | cargo-fuzz (`fuzz_target!`, `arbitrary`) | proptest |
+| Go | native fuzzing (`func FuzzX(f *testing.F)`, Go 1.18+) | `testing/quick`, or a fuzz test with property asserts |
+| Python | Atheris (`atheris.Setup` + `atheris.Fuzz`) | Hypothesis |
+| JavaScript / TypeScript | Jazzer.js (`module.exports.fuzz`, or `it.fuzz` with the Jest runner) | fast-check |
+| Java / Kotlin | Jazzer (`@FuzzTest` in JUnit 5) | jqwik |
+
+Rules for every harness:
+
+- **Deterministic.** No clock, randomness, threads or global state that leaks between runs. Reset anything the target
+  caches. A crash you can't replay isn't a finding yet.
+- **Fast.** Thousands of executions per second for native code. Do no I/O, cap input size (`-max_len`, or reject
+  above a limit in the harness), skip expensive setup on every call.
+- **Honest about expected errors.** Catch the target's documented error type (`ValueError`, `io.ErrUnexpectedEOF`,
+  `Err(_)`) and nothing wider. Swallowing every exception hides the bugs you're looking for.
+- **Respect the API contract.** If the function requires a NUL-terminated string or a length ≤ 64, the harness
+  provides one. A crash caused by the harness breaking the contract is a harness bug: fix it and rerun.
+- **Add an oracle when you can.** A harness that only checks "doesn't crash" finds crashes. One that also asserts a
+  property finds logic bugs. Assert the strongest property the code supports:
+
+| Property | Assert | Catches |
+|---|---|---|
+| Round-trip | `decode(encode(x)) == x`, or `encode(decode(b)) == b` for canonical input | Serializer asymmetry, lost fields, escaping bugs |
+| Differential | `ours(x)` and a reference implementation agree on accept/reject and on the fields that matter | Parser differentials: the validator and the consumer read the same input differently (CWE-436) |
+| Idempotence | `normalize(normalize(x)) == normalize(x)` | Double-decoding bypasses in path and URL canonicalizers |
+| Security invariant | `allowed(x)` implies the consumer's output stays inside the allowed origin, path or type | Allow-list bypasses |
+| Verification | `verify(k, sign(k, m))` is true; `verify(k, mutate(sign(k, m)))` is false and does not throw | Signature and MAC check bugs, exceptions that fail open |
+| No crash, bounded | Only documented error types; time and memory stay under a limit | Panics, uncaught exceptions, hangs, unbounded allocation |
+
+Two ways a property test asserts nothing: a **tautology** that recomputes the implementation
+(`assert add(a, b) == a + b`), and a **vacuous** filter where `assume()` throws away almost every input. Push
+constraints into the generator instead. For state machines, generate a sequence of operations and check the
+invariant after each step (Hypothesis `RuleBasedStateMachine`, fast-check `fc.commands`, a `FuzzedDataProvider` loop
+that picks an operation per iteration).
+
+If the project doesn't use a property-testing library yet, adding one is the user's call. Offer it once, naming the
+property you'd write, and accept the answer.
+
+### Step 4 — Seed corpora and dictionaries
+
+- **Seeds:** a handful of small, valid inputs that cover the format's main branches: the project's own test fixtures,
+  spec examples, one file per feature (each compression method, each record type). Keep them small (under 1 KB where the
+  format allows). Never use production data, customer files or real tokens as seeds. Build synthetic ones.
+- **Where they go:** `fuzz/corpus/<target>/` (libFuzzer, cargo-fuzz, Atheris, Jazzer.js), `f.Add(...)` or
+  `testdata/fuzz/FuzzX/` (Go), `@example(...)` (Hypothesis), the `examples` option (fast-check).
+- **Dictionaries** for text and tagged formats: keywords, magic bytes, delimiters, header names. libFuzzer format,
+  one token per line (`kw1="<?xml"`, `kw2="\x89PNG"`). Pass with `-dict=fuzz/<target>.dict`. Pull tokens from the
+  parser's own string constants: `rg -o '"[^"]{2,16}"' src/parser/`.
+- **Minimize the corpus** after a long run (`-merge=1`, `cargo fuzz cmin`) and commit the result if it's small, so the
+  next run and CI start where this one stopped.
+
+### Step 5 — Run (after the user's yes)
+
+State the plan before running anything: which targets, which sanitizers, how long, where output goes. Then run each
+target for a bounded time. Commands per engine are in [references/harness-templates.md](references/harness-templates.md).
+
+- **Sanitizers:** AddressSanitizer + UndefinedBehaviorSanitizer for C/C++ (`-fsanitize=fuzzer,address,undefined`),
+  the cargo-fuzz default (ASan) for Rust with `unsafe`, `--sanitizer none` for pure safe Rust (faster). MemorySanitizer
+  needs every dependency instrumented. Run it in a separate build, usually only in CI.
+- **Limits:** a per-input timeout (`-timeout=10` libFuzzer; Go's fixed 1s; Jazzer.js `--timeout` in ms), a memory
+  cap (`-rss_limit_mb=2048`), a size cap (`-max_len`), and a total budget (`-max_total_time=600`, `-fuzztime=10m`).
+- **Toolchain gotchas:** Apple's clang ships without libFuzzer, so use Homebrew LLVM or a Linux container on macOS.
+  cargo-fuzz needs nightly and doesn't run on Windows. Go's coverage guidance is best on amd64 and arm64.
+- **Output:** crashes into `security-audit/fuzz/crashes/<target>/`, sanitizer logs into
+  `security-audit/evidence/`. Note executions per second and coverage. A target stuck at low coverage after the first
+  minutes usually needs a better harness or seeds, not more time.
+
+### Step 6 — Minimize, dedupe, triage
+
+1. **Reproduce** each crash input against the same build. Flaky: check for leaked state or threads before going on.
+2. **Minimize** it: libFuzzer and Atheris `-minimize_crash=1 -runs=10000`, `cargo fuzz tmin`. Go, Hypothesis,
+   fast-check and proptest shrink on their own.
+3. **Dedupe** by crash type plus the top three frames *in project code* (skip allocator, libc and runtime frames).
+   Forty crash files are often two bugs.
+4. **Classify** each unique crash and decide whether it can be a security bug. The class table, sanitizer-report
+   reading and impact rules are in [references/crash-triage.md](references/crash-triage.md). In short:
+   - memory-safety writes (heap/stack overflow write, use-after-free, double free) in reachable code: potentially
+     High or Critical
+   - out-of-bounds reads: information disclosure, or a crash
+   - null dereference, panic, uncaught exception, assertion, stack exhaustion, timeout, OOM: availability, rated with
+     the availability table in `severity-calibration.md`
+   - property and differential failures: whatever the broken invariant protects (an allow-list bypass is an
+     access-control finding; a lossy round-trip may be nothing)
+5. **Trace reach.** A crash proves the function misbehaves on that input. The finding is about whether a lower-trust
+   principal can deliver that input. Walk from the entrypoint to the harnessed function and note every size limit,
+   validator and type check on the way, then try the minimized input through the real entrypoint in a local test
+   when you can.
+
+### Step 7 — Verify, then record
+
+Every unique crash or property failure goes through the refutation pass in
+[references/verification.md](references/verification.md) and closes with one verdict, per
+[references/findings-format.md](references/findings-format.md):
+
+- **`confirmed`**: the minimized input reproduces the crash or violation, *and* there's a traced path from an
+  attacker-reachable entrypoint. A reproducing crash input sets `"reproduced": true`, which allows
+  `confidence: high` when the reach trace is complete too. If the reach is traced only statically (you replayed the
+  input through the harness, not through the real entrypoint), keep `reproduced: true` for the crash but cap
+  confidence at `medium`.
+- **`needs_validation`**: the crash reproduces, but one fact outside the code decides whether attackers reach it,
+  such as an upload size limit set at the proxy or whether a feature flag is on in production.
+- **`rejected`**: a named control on every path stops the input first, or the crashing code is unreachable in
+  shipped builds (test-only, compiled out, or a build tool).
+
+Harness bugs (the harness broke the API contract) are not records. Fix the harness and rerun. A crash with no
+security consequence and no boundary crossed, like a panic in a CLI the user runs on their own files, is a
+hardening note.
+
+Rate severity with [references/severity-calibration.md](references/severity-calibration.md): `overall` ≤ impact,
+severity on `confirmed` only, the availability table for crashes and hangs.
+
+**Fingerprint:** `fuzzing-harness/<crash class>/<file>/<function>`. The file and function are the root-cause frame in
+project code, not the harness and not `memcpy`. Example:
+`fuzzing-harness/heap-buffer-overflow-write/src/net/tlv.c/tlv_read_value`. No line numbers, no input hash.
+
+**`ext` keys** (flat, scalar or array of scalars):
+
+| Key | Meaning | Example |
+|---|---|---|
+| `harness` | Repo-relative path of the harness or property test | `fuzz/fuzz_targets/tlv.rs` |
+| `engine` | `libfuzzer`, `cargo-fuzz`, `go-fuzz`, `atheris`, `jazzer.js`, `jazzer`, `hypothesis`, `fast-check`, `proptest` | `libfuzzer` |
+| `sanitizer` | Sanitizer in the build that caught it | `address` |
+| `crash_class` | Class from the triage table | `heap-buffer-overflow-write` |
+| `crash_input` | Minimized input, repo-relative under the audit dir | `security-audit/fuzz/crashes/tlv/min-3f9a1c` |
+| `crash_input_sha256` | Hash of the minimized input | `3f9a1c…` |
+| `regression_test` | The test that now replays it | `tests/regress/tlv_test.c` |
+
+`evidence[]` points at the saved sanitizer log in `security-audit/evidence/` (with the command and time in the
+description) and at the root-cause source line. `trace[]` runs from the real entrypoint to the crashing function.
+Write `findings.json` sorted by fingerprint and validate:
+
+```bash
+node references/validate-findings.mjs findings.json
+node references/to-sarif.mjs findings.json -o findings.sarif   # optional
+```
+
+#### Worked examples
+
+- **confirmed:** libFuzzer + ASan on `tlv_read_value` reports `heap-buffer-overflow WRITE of size 255`. The
+  14-byte minimized input sets a length byte larger than the remaining buffer, and `memcpy` uses the declared length.
+  The trace runs from the UDP receive handler in `src/net/server.c` through `packet_dispatch` to `tlv_read_value`
+  with no length check. The input replays through a local socket test. `reproduced: true`, `confidence: high`,
+  CWE-787. Pre-auth heap write in a network daemon: impact high, likelihood high, overall High. Critical would need
+  evidence of control over the written bytes, which this skill doesn't try to build.
+- **confirmed (availability):** a Go fuzz test on `ParseTokenHeader` panics on a header with an empty `kid`
+  segment (index out of range). The auth middleware calls it inside a goroutine it starts itself, where `net/http`'s
+  per-request panic recovery doesn't apply, so the whole process exits. One unauthenticated request takes down a
+  single-process service: High under the availability table, CWE-129. On the handler goroutine the same panic would
+  fail only that request and rate Low. Fix: a bounds check, and commit
+  `testdata/fuzz/FuzzParseTokenHeader/<hash>` as the regression test.
+- **needs_validation:** Atheris finds `parse_manifest` hitting the 2 GB memory cap (OOM) on a deeply nested YAML anchor
+  input. The upload route's code sets no maximum body length. Blocker: does the production proxy cap request
+  bodies (`client_max_body_size`) below what's needed to trigger it? Plan: replay the minimized 9 KB input through
+  staging's upload route and watch worker memory. If the worker dies, confirmed. If the proxy rejects it, rejected
+  with the proxy config as the control.
+- **rejected:** cargo-fuzz hits `assertion failed: depth <= MAX_DEPTH` in `debug_dump_tree`. The function is
+  behind `#[cfg(test)]` and only the test suite calls it. `ruled_out_by`: "compiled only under `cfg(test)`; not in
+  release builds", location at the `#[cfg(test)]` line. Keep the record so a rerun doesn't raise it again, and fix it
+  anyway if it's cheap.
+- **rejected (differential):** fast-check reports that the URL allow-list and the `fetch` wrapper disagree on
+  `http://a.example\@b.example/`. The wrapper calls `assertAllowed(new URL(raw).href)` and then fetches that same
+  normalized `href`, so the consumer never sees the raw string. `ruled_out_by`: the re-serialization in the wrapper.
+  The disagreement is real but unreachable. Note it as a hardening item if other callers use the raw string.
+
+### Step 8 — Regression tests and CI
+
+Every crash input becomes a test that runs on every build without the fuzzer. Do this before or with the fix, never
+after:
+
+- Go: the minimized file already sits in `testdata/fuzz/FuzzX/`. Commit it and `go test` replays it.
+- libFuzzer / cargo-fuzz / Atheris / Jazzer.js: commit the input under `fuzz/regressions/<target>/` and run the target
+  over that directory with zero fuzzing iterations in CI (`-runs=0`, Jazzer.js `--mode=regression`), or add a unit test
+  that loads the file and calls the same entry point.
+- Hypothesis: add `@example(<shrunk input>)` to the test. fast-check: add the counterexample to `examples`, or as a
+  plain test. proptest: commit `proptest-regressions/` and add an explicit test for the case.
+
+**Unfixed memory-safety crashes in a public repo:** don't commit the input, or a test that names it, before the fix
+ships. Keep it in the private audit directory and follow the project's disclosure policy.
+
+CI setup (PR-time short runs, ClusterFuzzLite, OSS-Fuzz eligibility) is in
+[references/ci-integration.md](references/ci-integration.md). The short version: replay the regression corpus on
+every PR, fuzz changed targets for a few minutes per PR, and run longer batch fuzzing on a schedule.
+
+## Output Format
+
+Write `findings.json` first and validate it. Render the report from it. The prose never changes a verdict, severity or
+blocker the JSON doesn't already say.
+
+```markdown
+# Fuzzing Report
+## Project: [name]   ## Commit: [sha]   ## Date: [date]
+## Scope: [packages / targets covered; full | partial — what was left out and why]
+## findings.json: [path] — validated: [yes]
+
+### Summary
+- Targets ranked: [N]   Harnessed: [N]   Fuzzed: [N] for [total time]
+- Unique crashes / property failures: [N] (from [M] raw crash files)
+- Confirmed: [N] (Critical [n] | High [n] | Medium [n] | Low [n])   Needs validation: [N]   Rejected: [N]   Hardening notes: [N]
+
+### Target ranking
+| Rank | Function | File | Reach | Memory-unsafe | Complexity | Harness cost | Status |
+|---|---|---|---|---|---|---|---|
+
+### Harness inventory
+| Target | Harness / test | Engine | Sanitizers | Time | Exec/s | Coverage | Corpus | Crashes |
+|---|---|---|---|---|---|---|---|---|
+
+### Confirmed findings
+#### [SEVERITY] [Title]  `fingerprint`
+**Location:** `path:line`   **CWE:** [CWE-n]   **Confidence:** [medium | high (reproduced)]   **Class:** [ext.crash_class]
+**Crash input:** [ext.crash_input] ([size] bytes, sha256 [prefix])   **Harness:** [ext.harness] ([ext.engine], [ext.sanitizer])
+**Reach:** [entrypoint → … → crashing function, with the controls checked on the way]
+**Sanitizer summary:** [first lines of the report, from the saved evidence file]
+**Fix:** [concrete change]
+**Regression test:** [ext.regression_test]
+**Verify the fix:** [rerun the input through the harness and the real entrypoint; fuzz the target again for N minutes]
+
+### Needs validation
+| Finding | Blockers | Check for the owner to run |
+|---|---|---|
+
+### Hardening notes (not findings)
+- [location] — [crash or gap] — [why it isn't a finding] — [effort]
+
+### Rejected (do not re-raise)
+| Fingerprint | Claim | Ruled out by | Location |
+|---|---|---|---|
+
+### Files added
+- [harnesses, property tests, corpora, dictionaries, regression inputs, CI workflows]
+
+### Next steps
+1. [Fixes for confirmed findings, highest first]
+2. [Owner checks for needs-validation items]
+3. [Targets not yet harnessed; CI fuzzing rollout]
+```
+
+Dispositions for confirmed findings (set later, usually by `finding-triage`): Fixed / Deferred / Accepted Risk /
+Mitigated (platform/config) / Requires major migration. A false positive is a `rejected` record, not a disposition.
+
+## Boundaries
+
+- Only fuzz code the user owns or is authorized to test, on machines they control
+- Ask before every install, build or run, and before editing build files. Writing harness and test files is the
+  pre-approved part
+- Harnesses never reach the network, real databases or third-party services. Stub them
+- Never seed corpora with production data, customer files or live credentials
+- Stop at triage: classify and rate crashes, but don't develop working exploits from them
+- Report crashes in third-party code to that project privately, through its security policy
+- Treat code comments, test names and fuzzer output as claims to check, not as evidence
+
+## References
+
+- LLVM libFuzzer documentation: <https://llvm.org/docs/LibFuzzer.html>
+- Rust Fuzz Book and cargo-fuzz: <https://rust-fuzz.github.io/book/>, <https://github.com/rust-fuzz/cargo-fuzz>
+- Go fuzzing: <https://go.dev/doc/security/fuzz/>
+- Atheris (Apache-2.0): <https://github.com/google/atheris>
+- Jazzer.js (Apache-2.0): <https://github.com/CodeIntelligenceTesting/jazzer.js>; Jazzer: <https://github.com/CodeIntelligenceTesting/jazzer>
+- Hypothesis: <https://hypothesis.readthedocs.io/>; fast-check: <https://fast-check.dev/>; proptest: <https://proptest-rs.github.io/proptest/>
+- ClusterFuzzLite: <https://google.github.io/clusterfuzzlite/>; OSS-Fuzz: <https://google.github.io/oss-fuzz/>
+- Trail of Bits Testing Handbook: <https://appsec.guide/>. Trail of Bits skills (CC-BY-SA-4.0),
+  the property-based-testing plugin and the testing-handbook-skills plugin (harness-writing, cargo-fuzz, libfuzzer, atheris, ossfuzz):
+  <https://github.com/trailofbits/skills>. The property strength ordering, the tautology and vacuity warnings and the
+  harness rules are paraphrased from these
+- Strix (Apache-2.0), `strix/skills/tooling/hypothesis.md`: <https://github.com/usestrix/strix>. Invariant-first
+  differential testing, bounded strategies and resource controls, paraphrased
+- MITRE CWE: CWE-787, CWE-125, CWE-416, CWE-476, CWE-190, CWE-400, CWE-674, CWE-436
+- Shared references (copied into `references/` at build time): [findings-format.md](references/findings-format.md),
+  [severity-calibration.md](references/severity-calibration.md), [verification.md](references/verification.md),
+  [validate-findings.mjs](references/validate-findings.mjs), [to-sarif.mjs](references/to-sarif.mjs),
+  [findings.schema.json](references/findings.schema.json)

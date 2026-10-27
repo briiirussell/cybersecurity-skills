@@ -204,8 +204,8 @@ violated invariant, after the user agrees and preferably in a container or VM:
 Exact commands, sanitizer options and their limits (assembly, custom allocators and uninstrumented libraries escape
 them) are in [references/hardening-and-sanitizers.md](references/hardening-and-sanitizers.md).
 
-**Fuzzing hand-off.** When a parser has no fuzz target, or a candidate needs many inputs to settle, hand it to a fuzzing
-workflow (a separate fuzzing skill is planned for this repo; until it ships, give the user the hand-off directly). Pass
+**Fuzzing hand-off.** When a parser has no fuzz target, or a candidate needs many inputs to settle, hand it to
+`fuzzing-harness`. Pass
 along: the entry function and its signature, the input format and a few valid seed inputs, the sanitizers to build
 with, the invariant to assert, and the candidate fingerprints the fuzzer should settle. Each reproducing crash then
 comes back here as evidence for that candidate.

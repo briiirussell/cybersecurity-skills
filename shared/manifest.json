@@ -22,7 +22,8 @@
       "privacy-engineering",
       "cicd-security",
       "variant-analysis",
-      "native-code-review"
+      "native-code-review",
+      "fuzzing-harness"
     ],
     "validate-findings.mjs": [
       "agent-supply-chain-audit",
@@ -45,7 +46,8 @@
       "privacy-engineering",
       "cicd-security",
       "variant-analysis",
-      "native-code-review"
+      "native-code-review",
+      "fuzzing-harness"
     ],
     "to-sarif.mjs": [
       "agent-supply-chain-audit",
@@ -68,7 +70,8 @@
       "privacy-engineering",
       "cicd-security",
       "variant-analysis",
-      "native-code-review"
+      "native-code-review",
+      "fuzzing-harness"
     ],
     "findings-format.md": [
       "agent-supply-chain-audit",
@@ -91,7 +94,8 @@
       "privacy-engineering",
       "cicd-security",
       "variant-analysis",
-      "native-code-review"
+      "native-code-review",
+      "fuzzing-harness"
     ],
     "severity-calibration.md": [
       "agent-supply-chain-audit",
@@ -113,7 +117,8 @@
       "privacy-engineering",
       "cicd-security",
       "variant-analysis",
-      "native-code-review"
+      "native-code-review",
+      "fuzzing-harness"
     ],
     "coverage.schema.json": [
       "owasp-audit",
@@ -142,7 +147,8 @@
       "privacy-engineering",
       "cicd-security",
       "variant-analysis",
-      "native-code-review"
+      "native-code-review",
+      "fuzzing-harness"
     ],
     "recon-and-coverage.md": [
       "owasp-audit",
