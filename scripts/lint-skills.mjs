@@ -19,6 +19,8 @@
  *   - a backticked skill name in a cross-reference context does not resolve to skills/<name>/
  *   - a relative markdown link does not resolve (links to shared copies under
  *     references/ are allowed even before the build has copied them)
+ *   - a link's `#anchor` names no heading in the target .md file (GitHub slug rules).
+ *     Checked in SKILL.md, the skill's references (any depth) and shared/
  *   - the same single-quoted trigger phrase appears in two or more descriptions
  *     (the request would be ambiguous between skills; SkillSpector TR2). Keep the
  *     phrase in the skill that owns the work and narrow or drop it in the other.
@@ -70,6 +72,9 @@ const SHARED_FALLBACK = [
   "orchestration.md",
   "diff-review.md",
 ];
+
+const SHARED_DIR = join(ROOT, "shared");
+const LINK_RE = /\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
 
 const errors = [];
 const warnings = [];
@@ -132,6 +137,53 @@ function stripFences(text) {
     out.push(inFence ? "" : line);
   }
   return out;
+}
+
+/** GitHub-style heading anchors for a markdown file (fenced code ignored), plus explicit <a id> / <a name>. */
+const slugCache = new Map();
+export function headingSlugs(file) {
+  if (slugCache.has(file)) return slugCache.get(file);
+  const out = new Set();
+  const seen = new Map();
+  for (const line of stripFences(readFileSync(file, "utf8"))) {
+    for (const a of line.matchAll(/<a\s+(?:id|name)="([^"]+)"/g)) out.add(a[1]);
+    const m = /^#{1,6}\s+(.*?)\s*#*\s*$/.exec(line);
+    if (!m) continue;
+    const slug = m[1]
+      .replace(/<[^>]+>/g, "")
+      .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}\s_-]/gu, "")
+      .replace(/ /g, "-");
+    const n = seen.get(slug) ?? 0;
+    seen.set(slug, n + 1);
+    out.add(n ? `${slug}-${n}` : slug);
+  }
+  slugCache.set(file, out);
+  return out;
+}
+
+/** Report links in `file` whose #anchor names no heading in the target markdown file. */
+function checkAnchors(file, lines = stripFences(readFileSync(file, "utf8"))) {
+  lines.forEach((line, i) => {
+    for (const m of line.matchAll(LINK_RE)) {
+      const target = m[1];
+      if (/^(https?:|mailto:|<)/i.test(target) || !target.includes("#")) continue;
+      const [pathPart, anchor] = target.split("#", 2);
+      const resolved = pathPart ? normalize(join(dirname(file), decodeURI(pathPart))) : file;
+      if (!resolved.endsWith(".md") || !existsSync(resolved) || !anchor) continue;
+      if (!headingSlugs(resolved).has(decodeURIComponent(anchor)))
+        err(file, `line ${i + 1}: link "${target}" points at no heading "#${anchor}"`);
+    }
+  });
+}
+
+function mdFilesUnder(dir) {
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir).flatMap((e) => {
+    const p = join(dir, e);
+    return statSync(p).isDirectory() ? mdFilesUnder(p) : p.endsWith(".md") ? [p] : [];
+  });
 }
 
 function loadSharedFiles() {
@@ -249,7 +301,7 @@ function lintSkill(name) {
     }
 
     // Relative markdown links
-    for (const m of line.matchAll(/\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g)) {
+    for (const m of line.matchAll(LINK_RE)) {
       const target = m[1];
       if (/^(https?:|mailto:|#|<)/i.test(target)) continue;
       const pathPart = decodeURI(target.split("#")[0]);
@@ -261,9 +313,12 @@ function lintSkill(name) {
       err(file, `line ${ln}: relative link "${target}" does not resolve`);
     }
   });
+  checkAnchors(file, prose);
+  for (const ref of mdFilesUnder(join(SKILLS_DIR, name, "references"))) checkAnchors(ref);
 }
 
 for (const name of skillNames) lintSkill(name);
+for (const f of mdFilesUnder(SHARED_DIR)) checkAnchors(f);
 
 // Every folder under skills/ must carry a SKILL.md.
 for (const entry of readdirSync(SKILLS_DIR)) {
