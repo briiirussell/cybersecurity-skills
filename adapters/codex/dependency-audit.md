@@ -278,7 +278,7 @@ Pinned looks like `some-mcp-server@1.4.2`, `tool==0.9.1`, `image@sha256:...`. Ha
 
 ### Step 5: Check Dev Tool and CI/CD Security
 
-**GitHub Actions and other CI:** workflow security (pull_request_target, script injection, token permissions, SHA pinning, fork secrets, self-hosted runners, agents in CI) → `cicd-security`. This step keeps the dependency side: what the build installs and how.
+**GitHub Actions and other CI:** workflow security (pull_request_target, script injection, token permissions, SHA pinning, fork secrets, self-hosted runners, agents in CI) → `cicd-security`.
 
 **Docker:**
 - Running as root in container (missing `USER` directive)
@@ -294,7 +294,7 @@ Pinned looks like `some-mcp-server@1.4.2`, `tool==0.9.1`, `image@sha256:...`. Ha
 
 ### Step 5b: CI and Release Trust Handoffs
 
-CI configuration is authorization code: it decides who can run what, with which credentials, against which targets. Most pipeline compromises go through a handoff, where a lower-trust job writes something a higher-trust job later restores, executes, or ships. Check each handoff below. Greps, validation rules, and reporting fields are in [references/ci-release.md](references/ci-release.md). Handoffs 1–4, 7 and 8 (artifacts and caches into privileged jobs, permissions, OIDC subjects, publish identity, self-hosted runners) are owned by `cicd-security`; record them there. This step keeps release-artifact identity (5) and independent checksums (6).
+CI configuration is authorization code: it decides who can run what, with which credentials, against which targets. Most pipeline compromises go through a handoff, where a lower-trust job writes something a higher-trust job later restores, executes, or ships. Check each handoff below. Greps, validation rules, and reporting fields are in [references/ci-release.md](references/ci-release.md). Handoffs 1–4, 7 and 8 belong to `cicd-security`; this step keeps 5 and 6.
 
 | # | Handoff | Starting grep (`.github/workflows/*.y*ml`) |
 |---|---|---|
@@ -317,7 +317,7 @@ For a PR or a lockfile diff, follow [references/diff-review.md](references/diff-
 
 ## Output Format
 
-**Write `findings.json` first, validate it, then render the markdown from it.** Record every candidate as `confirmed`, `needs_validation`, or `rejected` per [references/findings-format.md](references/findings-format.md), and run `node references/validate-findings.mjs findings.json` until it exits 0. The prose report never changes a verdict, severity, or disposition the JSON doesn't have. Score severity on confirmed records only, using [references/severity-calibration.md](references/severity-calibration.md). Fingerprint by root cause in the shared form, `dependency-audit/<advisory-id>/<lockfile>/<package>` (for example `dependency-audit/GHSA-29mw-wpgm-hmr9/package-lock.json/lodash`), or `dependency-audit/ci/<workflow-file>/<handoff>` for release-artifact findings (handoffs 5–6; workflow findings use `cicd-security/<class>/...`). No versions or line numbers in it.
+**Write `findings.json` first, validate it, then render the markdown from it.** Record every candidate as `confirmed`, `needs_validation`, or `rejected` per [references/findings-format.md](references/findings-format.md), and run `node references/validate-findings.mjs findings.json` until it exits 0. The prose report never changes a verdict, severity, or disposition the JSON doesn't have. Score severity on confirmed records only, using [references/severity-calibration.md](references/severity-calibration.md). Fingerprint by root cause in the shared form, `dependency-audit/<advisory-id>/<lockfile>/<package>` (for example `dependency-audit/GHSA-29mw-wpgm-hmr9/package-lock.json/lodash`), or `dependency-audit/ci/<workflow-file>/<handoff>` for handoffs 5–6. No versions or line numbers in it.
 
 **Rejections** follow the table in [references/verification.md](references/verification.md):
 

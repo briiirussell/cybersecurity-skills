@@ -18,8 +18,7 @@ Cross-references: `prompt-injection` for the same hidden-instruction and tool-po
 `env` blocks, agent settings, and session transcripts; `dependency-audit` for the npm / PyPI packages behind MCP servers
 and bundled scripts; `ai-risk-management` for where agent tooling sits in the org's AI inventory; `incident-triage`
 when a malicious item has already run; `personal-opsec` for the operator's own machine and accounts around the agent;
-`cicd-security` for agents running inside CI (claude-code-action and similar), where issue and PR text reaches an agent
-holding a write token.
+`cicd-security` for agents that run inside CI workflows (claude-code-action and similar).
 
 ## Step 0 — Authorization and scope
 
