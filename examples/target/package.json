@@ -1,0 +1,17 @@
+{
+  "name": "notes-api",
+  "version": "0.3.0",
+  "private": true,
+  "description": "Deliberately vulnerable example target for cybersecurity-skills. Do not deploy.",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js"
+  },
+  "dependencies": {
+    "axios": "0.21.0",
+    "better-sqlite3": "9.4.3",
+    "express": "4.17.1",
+    "jsonwebtoken": "8.5.1",
+    "lodash": "4.17.15"
+  }
+}

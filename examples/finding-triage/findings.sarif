@@ -1,0 +1,219 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "cybersecurity-skills",
+          "informationUri": "https://github.com/briiirussell/cybersecurity-skills",
+          "rules": [
+            {
+              "id": "finding-triage/CWE-209/src/app.js/errorHandler",
+              "shortDescription": {
+                "text": "Global Express error handler returns err.message and err.stack to any client, pre-auth on any route"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-209",
+                  "owasp/A10:2025"
+                ],
+                "skill": "finding-triage",
+                "security-severity": "3.0"
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/209.html"
+            }
+          ]
+        }
+      },
+      "originalUriBaseIds": {
+        "%SRCROOT%": {
+          "description": {
+            "text": "Repository root"
+          }
+        }
+      },
+      "results": [
+        {
+          "ruleId": "finding-triage/CWE-209/src/app.js/errorHandler",
+          "ruleIndex": 0,
+          "level": "note",
+          "message": {
+            "text": "Global Express error handler returns err.message and err.stack to any client, pre-auth on any route. Severity low (likelihood high: Anonymous client can trigger it on any route with a malformed JSON body; no precondition beyond reaching the API; impact low: Discloses absolute install paths, module names, SQLite schema fragments, and (via /api/preview) whether internal hostnames resolve and their internal IP/port state; no credentials, tokens or user data)."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/app.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 17
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "cybersecuritySkills/v1": "finding-triage/CWE-209/src/app.js/errorHandler"
+          },
+          "properties": {
+            "verdict": "confirmed",
+            "confidence": "medium",
+            "skill": "finding-triage",
+            "security-severity": "3.0"
+          },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/preview.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 8
+                          }
+                        },
+                        "message": {
+                          "text": "POST /api/preview, any signed-up user (requireAuth); body.url passes the http(s) prefix check at line 11"
+                        }
+                      },
+                      "kinds": [
+                        "entrypoint"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/preview.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 12
+                          }
+                        },
+                        "message": {
+                          "text": "axios.get(url) rejects on DNS failure, connection refusal, timeout or non-2xx status; the error carries Node's message (e.g. getaddrinfo ENOTFOUND <host>, connect ECONNREFUSED <ip>:<port>)"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/preview.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 16
+                          }
+                        },
+                        "message": {
+                          "text": "catch block forwards the raw error with next(err); no mapping to a generic message"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/app.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 17
+                          }
+                        },
+                        "message": {
+                          "text": "res.status(500).json({ error: err.message, stack: err.stack }) for every error from every route; no NODE_ENV switch"
+                        }
+                      },
+                      "kinds": [
+                        "sink"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "relatedLocations": [
+            {
+              "id": 0,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/app.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 17
+                }
+              },
+              "message": {
+                "text": "Error handler serializes err.message and err.stack into the response body unconditionally"
+              }
+            },
+            {
+              "id": 1,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/app.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 14
+                }
+              },
+              "message": {
+                "text": "Comment states errors are returned on purpose so the frontend can show them; there is no production branch"
+              }
+            },
+            {
+              "id": 2,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/app.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 5
+                }
+              },
+              "message": {
+                "text": "express.json() runs before every router, so a malformed JSON body to any route (including unauthenticated /api/users/*) reaches the same handler: pre-auth trigger"
+              }
+            },
+            {
+              "id": 3,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/users.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 10
+                }
+              },
+              "message": {
+                "text": "Duplicate-email signup throws a SqliteError (UNIQUE constraint failed: users.email) that reaches the handler unauthenticated and discloses schema detail"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

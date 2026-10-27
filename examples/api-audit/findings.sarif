@@ -1,0 +1,1383 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "cybersecurity-skills",
+          "informationUri": "https://github.com/briiirussell/cybersecurity-skills",
+          "rules": [
+            {
+              "id": "api-audit/CWE-209/src/app.js/errorHandler",
+              "shortDescription": {
+                "text": "Global error handler returns err.message and err.stack to any client, and turns login into an email-enumeration oracle"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-209",
+                  "owasp/API8:2023"
+                ],
+                "skill": "api-audit",
+                "security-severity": "3.0"
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/209.html"
+            },
+            {
+              "id": "api-audit/CWE-307/src/routes/users.js/login-signup-rate-limit",
+              "shortDescription": {
+                "text": "No rate limiting or lockout on POST /api/users/login and /signup (online password guessing; synchronous scrypt blocks the event loop)"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-307",
+                  "owasp/API4:2023"
+                ],
+                "skill": "api-audit"
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/307.html"
+            },
+            {
+              "id": "api-audit/CWE-613/src/auth.js/requireAuth-no-revocation",
+              "shortDescription": {
+                "text": "Tokens outlive account deletion, and SQLite rowid reuse can hand a deleted user's token the next new user's account"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-613",
+                  "owasp/API2:2023"
+                ],
+                "skill": "api-audit",
+                "security-severity": "3.0"
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/613.html"
+            },
+            {
+              "id": "api-audit/CWE-639/src/routes/notes.js/GET-notes-id",
+              "shortDescription": {
+                "text": "GET /api/notes/:id returns any user's note to any authenticated user (BOLA)"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-639",
+                  "owasp/API1:2023"
+                ],
+                "skill": "api-audit",
+                "security-severity": "8.0"
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/639.html"
+            },
+            {
+              "id": "api-audit/CWE-798/src/config.js/jwtSecret",
+              "shortDescription": {
+                "text": "JWT signing secret falls back to the hard-coded string \"changeme\", so tokens for any user, including admins, can be forged"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-798",
+                  "owasp/API2:2023"
+                ],
+                "skill": "api-audit",
+                "security-severity": "9.5"
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/798.html"
+            },
+            {
+              "id": "api-audit/CWE-89/src/routes/notes.js/GET-notes-search",
+              "shortDescription": {
+                "text": "SQL injection in GET /api/notes/search via q reads every user's notes and every password hash"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-89",
+                  "owasp/A05:2025"
+                ],
+                "skill": "api-audit",
+                "security-severity": "8.0"
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/89.html"
+            },
+            {
+              "id": "api-audit/CWE-915/src/routes/notes.js/PATCH-notes-id",
+              "shortDescription": {
+                "text": "Mass assignment in PATCH /api/notes/:id lets a user rewrite id and owner_id, taking over or planting notes in other accounts"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-915",
+                  "owasp/API3:2023"
+                ],
+                "skill": "api-audit",
+                "security-severity": "8.0"
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/915.html"
+            },
+            {
+              "id": "api-audit/CWE-918/src/routes/preview.js/POST-preview",
+              "shortDescription": {
+                "text": "SSRF in POST /api/preview: any user can make the server request arbitrary internal URLs, with an error-message port-scan oracle"
+              },
+              "properties": {
+                "tags": [
+                  "security",
+                  "external/cwe/cwe-918",
+                  "owasp/API7:2023"
+                ],
+                "skill": "api-audit",
+                "security-severity": "5.5"
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/918.html"
+            }
+          ]
+        }
+      },
+      "originalUriBaseIds": {
+        "%SRCROOT%": {
+          "description": {
+            "text": "Repository root"
+          }
+        }
+      },
+      "results": [
+        {
+          "ruleId": "api-audit/CWE-209/src/app.js/errorHandler",
+          "ruleIndex": 0,
+          "level": "note",
+          "message": {
+            "text": "Global error handler returns err.message and err.stack to any client, and turns login into an email-enumeration oracle. Severity low (likelihood high: One unauthenticated request with no special conditions; impact low: Account enumeration plus internal path and dependency disclosure; no direct follow-on)."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/app.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 17
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "cybersecuritySkills/v1": "api-audit/CWE-209/src/app.js/errorHandler"
+          },
+          "properties": {
+            "verdict": "confirmed",
+            "confidence": "medium",
+            "skill": "api-audit",
+            "security-severity": "3.0"
+          },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/users.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 15
+                          }
+                        },
+                        "message": {
+                          "text": "POST /api/users/login, unauthenticated, body {email} with no password"
+                        }
+                      },
+                      "kinds": [
+                        "entrypoint"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/users.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 18
+                          }
+                        },
+                        "message": {
+                          "text": "checkPassword(undefined, hash) runs only when the email exists"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/auth.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 13
+                          }
+                        },
+                        "message": {
+                          "text": "crypto.scryptSync(undefined, ...) throws TypeError; Express 4 forwards synchronous throws to the error handler"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/app.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 17
+                          }
+                        },
+                        "message": {
+                          "text": "res.status(500).json({ error: err.message, stack: err.stack })"
+                        }
+                      },
+                      "kinds": [
+                        "sink"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "relatedLocations": [
+            {
+              "id": 0,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/app.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 17
+                }
+              },
+              "message": {
+                "text": "Message and stack returned for every error, no environment check, err.status ignored"
+              }
+            },
+            {
+              "id": 1,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/app.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 5
+                }
+              },
+              "message": {
+                "text": "Malformed JSON bodies (unauthenticated) raise body-parser errors that reach the same handler and leak node_modules paths"
+              }
+            },
+            {
+              "id": 2,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/users.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 18
+                }
+              },
+              "message": {
+                "text": "Unknown email returns 401; known email with no password returns 500, a reliable oracle"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "api-audit/CWE-307/src/routes/users.js/login-signup-rate-limit",
+          "ruleIndex": 1,
+          "level": "note",
+          "message": {
+            "text": "Needs validation: No rate limiting or lockout on POST /api/users/login and /signup (online password guessing; synchronous scrypt blocks the event loop). Blockers: Whether anything in front of the deployment (reverse proxy, WAF, API gateway, platform firewall) rate-limits POST /api/users/login and POST /api/users/signup before traffic reaches Node, and whether that limit is per IP or per account. Validation plan: Against staging (or production with written authorization), using a test account you own: (1) Check edge config (nginx limit_req, Cloudflare/AWS WAF rate rules, gateway throttling) for rules on the two paths. (2) From one IP send 200 POST /api/users/login with the test email and wrong passwords over ~60 s. All 401 with no 429/block/slowdown -> confirmed; 429s or blocks after N requests -> mitigated at the edge (record as rejected, ruled out by that rule). (3) Repeat from a second IP after the first is blocked: if it succeeds, the limit is per IP only and distributed guessing remains (stays confirmed at reduced likelihood). (4) While sending ~50 concurrent signups with random emails, poll GET /healthz from another client: latency well above baseline that recovers when load stops confirms the event-loop exhaustion path."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/users.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 15
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "cybersecuritySkills/v1": "api-audit/CWE-307/src/routes/users.js/login-signup-rate-limit"
+          },
+          "properties": {
+            "verdict": "needs_validation",
+            "confidence": "medium",
+            "skill": "api-audit"
+          },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/users.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 15
+                          }
+                        },
+                        "message": {
+                          "text": "POST /api/users/login, unauthenticated, unlimited attempts"
+                        }
+                      },
+                      "kinds": [
+                        "entrypoint"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/users.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 18
+                          }
+                        },
+                        "message": {
+                          "text": "checkPassword on every attempt for a known email"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/auth.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 13
+                          }
+                        },
+                        "message": {
+                          "text": "crypto.scryptSync blocks the single Node thread per attempt (signup does the same at auth.js:7 via users.js:10)"
+                        }
+                      },
+                      "kinds": [
+                        "sink"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "relatedLocations": [
+            {
+              "id": 0,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/app.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 5
+                }
+              },
+              "message": {
+                "text": "Only express.json is mounted globally; no limiter anywhere in src/ or package.json"
+              }
+            },
+            {
+              "id": 1,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/users.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 9
+                }
+              },
+              "message": {
+                "text": "Password policy is length >= 8 only"
+              }
+            },
+            {
+              "id": 2,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/users.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 10
+                }
+              },
+              "message": {
+                "text": "Signup hashes before the INSERT, so even duplicate-email signups cost a full scrypt with no account needed"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "api-audit/CWE-613/src/auth.js/requireAuth-no-revocation",
+          "ruleIndex": 2,
+          "level": "note",
+          "message": {
+            "text": "Tokens outlive account deletion, and SQLite rowid reuse can hand a deleted user's token the next new user's account. Severity low (likelihood low: Requires deletion of the highest-id user, a following signup, and a token issued within 7 days; impact medium: Full read/write over one other user's notes for the token's remaining lifetime)."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/auth.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 28
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "cybersecuritySkills/v1": "api-audit/CWE-613/src/auth.js/requireAuth-no-revocation"
+          },
+          "properties": {
+            "verdict": "confirmed",
+            "confidence": "medium",
+            "skill": "api-audit",
+            "security-severity": "3.0"
+          },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/admin.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 14
+                          }
+                        },
+                        "message": {
+                          "text": "Admin deletes a user row; nothing revokes that user's tokens"
+                        }
+                      },
+                      "kinds": [
+                        "entrypoint"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/auth.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 28
+                          }
+                        },
+                        "message": {
+                          "text": "requireAuth trusts claims.sub without checking the user still exists; tokens live 7 days (config.js:6)"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/db.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 8
+                          }
+                        },
+                        "message": {
+                          "text": "id INTEGER PRIMARY KEY without AUTOINCREMENT: SQLite assigns max(rowid)+1, reusing a deleted highest id"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/users.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 10
+                          }
+                        },
+                        "message": {
+                          "text": "Next signup inserts without an explicit id and receives the reused id"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/notes.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 15
+                          }
+                        },
+                        "message": {
+                          "text": "Notes handlers scope by req.user.id, so the old token reads and writes the new user's notes"
+                        }
+                      },
+                      "kinds": [
+                        "sink"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "relatedLocations": [
+            {
+              "id": 0,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/auth.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 27
+                }
+              },
+              "message": {
+                "text": "Only signature and expiry are checked; no DB lookup, token version or denylist"
+              }
+            },
+            {
+              "id": 1,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/config.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 6
+                }
+              },
+              "message": {
+                "text": "jwtExpiresIn: 7d"
+              }
+            },
+            {
+              "id": 2,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/db.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 8
+                }
+              },
+              "message": {
+                "text": "No AUTOINCREMENT on users.id"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "api-audit/CWE-639/src/routes/notes.js/GET-notes-id",
+          "ruleIndex": 3,
+          "level": "error",
+          "message": {
+            "text": "GET /api/notes/:id returns any user's note to any authenticated user (BOLA). Severity high (likelihood high: Open signup issues a token immediately; note ids are sequential integers; impact high: Reads every other user's private notes (title and body))."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/notes.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 28
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "cybersecuritySkills/v1": "api-audit/CWE-639/src/routes/notes.js/GET-notes-id"
+          },
+          "properties": {
+            "verdict": "confirmed",
+            "confidence": "medium",
+            "skill": "api-audit",
+            "security-severity": "8.0"
+          },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/notes.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 27
+                          }
+                        },
+                        "message": {
+                          "text": "GET /api/notes/:id reads req.params.id (router-wide requireAuth at notes.js:7)"
+                        }
+                      },
+                      "kinds": [
+                        "entrypoint"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/notes.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 28
+                          }
+                        },
+                        "message": {
+                          "text": "SELECT * FROM notes WHERE id = ? with no owner_id or shared predicate"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/notes.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 30
+                          }
+                        },
+                        "message": {
+                          "text": "res.json(note) returns the full row"
+                        }
+                      },
+                      "kinds": [
+                        "sink"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "relatedLocations": [
+            {
+              "id": 0,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/notes.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 28
+                }
+              },
+              "message": {
+                "text": "Lookup by id only"
+              }
+            },
+            {
+              "id": 1,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/notes.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 41
+                }
+              },
+              "message": {
+                "text": "Sibling PATCH filters owner_id; DELETE does too (notes.js:50)"
+              }
+            },
+            {
+              "id": 2,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/db.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 18
+                }
+              },
+              "message": {
+                "text": "notes.shared exists but no handler consults it"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "api-audit/CWE-798/src/config.js/jwtSecret",
+          "ruleIndex": 4,
+          "level": "error",
+          "message": {
+            "text": "JWT signing secret falls back to the hard-coded string \"changeme\", so tokens for any user, including admins, can be forged. Severity critical (likelihood high: The default string is public in the source and is what the shipped .env.example produces; impact critical: Unauthenticated takeover of any account; with an admin id, list and delete every user and their notes)."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/config.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 5
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "cybersecuritySkills/v1": "api-audit/CWE-798/src/config.js/jwtSecret"
+          },
+          "properties": {
+            "verdict": "confirmed",
+            "confidence": "medium",
+            "skill": "api-audit",
+            "security-severity": "9.5"
+          },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/auth.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 22
+                          }
+                        },
+                        "message": {
+                          "text": "requireAuth accepts an attacker-supplied Bearer token"
+                        }
+                      },
+                      "kinds": [
+                        "entrypoint"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/config.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 5
+                          }
+                        },
+                        "message": {
+                          "text": "jwtSecret: process.env.JWT_SECRET || \"changeme\""
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/auth.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 27
+                          }
+                        },
+                        "message": {
+                          "text": "jwt.verify accepts any HS256 token signed with \"changeme\""
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/auth.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 28
+                          }
+                        },
+                        "message": {
+                          "text": "req.user.id = forged sub; requireAdmin (auth.js:36) then checks the DB role of that forged id"
+                        }
+                      },
+                      "kinds": [
+                        "sink"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "relatedLocations": [
+            {
+              "id": 0,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/config.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 5
+                }
+              },
+              "message": {
+                "text": "Hard-coded fallback secret"
+              }
+            },
+            {
+              "id": 1,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": ".env.example",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 3
+                }
+              },
+              "message": {
+                "text": "Ships JWT_SECRET= empty; an empty string also falls through || to \"changeme\""
+              }
+            },
+            {
+              "id": 2,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package.json",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 10
+                }
+              },
+              "message": {
+                "text": "No dotenv dependency, and no startup check refuses the default"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "api-audit/CWE-89/src/routes/notes.js/GET-notes-search",
+          "ruleIndex": 5,
+          "level": "error",
+          "message": {
+            "text": "SQL injection in GET /api/notes/search via q reads every user's notes and every password hash. Severity high (likelihood high: Self-registered account plus one GET with a textbook payload; impact high: Reads all users' notes, emails, roles and salted scrypt hashes; read-only, and scrypt slows offline cracking)."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/notes.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 22
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "cybersecuritySkills/v1": "api-audit/CWE-89/src/routes/notes.js/GET-notes-search"
+          },
+          "properties": {
+            "verdict": "confirmed",
+            "confidence": "medium",
+            "skill": "api-audit",
+            "security-severity": "8.0"
+          },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/notes.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 20
+                          }
+                        },
+                        "message": {
+                          "text": "GET /api/notes/search, any authenticated user"
+                        }
+                      },
+                      "kinds": [
+                        "entrypoint"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/notes.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 21
+                          }
+                        },
+                        "message": {
+                          "text": "q = req.query.q, no validation or escaping"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/notes.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 22
+                          }
+                        },
+                        "message": {
+                          "text": "Template literal ... title LIKE '%${q}%' passed to db.prepare().all()"
+                        }
+                      },
+                      "kinds": [
+                        "sink"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "relatedLocations": [
+            {
+              "id": 0,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/notes.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 22
+                }
+              },
+              "message": {
+                "text": "q (and req.user.id) interpolated into SQL"
+              }
+            },
+            {
+              "id": 1,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/db.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 13
+                }
+              },
+              "message": {
+                "text": "notes has 6 columns, users 4, so a UNION SELECT from users is straightforward"
+              }
+            },
+            {
+              "id": 2,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/app.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 17
+                }
+              },
+              "message": {
+                "text": "SQLite error messages are returned to the caller, giving error-based feedback"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "api-audit/CWE-915/src/routes/notes.js/PATCH-notes-id",
+          "ruleIndex": 6,
+          "level": "error",
+          "message": {
+            "text": "Mass assignment in PATCH /api/notes/:id lets a user rewrite id and owner_id, taking over or planting notes in other accounts. Severity high (likelihood high: Open signup; one PATCH; victim note ids are sequential and readable via the GET /:id BOLA; impact high: Overwrites and takes ownership of any user's note, destroying its content; plants notes in any account)."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/notes.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 43
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "cybersecuritySkills/v1": "api-audit/CWE-915/src/routes/notes.js/PATCH-notes-id"
+          },
+          "properties": {
+            "verdict": "confirmed",
+            "confidence": "medium",
+            "skill": "api-audit",
+            "security-severity": "8.0"
+          },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/notes.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 40
+                          }
+                        },
+                        "message": {
+                          "text": "PATCH /api/notes/:id, any authenticated user"
+                        }
+                      },
+                      "kinds": [
+                        "entrypoint"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/notes.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 41
+                          }
+                        },
+                        "message": {
+                          "text": "Ownership check proves only that the caller owns the note at req.params.id"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/notes.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 43
+                          }
+                        },
+                        "message": {
+                          "text": "_.merge(note, req.body) mutates note in place, so body id and owner_id overwrite the row object"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/notes.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 45
+                          }
+                        },
+                        "message": {
+                          "text": "UPDATE ... SET owner_id = updated.owner_id ... WHERE id = note.id, both attacker-chosen"
+                        }
+                      },
+                      "kinds": [
+                        "sink"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "relatedLocations": [
+            {
+              "id": 0,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/notes.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 43
+                }
+              },
+              "message": {
+                "text": "Unfiltered merge of the request body"
+              }
+            },
+            {
+              "id": 1,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/notes.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 45
+                }
+              },
+              "message": {
+                "text": "owner_id and the WHERE id both come from the merged object"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "api-audit/CWE-918/src/routes/preview.js/POST-preview",
+          "ruleIndex": 7,
+          "level": "warning",
+          "message": {
+            "text": "SSRF in POST /api/preview: any user can make the server request arbitrary internal URLs, with an error-message port-scan oracle. Severity medium (likelihood high: Open signup; a single POST with a URL; nothing to bypass; impact medium: Internal network reachability and port mapping plus <title> of internal HTML pages; no credential read shown)."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/preview.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 12
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "cybersecuritySkills/v1": "api-audit/CWE-918/src/routes/preview.js/POST-preview"
+          },
+          "properties": {
+            "verdict": "confirmed",
+            "confidence": "medium",
+            "skill": "api-audit",
+            "security-severity": "5.5"
+          },
+          "codeFlows": [
+            {
+              "threadFlows": [
+                {
+                  "locations": [
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/preview.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 8
+                          }
+                        },
+                        "message": {
+                          "text": "POST /api/preview, requireAuth only"
+                        }
+                      },
+                      "kinds": [
+                        "entrypoint"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/preview.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 11
+                          }
+                        },
+                        "message": {
+                          "text": "Only checks the string starts with http:// or https://"
+                        }
+                      },
+                      "kinds": [
+                        "propagation"
+                      ]
+                    },
+                    {
+                      "location": {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "src/routes/preview.js",
+                            "uriBaseId": "%SRCROOT%"
+                          },
+                          "region": {
+                            "startLine": 12
+                          }
+                        },
+                        "message": {
+                          "text": "axios.get(url) with no host/IP allow-list; redirects followed by default (axios 0.21.0)"
+                        }
+                      },
+                      "kinds": [
+                        "sink"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "relatedLocations": [
+            {
+              "id": 0,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/preview.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 14
+                }
+              },
+              "message": {
+                "text": "Returns the <title> text of the fetched page"
+              }
+            },
+            {
+              "id": 1,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/preview.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 16
+                }
+              },
+              "message": {
+                "text": "Failures go to next(err)"
+              }
+            },
+            {
+              "id": 2,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/app.js",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 17
+                }
+              },
+              "message": {
+                "text": "err.message (ECONNREFUSED host:port, timeout, status code) returned to the caller"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
