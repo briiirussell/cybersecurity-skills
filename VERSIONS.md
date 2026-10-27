@@ -21,7 +21,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | fuzzing-harness | 1.0.1 | 2026-10-27 |
 | hipaa-audit | 1.1.1 | 2026-10-27 |
 | iam-audit | 1.2.0 | 2026-10-27 |
-| incident-triage | 1.1.1 | 2026-10-27 |
+| incident-triage | 1.1.2 | 2026-10-27 |
 | log-watch | 1.0.1 | 2026-10-26 |
 | malware-triage | 1.0.0 | 2026-10-27 |
 | mobile-audit | 1.1.1 | 2026-10-27 |
@@ -48,6 +48,13 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.52.2 (2026-10-27)
+
+incident-triage description names what a live incident looks like (ransomware on a file server, an attacker still in the network, an unexpected new admin user, a host compromised through a CVE). incident-triage 1.1.2.
+
+**Changed**
+- incident-triage: description wording only. All four of its trigger-eval misses now route here: two should-fire prompts that went to agent-supply-chain-audit and log-watch, and two near-misses that went to breach-patterns and patch-sweep. Offline trigger eval: should-fire 214 → 216 of 228, near-miss 217 → 219 of 221, nothing lost.
 
 ### 1.52.1 (2026-10-27)
 
