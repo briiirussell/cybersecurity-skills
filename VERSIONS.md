@@ -18,10 +18,10 @@ Current versions of all skills. Agents can compare against local versions to che
 | dependency-audit | 1.2.4 | 2026-10-27 |
 | disk-forensics | 1.0.2 | 2026-10-27 |
 | finding-triage | 1.3.1 | 2026-10-27 |
-| fuzzing-harness | 1.0.0 | 2026-10-27 |
+| fuzzing-harness | 1.0.1 | 2026-10-27 |
 | hipaa-audit | 1.1.1 | 2026-10-27 |
 | iam-audit | 1.2.0 | 2026-10-27 |
-| incident-triage | 1.1.1 | 2026-10-27 |
+| incident-triage | 1.1.2 | 2026-10-27 |
 | log-watch | 1.0.1 | 2026-10-26 |
 | malware-triage | 1.0.0 | 2026-10-27 |
 | mobile-audit | 1.1.1 | 2026-10-27 |
@@ -32,7 +32,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | pci-audit | 1.1.1 | 2026-10-27 |
 | personal-opsec | 1.0.1 | 2026-10-26 |
 | privacy-engineering | 1.1.0 | 2026-10-27 |
-| prompt-injection | 1.2.0 | 2026-10-27 |
+| prompt-injection | 1.2.1 | 2026-10-27 |
 | recon | 1.0.1 | 2026-10-26 |
 | red-team-engagement | 1.0.1 | 2026-10-26 |
 | scanner-pipeline | 1.0.4 | 2026-10-27 |
@@ -48,6 +48,27 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.52.3 (2026-10-27)
+
+prompt-injection description names indirect injection through what an agent reads (a malicious web page in a browsing agent; emails, documents or tickets reaching an agent that can act). prompt-injection 1.2.1.
+
+**Changed**
+- prompt-injection: description wording only. "Can a malicious web page hijack our browsing agent?" and "our agent reads incoming emails and can send replies" now route here instead of log-watch and threat-modeling. Offline trigger eval: should-fire 216 → 218 of 228. Its overlap with ai-risk-management drops from 0.45 to 0.40.
+
+### 1.52.2 (2026-10-27)
+
+incident-triage description names what a live incident looks like (ransomware on a file server, an attacker still in the network, an unexpected new admin user, a host compromised through a CVE). incident-triage 1.1.2.
+
+**Changed**
+- incident-triage: description wording only. All four of its trigger-eval misses now route here: two should-fire prompts that went to agent-supply-chain-audit and log-watch, and two near-misses that went to breach-patterns and patch-sweep. Offline trigger eval: should-fire 214 → 216 of 228, near-miss 217 → 219 of 221, nothing lost.
+
+### 1.52.1 (2026-10-27)
+
+fuzzing-harness description: says "fuzzer" and "file and packet parsers in C, C++, Rust, Go, Python or JS", so "write a fuzzer for our C packet parser" stops going to native-code-review. fuzzing-harness 1.0.1.
+
+**Changed**
+- fuzzing-harness: description wording only. Offline trigger eval: should-fire 213 → 214 of 228, nothing else moved.
 
 ### 1.52.0 (2026-10-27)
 
