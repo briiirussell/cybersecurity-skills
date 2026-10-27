@@ -65,6 +65,10 @@ Before grepping for vulnerabilities, map the system ([references/recon-and-cover
 - Entry surfaces: routes, server actions, loaders, tRPC procedures, GraphQL resolvers, webhooks, jobs, cron, uploads
 - Sinks: DB writes/raw queries, exec, filesystem, outbound HTTP, HTML rendering, email, paid third-party calls, redirects
 - What's deployed vs what's in the repo (proxy, CDN, IdP, env). These become `needs_validation` blockers later
+- **Frameworks and BaaS.** Match `package.json` dependencies and config files against the detection table in
+  [references/frameworks/README.md](references/frameworks/README.md) (for example `next` + `next.config.*` → Next.js,
+  `@supabase/*` or `supabase/config.toml` → Supabase). Load only the matching playbooks, add their surfaces to the
+  ledger, and work their checks in Step 3. Their findings use the same categories, verdicts, and format as the rest
 
 Write `architecture.md` (≤ ~1,000 words) and seed `coverage.json` with one `planned` unit per surface × boundary ×
 OWASP category.
@@ -454,4 +458,5 @@ False Positive is not a disposition. It's a `rejected` verdict with the control 
 
 - [OWASP Top 10:2025](https://owasp.org/Top10/2025/) (2021 mapping in the Audit Checklist intro); OWASP Code Review Guide; CWE Top 25
 - Shared workflow references (copied into `references/` at build time): verification.md, recon-and-coverage.md, orchestration.md, diff-review.md, findings-format.md, severity-calibration.md
+- Framework playbooks in [references/frameworks/](references/frameworks/README.md), each citing its own sources and licenses
 - Workflow ideas paraphrased from [Cloudflare security-audit-skill](https://github.com/cloudflare/security-audit-skill) (MIT) — recon, coverage ledger, independent verifier, run profiles, findings schema — and [Strix](https://github.com/usestrix/strix) (Apache-2.0) — counterevidence, diff mode, severity calibration. Specific source files are cited in each shared reference.

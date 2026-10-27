@@ -39,7 +39,7 @@ jobs:
             --no-progress --include-fragments --max-concurrency 16 --timeout 20 --max-retries 2
             --accept '200..=299,403,429'
             'README.md' 'CONTRIBUTING.md' 'docs/**/*.md' 'shared/*.md'
-            'skills/*/SKILL.md' 'skills/*/references/*.md'
+            'skills/*/SKILL.md' 'skills/*/references/**/*.md'
       - name: Open, update or close the broken-links issue
         env:
           GH_TOKEN: ${{ github.token }}
