@@ -17,7 +17,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | disk-forensics | 1.0.1 | 2026-10-26 |
 | finding-triage | 1.1.2 | 2026-10-26 |
 | hipaa-audit | 1.0.2 | 2026-10-26 |
-| iam-audit | 1.0.3 | 2026-10-26 |
+| iam-audit | 1.1.0 | 2026-10-26 |
 | incident-triage | 1.1.0 | 2026-10-26 |
 | log-watch | 1.0.1 | 2026-10-26 |
 | mobile-audit | 1.0.1 | 2026-10-26 |
@@ -41,6 +41,22 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.1.3 | 2026-10-26 |
 
 ## Recent Changes
+
+### 1.29.0 (2026-10-26)
+
+iam-audit moves onto the shared findings format (#129). iam-audit 1.1.0.
+
+**Changed**
+- **Verify, then record.** A new step covering Audit mode and the current-state inventory of a migration:
+  - Save the redacted IAM and IdP exports to `evidence/` and point `location` at the decisive statement.
+  - Run the refutation pass. The strongest controls are SCPs, permissions boundaries, organization conditions like `aws:PrincipalOrgID`, and Conditional Access.
+  - Examples for each verdict: a GitHub OIDC role trusting `repo:acme/*` with `iam:PassRole` on an admin role is confirmed. `iam:CreatePolicyVersion` behind SCPs you can't see needs validation. A `Principal: "*"` trust limited by organization ID is rejected.
+- **Reproduction.** A provider's read-only policy simulator returning "allowed" counts as `reproduced`: `simulate-principal-policy`, `gcloud policy-troubleshoot iam`, Entra What If. The escalation itself is never exercised.
+- **Severity notes.** Escalation paths that start from someone who is already admin aren't findings. Missing MFA is rated by what the affected accounts can reach.
+- **Fingerprints:** `iam-audit/<class>/<provider>/<tenant>/<principal or policy>`, or the file and symbol for app authorization and IaC.
+- **`ext` keys:** `provider`, `tenant`, `principal`.
+- **Output Format** is rendered from `findings.json`. It has "Rejected (do not re-raise)" and a privileged access inventory. Design and migration advice goes in its own Recommendations table, not in findings.
+- The skill now gets copies of the six shared findings files.
 
 ### 1.28.0 (2026-10-26)
 

@@ -131,28 +131,109 @@ For a new project, design these in this order:
 6. **Deprecate the old path with a deadline.** Set a "by X date, the old IAM users are disabled" — and enforce it. Migrations without deadlines never finish.
 7. **Audit-trail the cutover.** Document who moved, when, what they had, what they got, who approved.
 
+## Verify, then record
+
+Findings come from Audit mode, and from the current-state inventory in a migration (Mode 3, step 1). Design and migration recommendations are not findings: they go in the report's Recommendations table, not in `findings.json`. Close every audit candidate with one verdict, as defined in [references/findings-format.md](references/findings-format.md).
+
+**1. Save the evidence first.** Almost everything here is a deployed setting, not a file. Save the read-only output that backs each candidate, redacted, to `<audit dir>/evidence/<name>.json` (or `.txt`), pretty-printed (`| jq .`) so line numbers stay put: `evidence/aws-iam-get-account-authorization-details.json`, `evidence/aws-accessanalyzer-list-findings.json`, `evidence/gcloud-asset-analyze-iam-policy-acme-prod.json`, `evidence/okta-policies-okta-sign-on.json`, `evidence/entra-conditional-access-policies.json`. Point `location`, `trace[]` and `evidence[]` at that file and the line of the decisive statement or setting, with the path repo-relative like any other location (`security-audit/evidence/...`). For an audit with no repository, make paths relative to the audit directory and say so in the report header. Application-authorization findings point at the source file instead.
+
+Never save a secret value. Strip client secret values (`secretText`), private keys, SAML signing certificates' private halves, API tokens, session tokens and password hashes before writing the file. Keep the principal names and IDs needed to find the resource.
+
+**2. Run the refutation pass** in [references/verification.md](references/verification.md) on every candidate before it is confirmed. For IAM the path is: the lower-trust principal (an internet user with a stolen password, any repo in the GitHub org, any principal in another account, a developer role) → the grant, trust or policy gap that lets them in → the privilege or data they end up with. Write it as `trace[]` over the evidence files: `entrypoint` = the trust policy, sign-on rule or binding that admits them; `propagation` = each hop (`iam:PassRole`, `iam:CreatePolicyVersion`, `actAs`, group nesting); `sink` = the admin permission or data resource reached. Look hardest for the controls that sit above the policy you're reading: SCPs and organization policies, permissions boundaries, resource-policy conditions (`aws:PrincipalOrgID`, `aws:SourceAccount`), Conditional Access, IdP authentication policies, deny policies.
+
+**3. Pick the verdict.**
+
+| Verdict | What it looks like here |
+|---|---|
+| `confirmed` | The saved output shows the whole path. Examples: role `ci-deploy` trusts GitHub OIDC with `token.actions.githubusercontent.com:sub` = `repo:acme/*`, and its policy allows `iam:PassRole` on `*` plus `lambda:CreateFunction`, with `AdminRole` passable, so any workflow in any org repo can run code as admin. An Okta sign-on policy rule for "Everyone" has MFA not required, and the app it covers is the AWS IAM Identity Center app with production permission sets. |
+| `needs_validation` | The policy you can see supports the claim, but one decisive fact lives somewhere you couldn't read. Examples: a developer role has `iam:CreatePolicyVersion` on its own policy (escalation to `*`), but the SCPs live in the management account you have no access to (blocker: does an SCP deny `iam:CreatePolicyVersion`; plan: `aws organizations list-policies-for-target --target-id <account-id> --filter SERVICE_CONTROL_POLICY` from the management account, or `aws iam simulate-principal-policy --policy-source-arn <role-arn> --action-names iam:CreatePolicyVersion`). A Conditional Access policy requires MFA but excludes the group `CA-Exclusions`, whose members you can't list. Any check you describe but don't run is `needs_validation` with the exact command in `validation_plan`. |
+| `rejected` | A named control at a named location stops it on every path. Examples: a role with `iam:CreateRole` + `iam:AttachRolePolicy` looks like an escalation path, but an SCP denies both unless the new role carries the `dev-boundary` permissions boundary (`ruled_out_by.location` = the SCP evidence file and line). A trust policy has `"Principal": {"AWS": "*"}`, but its `Condition` requires `aws:PrincipalOrgID` = your organization. |
+
+Escalation paths that start from a principal that is already admin are not findings. An unsafe default in an IaC module or a role template you were given (a module whose trust policy allows `"AWS": "*"` unless `trusted_accounts` is set) is `confirmed`, with a `system_configuration` condition ("deployments that don't set `trusted_accounts`") and confidence `medium`.
+
+Gaps with no traced impact are hardening notes, not records: roles not written down, direct user assignments that grant nothing extra, TOTP rather than FIDO2 for non-admin users, a session lifetime longer than policy, sign-in logs not forwarded to a SIEM, a break-glass account not tested this year. They go in the report's hardening section with no severity.
+
+**4. Calibrate severity** with [references/severity-calibration.md](references/severity-calibration.md), on `confirmed` records only, and rate by what the principal ends up able to do. An escalation path to account or tenant admin from a low-privilege role is High; an open trust policy on a role that can read production data is High or Critical; missing MFA is rated by what the affected accounts reach (admins of production: High; low-privilege users of an internal wiki: Medium or Low). `overall` ≤ demonstrated impact.
+
+Confidence: a policy read from the live API is evidence, not reproduction. Never exercise an escalation path. The provider's own read-only evaluator (`aws iam simulate-principal-policy`, `gcloud policy-troubleshoot iam`, Entra's Conditional Access What If) returning "allowed" for the decisive action counts as `"reproduced": true`; record the command and result in `evidence[]`. Without it, confidence caps at `medium`.
+
+**5. Fingerprint by principal or policy, not by line.** Form: `iam-audit/<class>/<provider>/<tenant>/<principal or policy>`, or `iam-audit/<class>/<file>/<symbol>` for application authorization and IaC. Write ARNs with slashes; the validator rejects `:<digits>` segments.
+
+```
+iam-audit/shadow-admin/aws/123456789012/role/ci-deploy        # arn:aws:iam::123456789012:role/ci-deploy
+iam-audit/open-trust-policy/aws/123456789012/role/partner-read
+iam-audit/sa-self-impersonation/gcp/acme-prod/builder@acme-prod.iam.gserviceaccount.com
+iam-audit/mfa-not-enforced/okta/acme.okta.com/policy/default-sign-on
+iam-audit/tenant-role-isolation/src/auth/can.ts/can
+```
+
+Classes in use: `wildcard-policy`, `admin-attachment`, `open-trust-policy`, `missing-permissions-boundary`, `shadow-admin`, `sa-self-impersonation`, `sa-key`, `static-access-key`, `console-user`, `primitive-role`, `public-binding`, `org-level-binding`, `mfa-not-enforced`, `legacy-auth-allowed`, `ca-gap`, `sp-secret-no-expiry`, `inactive-account`, `orphaned-app`, `tenant-role-isolation`. Add a new one when none fits.
+
+**6. Domain fields go under `ext`:**
+
+| Key | Value |
+|---|---|
+| `provider` | `aws`, `gcp`, `azure`, `entra`, `okta`, `auth0`, `google-workspace`, `cognito`, `app` |
+| `tenant` | Account ID, GCP project or org ID, Entra tenant domain, Okta org domain |
+| `principal` | The user, role, group, service account or app the finding is about, as the provider prints it |
+
+**7. Write and validate.** Set `skill: "iam-audit"`, sort by fingerprint, write `findings.json`, and fix until it passes:
+
+```bash
+node references/validate-findings.mjs findings.json
+node references/to-sarif.mjs findings.json -o findings.sarif   # optional
+```
+
+On a re-run, load the previous `findings.json` and match by fingerprint. A `rejected` record stays rejected unless the control it names changed (re-read that evidence first). Dispositions, usually set later by `finding-triage`: Fixed / Deferred / Accepted Risk / Mitigated (platform/config) / Requires major migration. A false positive is a `rejected` record.
+
 ## Output Format
+
+Write `findings.json` first (Audit mode). The report is rendered from it and never changes a verdict, severity, blocker or impact the JSON doesn't already say. No "Potential" or "Possible" labels.
 
 ```markdown
 # IAM [Audit | Design | Migration] Report
-## Scope: [accounts / orgs / IdPs covered]
-## Date: [date]
+## Scope: [accounts / orgs / IdPs / apps covered]   ## Mode: [Audit | Design | Migrate]   ## Date: [date]
+## Access: [read-only role / API scopes used]   ## Not covered: [what and why]
+## findings.json: [path] — validated: [yes]   ## Evidence: [audit dir]/evidence/
 
 ### Executive Summary
 [2-3 paragraphs — the IAM posture in plain English, top 3 risks, recommended next 90 days]
 
-### Findings / Recommendations
-| ID | Severity | Mode | Category | Issue / Recommendation |
-|----|----------|------|----------|------------------------|
+### Summary
+- Confirmed: [N] (Critical [n] | High [n] | Medium [n] | Low [n])
+- Needs validation: [N]   Rejected: [N]   Hardening notes: [N]
 
-### Per-finding detail
-[as in owasp-audit — file/resource, description, vulnerable config, remediation, verification]
+### Confirmed findings
+#### [SEVERITY] [Title]  `fingerprint`
+**Provider / tenant / principal:** [ext.provider / ext.tenant / ext.principal]
+**Evidence:** `evidence/<file>:<line>` — [the decisive statement or setting, redacted]
+**Confidence:** [medium | high (reproduced via simulator)]   **Conditions:** [from conditions[]]
+**Path:** [lower-trust principal → grant or gap → privilege or data reached]
+**Fix:** [the policy, binding or IdP change]
+**Verify the fix:** [the read-only command or simulator check that shows it's closed]
+
+### Needs validation
+| Finding | Blocker | Check for the owner to run |
+|---|---|---|
+
+### Hardening notes (not findings)
+- [gap] — [why it isn't a finding] — [effort]
+
+### Rejected (do not re-raise)
+| Fingerprint | Ruled out by | Location |
+|---|---|---|
+
+### Privileged access inventory
+| Principal | Provider / tenant | Admin-level grant | Standing or JIT | MFA type | Last used |
+|---|---|---|---|---|---|
+
+### Recommendations (Design / Migrate mode — not findings)
+| ID | Category | Recommendation | Effort |
+|---|---|---|---|
 
 ### Roadmap
 [Quarterly milestones — what to do this month, next 90 days, next year]
 ```
-
-Disposition rule (Fixed / Deferred / Accepted Risk) per `owasp-audit`.
 
 ## Boundaries
 
@@ -174,3 +255,15 @@ Disposition rule (Fixed / Deferred / Accepted Risk) per `owasp-audit`.
 - Open Policy Agent / Cedar / Cerbos / OpenFGA documentation
 - AWS Permission Boundary documentation
 - "Just enough access" / JIT access patterns
+- Shared references (copied into `references/` at build time): [findings-format.md](references/findings-format.md), [findings.schema.json](references/findings.schema.json), [validate-findings.mjs](references/validate-findings.mjs), [to-sarif.mjs](references/to-sarif.mjs), [severity-calibration.md](references/severity-calibration.md), [verification.md](references/verification.md)
+
+## Reference files
+
+This skill links to supporting files under `references/`. They are not inlined in this adapter; open them on GitHub (or in `skills/iam-audit/references/` if you have the repo checked out):
+
+- [references/findings-format.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/iam-audit/references/findings-format.md)
+- [references/findings.schema.json](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/iam-audit/references/findings.schema.json)
+- [references/severity-calibration.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/iam-audit/references/severity-calibration.md)
+- [references/to-sarif.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/iam-audit/references/to-sarif.mjs)
+- [references/validate-findings.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/iam-audit/references/validate-findings.mjs)
+- [references/verification.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/iam-audit/references/verification.md)
