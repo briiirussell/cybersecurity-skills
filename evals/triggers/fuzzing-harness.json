@@ -1,0 +1,43 @@
+{
+  "skill": "fuzzing-harness",
+  "should_fire": [
+    "can you write a fuzzer for our packet parser? it's C and I'm scared of it",
+    "add a libFuzzer harness for this\n```c\nint tlv_parse(tlv_ctx *ctx, const uint8_t *buf, size_t len) {\n  while (len > 2) {\n    uint8_t t = buf[0], l = buf[1];\n    memcpy(ctx->val[t], buf + 2, l);\n    buf += 2 + l; len -= 2 + l;\n  }\n}\n```",
+    "set up cargo fuzz for our Rust image decoder crate",
+    "write a go test -fuzz target for ParseTokenHeader",
+    "the fuzzer dumped 40 crash files with AddressSanitizer reports, which ones are real bugs?",
+    "add Hypothesis property tests to check decode(encode(x)) == x for our serializer",
+    "use fast-check to property test our URL allow-list against the WHATWG parser",
+    "how do we get our parser library into OSS-Fuzz or run ClusterFuzzLite on PRs?"
+  ],
+  "near_miss": [
+    {
+      "prompt": "run Burp Intruder against the login form on our staging site to test parameter tampering",
+      "owner": "web-pentest"
+    },
+    {
+      "prompt": "test our Android app's exported activities and intents for IPC issues",
+      "owner": "mobile-audit"
+    },
+    {
+      "prompt": "do an OWASP Top 10 security review of our Express app before launch",
+      "owner": "owasp-audit"
+    },
+    {
+      "prompt": "a CVE just dropped for libxml2, is our code reachable and should we patch now?",
+      "owner": "vuln-research"
+    },
+    {
+      "prompt": "Semgrep flagged one finding in our auth module, is it a false positive?",
+      "owner": "finding-triage"
+    },
+    {
+      "prompt": "set up gitleaks, Semgrep and Trivy scanners to run nightly across all our repos",
+      "owner": "scanner-pipeline"
+    },
+    {
+      "prompt": "we use AES-GCM with a random 96-bit nonce, is our encryption implementation right?",
+      "owner": "crypto-audit"
+    }
+  ]
+}

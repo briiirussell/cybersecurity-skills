@@ -1,0 +1,42 @@
+rules:
+  - id: express-idor-param-lookup
+    languages: [javascript, typescript]
+    severity: WARNING
+    message: >-
+      Route loads a record by the URL parameter $REQ.params.$ID with no owner or
+      tenant predicate in the query. Any signed-in user can read another user's
+      record by changing the id. Add the caller's id to the WHERE clause (or the
+      ORM's where object), or document why the record is public.
+    metadata:
+      cwe: "CWE-639: Authorization Bypass Through User-Controlled Key"
+      category: security
+      confidence: MEDIUM
+      variant_of: owasp-audit/CWE-639/src/routes/notes.js/GET-note-by-id
+    patterns:
+      - pattern-either:
+          - pattern-inside: |
+              $ROUTER.$METHOD($PATH, ..., ($REQ, $RES, ...) => { ... })
+          - pattern-inside: |
+              $ROUTER.$METHOD($PATH, ..., async ($REQ, $RES, ...) => { ... })
+          - pattern-inside: |
+              $ROUTER.$METHOD($PATH, ..., function ($REQ, $RES, ...) { ... })
+      - metavariable-regex:
+          metavariable: $METHOD
+          regex: ^(get|post|put|patch|delete|all)$
+      - pattern-either:
+          # better-sqlite3 / node-postgres style: SQL string plus the raw param
+          - pattern: $DB.prepare("$SQL").$EXEC(..., $REQ.params.$ID, ...)
+          - pattern: $DB.query("$SQL", [..., $REQ.params.$ID, ...])
+          # Prisma style: where object keyed only by the param
+          - patterns:
+              - pattern-either:
+                  - pattern: '$ORM.$MODEL.$FIND({ where: { id: $REQ.params.$ID } })'
+                  - pattern: '$ORM.$MODEL.$FIND({ where: { id: Number($REQ.params.$ID) } })'
+              - metavariable-regex:
+                  metavariable: $FIND
+                  regex: ^(findUnique|findFirst|findUniqueOrThrow|findFirstOrThrow|update|delete)$
+      # the guard: a query that also filters on the caller is the fixed shape
+      - pattern-not: $DB.prepare("=~/(?i)\b(owner_id|user_id|tenant_id|org_id)\b/").$EXEC(...)
+      - pattern-not: $DB.query("=~/(?i)\b(owner_id|user_id|tenant_id|org_id)\b/", [...])
+      # object patterns match a subset of keys, so also exclude where objects that scope to the caller
+      - pattern-not: '$ORM.$MODEL.$FIND({ where: { $K: $REQ.user.$U } })'

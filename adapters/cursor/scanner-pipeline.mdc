@@ -17,7 +17,7 @@ Field evidence from a 45-app sweep in October 2026 (`patch-sweep`). An agent-led
 
 **Why `Write` is pre-approved:** this skill's main output is files — the `scanner-pipeline.md` plan, a `.github/workflows/security-scan.yml`, and scanner configs. It writes only those, and only inside the target repo. Live-app scanners (`nuclei`, `zap`) are deliberately not pre-approved; they always prompt.
 
-Cross-references: `finding-triage` (ranking and disposition), `secrets-audit`, `dependency-audit`, `container-audit`, `cloud-audit` (Supabase advisors, PaaS), `web-pentest` (authorization for live scans), `agent-supply-chain-audit` (SHA-pinned Actions), `patch-sweep` (fleet CVE response), `log-watch`.
+Cross-references: `finding-triage` (ranking and disposition), `secrets-audit`, `dependency-audit`, `container-audit`, `cloud-audit` (Supabase advisors, PaaS), `web-pentest` (authorization for live scans), `cicd-security` (SHA-pinned Actions, workflow hardening; zizmor / actionlint results), `patch-sweep` (fleet CVE response), `log-watch`.
 
 ## Authorization
 
@@ -71,7 +71,7 @@ Add `.security/out/` to `.gitignore`. Flag versions differ between tool majors (
 
 ### Custom rule: always-true RLS policy
 
-The motivating bug: `using (csr.collection_id = csr.collection_id)` compares a column with itself, so the policy passes for every row. The author meant the outer table's column. Semgrep has no first-class SQL parser, so use generic mode: `pattern-inside: create policy ... ;` plus a regex that backreferences the left-hand side. Full rule file (self-comparison, literal `true`, and public tables to cross-check for RLS): [references/semgrep/supabase-rls.yml](references/semgrep/supabase-rls.yml). Copy it into the repo's `.semgrep/` so the CI workflow picks it up.
+The motivating bug: `using (csr.collection_id = csr.collection_id)` compares a column with itself, so the policy passes for every row. The author meant the outer table's column. Semgrep has no first-class SQL parser, so use generic mode: `pattern-inside: create policy ... ;` plus a regex that backreferences the left-hand side. Full rule file (self-comparison, literal `true`, and public tables to cross-check for RLS): [references/semgrep/supabase-rls.yml](references/semgrep/supabase-rls.yml). Copy it into the repo's `.semgrep/` so the CI workflow picks it up. To write a rule like this from a confirmed finding, with tests, see `variant-analysis`.
 
 ```bash
 semgrep scan --metrics=off --config .semgrep/supabase-rls.yml supabase/migrations/
@@ -163,7 +163,7 @@ Scaffold [references/security-scan.yml](references/security-scan.yml) into the r
 - runs a **weekly full scan** (full git history, all rules) and on `workflow_dispatch`;
 - can be called from other repos with `workflow_call`, so one copy serves a fleet;
 - uploads SARIF to GitHub code scanning when available (public repos, or private with GitHub Advanced Security) and always keeps SARIF as a workflow artifact otherwise;
-- pins every Action to a full commit SHA and every container image to a digest (`agent-supply-chain-audit`). The SHAs in the template were looked up from the upstream release tags on 2026-10-26; update them with Dependabot or Renovate, not by switching to tags.
+- pins every Action to a full commit SHA and every container image to a digest (`cicd-security`). The SHAs in the template were looked up from the upstream release tags on 2026-10-26; update them with Dependabot or Renovate, not by switching to tags.
 
 When code scanning isn't available, open or update one issue per fingerprint (title = fingerprint, body = evidence without secret values) instead of dumping SARIF into a comment.
 

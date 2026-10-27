@@ -23,7 +23,13 @@
  *     (the request would be ambiguous between skills; SkillSpector TR2). Keep the
  *     phrase in the skill that owns the work and narrow or drop it in the other.
  *
- * Usage: node scripts/lint-skills.mjs [--quiet] [--skills-dir <dir>]
+ * Plugin subagents in agents/*.md (Claude Code only; the Cursor and Codex adapters don't get them):
+ *   - frontmatter missing, or `name` / `description` / `tools` absent
+ *   - `name` does not match the file name, or is not lowercase-hyphen (max 64)
+ *   - `tools` grants a tool that writes or executes (Write, Edit, MultiEdit, NotebookEdit, Bash):
+ *     the agents here are read-only verifiers
+ *
+ * Usage: node scripts/lint-skills.mjs [--quiet] [--skills-dir <dir>] [--agents-dir <dir>]
  */
 
 import { readFileSync, readdirSync, existsSync, statSync } from "node:fs";
@@ -35,6 +41,10 @@ const ROOT = new URL("..", import.meta.url).pathname;
 const SKILLS_ARG = process.argv.indexOf("--skills-dir");
 const SKILLS_DIR = SKILLS_ARG > 0 ? process.argv[SKILLS_ARG + 1] : join(ROOT, "skills");
 const QUIET = process.argv.includes("--quiet");
+const AGENTS_ARG = process.argv.indexOf("--agents-dir");
+const AGENTS_DIR = AGENTS_ARG > 0 ? process.argv[AGENTS_ARG + 1] : join(ROOT, "agents");
+// Tools a plugin agent here may not have: they write files or run commands.
+const AGENT_FORBIDDEN_TOOLS = new Set(["Write", "Edit", "MultiEdit", "NotebookEdit", "Bash"]);
 
 const AUTH_HEADING = /^##\s+.*\bauthori[sz]ation\b/im; // every skill needs one (CLAUDE.md)
 // Standard section names (templates/skill-template.md). Every skill has these two:
@@ -261,6 +271,32 @@ for (const entry of readdirSync(SKILLS_DIR)) {
   if (statSync(dir).isDirectory() && !knownSkills.has(entry)) err(dir, "folder has no SKILL.md");
 }
 
+// Plugin subagents (agents/*.md). Claude Code discovers them at the plugin root.
+function lintAgent(file) {
+  const content = readFileSync(file, "utf8");
+  const meta = parseFrontmatter(content);
+  if (!meta) return err(file, "missing YAML frontmatter");
+  const stem = basename(file, ".md");
+  if (!meta.name) err(file, "frontmatter `name` missing");
+  else {
+    if (meta.name !== stem) err(file, `name "${meta.name}" does not match file name "${stem}"`);
+    if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(meta.name) || meta.name.length > 64)
+      err(file, `name "${meta.name}" must be lowercase-hyphen, max 64 chars`);
+  }
+  if (!meta.description) err(file, "frontmatter `description` missing");
+  if (!meta.tools) err(file, "frontmatter `tools` missing (list the tools explicitly; an agent without it inherits every tool)");
+  else
+    for (const tool of parseAllowedTools(meta.tools)) {
+      const base = tool.replace(/\(.*$/, "");
+      if (AGENT_FORBIDDEN_TOOLS.has(base)) err(file, `tools grants ${tool}; agents here are read-only (Read, Grep, Glob)`);
+    }
+}
+
+const agentFiles = existsSync(AGENTS_DIR)
+  ? readdirSync(AGENTS_DIR).filter((f) => f.endsWith(".md")).sort().map((f) => join(AGENTS_DIR, f))
+  : [];
+for (const f of agentFiles) lintAgent(f);
+
 for (const [phrase, skills] of triggerPhrases) {
   if (skills.size > 1)
     err(SKILLS_DIR, `trigger phrase '${phrase}' appears in ${[...skills].sort().join(", ")} — keep it in the skill that owns the work, narrow or drop it in the other`);
@@ -273,6 +309,6 @@ for (const [phrase, skills] of triggerPhrases) {
 if (!QUIET) for (const w of warnings) console.warn(`warning: ${w}`);
 for (const e of errors) console.error(`error: ${e}`);
 console.log(
-  `lint-skills: ${skillNames.length} skills, ${errors.length} error(s), ${warnings.length} warning(s)`
+  `lint-skills: ${skillNames.length} skills, ${agentFiles.length} agent(s), ${errors.length} error(s), ${warnings.length} warning(s)`
 );
 process.exit(errors.length ? 1 : 0);

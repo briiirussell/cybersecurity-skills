@@ -8,7 +8,7 @@ alwaysApply: false
 
 Analyze disk images and file systems to recover evidence, reconstruct timelines, and identify artifacts.
 
-Cross-references: `incident-triage` for the upstream containment phase that captures the image this skill analyzes — that skill makes the bit-for-bit copy; this skill analyzes it. `breach-patterns` for translating the forensic findings into preemptive controls so the same root cause doesn't recur.
+Cross-references: `incident-triage` for the upstream containment phase that captures the image this skill analyzes — that skill makes the bit-for-bit copy; this skill analyzes it. `breach-patterns` for translating the forensic findings into preemptive controls so the same root cause doesn't recur. `malware-triage` for files recovered from the image that need a verdict.
 
 ## Authorization Check
 

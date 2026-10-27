@@ -14,7 +14,7 @@ Any current Node (18+) runs both scripts. Nothing to install.
 
 ## Workflow
 
-1. Close every candidate with one verdict (see below) and write the record.
+1. Drop the candidates the fixed exclusion rules catch (test code, fixtures, generated, vendored, docs; see "Two stages" in `verification.md`). They get no record. Close every remaining candidate with one verdict (see below) and write the record.
 2. Sort by `fingerprint` and write `findings.json`.
 3. Validate, and fix until it passes:
    ```bash
@@ -28,7 +28,7 @@ Any current Node (18+) runs both scripts. Nothing to install.
    node references/to-sarif.mjs findings.json --include-needs-validation -o findings.sarif
    ```
 
-On a re-run, load the previous `findings.json` first and match candidates by fingerprint. A candidate that matches a `rejected` record stays rejected unless the code at `ruled_out_by.location` changed.
+On a re-run, load the previous `findings.json` first and match candidates by fingerprint. A candidate that matches a `rejected` record stays rejected unless the code at `ruled_out_by.location` changed. A candidate that matches a `Fixed` record is re-checked against the fix: if the fix still rules it out, the record stays `Fixed` and isn't re-raised; if not, it's a regression and the record reopens (see `finding-triage`'s fix verification).
 
 ## Verdicts
 
@@ -98,6 +98,8 @@ Some skills need fields the common shape doesn't have: the PCI DSS requirement a
 ```json
 "ext": { "requirement": "8.4.2", "in_cde": true }
 ```
+
+`finding-triage` adds three keys to any confirmed record it closes as `Fixed`, next to the producing skill's own: `fixed_in` (the fixing commit SHA or release tag), `fix_verified_on` (`YYYY-MM-DD`, when the fix check passed against the shipped fix) and `regression_test` (repo-relative path or array of paths). A record that regresses loses `disposition`, `fixed_in` and `fix_verified_on`, and gets `regressed_after` with the old `fixed_in` value. Skills shouldn't use these four names for anything else.
 
 ### Findings about deployed resources
 

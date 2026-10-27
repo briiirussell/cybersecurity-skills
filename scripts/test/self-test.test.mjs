@@ -78,6 +78,41 @@ test("lint: every rule still fires", () => {
   assert.ok(!r.stderr.includes("/good-skill/"), "clean fixture must not be flagged");
 });
 
+const agent = ({ name, desc = "Read-only verifier used by the self-test.", tools = "Read, Grep, Glob" }) =>
+  `---\nname: ${name}\n${desc === null ? "" : `description: "${desc}"\n`}${tools === null ? "" : `tools: ${tools}\n`}---\n\n# ${name}\n`;
+
+test("lint: agent rules fire, and a read-only agent passes", () => {
+  const skills = tmp();
+  mkdirSync(join(skills, "good-skill"));
+  writeFileSync(join(skills, "good-skill", "SKILL.md"), skill({ name: "good-skill" }));
+  const agents = tmp();
+  const files = {
+    "good-agent": agent({ name: "good-agent" }),
+    "name-mismatch": agent({ name: "other-agent" }),
+    "no-desc": agent({ name: "no-desc", desc: null }),
+    "no-tools": agent({ name: "no-tools", tools: null }),
+    "writer": agent({ name: "writer", tools: "Read, Write" }),
+    "runner": agent({ name: "runner", tools: "Read, Bash(git log:*)" }),
+  };
+  for (const [stem, content] of Object.entries(files)) writeFileSync(join(agents, `${stem}.md`), content);
+  const r = node(["scripts/lint-skills.mjs", "--quiet", "--skills-dir", skills, "--agents-dir", agents]);
+  rmSync(skills, { recursive: true, force: true });
+  rmSync(agents, { recursive: true, force: true });
+  assert.equal(r.status, 1);
+  const expect = {
+    "name-mismatch": /does not match file name "name-mismatch"/,
+    "no-desc": /`description` missing/,
+    "no-tools": /`tools` missing/,
+    "writer": /tools grants Write; agents here are read-only/,
+    "runner": /tools grants Bash\(git log:\*\); agents here are read-only/,
+  };
+  for (const [stem, re] of Object.entries(expect)) {
+    const lines = r.stderr.split("\n").filter((l) => l.includes(`/${stem}.md`));
+    assert.ok(lines.some((l) => re.test(l)), `${stem}: expected ${re}, got:\n${lines.join("\n")}`);
+  }
+  assert.ok(!r.stderr.includes("/good-agent.md"), "read-only agent must not be flagged");
+});
+
 // ---------------------------------------------------------------------------
 // skillspector-baseline.mjs
 // ---------------------------------------------------------------------------

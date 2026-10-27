@@ -10,7 +10,7 @@ Version note: v4.0.1 (June 2024) is the only active version. v4.0 was retired on
 
 This skill emphasizes scope determination first, then the engineering-relevant requirements. Final compliance attestation (SAQ self-assessment or QSA audit producing an Attestation of Compliance) is a process this skill prepares for — it is not the attestation itself.
 
-Cross-references: `crypto-audit` for Req 3 / 4 cryptographic detail; `iam-audit` for Req 7-8; `siem-detection` for Req 10 logging; `dependency-audit` and `owasp-audit` for Req 6 (secure SDLC); `incident-triage` for Req 12.10 (incident response).
+Cross-references: `crypto-audit` for Req 3 / 4 cryptographic detail; `iam-audit` for Req 7-8; `siem-detection` for Req 10 logging; `dependency-audit` and `owasp-audit` for Req 6 (secure SDLC); `incident-triage` for Req 12.10 (incident response); `control-audit` for program-level control readiness (SOC 2 / ISO 27001) over the same systems.
 
 ## Authorization
 

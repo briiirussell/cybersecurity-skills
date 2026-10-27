@@ -1,0 +1,305 @@
+---
+description: "Control-level audit readiness for SOC 2, ISO/IEC 27001:2022 and NIST SP 800-53 Rev. 5 / FedRAMP. Scope the audit (criteria or baseline, systems, period, Type 1 vs Type 2), build the control inventory, write an evidence request per control (artifact, owner, sample, test method), test what the repo and configs show (CC8.1 / A.8.32 / CM-3 change management via branch protection), hand technical checks to the owning skill, and record control gaps in the shared findings format with a control matrix. Use when the user mentions 'SOC 2,' 'SOC 2 Type 2,' 'Trust Services Criteria,' 'ISO 27001,' 'ISMS,' 'Statement of Applicability,' 'Annex A controls,' 'NIST 800-53,' 'FedRAMP,' 'FedRAMP 20x,' 'SSP,' 'POA&M,' 'control matrix,' 'evidence request list,' 'PBC list,' 'audit readiness,' 'control testing,' or is getting ready for an external auditor or assessor."
+globs:
+alwaysApply: false
+---
+
+# Control Audit — Audit Readiness for Control Frameworks
+
+Get a control set ready for an external auditor: decide what's in scope, list the controls, write the evidence request an auditor would send for each one, test what you can from the repo and exported configs, and record what's missing or failing. The result is a control matrix, an evidence-request list, and a `findings.json` of control gaps that rates each gap by the exposure it leaves, not by how an auditor might word the opinion.
+
+This is the program-level layer. It doesn't re-run technical audits: when a control's evidence is a technical check (branch protection, MFA enforcement, encryption at rest), it hands the check to the skill that owns it and folds the result back in.
+
+Cross-references: `csf-mapping` (crosswalk a control set to NIST CSF 2.0, and governance-level gap analysis), `pci-audit` and `hipaa-audit` (code-facing audits when the in-scope data is cardholder data or PHI), `iam-audit` (access reviews, MFA, joiner/mover/leaver evidence), `cloud-audit` (logging, encryption, network and backup settings), `secrets-audit`, `dependency-audit` and `container-audit` (vulnerability management evidence), `siem-detection` (monitoring and alerting evidence), `incident-triage` (incident response plan and test evidence), `privacy-engineering` (SOC 2 Privacy category), `finding-triage` (dispositions after the audit), `security-comms` (readiness updates for executives and the board).
+
+## When to use
+
+- "We have a SOC 2 Type 2 in six months, where are we?" or "the auditor sent a PBC list, help us answer it"
+- Building or reviewing a control matrix, and writing evidence requests per control
+- "Our ISO 27001 Stage 2 is in May" or "is our Statement of Applicability defensible?"
+- Writing or reviewing an SSP and POA&M against an 800-53 baseline, or getting ready for FedRAMP (Rev5 or 20x)
+- Readiness review before fieldwork: which controls lack evidence, which failed in the period, which are only on paper
+- Re-running after remediation, matched by fingerprint
+
+Input: the framework and criteria in scope, the system description or boundary, the audit period, and whatever evidence the user can share (policies, ticket exports, config exports, the repo).
+
+**Not for:** NIST CSF 2.0 tiers, profiles or a board roadmap → `csf-mapping`. Card-data code and scope review → `pci-audit`. PHI flows and Security Rule safeguards in code → `hipaa-audit`. AI governance against the NIST AI RMF → `ai-risk-management`. GDPR / CCPA implementation → `privacy-engineering`. Triage of one scanner finding → `finding-triage`. The technical checks themselves → the skill named in the handoff table below.
+
+## Authorization
+
+- Work only on the user's own organization, or a client that engaged them for readiness work. If whose controls these are is unclear, ask.
+- Fine by default: reading the repo and the evidence the user shares, and writing the audit folder (`scope.md`, `control-matrix.md`, `evidence-requests.md`, `findings.json`, `evidence/`).
+- Needs a yes first: any query against a live system, even read-only (`gh api` for branch protection, an IdP or cloud CLI listing). Use the user's own credentials and read-only calls only. Never change a setting during the audit; a fix made mid-period is recorded as remediation with its date.
+- Evidence often holds personal data (HR rosters, access lists, background-check status). Record user IDs or counts, not names, and never copy credential values, customer data or full HR records into evidence, findings or the report.
+- Refuse to fabricate or backdate evidence, write a system description that claims controls that don't operate, or shape samples to hide exceptions from the auditor.
+
+## Step 1 — Scope the audit
+
+Write `scope.md` before anything else. Most readiness work that goes wrong went wrong here.
+
+| Decision | What to pin down |
+|---|---|
+| Framework and version | See the framework table below. Name the version in the report header |
+| Criteria or baseline | SOC 2: Security (the common criteria) is always in; add Availability, Confidentiality, Processing Integrity, Privacy only where customers or contracts need them. ISO 27001: all of clauses 4–10, plus the Annex A controls the Statement of Applicability includes. 800-53: the 800-53B baseline from the FIPS 199 categorization (Low / Moderate / High, plus privacy), tailored; FedRAMP: the Rev5 baseline or the 20x class being pursued |
+| System boundary | The service, its infrastructure, software, people, procedures and data. List every in-scope system by name |
+| Third parties | Subservice organizations (cloud host, IdP, payroll) and whether each is carved out or included; the complementary controls you rely on them for, and the ones your customers must run (CUECs) |
+| Audit period | SOC 2 Type 1: a single date (design only). Type 2: a period, commonly 3 to 12 months (design and operating effectiveness); a first Type 2 is often 3 to 6 months. ISO 27001: Stage 1 then Stage 2, with records showing the ISMS has run (an internal audit and a management review at least), then yearly surveillance. 800-53 / FedRAMP: an initial assessment, then continuous monitoring (monthly scans, annual assessment) |
+| What exists already | Prior reports, an existing control matrix, policies, a GRC tool export. Start from the organization's controls, not a blank list |
+
+Frameworks this skill carries a reference for:
+
+| Framework | Reference | Version to assess against |
+|---|---|---|
+| SOC 2 | [references/soc2.md](references/soc2.md) | AICPA 2017 Trust Services Criteria with the 2022 revised points of focus |
+| ISO/IEC 27001 | [references/iso27001.md](references/iso27001.md) | ISO/IEC 27001:2022 with Amendment 1:2024; the 2013 transition ended 31 October 2025. Build the inventory from the Statement of Applicability |
+| NIST SP 800-53 / FedRAMP | [references/nist-800-53.md](references/nist-800-53.md) | SP 800-53 Rev. 5 Release 5.2.0 (August 2025) with 800-53B baselines; FedRAMP Rev5 baselines or 20x Key Security Indicators under the Consolidated Rules for 2026 (mandatory 1 January 2027). FedRAMP rules are moving fast: check `fedramp.gov` first. Build the inventory from the SSP |
+
+For a crosswalk between frameworks, or to NIST CSF 2.0, map each control here to its CSF subcategory with `csf-mapping` and keep the mapping in a `csf` column of the control matrix. One control, evidenced once, can satisfy several frameworks; say which.
+
+## Step 2 — Build the control inventory
+
+One row per control the organization operates, not per criterion. A criterion is usually met by several controls, and one control often serves several criteria.
+
+| Field | Example |
+|---|---|
+| Control ID | `CHG-02` (the organization's own ID) |
+| Framework refs | `CC8.1`, `A.8.32`, `CM-3` |
+| Control as operated | "Every merge to `main` needs one approving review from someone other than the author; CI must pass" |
+| Owner | Role, not a person's name: "Engineering manager, platform" |
+| Frequency | Per event / daily / weekly / monthly / quarterly / annual |
+| Type | Manual or automated; preventive or detective |
+| Systems | Which in-scope systems it runs on |
+| Design status | Designed / partially designed / not designed |
+
+A criterion with no mapped control is a design gap. Record it in Step 5.
+
+Write each control as something a tester can check. "We follow least privilege" can't be tested; "Quarterly, the system owner reviews production database access against the HR roster and removes leavers within 2 business days" can.
+
+## Step 3 — Write the evidence requests
+
+For each control, write the request the auditor will send, before they send it. Put them in `evidence-requests.md`, one row per request.
+
+| Field | What to write |
+|---|---|
+| Request ID | `ER-CHG-02-1` |
+| Control | `CHG-02` |
+| Artifact | Exactly what to produce: "export of merged PRs to `main` in the period, with reviewer and CI status" |
+| From whom | The role or system that holds it |
+| Population and period | The full list the sample is drawn from, and its dates. Type 1: as of the report date. Type 2: the whole period |
+| Sample | Size by control frequency (table below). The tester picks the sample, not the control owner |
+| Test method | Inquiry / observation / inspection / reperformance (below) |
+| Pass condition | What a sample must show to pass: "approver ≠ author, approval before merge, CI green at merge" |
+
+**Test methods**, weakest to strongest. Inquiry alone never evidences a control; pair it with at least one of the others.
+
+| Method | What it is | Example |
+|---|---|---|
+| Inquiry | Ask the owner how it works | Interview the on-call lead about alert handling |
+| Observation | Watch it happen | Watch a new hire's account being provisioned |
+| Inspection | Examine a record or config | Read the access-review ticket, the branch protection export |
+| Reperformance | Redo the control independently and compare | Re-run the leaver check: compare the HR termination list to active IdP accounts |
+
+**Sample sizes for Type 2.** Typical auditor practice (firms differ; ask yours):
+
+| Control frequency | Typical sample |
+|---|---|
+| Annual | 1 |
+| Quarterly | 2 |
+| Monthly | 2 to 5 |
+| Weekly | 5 to 15 |
+| Daily | 20 to 40 |
+| Many times a day, or per event (PRs, tickets, hires) | 25 to 60, or a percentage of the population |
+| Automated, configured once | 1 test of the configuration, plus evidence it didn't change in the period (change history) |
+
+The SOC 2 reference lists the usual artifacts per criterion.
+
+## Step 4 — Test from the repo and configs, hand off the rest
+
+Test read-only, and only what the repo or a saved export actually shows. Everything you test becomes evidence under `<audit dir>/evidence/`, saved redacted and pretty-printed so line numbers stay put, with the command and time in the record's description.
+
+What the repo can usually evidence directly:
+
+| Control area | Where to look | Example check |
+|---|---|---|
+| Change management | Branch protection, `CODEOWNERS`, CI workflows, PR history | `gh api repos/<owner>/<repo>/branches/main/protection` (read-only, with the user's go-ahead); `rg -n "required_approving_review_count\|enforce_admins" -g '*.tf'`; portable: `grep -rnE "required_approving_review_count|enforce_admins" --include='*.tf' .` |
+| Infrastructure as code | Terraform, CloudFormation, Pulumi | Encryption, logging and backup settings on in-scope resources |
+| Vulnerability management | Dependabot or Renovate config, scanner workflows | `ls .github/dependabot.yml renovate.json 2>/dev/null`; required scan jobs in CI |
+| Secrets handling | Secret scanning config, `.gitignore`, env templates | Pre-commit or CI secret scanning present and required |
+| Logging | App logger config, retention in IaC | Retention period vs the policy's stated period |
+| Policies in the repo | `docs/`, `SECURITY.md`, `policies/` | Approval and review dates, owner named |
+
+Hand the technical depth to the owning skill and fold its verdict back into the control row. Don't redo its work here.
+
+| Control area | Owning skill | What comes back |
+|---|---|---|
+| Access provisioning, reviews, MFA, leavers | `iam-audit` | IdP policy findings, orphaned accounts |
+| Cloud logging, encryption, network, backups | `cloud-audit` | Resource-level findings and evidence files |
+| Vulnerability and patch management | `dependency-audit`, `container-audit`, `patch-sweep` | Open advisories and their age vs the SLA in policy |
+| Secrets management | `secrets-audit` | Committed or live credentials |
+| Secure development | `owasp-audit`, `api-audit` | Application findings for the SDLC control |
+| Monitoring and alerting | `siem-detection` | Detection coverage for the monitoring control |
+| Incident response | `incident-triage` | Plan, tabletop or real-incident records |
+| Cardholder data or PHI in scope | `pci-audit`, `hipaa-audit` | Framework-specific technical findings |
+
+A handed-off finding keeps its own fingerprint and skill. In the control matrix, cite its fingerprint against the control it affects instead of writing a second record for the same root cause.
+
+What the repo can't show (HR records, training completion, vendor reviews, board minutes, the access review itself) goes in the evidence-request list for the owner.
+
+## Step 5 — Verify, then record
+
+Close every candidate gap with one verdict, as defined in [references/findings-format.md](references/findings-format.md), and run the refutation pass in [references/verification.md](references/verification.md) before anything is confirmed.
+
+**A control that's missing or failing is a finding; the control is the intended control.** Rate severity by the exposure the gap leaves, using [references/severity-calibration.md](references/severity-calibration.md), not by audit-opinion risk. "This would be a qualified opinion" is not a severity. A leaver with live production database access 40 days after termination is High because of what that access reaches. A quarterly review that ran 10 days late, with nothing wrong found when it did run, is not an exposure.
+
+**Documentation gaps are not findings.** A policy that's missing, unsigned or a year past review, an overdue training record, a vendor review not filed, a control description that doesn't match practice: list them in the report's "Documentation gaps (not findings)" section with the criterion, owner and the evidence expected. No severity, no `findings.json` record. They still matter to the auditor, and the report says so. Defense-in-depth gaps where another control already covers the exposure are hardening notes.
+
+Design gaps vs operating exceptions: a control that doesn't exist (design) and a control that exists but failed in a sample (operating) are both findings if they leave an exposure. Put which one in `ext.gap_type`.
+
+What each verdict looks like here:
+
+- **`confirmed`**: evidence you read shows the control missing or failing, and what that exposes.
+  - Change management (CC8.1): the saved branch protection export for `main` on the production repo shows no required reviews and `enforce_admins: false`, and the deploy workflow ships every push to `main` to production. Trace: push access (entrypoint) → unprotected `main` (propagation) → production deploy job (sink), all pointing at the evidence file and the workflow file. Medium or High depending on who holds push access and what production holds.
+  - Logical access (CC6.2): the IdP export and the HR termination list (both saved, redacted to IDs) show 3 accounts active 30+ days after termination, one with production admin. Reperformance is the test; record `test_method: reperformance`.
+- **`needs_validation`**: the evidence that decides it lives with a person or a system you can't read. The blocker is that fact, and the validation plan is the evidence request.
+  - Access review (CC6.3): the policy says quarterly reviews, and the ticket export has Q1 and Q2 but nothing for Q3. Blocker: whether the Q3 review was done outside the ticketing system. Plan: request ER-IAM-03-1, the Q3 review record with reviewer, date and the removals it led to; if none exists, it becomes confirmed (operating exception), rated by what unreviewed access reaches.
+  - Backups (A1.2): IaC enables snapshots, but restore testing happens in a runbook the team runs by hand. Blocker: whether a restore was tested in the period. Plan: request the last restore-test record and its date.
+- **`rejected`**: evidence shows the control designed and operating, so the gap claim is ruled out. `ruled_out_by.location` points at that evidence.
+  - "No MFA on the admin console": the IdP sign-on policy export (saved) requires phishing-resistant MFA for the admin group, and the authentication log sample shows MFA on every admin sign-in in the period.
+  - "Production deploys bypass review": the branch protection export requires one approval with `enforce_admins: true`, and a sample of 25 merged PRs from the period all show an approver other than the author.
+
+**Location.** Every record needs a `location`. Point it at the strongest artifact you read: the repo file, or the saved evidence file and the line of the decisive field. When nothing is readable yet (a `needs_validation` that waits on a person), point it at that request's line in `<audit dir>/evidence-requests.md`.
+
+**Fingerprints** are `control-audit/<framework>/<control id>/<system or scope>`, slash-separated, lowercase framework slug, no line numbers. Use the framework's own ID for the control; write enhancement or sub-item parentheses with a dot (`AC-2(1)` → `AC-2.1`), since parentheses aren't allowed in fingerprints. Name the system or scope so the same control on two systems gets two records:
+
+```
+control-audit/soc2/CC6.2/okta-workforce
+control-audit/soc2/CC8.1/github/acme/api
+control-audit/soc2/A1.2/aws/123456789012/prod-db
+control-audit/iso27001/A.5.18/okta-workforce
+control-audit/fedramp/SC-28.1/aws/123456789012/prod-db
+```
+
+Framework slugs: `soc2`, `iso27001`, `nist80053`, `fedramp`.
+
+**`ext` fields** (flat, snake_case; don't repeat anything that already has a field):
+
+| Key | Value | Example |
+|---|---|---|
+| `framework` | Framework and version | `"soc2-tsc-2017"`, `"iso27001-2022"`, `"nist-800-53r5-5.2.0"`, `"fedramp-rev5-moderate"` |
+| `control_id` | The framework control or criterion | `"CC6.2"`, `"A.8.32"`, `"clause-9.2"`, `"AC-2.3"` |
+| `responsibility` | 800-53 / FedRAMP: who implements it | `"system"`, `"inherited"`, `"hybrid"`, `"customer"` |
+| `poam_id` | 800-53 / FedRAMP: the POA&M row tracking it, if any | `"V-0142"` |
+| `org_control_id` | The organization's own control ID, if any | `"IAM-04"` |
+| `test_method` | How it was tested | `"inspection"`, `"reperformance"` |
+| `evidence_request` | The request ID that holds or would hold the evidence | `"ER-IAM-03-1"` |
+| `gap_type` | `"design"` or `"operating"` | `"operating"` |
+| `sample` | Exceptions over sample size, when sampled | `"3/25"` |
+| `csf` | NIST CSF 2.0 subcategory, from `csf-mapping` | `"PR.AA-05"` |
+
+Then:
+
+1. Write `findings.json` sorted by `fingerprint`, with `skill: "control-audit"`. Validate it and fix every error: `node references/validate-findings.mjs findings.json` ([references/validate-findings.mjs](references/validate-findings.mjs)). Optionally export SARIF: `node references/to-sarif.mjs findings.json -o findings.sarif` ([references/to-sarif.mjs](references/to-sarif.mjs)).
+2. Keep documentation gaps and hardening notes in `notes.md` next to the JSON. They are not records.
+3. On a re-run, load the previous `findings.json` and match by fingerprint. A `rejected` record stays rejected unless the evidence behind it is from an earlier period; a new period means new samples.
+
+Dispositions (set later, usually by `finding-triage`): Fixed / Deferred / Accepted Risk / Mitigated (platform/config) / Requires major migration. For an audit, "Fixed" needs the date: a fix late in a Type 2 period still leaves the exception in the period.
+
+## Output Format
+
+Write `findings.json` first. Render the report from it; the prose never changes a verdict, severity or blocker the JSON doesn't already say.
+
+```markdown
+# [Framework] Audit Readiness Review
+## Organization: [name]   ## System: [name / boundary]   ## Framework: [name + version]
+## Criteria or baseline: [e.g. Security + Availability]   ## Report type: [Type 1 as of date | Type 2, period start–end]
+## Date: [date]   ## Reviewer: [name]   ## Scope: [full | partial, what was left out]
+## findings.json: [path], validated: [yes]   ## Evidence folder: [path]
+
+### Summary
+- Controls in scope: [N]   Evidenced: [n]   Gaps (findings): [n]   Awaiting evidence: [n]   Documentation gaps: [n]
+- Confirmed: [N] (Critical [n] | High [n] | Medium [n] | Low [n])   Needs validation: [N]   Rejected: [N]
+- Readiness call: [ready for fieldwork | ready after the items below | not ready], one line on why
+
+### Control matrix
+| Org control | Framework refs | Owner | Frequency | Test method | Evidence request | Status | Record / note | CSF |
+|---|---|---|---|---|---|---|---|---|
+| CHG-02 | CC8.1 | Eng manager | Per PR | Inspection, 25 samples | ER-CHG-02-1 | Gap | `control-audit/soc2/CC8.1/github/acme/api` | PR.PS-01 |
+
+Status: Evidenced / Gap / Awaiting evidence / Documentation gap / Not applicable (with reason).
+
+### Evidence-request list
+| Request | Control | Artifact | From | Population and period | Sample | Test method | Pass condition | Status |
+|---|---|---|---|---|---|---|---|---|
+
+### Confirmed findings
+#### [SEVERITY] [Title]  `fingerprint`
+**Control:** [ext.control_id] / [ext.org_control_id]   **Gap type:** [design | operating]   **Sample:** [ext.sample]
+**Location:** `path:line` (repo or evidence file)   **Confidence:** [medium | high (reproduced)]   **Test:** [ext.test_method]
+**What and why it matters:** [the evidence and the exposure it leaves]
+**Fix:** [concrete change, and the evidence that will show it operating]
+**Verify the fix:** [the test the auditor will run]
+
+### Needs validation
+| Finding | Control | Blocker | Evidence request (validation plan) |
+|---|---|---|---|
+
+### Documentation gaps (not findings)
+| Criterion | What's missing | Owner | Evidence expected | Due before |
+|---|---|---|---|---|
+
+### Hardening notes (not findings)
+- [gap] — [why it isn't a finding] — [effort]
+
+### Rejected (do not re-raise)
+| Fingerprint | Ruled out by | Location |
+|---|---|---|
+
+### Handed off
+| Control | Skill | Record or status |
+|---|---|---|
+
+### Third parties and complementary controls
+| Subservice org | Carve-out / inclusive | Their report on file (type, period) | Complementary controls we run |
+|---|---|---|---|
+
+### Prioritized remediation plan
+1. [highest exposure first; then anything that must operate for the whole period, since it has to start now]
+```
+
+The control matrix counts records from `findings.json` and entries from the documentation-gap list. It is not a separate judgement.
+
+## Boundaries
+
+- This is readiness, not an audit opinion or a certificate. A SOC 2 report is issued by an independent CPA firm, an ISO/IEC 27001 certificate by an accredited certification body, and a FedRAMP assessment by a recognized independent assessor (3PAO), with the ATO decided by the agency. The readiness review prepares for those and does not replace them
+- Severity is not a POA&M risk rating either; keep the assessor's rating in the POA&M and `ext.poam_id`
+- Severity is not a nonconformity grade. A major nonconformity for a missing management review is still a documentation gap here, and the report says it will block certification
+- Severity reflects exposure. Don't inflate a paperwork gap to High to get budget, and don't call a live exposure a documentation gap because the auditor might not sample it
+- Never fabricate, backdate or edit evidence, and never pick samples to avoid known exceptions. The auditor picks samples. If evidence doesn't exist, the row says so
+- Technical findings belong to the skill that found them. Cite their fingerprints here; don't duplicate records
+- An active exposure found during readiness (live credentials, a leaver with production access) goes to the owner now, not into the report next month. Use `incident-triage` if it looks used
+- Policy and legal sign-off (management's assertion, the system description) stays with management and counsel
+
+## References
+
+- AICPA, 2017 Trust Services Criteria for Security, Availability, Processing Integrity, Confidentiality, and Privacy (with Revised Points of Focus, 2022) — `aicpa-cima.com`
+- AICPA, SOC 2 Reporting on an Examination of Controls at a Service Organization (Guide, 2022 edition)
+- COSO, Internal Control — Integrated Framework (2013): the 17 principles behind CC1–CC5
+- ISO/IEC 27001:2022 and Amendment 1:2024, ISO/IEC 27002:2022 — `iso.org` (copyrighted; the reference file paraphrases control titles)
+- NIST SP 800-53 Rev. 5 (Release 5.2.0), SP 800-53A, SP 800-53B, and OSCAL — `csrc.nist.gov`, `pages.nist.gov/OSCAL`
+- FedRAMP Consolidated Rules for 2026, Rev5 baselines and FedRAMP 20x Key Security Indicators — `fedramp.gov`
+- Framework detail: [references/soc2.md](references/soc2.md), [references/iso27001.md](references/iso27001.md), [references/nist-800-53.md](references/nist-800-53.md)
+- Shared references (copied into `references/` at build time): [references/findings-format.md](references/findings-format.md), [references/verification.md](references/verification.md), [references/severity-calibration.md](references/severity-calibration.md), [references/findings.schema.json](references/findings.schema.json)
+
+## Reference files
+
+This skill links to supporting files under `references/`. They are not inlined in this adapter; open them on GitHub (or in `skills/control-audit/references/` if you have the repo checked out):
+
+- [references/findings-format.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/control-audit/references/findings-format.md)
+- [references/findings.schema.json](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/control-audit/references/findings.schema.json)
+- [references/iso27001.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/control-audit/references/iso27001.md)
+- [references/nist-800-53.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/control-audit/references/nist-800-53.md)
+- [references/severity-calibration.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/control-audit/references/severity-calibration.md)
+- [references/soc2.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/control-audit/references/soc2.md)
+- [references/to-sarif.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/control-audit/references/to-sarif.mjs)
+- [references/validate-findings.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/control-audit/references/validate-findings.mjs)
+- [references/verification.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/control-audit/references/verification.md)

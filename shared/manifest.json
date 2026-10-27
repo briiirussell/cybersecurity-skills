@@ -19,7 +19,12 @@
       "prompt-injection",
       "pci-audit",
       "hipaa-audit",
-      "privacy-engineering"
+      "privacy-engineering",
+      "cicd-security",
+      "variant-analysis",
+      "native-code-review",
+      "fuzzing-harness",
+      "control-audit"
     ],
     "validate-findings.mjs": [
       "agent-supply-chain-audit",
@@ -39,7 +44,12 @@
       "prompt-injection",
       "pci-audit",
       "hipaa-audit",
-      "privacy-engineering"
+      "privacy-engineering",
+      "cicd-security",
+      "variant-analysis",
+      "native-code-review",
+      "fuzzing-harness",
+      "control-audit"
     ],
     "to-sarif.mjs": [
       "agent-supply-chain-audit",
@@ -59,7 +69,12 @@
       "prompt-injection",
       "pci-audit",
       "hipaa-audit",
-      "privacy-engineering"
+      "privacy-engineering",
+      "cicd-security",
+      "variant-analysis",
+      "native-code-review",
+      "fuzzing-harness",
+      "control-audit"
     ],
     "findings-format.md": [
       "agent-supply-chain-audit",
@@ -79,7 +94,12 @@
       "prompt-injection",
       "pci-audit",
       "hipaa-audit",
-      "privacy-engineering"
+      "privacy-engineering",
+      "cicd-security",
+      "variant-analysis",
+      "native-code-review",
+      "fuzzing-harness",
+      "control-audit"
     ],
     "severity-calibration.md": [
       "agent-supply-chain-audit",
@@ -98,7 +118,12 @@
       "mobile-audit",
       "pci-audit",
       "hipaa-audit",
-      "privacy-engineering"
+      "privacy-engineering",
+      "cicd-security",
+      "variant-analysis",
+      "native-code-review",
+      "fuzzing-harness",
+      "control-audit"
     ],
     "coverage.schema.json": [
       "owasp-audit",
@@ -124,7 +149,12 @@
       "prompt-injection",
       "pci-audit",
       "hipaa-audit",
-      "privacy-engineering"
+      "privacy-engineering",
+      "cicd-security",
+      "variant-analysis",
+      "native-code-review",
+      "fuzzing-harness",
+      "control-audit"
     ],
     "recon-and-coverage.md": [
       "owasp-audit",

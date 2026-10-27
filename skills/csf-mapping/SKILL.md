@@ -25,7 +25,7 @@ Each function contains Categories (e.g., `PR.AA` — Identity Management, Authen
 
 This skill maps your reality to those Subcategories.
 
-Cross-references: every audit skill in this repo (they produce evidence that becomes the "current state" entries here), `iam-audit` (most of PR.AA), `siem-detection` (most of DE), `incident-triage` (most of RS), `threat-modeling` (informs ID.RA risk assessment), `breach-patterns` (informs ID.IM improvements from lessons learned).
+Cross-references: every audit skill in this repo (they produce evidence that becomes the "current state" entries here), `iam-audit` (most of PR.AA), `siem-detection` (most of DE), `incident-triage` (most of RS), `threat-modeling` (informs ID.RA risk assessment), `breach-patterns` (informs ID.IM improvements from lessons learned), `control-audit` (SOC 2 / ISO 27001 / NIST 800-53 audit readiness and evidence requests; its crosswalks run through this skill).
 
 ## Authorization
 
@@ -197,7 +197,7 @@ Use the CSF assessment as the *backing detail*. The board view is a one-page hea
 ## Boundaries
 
 - This skill produces governance artifacts and roadmaps — not exploitation
-- CSF assessments are not audits in the regulatory sense (SOC 2 audit, FedRAMP assessment, ISO 27001 certification audit are all separate processes); CSF mapping informs those but doesn't replace them
+- CSF assessments are not audits in the regulatory sense (SOC 2 audit, FedRAMP assessment, ISO 27001 certification audit are all separate processes); CSF mapping informs those but doesn't replace them. For readiness work against those frameworks, use `control-audit`
 - For audited environments (PCI, HIPAA, FedRAMP), the auditor's specific framework is authoritative; CSF mapping is a useful complement
 - Refuse to inflate tier ratings without evidence — Tier 3 means "evidence of documented org-wide processes," not "we hope to do this someday"
 - Where the assessment surfaces a finding that needs immediate action (active incident, exposed system), hand off to `incident-triage` or the relevant audit skill

@@ -4,43 +4,269 @@ Current versions of all skills. Agents can compare against local versions to che
 
 | Skill | Version | Last Updated |
 |-------|---------|--------------|
-| agent-supply-chain-audit | 1.0.1 | 2026-10-26 |
+| agent-supply-chain-audit | 1.0.2 | 2026-10-27 |
 | ai-risk-management | 1.1.2 | 2026-10-26 |
-| api-audit | 1.1.5 | 2026-10-26 |
+| api-audit | 1.1.7 | 2026-10-27 |
 | breach-patterns | 1.0.4 | 2026-10-26 |
 | business-logic-testing | 1.0.2 | 2026-10-26 |
+| cicd-security | 1.0.0 | 2026-10-27 |
 | cloud-audit | 1.2.0 | 2026-10-26 |
 | container-audit | 1.1.0 | 2026-10-26 |
-| crypto-audit | 1.1.0 | 2026-10-27 |
-| csf-mapping | 1.0.2 | 2026-10-26 |
-| dependency-audit | 1.2.3 | 2026-10-26 |
-| disk-forensics | 1.0.1 | 2026-10-26 |
-| finding-triage | 1.1.2 | 2026-10-26 |
-| hipaa-audit | 1.1.0 | 2026-10-27 |
-| iam-audit | 1.1.0 | 2026-10-26 |
-| incident-triage | 1.1.0 | 2026-10-26 |
+| control-audit | 1.2.0 | 2026-10-27 |
+| crypto-audit | 1.1.2 | 2026-10-27 |
+| csf-mapping | 1.0.3 | 2026-10-27 |
+| dependency-audit | 1.2.4 | 2026-10-27 |
+| disk-forensics | 1.0.2 | 2026-10-27 |
+| finding-triage | 1.3.1 | 2026-10-27 |
+| fuzzing-harness | 1.0.0 | 2026-10-27 |
+| hipaa-audit | 1.1.1 | 2026-10-27 |
+| iam-audit | 1.1.1 | 2026-10-27 |
+| incident-triage | 1.1.1 | 2026-10-27 |
 | log-watch | 1.0.1 | 2026-10-26 |
-| mobile-audit | 1.1.0 | 2026-10-27 |
+| malware-triage | 1.0.0 | 2026-10-27 |
+| mobile-audit | 1.1.1 | 2026-10-27 |
+| native-code-review | 1.0.1 | 2026-10-27 |
 | osint-recon | 1.0.2 | 2026-10-26 |
-| owasp-audit | 1.3.2 | 2026-10-26 |
+| owasp-audit | 1.6.0 | 2026-10-27 |
 | patch-sweep | 1.0.2 | 2026-10-26 |
-| pci-audit | 1.1.0 | 2026-10-27 |
+| pci-audit | 1.1.1 | 2026-10-27 |
 | personal-opsec | 1.0.1 | 2026-10-26 |
 | privacy-engineering | 1.1.0 | 2026-10-27 |
 | prompt-injection | 1.2.0 | 2026-10-27 |
 | recon | 1.0.1 | 2026-10-26 |
 | red-team-engagement | 1.0.1 | 2026-10-26 |
-| scanner-pipeline | 1.0.2 | 2026-10-26 |
-| secrets-audit | 1.1.3 | 2026-10-26 |
+| scanner-pipeline | 1.0.4 | 2026-10-27 |
+| secrets-audit | 1.1.4 | 2026-10-27 |
 | security-comms | 1.0.3 | 2026-10-26 |
-| siem-detection | 1.0.3 | 2026-10-26 |
+| security-start | 1.0.0 | 2026-10-27 |
+| siem-detection | 1.0.5 | 2026-10-27 |
 | soc-operations | 1.0.4 | 2026-10-26 |
-| threat-hunting | 1.0.4 | 2026-10-26 |
+| threat-hunting | 1.0.5 | 2026-10-27 |
 | threat-modeling | 1.0.4 | 2026-10-26 |
-| vuln-research | 1.0.3 | 2026-10-26 |
-| web-pentest | 1.2.0 | 2026-10-27 |
+| variant-analysis | 1.0.0 | 2026-10-27 |
+| vuln-research | 1.0.4 | 2026-10-27 |
+| web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.50.0 (2026-10-27)
+
+New skill: security-start, a router for vague asks (#131). security-start 1.0.0.
+
+**Added**
+- **security-start 1.0.0.** For asks with no shape ("make this secure", "where do I start?"). It takes a quick read-only look at the repo, then asks at most three questions: what you have, what's happening, and who the result is for. Then it hands off to one to three skills from the catalog, in order. A 37-row table maps situations to a first skill and its follow-ups and covers all 41 other skills. An active incident skips the questions and goes straight to incident-triage. Routing to an offensive skill always comes with a note that it needs written authorization. It does no auditing itself and has no SessionStart hook, so it costs nothing in sessions that don't use it.
+- **Doesn't steal triggers.** Its description claims only vague phrases and tells the model to use the named skill whenever the ask names a framework, target or tool. On the offline trigger eval it takes no other skill's prompts and wins all six of its own.
+- README: new row, map cell, crossover line, and a "Not sure?" bullet at the top of "Where to start".
+
+### 1.49.0 (2026-10-27)
+
+control-audit adds NIST SP 800-53 Rev. 5 and FedRAMP (#140). control-audit 1.2.0. This finishes #140.
+
+**Added**
+- **NIST 800-53 and FedRAMP** (`references/nist-800-53.md`). It covers:
+  - SP 800-53 Rev. 5 (Release 5.2.0), with the control families and the SP 800-53B Low / Moderate / High baselines
+  - the SSP, SAR and POA&M artifacts, and OSCAL
+  - FedRAMP's 2026 changes: the Consolidated Rules (mandatory from 1 January 2027), Classes A–D replacing Low/Moderate/High, the Rev5 certification sunset, and 20x Key Security Indicators
+  - facts that rest only on secondary sources are marked "(verify)"
+- Control enhancements are written with a dot in fingerprints (`AC-2(1)` → `AC-2.1`), because the validator doesn't allow parentheses.
+- The skill's scope step and trigger phrases cover NIST 800-53 and FedRAMP.
+
+### 1.48.0 (2026-10-27)
+
+control-audit adds ISO/IEC 27001:2022 (#140). control-audit 1.1.0.
+
+**Added**
+- **ISO 27001** (`references/iso27001.md`): management-system clauses 4–10 and the Statement of Applicability. The 93 Annex A controls are grouped in the four themes, with the 11 controls that are new in 2022 marked. It also covers Amendment 1:2024 and the end of the 2013 transition on 31 October 2025. Control titles are paraphrased, not reproduced, because ISO text is copyrighted.
+- The skill's scope step and trigger phrases cover ISO 27001.
+
+### 1.47.0 (2026-10-27)
+
+New skill: control-audit, starting with SOC 2 (#140). control-audit 1.0.0. Back-references: csf-mapping 1.0.3, pci-audit 1.1.1, hipaa-audit 1.1.1.
+
+#140 asked whether SOC 2, ISO 27001 and NIST 800-53 / FedRAMP should be one skill or three. They're one skill, with a reference file per framework, because the workflow is the same and three skills would fight over the same trigger phrases. pci-audit and hipaa-audit stay separate because they review code.
+
+**Added**
+- **control-audit 1.0.0.** Control-level audit readiness:
+  - scope the audit: framework, criteria, systems in scope, audit period, Type 1 vs Type 2
+  - build the control inventory, and write an evidence request per control: what artifact, from whom, which sample period, and how it's tested (inquiry / observation / inspection / reperformance)
+  - test what the repo and config can show, read-only, and hand technical checks to the owning skill (cloud-audit, iam-audit, siem-detection, ...)
+  - record control gaps in the shared findings format. A gap is `confirmed` only with evidence that the control is missing or failing. Evidence held by a person or system the agent can't read goes to `needs_validation`, with the evidence request as the validation plan. An evidenced control is `rejected`.
+  - rate severity by exposure, not audit-opinion risk; pure documentation gaps go in their own section
+- **SOC 2** (`references/soc2.md`): the 2017 Trust Services Criteria with the 2022 revised points of focus (CC1–CC9 plus Availability, Confidentiality, Processing Integrity and Privacy), common evidence by criterion, and Type 1 vs Type 2.
+- Output: a control matrix, an evidence-request list, findings and documentation gaps. Fingerprints are `control-audit/<framework>/<control id>/<scope>`, with `ext` keys for the framework, control id, test method and evidence request. Crosswalks go through csf-mapping.
+
+**Changed**
+- csf-mapping points readiness work for SOC 2 / ISO 27001 / FedRAMP to control-audit. pci-audit and hipaa-audit cross-reference it.
+- README: new row, map cell, crossover line, and a "Where to start" mention.
+
+### 1.46.0 (2026-10-27)
+
+New skill: malware-triage (#139). malware-triage 1.0.0. Back-references: incident-triage 1.1.1, disk-forensics 1.0.2, threat-hunting 1.0.5, siem-detection 1.0.5.
+
+**Added**
+- **malware-triage 1.0.0.** Static triage of a suspicious file without running it. It covers:
+  - **Safe handling first:** never execute the sample on the analyst's machine; work on a copy in an isolated VM. Private samples aren't uploaded to public services without the owner's yes, because that can tip off the attacker and leak data. Lookups by hash are fine.
+  - **Identity and reputation:** hashes (SHA-256, imphash, ssdeep / TLSH) and reputation lookup by hash.
+  - **Static analysis:** file type, entropy and packers, strings and FLOSS, and per-format triage for PE / .NET, ELF and Mach-O.
+  - **Scripts and documents:** deobfuscating scripts and Office macros (PowerShell, JS, VBA via olevba), plus archives, ISO, LNK and OneNote containers.
+  - **Behaviour:** capa capabilities mapped to MITRE ATT&CK.
+  - **Indicators:** exported as defanged CSV or STIX 2.1.
+  - **YARA rules:** tested against the sample and a goodware set.
+  - **Hand-offs:** to siem-detection and threat-hunting.
+- Dynamic analysis only points to a sandbox (CAPE, ANY.RUN, Joe Sandbox, Hybrid Analysis) and notes the privacy trade-off.
+- **Output:** a Malware Triage Report, not `findings.json`. A verdict on a third-party file has no fix or disposition. The verdict is malicious / suspicious / likely benign / unknown, with confidence and a numbered evidence table, and "likely benign" is capped at medium confidence. Weaknesses the triage finds in the user's own systems go to the owning audit skill as findings.
+- **Grants:** read-only commands only (`file`, `strings`, hashing, `yara`, `capa`, `olevba`, `readelf`, `objdump`, three `otool` forms). FLOSS and exiftool aren't pre-approved, because each has a flag that changes the system or the file.
+
+**Changed**
+- incident-triage, disk-forensics, threat-hunting and siem-detection point to malware-triage.
+- README: new row, map cell, crossover line, and a "Where to start" mention.
+
+### 1.45.0 (2026-10-27)
+
+New skill: fuzzing-harness (#137). fuzzing-harness 1.0.0. Back-references: native-code-review 1.0.1, web-pentest 1.2.1, crypto-audit 1.1.2.
+
+**Added**
+- **fuzzing-harness 1.0.0.** Writes and runs fuzz harnesses and property-based tests for the code that handles untrusted bytes: parsers, decoders, serializers, deserializers, token and header parsing, protocol state machines.
+  - **Ranks targets** by what they parse and where the input comes from.
+  - **Harnesses:** libFuzzer, cargo-fuzz, Go native fuzzing, Atheris, Jazzer.js and Jazzer. Templates are in `references/harness-templates.md`.
+  - **Property-based tests:** Hypothesis, fast-check and proptest, with useful properties: round-trip, invariants, differential against a reference, no crash on arbitrary input.
+  - **Runs:** seed corpora and dictionaries, sanitizer builds, timeouts.
+  - **Crashes:** each one is reproduced, minimized, deduped by stack and triaged into `findings.json`. A crash input that reproduces sets `reproduced: true`; `references/crash-triage.md` maps sanitizer reports to crash class and CWE. Each crash becomes a regression test.
+  - **CI:** regression replay on every PR, short PR fuzz runs, ClusterFuzzLite, and OSS-Fuzz eligibility (`references/ci-integration.md`).
+- Write is granted because harness, test, corpus and CI files are the main output. There are no Bash grants: installs, builds and fuzz runs execute the project's code, so they always prompt.
+- An unfixed memory-safety crash input is never committed to a public repo, and public CI artifacts are treated as public.
+
+**Changed**
+- native-code-review hands dynamic confirmation to fuzzing-harness by name. web-pentest separates live HTTP fuzzing from code-level harnesses. crypto-audit points to it for round-trip and tamper-rejection property tests.
+- README: new row, map cell and crossover line.
+
+### 1.44.0 (2026-10-27)
+
+New skill: native-code-review (#135). native-code-review 1.0.0. Back-references: crypto-audit 1.1.1, mobile-audit 1.1.1, vuln-research 1.0.4.
+
+**Added**
+- **native-code-review 1.0.0.** Memory-safety review of C, C++ and Rust source, parsers of untrusted input first. Each candidate is traced from where untrusted bytes enter to the memory operation that goes wrong. It covers:
+  - out-of-bounds reads and writes
+  - integer overflow, truncation and sign confusion that feed a size
+  - use-after-free and double free
+  - format strings, and uninitialized memory
+  - Rust `unsafe` soundness (safety comments, `Send`/`Sync` impls, `transmute`, `set_len`, raw-pointer aliasing)
+  - FFI boundaries
+  - secrets not wiped from memory
+- `references/bug-classes.md` has 11 bug classes, each with CWE ids, `rg` and portable grep patterns, and what rules a hit out or confirms it. The patterns were tested on sample C, C++ and Rust files. Also new: `references/rust-unsafe-checklist.md`, and `references/hardening-and-sanitizers.md` (OpenSSF compiler flags with minimum versions, `readelf` / `checksec` checks, ASan / UBSan / MSan / TSan and Miri runs).
+- Calibration rules:
+  - A missing hardening flag is always a hardening note, never a finding.
+  - A missing wipe is a finding only when wiping is a documented guarantee or there's a traced leak path.
+  - Unsound Rust in a published library's safe API is a finding even without an app-level path.
+  - Titles never say "remote code execution" unless it was shown.
+- Only `readelf` and `checksec file` are pre-approved. Building, tests, sanitizers, Miri and `cargo geiger` always prompt, because building runs the project's build scripts. Dynamic work stops at a sanitizer or Miri report.
+
+**Changed**
+- crypto-audit, mobile-audit (native libraries) and vuln-research (reachability for C, C++ and Rust libraries) point to native-code-review.
+- README: new row, map cell and crossover line.
+
+### 1.43.0 (2026-10-27)
+
+New skill: variant-analysis (#136). variant-analysis 1.0.0. Back-references: finding-triage 1.3.1, scanner-pipeline 1.0.4, siem-detection 1.0.4.
+
+**Added**
+- **variant-analysis 1.0.0.** Starts from one confirmed finding and hunts its siblings:
+  - pin down the original
+  - write an exact-match rule, then widen it one element at a time
+  - write the rule with tests: a Semgrep rule with `ruleid:` / `ok:` annotations and `semgrep --test`, a CodeQL query with a test pack and `.expected` file, or a nuclei v3 template for variants only visible over HTTP. The nuclei template only sends GET, needs both a status and a planted marker to match, and is checked against a known-bad and a known-fixed host first.
+  - run it on one repo, or across the org via patch-sweep
+  - close every hit with a verdict, linked to the original through `ext.variant_of`
+  - hand the rule to scanner-pipeline so the bug can't come back
+- Ships a tested Express IDOR rule (`references/rules/express-idor-param-lookup.yml` and its fixture; `semgrep --test` passes). The end-to-end example starts from the owasp-audit example's IDOR and finds one more hit in `examples/target`, rejected because `requireAdmin` guards it.
+- Grants are exact Semgrep commands only (`--test`, `--validate`, one fixed `scan`), so `--autofix` is never pre-approved. CodeQL and nuclei always prompt. Write is granted because rule files are the main output.
+- The CodeQL skeleton follows GitHub's docs but hasn't been compiled. The reference says to run `codeql test run` before trusting it.
+
+**Changed**
+- finding-triage, scanner-pipeline and siem-detection point to variant-analysis (siem-detection keeps log rules, variant-analysis takes rules over code and HTTP).
+- README: new row, map cell and crossover line.
+
+### 1.42.0 (2026-10-27)
+
+New skill: cicd-security (#134). cicd-security 1.0.0. Back-references: dependency-audit 1.2.4, secrets-audit 1.1.4, scanner-pipeline 1.0.3, agent-supply-chain-audit 1.0.2, iam-audit 1.1.1.
+
+**Added**
+- **cicd-security 1.0.0.** Reviews CI the way you'd review authorization code. For every job, it asks one question: can someone with less trust than the job (a fork PR author, any commenter, a third-party action maintainer) change what it runs or reads, and what does the job hold when they do? It covers:
+  - `pull_request_target` and `workflow_run` running untrusted code ("pwn requests"), including GitHub's December 2025 change to `pull_request_target`
+  - expression injection from `${{ github.event.* }}` into `run:` steps
+  - missing or broad `permissions:`
+  - third-party actions not pinned to a commit SHA
+  - OIDC trust policies with wildcard or missing `sub` conditions (AWS, GCP, Azure)
+  - self-hosted runners on public repos, and secrets reaching forks
+  - cache poisoning, and artifacts trusted across workflows
+  - publish jobs without a protected identity
+  - **AI agents in CI** (claude-code-action and similar): who can trigger them, what issue and PR text reaches them, and what token, tools and secrets they hold
+  - GitLab CI and CircleCI equivalents, briefly
+- Runs zizmor (`--offline`) and actionlint read-only, using exact grants only, because a wildcard would also allow `zizmor --fix` or `actionlint -init-config`. There's no `gh api` grant, because a trailing `-X` or `-f` can turn a read into a write.
+- Writes `findings.json` with fingerprints `cicd-security/<class>/<workflow file>/<job>`, and `ext` keys for the trigger, job, lower-trust actor, token permissions and secrets in scope. Settings that live only on the platform (fork-PR approval, branch protection, cloud trust policies) go to `needs_validation`, along with the command that answers them. Worked examples cover each verdict.
+
+**Changed**
+- dependency-audit hands workflow security to cicd-security. Its Step 5 GitHub Actions bullets and Step 5b handoffs 1–4, 7 and 8 now point there. It keeps release-artifact identity and independent checksums, and drops the 'GitHub Actions security', 'cache poisoning' and 'OIDC trust policy' trigger phrases. A trigger-eval prompt about workflow review moves to cicd-security.
+- secrets-audit, scanner-pipeline, agent-supply-chain-audit and iam-audit gain cross-references to cicd-security.
+- README: new row, map cell, crossover line, and a "Where to start" mention.
+
+### 1.41.0 (2026-10-27)
+
+owasp-audit framework playbooks, part 3: Django and Rails (#132). owasp-audit 1.6.0. This finishes #132.
+
+**Added**
+- **Django** (`frameworks/django.md`): unscoped querysets and DRF object permissions, serializer and ModelForm mass assignment (`fields = '__all__'`), `**request` expansion into ORM filters (CVE-2025-64459), `raw()` / `extra()` / cursor SQL, `mark_safe`, and production settings (`DEBUG`, `SECRET_KEY`, allowed hosts).
+- **Rails** (`frameworks/rails.md`): unscoped `find` and missing `authorize`, `permit!` and broad permit lists (and Rails 8 `params.expect`), interpolated SQL and `order()`, `html_safe` / `raw` and other output sinks, and credentials and production config.
+- Mass assignment is tagged A08:2025 (CWE-915), following OWASP's mapping, or A01 when the assigned field is an owner or tenant key.
+
+### 1.40.0 (2026-10-27)
+
+owasp-audit framework playbooks, part 2: Firebase and Electron (#132). owasp-audit 1.5.0.
+
+**Added**
+- **Firebase** (`frameworks/firebase.md`): open and test-mode rules, `request.auth != null` as the only check, field allowlists on writes, Storage rules versus bucket IAM, Cloud Functions identity, and what API key restrictions and App Check do and don't protect.
+- **Electron** (`frameworks/electron.md`): `webPreferences` (contextIsolation, nodeIntegration, sandbox, webSecurity), what the preload bridge exposes, IPC sender and argument checks, navigation and `shell.openExternal`, deep links, fuses, CVE-2025-55305, and update signing.
+
+### 1.39.0 (2026-10-27)
+
+owasp-audit gets framework playbooks, part 1: Next.js and Supabase (#132). owasp-audit 1.4.0.
+
+**Added**
+- **Framework detection.** Recon detects frameworks from package.json dependencies and config files, then loads only the matching playbook from `references/frameworks/`. Playbook findings use the normal Top 10:2025 categories, ledger units and findings format.
+- **Next.js** (`frameworks/nextjs.md`): server actions as public POST endpoints, middleware/proxy matcher gaps and CVE-2025-29927, `NEXT_PUBLIC_` and `next.config` `env` leaks, route handler auth, per-user data leaking through cache and revalidate, and version advisories.
+- **Supabase** (`frameworks/supabase.md`): RLS on every exposed table, permissive policies (including roles read from `user_metadata`), service-role and `sb_secret_` keys in client code, storage policies, `security definer` RPC, and `getSession()` / `verify_jwt` reliance. Links scanner-pipeline's `supabase-rls.yml`.
+- Each playbook has the surfaces to add to the ledger, `rg` and portable grep commands, what confirms or rejects a candidate, and a confirmed and a rejected example.
+
+**Changed**
+- The weekly link check now covers nested reference folders (`skills/*/references/**/*.md`).
+
+### 1.38.0 (2026-10-27)
+
+finding-triage checks that a fix actually works before closing the finding (#133). finding-triage 1.3.0, owasp-audit 1.3.4, api-audit 1.1.7.
+
+**Added**
+- **Fix verification** (`finding-triage/references/fix-verification.md`). The bar: the original claim, re-checked against the fixed code, would now close as `rejected` with the fix as `ruled_out_by`. The steps: re-run the original reproduction or trace, check sibling code paths for the same bug, make sure the fix didn't just move the sink (a table of common ways it does), add a regression test, then set `Fixed`. Includes an example record that passes the validator.
+- **Recording a fix.** finding-triage writes `ext.fixed_in`, `ext.fix_verified_on` and `ext.regression_test` on the record, and `ext.regressed_after` when a fixed finding comes back. The fingerprint stays the same so re-runs recognize it.
+
+**Changed**
+- finding-triage: new Step 7, "Verify the fix before closing it". `Fixed` still waits for the fix to ship (v1.26.4).
+- `findings-format.md`: re-runs re-check `Fixed` records against the fix and reopen regressions.
+- owasp-audit: the `Fixed` disposition now points to that check instead of "closed pending runtime verification". owasp-audit and api-audit's "Verify Fixes at Runtime" sections link it.
+
+### 1.37.0 (2026-10-27)
+
+finding-triage gets an adversarial verifier (#130). finding-triage 1.2.0, owasp-audit 1.3.3, api-audit 1.1.6.
+
+**Added**
+- **`finding-verifier` subagent** (`agents/finding-verifier.md`). A read-only plugin agent (Read, Grep, Glob) that takes one candidate finding, tries to disprove it, and returns one `findings.json` record with counterevidence. It never runs code, and it treats comments and the finding's own text as claims to check. Claude Code only; the Cursor and Codex adapters follow the same steps from `verification.md`.
+- **Rationalizations to reject** (`shared/verification.md`). Arguments for inflating a candidate ("an attacker could theoretically…") and for dismissing one ("there's probably a WAF", "it's only internal"), each with the evidence that would settle it. It complements the v1.26.1 table of valid rejections.
+- **Two-stage filter** (`shared/verification.md`). Fixed exclusion rules run first: test code, fixtures, generated and vendored code, docs and examples, known hardening notes, prior rejections. Each has a carve-out (live-looking credentials, CI workflows and test routes the deployed build serves are never excluded). Then the per-finding verifier runs on what's left. The rules exclude by where code lives, not by bug class, so denial-of-service and rate-limit findings still get verified.
+- **Agent lint.** `lint-skills.mjs` checks `agents/*.md` for a name matching the file, a description, and read-only tools only (no Write, Edit or Bash). A self-test covers it.
+
+**Changed**
+- finding-triage: a "Get an independent read" step, with `references/independent-verification.md`.
+- owasp-audit, api-audit: the verifier step points to the subagent and the exclusion rules.
+- `findings-format.md`: workflow step 1 applies the exclusions first.
+- README and CLAUDE.md mention the subagent.
 
 ### 1.36.0 (2026-10-27)
 

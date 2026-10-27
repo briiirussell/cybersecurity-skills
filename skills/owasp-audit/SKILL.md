@@ -65,6 +65,10 @@ Before grepping for vulnerabilities, map the system ([references/recon-and-cover
 - Entry surfaces: routes, server actions, loaders, tRPC procedures, GraphQL resolvers, webhooks, jobs, cron, uploads
 - Sinks: DB writes/raw queries, exec, filesystem, outbound HTTP, HTML rendering, email, paid third-party calls, redirects
 - What's deployed vs what's in the repo (proxy, CDN, IdP, env). These become `needs_validation` blockers later
+- **Frameworks and BaaS.** Match `package.json` dependencies and config files against the detection table in
+  [references/frameworks/README.md](references/frameworks/README.md) (for example `next` + `next.config.*` → Next.js,
+  `@supabase/*` or `supabase/config.toml` → Supabase). Load only the matching playbooks, add their surfaces to the
+  ledger, and work their checks in Step 3. Their findings use the same categories, verdicts, and format as the rest
 
 Write `architecture.md` (≤ ~1,000 words) and seed `coverage.json` with one `planned` unit per surface × boundary ×
 OWASP category.
@@ -88,7 +92,8 @@ unit, read the entrypoint, follow data to every sink, and record what you checke
 Before anything reaches the report, run the per-finding refutation pass in
 [references/verification.md](references/verification.md). One fresh verifier per candidate (a subagent where
 supported; otherwise a separate step that doesn't re-read the hunting notes). It re-reads every cited `file:line`,
-names the strongest control on the path, and returns exactly one verdict:
+names the strongest control on the path, and returns exactly one verdict. Apply the fixed exclusion rules (test,
+generated, vendored, docs) first. In Claude Code, dispatch the plugin's read-only `finding-verifier` subagent per candidate.
 
 | Verdict | Bar | Severity |
 |---|---|---|
@@ -346,7 +351,7 @@ Don't report these as findings:
 
 ## Verify Fixes at Runtime
 
-After applying a fix, exercise the affected code path — do not stop at typecheck or build. Modern frameworks have runtime-only failure modes that compile cleanly:
+After applying a fix, exercise the affected code path — do not stop at typecheck or build. `finding-triage`'s fix verification (re-run the original check, look for variants, make sure the sink didn't just move, add a regression test) decides when the record becomes `Fixed`. Modern frameworks have runtime-only failure modes that compile cleanly:
 
 - **Edge / Node split runtimes.** Next.js middleware, Cloudflare Workers, Vercel Edge — Node-only imports (`node:crypto`, `node:fs`) build successfully but throw on first request.
 - **Lazy module loads.** Adapters/plugins loaded via `import()` or runtime DI surface only when the codepath runs.
@@ -432,7 +437,7 @@ pre-existing issues noted during a diff review.
 
 ### Dispositions (confirmed findings only)
 
-- **Fixed** — remediation shipped. Closed pending runtime verification.
+- **Fixed** — set only after the fix shipped and its check passed (`finding-triage` Step 7).
 - **Deferred** — acknowledged and scheduled. Say whether the next deploy is gated on it (release blocker) or not. Severity doesn't change because you deferred it.
 - **Accepted Risk** — not planned at the current configuration. Must record (1) why the fix doesn't apply (cost tier, version constraint, topology, vendor limitation), (2) compensating controls, (3) the re-evaluation trigger. An Accepted Risk entry without all three is a real finding being silently dropped.
 - **Mitigated (platform/config)** — a control outside the code (WAF rule, platform setting, network policy) now blocks the path. Name it and how it was verified; the code fix may still be scheduled.
@@ -453,4 +458,5 @@ False Positive is not a disposition. It's a `rejected` verdict with the control 
 
 - [OWASP Top 10:2025](https://owasp.org/Top10/2025/) (2021 mapping in the Audit Checklist intro); OWASP Code Review Guide; CWE Top 25
 - Shared workflow references (copied into `references/` at build time): verification.md, recon-and-coverage.md, orchestration.md, diff-review.md, findings-format.md, severity-calibration.md
+- Framework playbooks in [references/frameworks/](references/frameworks/README.md), each citing its own sources and licenses
 - Workflow ideas paraphrased from [Cloudflare security-audit-skill](https://github.com/cloudflare/security-audit-skill) (MIT) — recon, coverage ledger, independent verifier, run profiles, findings schema — and [Strix](https://github.com/usestrix/strix) (Apache-2.0) — counterevidence, diff mode, severity calibration. Specific source files are cited in each shared reference.

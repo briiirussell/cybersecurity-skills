@@ -4,7 +4,7 @@
     "run npm audit and tell me what actually matters",
     "are any of these packages vulnerable?\n```json\n{\"dependencies\": {\"lodash\": \"4.17.15\", \"axios\": \"0.21.0\", \"next\": \"14.0.1\"}}\n```",
     "npm audit fix broke the build, help",
-    "review our GitHub Actions workflows for supply chain risk like unpinned actions and cache poisoning",
+    "which of our outdated dependencies have known vulnerabilities we should upgrade first?",
     "could we get hit by dependency confusion with our internal package names?"
   ],
   "near_miss": [
@@ -27,6 +27,10 @@
     {
       "prompt": "is this one Dependabot alert a false positive, and what severity is it really?",
       "owner": "finding-triage"
+    },
+    {
+      "prompt": "review our GitHub Actions workflows for supply chain risk like unpinned actions and cache poisoning",
+      "owner": "cicd-security"
     }
   ]
 }

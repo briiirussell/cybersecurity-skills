@@ -16,6 +16,7 @@ Cross-references:
 - `vuln-research` for the technical CVE deep-dive that feeds reachability assessment here
 - `owasp-audit` / `api-audit` disposition rule (the framework this implements per-finding) and their per-finding verification pass ([references/verification.md](references/verification.md))
 - `scanner-pipeline` for bulk scanner output — triage the survivors here, one at a time
+- `variant-analysis` when a confirmed finding probably has siblings: encode it as a rule and sweep the repo or org
 - `security-comms` for translating the disposition writeup into stakeholder-readable language when the finding has to leave the security context
 - Any audit skill — this consumes their findings as input
 - [references/severity-calibration.md](references/severity-calibration.md) — the full severity rules this skill summarizes
@@ -104,6 +105,8 @@ Missing one? Then it isn't a finding yet:
 
 **Document a false-positive determination as carefully as a real finding.** If a future scanner or auditor flags the same thing, the prior false-positive note saves them the work.
 
+**Get an independent read.** Before confirming at High or Critical, moving a verdict up, or writing a scanner finding off as a false positive, have something other than the finder try to refute it. Scanner batches go through the fixed exclusion rules first (test, generated, vendored, docs). In Claude Code with this plugin, hand the finding to the `finding-verifier` subagent: one finding per call, the record and the code only, never your notes. In Cursor, Codex and other tools, run the same pass inline as a separate step from [references/verification.md](references/verification.md), and check your reasoning against its "Rationalizations to reject" table. When to run it, turning a scanner finding into a candidate, and merging the result: [references/independent-verification.md](references/independent-verification.md).
+
 ### Step 3 — Contextual severity
 
 The scanner's CVSS or severity rating is a starting point, not the answer. Rate **likelihood** and **impact** separately, each with a one-line reason, then pick an overall.
@@ -183,7 +186,7 @@ Full rules, examples and the publishable-vs-secret key table: [references/severi
 | **False positive** | Not actually a vulnerability (verdict `rejected`) | Evidence for the determination, the named control + location, scanner rule ID to suppress (with care) |
 | **Hardening note** | No traced impact — not a finding | One line: what's missing, why it would help, effort. No severity, no SLA |
 
-**On Fix now:** a decision to fix is not a fix. Leave `disposition` unset in `findings.json` while the fix is planned or in review. The record stays open, and `to-sarif.mjs` keeps alerting on it. Set `Fixed` only once the change has shipped and the template's Verification step passed against it; record the commit or release in the writeup. Writing `Fixed` early makes the SARIF drop the alert while the bug is still live.
+**On Fix now:** a decision to fix is not a fix. Leave `disposition` unset in `findings.json` while the fix is planned or in review. The record stays open, and `to-sarif.mjs` keeps alerting on it. Set `Fixed` only once the change has shipped and the fix check in Step 7 passed against it; record the commit or release in the writeup and in `ext.fixed_in`. Writing `Fixed` early makes the SARIF drop the alert while the bug is still live.
 
 **On Defer:** severity does NOT change because you decided to defer. Recording a "High deferred to Q3" is honest; downgrading a High to Medium because Q3 is far away is risk-laundering.
 
@@ -364,6 +367,18 @@ Before submitting:
 - If the input was a `findings.json` record: did you write back the verdict, severity and disposition, and does the validator still pass?
 - Is any record marked `Fixed` whose fix hasn't shipped and been verified? Clear the disposition until it has.
 
+### Step 7 — Verify the fix before closing it
+
+A merged fix is a claim. Before a Fix now finding becomes **Fixed**, check it: the fix is verified when the original claim, re-checked against the fixed code, would close as `rejected` with the fix as `ruled_out_by`.
+
+1. **Re-run the original check** — the recorded PoC or test against the fixed build, or the `trace[]` walked again (the `finding-verifier` subagent can do this read-only). Confirm the legitimate request still works.
+2. **Variant check** — other callers of the sink, parallel entrypoints to the same data, the same pattern elsewhere. Same root cause and not covered: the fix is incomplete. Separate root cause: a new candidate under "Related candidates".
+3. **Didn't just move the sink** — re-trace from every entrypoint that reached the old sink. Client-only guards, a denylist for the PoC string, a guard on one path, a fail-open check or a default-off flag are partial fixes.
+4. **Regression test** — sends the adversarial input to the real path, asserts refusal, fails before the fix, runs in CI.
+5. **Ship, then set `Fixed`** — only after 1–4 pass and the change is live everywhere the finding applied. Keep the `fingerprint`, verdict and severity unchanged; add `ext.fixed_in`, `ext.fix_verified_on` and `ext.regression_test`, then re-run the validator. If a later run finds the same fingerprint again, reopen it as a regression.
+
+Full procedure, the "moved the sink" table and the record example: [references/fix-verification.md](references/fix-verification.md).
+
 ## When to escalate
 
 Findings that should NOT be triaged unilaterally by a single engineer:
@@ -424,7 +439,12 @@ Things you noticed while triaging: the same pattern on a sibling route, a second
 
 - [references/severity-calibration.md](references/severity-calibration.md) — boundary + result gate, anchors, over-rating list, High/Critical checklist
 - [references/findings-format.md](references/findings-format.md) — `findings.json` verdicts and fields; `validate-findings.mjs`, `to-sarif.mjs`
+- [references/verification.md](references/verification.md) — the per-finding refutation pass, two-stage filter and rationalizations table
+- [references/fix-verification.md](references/fix-verification.md) — re-running the original check, variant hunt, moved-sink patterns, regression test, recording `Fixed`
+- [references/independent-verification.md](references/independent-verification.md) — when triage runs the verifier, and how to use the `finding-verifier` subagent or the inline pass
+- Trail of Bits [fp-check](https://github.com/trailofbits/skills/tree/main/plugins/fp-check) (CC BY-SA 4.0) and anthropics [claude-code-security-review](https://github.com/anthropics/claude-code-security-review) (MIT) — rationalizations to reject, read-only verifier agents, exclusion rules before per-finding filtering (paraphrased)
 - Cloudflare [security-audit-skill](https://github.com/cloudflare/security-audit-skill) (MIT) — boundary-and-result requirement, verdict-shaped findings records (paraphrased)
+- Trail of Bits [post-patch-validation](https://github.com/trailofbits/skills/tree/main/plugins/post-patch-validation) and [regression-hunt](https://github.com/trailofbits/skills/tree/main/plugins/regression-hunt) (CC BY-SA 4.0), Strix [fix_verification.md](https://github.com/usestrix/strix/blob/main/strix/skills/analysis/fix_verification.md) (Apache-2.0) — fix verification and regression hunting (paraphrased)
 - Strix [severity calibration](https://github.com/usestrix/strix/blob/main/strix/skills/analysis/severity_calibration.md) (Apache-2.0) — over-rating list and High/Critical acceptance checks (paraphrased)
 - CVSS v4.0 specification — `first.org/cvss`
 - EPSS — Exploit Prediction Scoring System (FIRST.org)
@@ -440,6 +460,8 @@ This skill links to supporting files under `references/`. They are not inlined i
 
 - [references/findings-format.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/finding-triage/references/findings-format.md)
 - [references/findings.schema.json](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/finding-triage/references/findings.schema.json)
+- [references/fix-verification.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/finding-triage/references/fix-verification.md)
+- [references/independent-verification.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/finding-triage/references/independent-verification.md)
 - [references/severity-calibration.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/finding-triage/references/severity-calibration.md)
 - [references/to-sarif.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/finding-triage/references/to-sarif.mjs)
 - [references/validate-findings.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/finding-triage/references/validate-findings.mjs)

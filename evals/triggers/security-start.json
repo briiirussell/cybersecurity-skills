@@ -1,0 +1,37 @@
+{
+  "skill": "security-start",
+  "should_fire": [
+    "make this secure",
+    "where do I start with security for my startup?",
+    "which security skill should I use for this repo?",
+    "is this secure? not sure what we should check",
+    "can you do a general security checkup, I don't know where to begin",
+    "help me with security for this project, here's what's in the repo:\n```\nDockerfile  package.json  src/  .github/workflows/  terraform/\n```\nno idea where to start"
+  ],
+  "near_miss": [
+    {
+      "prompt": "run an OWASP Top 10 audit on this codebase",
+      "owner": "owasp-audit"
+    },
+    {
+      "prompt": "we've been hacked, someone is in our AWS account right now",
+      "owner": "incident-triage"
+    },
+    {
+      "prompt": "is our GitHub Actions pull_request_target workflow safe?",
+      "owner": "cicd-security"
+    },
+    {
+      "prompt": "we have a SOC 2 Type 2 audit in March, what evidence do we need?",
+      "owner": "control-audit"
+    },
+    {
+      "prompt": "triage this Dependabot alert and tell me the real severity",
+      "owner": "finding-triage"
+    },
+    {
+      "prompt": "audit my own laptop and accounts as the founder",
+      "owner": "personal-opsec"
+    }
+  ]
+}

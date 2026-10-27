@@ -199,7 +199,7 @@ Capture both full exchanges (request headers minus secrets, body, status, respon
 
 ## Verify Every Finding (refutation pass — before the report)
 
-Every candidate goes through a per-finding refutation pass before it can be reported. Run it as a subagent where the platform supports it; otherwise run it as a separate step that does **not** look at the original discovery reasoning. The verifier is told: *you did not write this — try to refute it.* It re-reads every cited `file:line`, names the strongest control that actually runs on the path, and returns one verdict. Full procedure and the verifier prompt: [references/verification.md](references/verification.md).
+Every candidate goes through a per-finding refutation pass before it can be reported. Run it as a subagent where the platform supports it; otherwise run it as a separate step that does **not** look at the original discovery reasoning. The verifier is told: *you did not write this — try to refute it.* It re-reads every cited `file:line`, names the strongest control that actually runs on the path, and returns one verdict. Full procedure and the verifier prompt: [references/verification.md](references/verification.md). Apply its fixed exclusion rules (test, generated, vendored, docs) first; in Claude Code, dispatch the plugin's read-only `finding-verifier` subagent once per candidate.
 
 **Three verdicts** (shared vocabulary — the old "Potential" label is retired):
 
@@ -238,7 +238,7 @@ Each record is one of the three verdict shapes with a stable `fingerprint` (root
 - For rate-limit fixes: hit the endpoint at 10× the configured rate; observe 429 not 200
 - For CORS fixes: send the request with `Origin: https://evil.com`; observe the browser blocks, not the server
 
-`tsc --noEmit` + build success ≠ fix verified. See also `owasp-audit`'s Verify Fixes at Runtime + Second-Opinion Pass — same playbook applies.
+`tsc --noEmit` + build success ≠ fix verified. See also `owasp-audit`'s Verify Fixes at Runtime + Second-Opinion Pass — same playbook applies — and `finding-triage`'s fix verification before a record becomes `Fixed`.
 
 ## Output Format
 

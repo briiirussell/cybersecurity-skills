@@ -23,15 +23,16 @@ Built by [Bri Russell](https://github.com/briiirussell). I run real audits with 
 
 Not every skill is for every user on day one. A good starting point by context:
 
+- **Not sure?** Ask for `security-start` (or just say "where do I start with security?"). It asks two or three questions and picks the skill.
 - **Reviewing your own code or product:** start with `owasp-audit` for the source-code sweep, then `api-audit` if you have API endpoints, then `dependency-audit` for the CVE pass
 - **A CVE wave just dropped and you run many apps:** `patch-sweep` to work out which apps are affected and ship fixes across the fleet, with `dependency-audit` for each project
 - **Want deterministic scanners in CI instead of asking an agent to "hack" your app:** `scanner-pipeline` picks the tools per layer, wires them into CI, and routes findings to `finding-triage`
 - **Securing cloud / infrastructure:** start with `cloud-audit` (AWS / GCP / Azure misconfig), then `iam-audit` if you manage identities, then `container-audit` if you run Docker / Kubernetes
-- **Responding to "something happened":** `incident-triage` for the immediate response, `disk-forensics` if you need to analyze a system afterward, `security-comms` to draft the stakeholder / customer communications
+- **Responding to "something happened":** `incident-triage` for the immediate response, `disk-forensics` if you need to analyze a system afterward, `malware-triage` for a suspicious file someone found, `security-comms` to draft the stakeholder / customer communications
 - **No SIEM, no security staff, but you have logs:** `log-watch` sets up a scheduled agent that reads the logs you already have (Vercel, Heroku, Sentry, Supabase, Stripe, CloudTrail, GitHub) and pages someone when it matters
 - **You are the security team (founder / solo operator):** `personal-opsec` audits your own accounts, devices and AI-agent setup first — the person holding the keys is usually the softest target
 - **Building a security program from scratch:** `csf-mapping` for the governance frame, `threat-modeling` before new features, `breach-patterns` to learn from public incidents
-- **Working under a specific regulation:** `privacy-engineering` for GDPR / CCPA / similar privacy laws, `hipaa-audit` for ePHI, `pci-audit` for payment cards, `ai-risk-management` for AI features
+- **Working under a specific regulation:** `privacy-engineering` for GDPR / CCPA / similar privacy laws, `hipaa-audit` for ePHI, `pci-audit` for payment cards, `control-audit` for SOC 2, ISO 27001 or FedRAMP audit readiness, `ai-risk-management` for AI features
 - **Running AI coding agents with skills, plugins, or MCP servers:** `agent-supply-chain-audit` before you install or trust them — including this catalog
 - **Closing the loop on findings:** `finding-triage` for any single finding from any source — gives you a defensible disposition with the right ticket fields
 - **Translating security work upward or outward:** `security-comms` for board / exec / customer / engineering / sales-engineering deliverables
@@ -65,18 +66,29 @@ The skills are organized into seven families. Most security work crosses familie
 │ audit│ │web-    │ │ forens.│ │ audit  │ │ risk-│ │ research│ │pci-audit │
 │depen-│ │ pentest│ │siem-   │ │iam-aud-│ │ mgmt │ │finding- │ │hipaa-    │
 │ audit│ │red-    │ │ detect.│ │ it     │ │agent-│ │ triage  │ │ audit    │
-│secre-│ │ team-  │ │soc-    │ │        │ │supply│ │csf-     │ │          │
-│ audit│ │ engage-│ │ ops    │ │        │ │-chain│ │ mapping │ │          │
+│secre-│ │ team-  │ │soc-    │ │        │ │supply│ │csf-     │ │control-  │
+│ audit│ │ engage-│ │ ops    │ │        │ │-chain│ │ mapping │ │ audit    │
 │crypt-│ │ ment   │ │threat- │ │        │ │-audit│ │security-│ │          │
 │ audit│ │business│ │ hunting│ │        │ │      │ │ comms   │ │          │
 │mobile│ │-logic- │ │breach- │ │        │ │      │ │personal-│ │          │
 │-audit│ │-testing│ │patterns│ │        │ │      │ │ opsec   │ │          │
-│patch-│ │        │ │log-    │ │        │ │      │ │         │ │          │
-│ sweep│ │        │ │ watch  │ │        │ │      │ │         │ │          │
-│scan- │ │        │ │        │ │        │ │      │ │         │ │          │
-│ner-  │ │        │ │        │ │        │ │      │ │         │ │          │
+│patch-│ │        │ │log-    │ │        │ │      │ │security-│ │          │
+│ sweep│ │        │ │ watch  │ │        │ │      │ │ start   │ │          │
+│scan- │ │        │ │malware-│ │        │ │      │ │         │ │          │
+│ner-  │ │        │ │ triage │ │        │ │      │ │         │ │          │
 │pipe- │ │        │ │        │ │        │ │      │ │         │ │          │
 │line  │ │        │ │        │ │        │ │      │ │         │ │          │
+│cicd- │ │        │ │        │ │        │ │      │ │         │ │          │
+│ sec. │ │        │ │        │ │        │ │      │ │         │ │          │
+│vari- │ │        │ │        │ │        │ │      │ │         │ │          │
+│ ant- │ │        │ │        │ │        │ │      │ │         │ │          │
+│ anal.│ │        │ │        │ │        │ │      │ │         │ │          │
+│native│ │        │ │        │ │        │ │      │ │         │ │          │
+│-code-│ │        │ │        │ │        │ │      │ │         │ │          │
+│review│ │        │ │        │ │        │ │      │ │         │ │          │
+│fuzz- │ │        │ │        │ │        │ │      │ │         │ │          │
+│ing-  │ │        │ │        │ │        │ │      │ │         │ │          │
+│ harn.│ │        │ │        │ │        │ │      │ │         │ │          │
 └──┬───┘ └───┬────┘ └───┬────┘ └───┬────┘ └──┬───┘ └────┬────┘ └────┬─────┘
    │         │          │          │         │           │            │
    └─────────┴────┬─────┴──────────┴─────────┴───────────┴────────────┘
@@ -95,6 +107,14 @@ The skills are organized into seven families. Most security work crosses familie
      scanner-pipeline → finding-triage → fix agents (tools find it, agents fix it)
      log-watch → siem-detection / soc-operations (outgrow it) → incident-triage (it's real)
      personal-opsec → iam-audit / secrets-audit / agent-supply-chain-audit (the person → the org → the agents)
+     dependency-audit → cicd-security ← agent-supply-chain-audit (the pipeline is supply chain too)
+     dependency-audit → cicd-security ← agent-supply-chain-audit (the pipeline is supply chain too)
+     finding-triage → variant-analysis → scanner-pipeline (one bug → a rule → it can't come back)
+     native-code-review ↔ crypto-audit (memory safety ↔ constant time and key handling)
+     native-code-review ↔ fuzzing-harness (read the parser ↔ fuzz it)
+     incident-triage → malware-triage → siem-detection / threat-hunting (the sample → detections and hunts)
+     control-audit ⇆ csf-mapping / pci-audit / hipaa-audit (audit readiness ⇆ framework mapping)
+     security-start → any skill (a vague ask → the right first step)
      breach-patterns → every audit skill (what to check)
      finding-triage ← every audit skill (closes the loop on any finding)
      security-comms ← every skill (translates output for non-security audience)
@@ -111,18 +131,23 @@ The skills are organized into seven families. Most security work crosses familie
 | [api-audit](skills/api-audit/) | OWASP API Security Top 10 (2023) — REST / GraphQL / RPC endpoint audit. BOLA, mass assignment, BFLA, rate-limit, webhook signature, plus a deep GraphQL playbook (schema inference with introspection off, aliased owned-vs-foreign IDOR, resolver cascade, Relay node swap, federation `_entities`, subscriptions, persisted queries). Paired owner-vs-non-owner evidence, verification pass, coverage ledger, findings.json. [Example run](examples/api-audit/report.md). |
 | [breach-patterns](skills/breach-patterns/) | Preemptive hardening — read public breach disclosures, extract the audit question each one implies, check your stack. Capital One / LastPass / Okta / Snowflake / MOVEit / Codecov / Equifax / Uber. |
 | [business-logic-testing](skills/business-logic-testing/) | The bugs scanners can't find — invariant-first testing (conservation of value, uniqueness, monotonicity, exclusivity), Actor × Action × Resource matrix, state-machine abuse, limit-slicing, and race conditions proven dynamically (HTTP/2 single-packet, idempotency-key scope, cache-before-commit). Explicit written scope required for money flows. |
+| [cicd-security](skills/cicd-security/) | GitHub Actions, GitLab CI and CircleCI review — pwn requests (`pull_request_target` / `workflow_run`), expression injection, token permissions, SHA pinning, OIDC trust subjects, self-hosted runners, fork secrets, cache and artifact trust, and AI agents in CI that read issue or PR text while holding a write token. zizmor and actionlint run read-only. Writes findings.json (confirmed / needs validation / rejected), with SARIF export. |
 | [cloud-audit](skills/cloud-audit/) | AWS / GCP / Azure infrastructure misconfiguration, excessive IAM, public exposure, compliance gaps — plus PaaS (Vercel / Netlify / Heroku / Render / Railway / Fly): stale manual production deploys, silently broken git deploys, legacy projects still serving old code, preview exposure, repo security defaults. Writes findings.json (confirmed / needs validation / rejected), with SARIF export. |
 | [container-audit](skills/container-audit/) | Docker + Kubernetes audit. Dockerfile, base images, pod security, RBAC, NetworkPolicy, secrets, image policy, runtime. Writes findings.json (confirmed / needs validation / rejected), with SARIF export. |
+| [control-audit](skills/control-audit/) | Audit readiness for SOC 2, ISO 27001:2022 and NIST 800-53 / FedRAMP — scope and audit period, control inventory, an evidence request per control (inquiry / observation / inspection / reperformance), read-only checks of what the repo can show, technical checks handed to the owning skill, and control gaps rated by exposure. Control matrix and evidence-request list. Writes findings.json (confirmed / needs validation / rejected), with SARIF export. |
 | [crypto-audit](skills/crypto-audit/) | Cryptography implementation review — algorithm/mode choice, KDF parameters, IV/nonce handling, authenticated encryption, signature verification, randomness, TLS posture, key lifecycle. Deeper than owasp-audit A02. Writes findings.json (confirmed / needs validation / rejected), with SARIF export. |
 | [csf-mapping](skills/csf-mapping/) | NIST CSF 2.0 posture assessment — Govern / Identify / Protect / Detect / Respond / Recover. Subcategory mapping, current/target tiers, prioritized roadmap. Translates technical findings into governance language. |
 | [dependency-audit](skills/dependency-audit/) | Dependencies, frameworks, runtimes, toolchain — CVEs, security anti-patterns, supply chain risk. Fixing safely (pnpm override traps, duplicate singletons, engines floor, runtime pins that must move together), CI/release trust handoffs (cache/artifact poisoning, OIDC, digest promotion), package-source redirection, agent-extension pinning. [Example run](examples/dependency-audit/report.md). |
 | [disk-forensics](skills/disk-forensics/) | Disk image analysis, evidence recovery, timeline reconstruction. Explicit Authorization Check covering lawful basis, chain of custody, privacy scope. |
 | [finding-triage](skills/finding-triage/) | Single-finding disposition workflow — accepts any source (or a findings.json record by fingerprint) and the confirmed / needs-validation / rejected verdicts. Boundary + result gate, severity capped at demonstrated impact, hardening notes kept out of findings. Fixed / Deferred / Accepted Risk / Mitigated (platform/config) / Requires major migration / False Positive, with ticket-ready writeups. Closes the loop on every audit skill. [Example run](examples/finding-triage/report.md). |
+| [fuzzing-harness](skills/fuzzing-harness/) | Fuzz harnesses (libFuzzer, cargo-fuzz, Go, Atheris, Jazzer.js / Jazzer) and property-based tests (Hypothesis, fast-check, proptest) for parsers, decoders and serializers — seed corpora, sanitizer runs, crash minimization and triage into findings, regression tests from crashes, and CI fuzzing (ClusterFuzzLite / OSS-Fuzz). Writes findings.json (confirmed / needs validation / rejected), with SARIF export. |
 | [hipaa-audit](skills/hipaa-audit/) | HIPAA Security / Privacy / Breach Notification — three safeguard categories, 18 identifiers, BAA chain-of-liability, minimum-necessary, 60-day breach clock, encryption-as-safe-harbor. Writes findings.json (confirmed / needs validation / rejected), with SARIF export. |
 | [iam-audit](skills/iam-audit/) | Consultant-style IAM — audit / design / migrate. Cloud IAM (AWS/GCP/Azure), identity providers (Okta/Entra/Auth0/Workspace), application authorization (RBAC/ABAC/ReBAC), workload identity, JIT access, break-glass. Writes findings.json (confirmed / needs validation / rejected), with SARIF export. |
 | [incident-triage](skills/incident-triage/) | Security incident triage following NIST SP 800-61. |
 | [log-watch](skills/log-watch/) | Scheduled agent log review + paging for small teams without a SIEM — inventory the logs you already have, starter detections with thresholds (credential stuffing, new admin grants, key creation, .env/.git probing, bad webhook signatures, export spikes, CloudTrail root/IAM), a cheap-filter → strong-model pipeline with a monthly cost table, dedupe + suppression, paging. Detection only; logs treated as untrusted input. |
+| [malware-triage](skills/malware-triage/) | Static triage of a suspicious file without running it — safe handling, hash reputation, packers, strings / FLOSS, PE / ELF / Mach-O, script and Office macro deobfuscation, capa mapped to ATT&CK. Output: a verdict with evidence, defanged indicators (CSV / STIX 2.1), and a YARA rule tested against goodware. Hands off to siem-detection and threat-hunting. |
 | [mobile-audit](skills/mobile-audit/) | iOS + Android audit against OWASP MASVS / MASTG — storage, crypto, network, auth, platform IPC, code, resilience. Writes findings.json (confirmed / needs validation / rejected), with SARIF export. |
+| [native-code-review](skills/native-code-review/) | Memory-safety review of C, C++ and Rust — out-of-bounds writes and integer overflow into sizes, use-after-free, format strings, uninitialized memory, Rust `unsafe` soundness, FFI boundaries, parsers of untrusted input first, secrets left in memory, plus hardening flags and sanitizers. Writes findings.json (confirmed / needs validation / rejected), with SARIF export. |
 | [osint-recon](skills/osint-recon/) | Open source intelligence gathering and correlation. |
 | [owasp-audit](skills/owasp-audit/) | Source-code audit against OWASP Top 10:2025 — recon first (architecture + coverage ledger), category checklist with grep patterns, a per-finding refutation pass (confirmed / needs validation / rejected), coverage critic, findings.json → report. Quick / standard / deep run profiles, subagent orchestration, re-runs by fingerprint, diff / PR-scoped mode, inbound-webhook and parser-limit patterns. [Example run](examples/owasp-audit/report.md). |
 | [patch-sweep](skills/patch-sweep/) | Fleet-wide CVE response across many apps and deploy platforms — map repos → platform projects → live domains, find each project's real production branch, catch stale manual deploys, decide affectedness (runtime + dependency + code path), mitigate before patching, ship and confirm prod. Output: one status board row per app. |
@@ -135,10 +160,12 @@ The skills are organized into seven families. Most security work crosses familie
 | [scanner-pipeline](skills/scanner-pipeline/) | Set up and run real scanners per layer (gitleaks / trufflehog, semgrep, osv-scanner, trivy / checkov, Supabase advisors, ZAP / nuclei on domains you own), normalize to SARIF or findings.json, dedupe, suppress with reason + expiry, schedule in CI, and hand one finding at a time to fix agents. Works across a fleet of repos. |
 | [secrets-audit](skills/secrets-audit/) | Find leaked secrets (code, Git history, build artifacts, CI, frontend bundles, AI agent configs and session transcripts) + audit secrets-management posture (rotation, scope, workload identity). Confirms key type (publishable vs restricted vs secret) before rating; findings.json with values redacted; exfil collector-domain list for egress hunting. [Example run](examples/secrets-audit/report.md). |
 | [security-comms](skills/security-comms/) | Translate security work for non-security audiences — board, executive, engineering, customer success, customers, legal, procurement. Seven audience archetypes, six templates (incident comms, post-mortem, breach disclosure, etc.). |
+| [security-start](skills/security-start/) | Not sure which skill you need? Start here. Looks at the repo, asks at most three questions (what you have, what's happening, who it's for), and hands off to one to three skills from this catalog, in order. Routing only — no audit of its own. |
 | [siem-detection](skills/siem-detection/) | SIEM detection engineering — log source coverage, Sigma rule authoring, MITRE ATT&CK mapping, FP tuning, detection-as-code. |
 | [soc-operations](skills/soc-operations/) | Build / run / improve a SOC — alert prioritization, runbook authoring, escalation criteria, on-call structure, KPIs (MTTD / MTTR / FP rate), alert-fatigue tuning loop. |
 | [threat-hunting](skills/threat-hunting/) | Proactive, hypothesis-driven adversary detection — PEAK framework, ATT&CK-driven hunt catalog, every hunt produces an artifact (rule, dead-end doc, or coverage gap). |
 | [threat-modeling](skills/threat-modeling/) | Pre-implementation security design — STRIDE per element + abuse cases, data flow diagrams with trust boundaries, four-question Shostack frame. |
+| [variant-analysis](skills/variant-analysis/) | Turn one confirmed bug into a tested Semgrep rule or CodeQL query (positive and negative cases), or a non-destructive nuclei template for HTTP-only variants. Run it across the repo or org, close every hit with a verdict linked to the original (`ext.variant_of`), and keep the rule in CI. Ships a tested Express IDOR rule and an end-to-end example. Writes findings.json (confirmed / needs validation / rejected), with SARIF export. |
 | [vuln-research](skills/vuln-research/) | CVE deep-dive — pull canonical sources, confirm versions, reachability analysis, check public PoCs / CISA KEV / EPSS, decide patch / mitigate / accept-risk. |
 | [web-pentest](skills/web-pentest/) | Live web application pentest against an authorized target — OWASP WSTG-structured, nine phases from config through business logic. Combined white-box + black-box mode (code ↔ endpoint Target Map) when you have source too; every PoC carries paired baseline-vs-attack evidence. Writes findings.json (confirmed / needs validation / rejected), with SARIF export. |
 <!-- SKILLS:END -->
@@ -178,6 +205,8 @@ That's one step on Claude Code 2.1.275 or later. On older versions, add the mark
 /plugin marketplace add briiirussell/cybersecurity-skills
 /plugin install cybersecurity-skills
 ```
+
+The plugin also ships one subagent, `finding-verifier`. Audit skills hand it one candidate finding at a time, and it tries to disprove the finding in a fresh, read-only context. Cursor and Codex don't get the subagent; they follow the same steps from `verification.md`.
 
 ### Option 3: Claude Code (project-level, manual)
 

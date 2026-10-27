@@ -19,18 +19,23 @@ body:
         - api-audit
         - breach-patterns
         - business-logic-testing
+        - cicd-security
         - cloud-audit
         - container-audit
+        - control-audit
         - crypto-audit
         - csf-mapping
         - dependency-audit
         - disk-forensics
         - finding-triage
+        - fuzzing-harness
         - hipaa-audit
         - iam-audit
         - incident-triage
         - log-watch
+        - malware-triage
         - mobile-audit
+        - native-code-review
         - osint-recon
         - owasp-audit
         - patch-sweep
@@ -43,10 +48,12 @@ body:
         - scanner-pipeline
         - secrets-audit
         - security-comms
+        - security-start
         - siem-detection
         - soc-operations
         - threat-hunting
         - threat-modeling
+        - variant-analysis
         - vuln-research
         - web-pentest
     validations:

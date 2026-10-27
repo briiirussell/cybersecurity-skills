@@ -8,7 +8,7 @@ Two halves: (1) find secrets that have already leaked into source, history, or a
 
 Most secret leaks aren't "we forgot to redact" — they're "we never had a system, so every developer made up their own approach." This skill covers both the cleanup and the prevention.
 
-Cross-references: `dependency-audit` (CI-related secrets risk in build-time exposure), `iam-audit` (workload identity federation as the alternative to long-lived keys), `owasp-audit` A04:2025 Cryptographic Failures (hard-coded secrets found during an app review), `agent-supply-chain-audit` (the skills, hooks, and MCP servers that sit next to these agent configs and can read them), `incident-triage` and `threat-hunting` (the exfiltration-collector domains below as egress indicators), `scanner-pipeline` (gitleaks / trufflehog across full history and a whole fleet of repos, on a schedule), `personal-opsec` (the operator's own machine, where agent tokens and pasted secrets actually live).
+Cross-references: `dependency-audit` (CI-related secrets risk in build-time exposure), `iam-audit` (workload identity federation as the alternative to long-lived keys), `owasp-audit` A04:2025 Cryptographic Failures (hard-coded secrets found during an app review), `agent-supply-chain-audit` (the skills, hooks, and MCP servers that sit next to these agent configs and can read them), `incident-triage` and `threat-hunting` (the exfiltration-collector domains below as egress indicators), `scanner-pipeline` (gitleaks / trufflehog across full history and a whole fleet of repos, on a schedule), `personal-opsec` (the operator's own machine, where agent tokens and pasted secrets actually live), `cicd-security` (which workflows and forks can reach CI secrets).
 
 ## Authorization
 
@@ -247,7 +247,7 @@ When you find a leaked secret:
 
 - **Rotation never tested** — secret stores configured, never actually rotated; first attempt breaks prod
 - **`.env.local` shipped to staging** — environment-specific dev secrets cross the boundary
-- **CI secrets accessible from PRs from forks** — GitHub's default behavior was previously dangerous; verify `pull_request_target` and secret accessibility
+- **CI secrets accessible from PRs from forks** — GitHub's default behavior was previously dangerous; verify `pull_request_target` and secret accessibility → `cicd-security` (fork secrets, pwn requests)
 - **Build args used for secrets** — `--build-arg AWS_SECRET=...` ends up in image history (use `--secret`/BuildKit instead)
 - **Logging frameworks dump `process.env`** on unhandled exception — Sentry / Datadog / Bugsnag scrub config required
 - **Secret stored in K8s as plain Secret** without etcd encryption — base64 is encoding, not encryption (see `container-audit`)
