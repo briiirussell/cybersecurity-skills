@@ -88,7 +88,7 @@ allowed-tools: Read, Grep, Glob     # Pre-approved: run WITHOUT a permission pro
 
 ```bash
 node scripts/build-adapters.mjs    # Generate Cursor + Codex adapters and copy shared/ files into skills/*/references/ (also: npm run build)
-node scripts/lint-skills.mjs       # Frontmatter, size, cross-reference, link and allowed-tools lint (CI runs this)
+node scripts/lint-skills.mjs       # Frontmatter, size, cross-reference, link + #anchor and allowed-tools lint (CI runs this)
 node scripts/check-versions.mjs --base origin/development   # Versions in sync + bumped vs the base (CI runs this on PRs)
 node scripts/eval-triggers.mjs --verbose   # Offline trigger eval: which prompts route to the wrong skill (CI runs this)
 npm run check                      # Everything CI runs locally except SkillSpector and plugin validate

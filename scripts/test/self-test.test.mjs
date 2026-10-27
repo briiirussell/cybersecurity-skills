@@ -54,6 +54,7 @@ test("lint: every rule still fires", () => {
     "too-long": skill({ name: "too-long", body: "## Authorization\n\nOwn.\n" + "line\n".repeat(500) }),
     "no-sections": skill({ name: "no-sections", standard: "" }),
     "report-format": skill({ name: "report-format", body: "## Authorization\n\nOwn.\n\n## Report Format\n\nA table.\n" }),
+    "bad-anchor": skill({ name: "bad-anchor", body: "## Authorization\n\nOwn. See [it](#no-such-heading) and [ok](#authorization).\n" }),
     "dup-phrase-a": skill({ name: "dup-phrase-a", desc: DESC("Also 'shared trigger phrase'. ") }),
     "dup-phrase-b": skill({ name: "dup-phrase-b", desc: DESC("Also 'shared trigger phrase'. ") }),
   });
@@ -69,6 +70,7 @@ test("lint: every rule still fires", () => {
     "too-long": /lines \(must be under 500\)/,
     "no-sections": /no `## Boundaries` section/,
     "report-format": /"## Report Format" should be "## Output Format"/,
+    "bad-anchor": /link "#no-such-heading" points at no heading/,
   };
   for (const [folder, re] of Object.entries(expect)) {
     const lines = r.stderr.split("\n").filter((l) => l.includes(`/${folder}/SKILL.md`));

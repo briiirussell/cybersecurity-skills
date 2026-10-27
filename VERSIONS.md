@@ -49,6 +49,13 @@ Current versions of all skills. Agents can compare against local versions to che
 
 ## Recent Changes
 
+### 1.51.0 (2026-10-27)
+
+The lint checks `#anchor` links (repo tooling). No skill changes.
+
+**Added**
+- **Anchor check.** `lint-skills.mjs` fails a markdown link whose `#anchor` names no heading in the target `.md` file, using GitHub's slug rules (lowercase, punctuation dropped, spaces to hyphens, `-1` / `-2` for repeated headings) plus explicit `<a id>` / `<a name>` targets. It checks SKILL.md, every skill's `references/` at any depth, and `shared/`. Renaming a heading, as the OWASP 2025 renumbering did, now breaks the build instead of quietly breaking links. All 58 existing anchor links resolve. A self-test covers it.
+
 ### 1.50.1 (2026-10-27)
 
 Repo tooling and docs cleanups after the v1.37.0–v1.50.0 build. No skill changes.
