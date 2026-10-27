@@ -16,6 +16,7 @@
 //   - severity.overall -> rule + result property "security-severity" (critical 9.5, high 8.0, medium 5.5, low 3.0)
 //     and level (critical/high -> error, medium -> warning, low -> note).
 //   - trace[] -> codeFlows[0].threadFlows[0].locations; evidence[] -> relatedLocations.
+//   - ext (skill-specific fields) -> result properties.ext, unchanged.
 //   - Paths are emitted relative to uriBaseId "%SRCROOT%".
 
 import { readFileSync, writeFileSync, realpathSync } from "node:fs";
@@ -75,6 +76,7 @@ function resultFor(rec, ruleIndex) {
     if (SUPPRESSED.has(rec.disposition))
       result.suppressions = [{ kind: "external", status: "accepted", justification: `Disposition: ${rec.disposition}` }];
   }
+  if (rec.ext) result.properties.ext = rec.ext;
   if (rec.trace.length > 0) {
     result.codeFlows = [
       {

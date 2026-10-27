@@ -56,6 +56,7 @@ Common to all three shapes:
 | `title` | string | One line, specific |
 | `cwe` | string, optional | `CWE-639` |
 | `owasp_category` | string, optional | `A01:2025`, `API1:2023` |
+| `ext` | object, optional | The producing skill's own fields (see "Skill-specific fields" below) |
 | `location` | `{file, line}` | Primary location. `file` is repo-relative, `line` ≥ 1 |
 | `trace[]` | `{kind, file, line, description}` | `kind` ∈ `entrypoint` \| `propagation` \| `sink`. A non-empty trace starts with `entrypoint`, ends with `sink`, and has neither in the middle. `confirmed` needs ≥ 2 steps; the others may be `[]` |
 | `evidence[]` | `{file, line, description}` | `confirmed` needs ≥ 1 |
@@ -83,6 +84,30 @@ Common to all three shapes:
 - Every `line` is an integer ≥ 1.
 - Trace order (entrypoint first, sink last). `overall` ≤ impact. `high` confidence on `confirmed` needs `reproduced: true`.
 - `needs_validation` has non-empty `blockers` and `validation_plan`. `rejected` has `ruled_out_by`.
+
+### Skill-specific fields (`ext`)
+
+Some skills need fields the common shape doesn't have: the PCI DSS requirement a gap is against, the cloud account and region of a resource, the MASVS control, the HIPAA standard. Those go in `ext`, never as new top-level fields (the validator rejects unknown fields). Each skill lists its `ext` keys in its own SKILL.md.
+
+- Keys are snake_case (`requirement`, `in_cde`, `account`). Values are a non-empty string, a number, a boolean, or a non-empty array of those. No nesting, no `null`, no empty `ext` (leave it out instead).
+- Don't repeat what already has a field. The CWE goes in `cwe`, the OWASP category in `owasp_category`, the file in `location`.
+- `to-sarif.mjs` copies `ext` into the SARIF result's `properties.ext` unchanged.
+
+```json
+"ext": { "requirement": "8.4.2", "in_cde": true }
+```
+
+### Findings about deployed resources
+
+Not every finding lives in a source file. A cloud bucket policy, an IdP setting, a live host's TLS configuration or a decompiled app binary still needs a `location`. Save the read-only output that shows the problem into the audit's output directory, then point `location` and `evidence[]` at that file and line:
+
+```text
+security-audit/evidence/aws-s3-get-bucket-policy-prod-assets.json   # aws s3api get-bucket-policy ... > this file
+```
+
+- Redact before saving. Never write a secret value, a session token or customer data into an evidence file.
+- Record the command and the time it ran in the evidence `description`, so the owner can run it again.
+- Build the fingerprint from the resource's own id, with slashes: `cloud-audit/s3-public-read/aws/123456789012/prod-assets`. ARNs and `host:port` contain `:<digits>`, which the validator reads as a line number.
 
 ## Fingerprints
 

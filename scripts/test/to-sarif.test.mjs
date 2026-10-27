@@ -47,6 +47,13 @@ test("fingerprint, severity, level, codeFlows and relatedLocations are mapped", 
   assert.equal(r.relatedLocations.length, rec.evidence.length);
 });
 
+test("ext is carried into the result property bag", () => {
+  const rec = confirmed();
+  rec.ext = { requirement: "8.4.2", in_cde: true };
+  assert.deepEqual(toSarif([rec]).runs[0].results[0].properties.ext, rec.ext);
+  assert.equal(toSarif([confirmed()]).runs[0].results[0].properties.ext, undefined);
+});
+
 test("severity -> security-severity and level table", () => {
   const expected = { critical: ["9.5", "error"], high: ["8.0", "error"], medium: ["5.5", "warning"], low: ["3.0", "note"] };
   for (const [sev, [score, level]] of Object.entries(expected)) {
