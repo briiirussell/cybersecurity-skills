@@ -1,0 +1,37 @@
+{
+  "skill": "control-audit",
+  "should_fire": [
+    "we have a SOC 2 Type 2 starting in March, are we ready?",
+    "the auditor sent us a PBC list with 140 requests, help me figure out who owns what",
+    "build a control matrix for the Trust Services Criteria common criteria",
+    "what evidence will the auditor want for change management, and how many samples?",
+    "here's our branch protection export, does it pass CC8.1?\n{\"required_pull_request_reviews\": null, \"enforce_admins\": {\"enabled\": false}, \"required_status_checks\": {\"strict\": true, \"contexts\": [\"ci\"]}}",
+    "should we do a Type 1 or a Type 2 first?"
+  ],
+  "near_miss": [
+    {
+      "prompt": "map our security program to CSF 2.0 tiers for the board",
+      "owner": "csf-mapping"
+    },
+    {
+      "prompt": "which SAQ do we need for our Stripe checkout?",
+      "owner": "pci-audit"
+    },
+    {
+      "prompt": "do we need a BAA with our analytics vendor for patient data?",
+      "owner": "hipaa-audit"
+    },
+    {
+      "prompt": "find users in Okta with admin roles who don't need them",
+      "owner": "iam-audit"
+    },
+    {
+      "prompt": "write an executive memo asking for budget for the audit",
+      "owner": "security-comms"
+    },
+    {
+      "prompt": "how do we handle data subject deletion requests under GDPR?",
+      "owner": "privacy-engineering"
+    }
+  ]
+}

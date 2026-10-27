@@ -23,7 +23,8 @@
       "cicd-security",
       "variant-analysis",
       "native-code-review",
-      "fuzzing-harness"
+      "fuzzing-harness",
+      "control-audit"
     ],
     "validate-findings.mjs": [
       "agent-supply-chain-audit",
@@ -47,7 +48,8 @@
       "cicd-security",
       "variant-analysis",
       "native-code-review",
-      "fuzzing-harness"
+      "fuzzing-harness",
+      "control-audit"
     ],
     "to-sarif.mjs": [
       "agent-supply-chain-audit",
@@ -71,7 +73,8 @@
       "cicd-security",
       "variant-analysis",
       "native-code-review",
-      "fuzzing-harness"
+      "fuzzing-harness",
+      "control-audit"
     ],
     "findings-format.md": [
       "agent-supply-chain-audit",
@@ -95,7 +98,8 @@
       "cicd-security",
       "variant-analysis",
       "native-code-review",
-      "fuzzing-harness"
+      "fuzzing-harness",
+      "control-audit"
     ],
     "severity-calibration.md": [
       "agent-supply-chain-audit",
@@ -118,7 +122,8 @@
       "cicd-security",
       "variant-analysis",
       "native-code-review",
-      "fuzzing-harness"
+      "fuzzing-harness",
+      "control-audit"
     ],
     "coverage.schema.json": [
       "owasp-audit",
@@ -148,7 +153,8 @@
       "cicd-security",
       "variant-analysis",
       "native-code-review",
-      "fuzzing-harness"
+      "fuzzing-harness",
+      "control-audit"
     ],
     "recon-and-coverage.md": [
       "owasp-audit",
