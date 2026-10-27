@@ -12,7 +12,7 @@
       "additionalProperties": false,
       "required": ["id", "surface", "boundary", "owasp_category", "status", "reviewed_paths", "checks", "finding_fingerprints", "unresolved"],
       "properties": {
-        "id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,199}$" },
+        "id": { "type": "string", "pattern": "^[A-Za-z0-9.][A-Za-z0-9._:/@+-]{0,199}$" },
         "surface": { "$ref": "#/$defs/text", "description": "The attack surface, e.g. 'POST /api/orders/:id/refund' or 'webhook receiver'." },
         "boundary": { "$ref": "#/$defs/text", "description": "The trust boundary crossed, e.g. 'anonymous -> authenticated user', 'tenant A -> tenant B'." },
         "owasp_category": {
@@ -21,7 +21,7 @@
         },
         "status": {
           "enum": ["planned", "in_progress", "blocked", "covered", "candidate", "deferred", "out_of_scope", "not_applicable"],
-          "description": "covered: requires >= 1 reviewed path and >= 1 check. candidate: requires >= 1 finding fingerprint. blocked: requires >= 1 unresolved item."
+          "description": "covered: reviewed, and nothing from it was confirmed or left needs_validation; requires >= 1 reviewed path and >= 1 check, and may list only rejected fingerprints. candidate: produced at least one confirmed or needs_validation finding (or one still without a verdict); requires >= 1 finding fingerprint. blocked: requires >= 1 unresolved item."
         },
         "reviewed_paths": {
           "type": "array",

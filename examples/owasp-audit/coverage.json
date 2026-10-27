@@ -46,7 +46,7 @@
     "surface": "POST /api/users/login",
     "boundary": "anonymous -> any user account",
     "owasp_category": "A07:2025",
-    "status": "covered",
+    "status": "candidate",
     "reviewed_paths": [
       "src/routes/users.js",
       "src/auth.js",
@@ -142,7 +142,7 @@
     "surface": "Express default (qs) query parser on every request",
     "boundary": "anonymous -> process availability",
     "owasp_category": "A03:2025",
-    "status": "covered",
+    "status": "candidate",
     "reviewed_paths": [
       "src/app.js",
       "package-lock.json",
@@ -165,7 +165,7 @@
     "surface": "global error middleware (all routes)",
     "boundary": "any client (incl. anonymous) -> server internals",
     "owasp_category": "A02:2025",
-    "status": "covered",
+    "status": "candidate",
     "reviewed_paths": [
       "src/app.js",
       "src/routes/users.js",
@@ -223,7 +223,7 @@
     "surface": "JWT signing secret (config)",
     "boundary": "deploy environment / anonymous -> any account",
     "owasp_category": "A04:2025",
-    "status": "covered",
+    "status": "candidate",
     "reviewed_paths": [
       "src/config.js",
       "src/auth.js",
@@ -360,7 +360,7 @@
     "surface": "GET /api/notes/search?q=",
     "boundary": "user -> database / other users' data",
     "owasp_category": "A05:2025",
-    "status": "covered",
+    "status": "candidate",
     "reviewed_paths": [
       "src/routes/notes.js",
       "src/db.js"
@@ -382,7 +382,7 @@
     "surface": "GET /api/notes/:id",
     "boundary": "user -> another user's note",
     "owasp_category": "A01:2025",
-    "status": "covered",
+    "status": "candidate",
     "reviewed_paths": [
       "src/routes/notes.js",
       "src/db.js"
@@ -423,7 +423,7 @@
     "surface": "PATCH /api/notes/:id",
     "boundary": "user -> another user's note",
     "owasp_category": "A01:2025",
-    "status": "covered",
+    "status": "candidate",
     "reviewed_paths": [
       "src/routes/notes.js",
       "src/db.js"
@@ -445,7 +445,7 @@
     "surface": "PATCH /api/notes/:id (_.merge)",
     "boundary": "user -> process-wide object prototype",
     "owasp_category": "A08:2025",
-    "status": "covered",
+    "status": "candidate",
     "reviewed_paths": [
       "src/routes/notes.js",
       "src/app.js",
@@ -511,7 +511,7 @@
     "surface": "POST /api/preview",
     "boundary": "user -> server's internal network",
     "owasp_category": "A01:2025",
-    "status": "covered",
+    "status": "candidate",
     "reviewed_paths": [
       "src/routes/preview.js",
       "src/app.js",
@@ -541,7 +541,7 @@
     "surface": "axios 0.21.0 used by POST /api/preview",
     "boundary": "user -> internal network via a vulnerable dependency",
     "owasp_category": "A03:2025",
-    "status": "covered",
+    "status": "candidate",
     "reviewed_paths": [
       "package-lock.json",
       "package.json",
@@ -797,7 +797,7 @@
     "surface": "requireAuth + DELETE /api/admin/users/:id + POST /api/users/signup (token lifecycle)",
     "boundary": "deleted or former user -> another live account",
     "owasp_category": "A07:2025",
-    "status": "covered",
+    "status": "candidate",
     "reviewed_paths": [
       "src/auth.js",
       "src/config.js",

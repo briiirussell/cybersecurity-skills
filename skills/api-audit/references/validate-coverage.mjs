@@ -10,7 +10,8 @@
 //   - covered    => >= 1 reviewed path and >= 1 check
 //   - candidate  => >= 1 finding fingerprint
 //   - blocked    => >= 1 unresolved item
-//   - with --findings, every finding_fingerprints entry must exist in findings.json
+//   - with --findings: every finding_fingerprints entry must exist in findings.json, and a covered unit may list
+//     only rejected records (a confirmed or needs_validation finding keeps its unit at candidate)
 //
 // The coverage-ledger idea is adapted from cloudflare/security-audit-skill (MIT, Copyright (c) Cloudflare, Inc.).
 // The code is this repo's own.
@@ -20,7 +21,7 @@ import { pathToFileURL } from "node:url";
 
 export const STATUSES = ["planned", "in_progress", "blocked", "covered", "candidate", "deferred", "out_of_scope", "not_applicable"];
 const FIELDS = ["id", "surface", "boundary", "owasp_category", "status", "reviewed_paths", "checks", "finding_fingerprints", "unresolved"];
-const ID_RE = /^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,199}$/;
+const ID_RE = /^[A-Za-z0-9.][A-Za-z0-9._:/@+-]{0,199}$/;
 
 const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 const isText = (v) => typeof v === "string" && /\S/.test(v);
@@ -103,7 +104,9 @@ export function validateCoverage(data, findings = null) {
   if (!Array.isArray(data)) return ["top level: coverage.json must be a JSON array of units"];
   const errors = [];
   const seen = new Map();
-  const known = Array.isArray(findings) ? new Set(findings.map((f) => f?.fingerprint).filter((x) => typeof x === "string")) : null;
+  const verdictOf = Array.isArray(findings)
+    ? new Map(findings.filter((f) => typeof f?.fingerprint === "string").map((f) => [f.fingerprint, f.verdict]))
+    : null;
   data.forEach((u, i) => {
     const id = isObj(u) && typeof u.id === "string" ? u.id : null;
     const where = id ? `[${i}] (${id})` : `[${i}]`;
@@ -112,10 +115,13 @@ export function validateCoverage(data, findings = null) {
       if (seen.has(id)) errors.push(`${where}: duplicate id (also at index ${seen.get(id)})`);
       else seen.set(id, i);
     }
-    if (known && isObj(u) && Array.isArray(u.finding_fingerprints))
+    if (verdictOf && isObj(u) && Array.isArray(u.finding_fingerprints))
       u.finding_fingerprints.forEach((fp, j) => {
-        if (typeof fp === "string" && !known.has(fp))
-          errors.push(`${where}.finding_fingerprints[${j}]: "${fp}" is not in findings.json`);
+        if (typeof fp !== "string") return;
+        if (!verdictOf.has(fp)) errors.push(`${where}.finding_fingerprints[${j}]: "${fp}" is not in findings.json`);
+        // "Items checked and found clean" is built from covered units, so a covered unit can only hold rejected records.
+        else if (u.status === "covered" && verdictOf.get(fp) !== "rejected")
+          errors.push(`${where}: status "covered" but "${fp}" is ${verdictOf.get(fp)}; a unit with a confirmed or needs_validation finding stays "candidate"`);
       });
   });
   return errors;
