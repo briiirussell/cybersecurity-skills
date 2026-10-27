@@ -19,7 +19,8 @@
       "prompt-injection",
       "pci-audit",
       "hipaa-audit",
-      "privacy-engineering"
+      "privacy-engineering",
+      "cicd-security"
     ],
     "validate-findings.mjs": [
       "agent-supply-chain-audit",
@@ -39,7 +40,8 @@
       "prompt-injection",
       "pci-audit",
       "hipaa-audit",
-      "privacy-engineering"
+      "privacy-engineering",
+      "cicd-security"
     ],
     "to-sarif.mjs": [
       "agent-supply-chain-audit",
@@ -59,7 +61,8 @@
       "prompt-injection",
       "pci-audit",
       "hipaa-audit",
-      "privacy-engineering"
+      "privacy-engineering",
+      "cicd-security"
     ],
     "findings-format.md": [
       "agent-supply-chain-audit",
@@ -79,7 +82,8 @@
       "prompt-injection",
       "pci-audit",
       "hipaa-audit",
-      "privacy-engineering"
+      "privacy-engineering",
+      "cicd-security"
     ],
     "severity-calibration.md": [
       "agent-supply-chain-audit",
@@ -98,7 +102,8 @@
       "mobile-audit",
       "pci-audit",
       "hipaa-audit",
-      "privacy-engineering"
+      "privacy-engineering",
+      "cicd-security"
     ],
     "coverage.schema.json": [
       "owasp-audit",
@@ -124,7 +129,8 @@
       "prompt-injection",
       "pci-audit",
       "hipaa-audit",
-      "privacy-engineering"
+      "privacy-engineering",
+      "cicd-security"
     ],
     "recon-and-coverage.md": [
       "owasp-audit",

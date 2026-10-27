@@ -77,6 +77,8 @@ The skills are organized into seven families. Most security work crosses familie
 │ner-  │ │        │ │        │ │        │ │      │ │         │ │          │
 │pipe- │ │        │ │        │ │        │ │      │ │         │ │          │
 │line  │ │        │ │        │ │        │ │      │ │         │ │          │
+│cicd- │ │        │ │        │ │        │ │      │ │         │ │          │
+│ sec. │ │        │ │        │ │        │ │      │ │         │ │          │
 └──┬───┘ └───┬────┘ └───┬────┘ └───┬────┘ └──┬───┘ └────┬────┘ └────┬─────┘
    │         │          │          │         │           │            │
    └─────────┴────┬─────┴──────────┴─────────┴───────────┴────────────┘
@@ -95,6 +97,8 @@ The skills are organized into seven families. Most security work crosses familie
      scanner-pipeline → finding-triage → fix agents (tools find it, agents fix it)
      log-watch → siem-detection / soc-operations (outgrow it) → incident-triage (it's real)
      personal-opsec → iam-audit / secrets-audit / agent-supply-chain-audit (the person → the org → the agents)
+     dependency-audit → cicd-security ← agent-supply-chain-audit (the pipeline is supply chain too)
+     dependency-audit → cicd-security ← agent-supply-chain-audit (the pipeline is supply chain too)
      breach-patterns → every audit skill (what to check)
      finding-triage ← every audit skill (closes the loop on any finding)
      security-comms ← every skill (translates output for non-security audience)
@@ -111,6 +115,7 @@ The skills are organized into seven families. Most security work crosses familie
 | [api-audit](skills/api-audit/) | OWASP API Security Top 10 (2023) — REST / GraphQL / RPC endpoint audit. BOLA, mass assignment, BFLA, rate-limit, webhook signature, plus a deep GraphQL playbook (schema inference with introspection off, aliased owned-vs-foreign IDOR, resolver cascade, Relay node swap, federation `_entities`, subscriptions, persisted queries). Paired owner-vs-non-owner evidence, verification pass, coverage ledger, findings.json. [Example run](examples/api-audit/report.md). |
 | [breach-patterns](skills/breach-patterns/) | Preemptive hardening — read public breach disclosures, extract the audit question each one implies, check your stack. Capital One / LastPass / Okta / Snowflake / MOVEit / Codecov / Equifax / Uber. |
 | [business-logic-testing](skills/business-logic-testing/) | The bugs scanners can't find — invariant-first testing (conservation of value, uniqueness, monotonicity, exclusivity), Actor × Action × Resource matrix, state-machine abuse, limit-slicing, and race conditions proven dynamically (HTTP/2 single-packet, idempotency-key scope, cache-before-commit). Explicit written scope required for money flows. |
+| [cicd-security](skills/cicd-security/) | GitHub Actions, GitLab CI and CircleCI review — pwn requests (`pull_request_target` / `workflow_run`), expression injection, token permissions, SHA pinning, OIDC trust subjects, self-hosted runners, fork secrets, cache and artifact trust, and AI agents in CI that read issue or PR text while holding a write token. zizmor and actionlint run read-only. Writes findings.json (confirmed / needs validation / rejected), with SARIF export. |
 | [cloud-audit](skills/cloud-audit/) | AWS / GCP / Azure infrastructure misconfiguration, excessive IAM, public exposure, compliance gaps — plus PaaS (Vercel / Netlify / Heroku / Render / Railway / Fly): stale manual production deploys, silently broken git deploys, legacy projects still serving old code, preview exposure, repo security defaults. Writes findings.json (confirmed / needs validation / rejected), with SARIF export. |
 | [container-audit](skills/container-audit/) | Docker + Kubernetes audit. Dockerfile, base images, pod security, RBAC, NetworkPolicy, secrets, image policy, runtime. Writes findings.json (confirmed / needs validation / rejected), with SARIF export. |
 | [crypto-audit](skills/crypto-audit/) | Cryptography implementation review — algorithm/mode choice, KDF parameters, IV/nonce handling, authenticated encryption, signature verification, randomness, TLS posture, key lifecycle. Deeper than owasp-audit A02. Writes findings.json (confirmed / needs validation / rejected), with SARIF export. |

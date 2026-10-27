@@ -19,6 +19,7 @@ body:
         - api-audit
         - breach-patterns
         - business-logic-testing
+        - cicd-security
         - cloud-audit
         - container-audit
         - crypto-audit

@@ -13,7 +13,7 @@ Three modes — pick the one that matches the engagement:
 - **Design** — greenfield IAM for a new project or new identity provider
 - **Migrate** — consolidate multiple identity providers, federate access, move to SSO
 
-Cross-references: `cloud-audit` for the cloud-provider audit (broader than IAM), `container-audit` for K8s RBAC and ServiceAccounts (orchestration-layer identity), `personal-opsec` for the individual operator's own accounts — hardware-key MFA, recovery paths, SIM-swap protection — which org IAM doesn't reach.
+Cross-references: `cloud-audit` for the cloud-provider audit (broader than IAM), `container-audit` for K8s RBAC and ServiceAccounts (orchestration-layer identity), `personal-opsec` for the individual operator's own accounts — hardware-key MFA, recovery paths, SIM-swap protection — which org IAM doesn't reach; `cicd-security` for the CI side of OIDC federation (which workflows and refs can assume a cloud role).
 
 ## Authorization
 
