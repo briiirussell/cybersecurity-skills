@@ -22,7 +22,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | log-watch | 1.0.1 | 2026-10-26 |
 | mobile-audit | 1.1.0 | 2026-10-27 |
 | osint-recon | 1.0.2 | 2026-10-26 |
-| owasp-audit | 1.5.0 | 2026-10-27 |
+| owasp-audit | 1.6.0 | 2026-10-27 |
 | patch-sweep | 1.0.2 | 2026-10-26 |
 | pci-audit | 1.1.0 | 2026-10-27 |
 | personal-opsec | 1.0.1 | 2026-10-26 |
@@ -41,6 +41,15 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.0 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.41.0 (2026-10-27)
+
+owasp-audit framework playbooks, part 3: Django and Rails (#132). owasp-audit 1.6.0. This finishes #132.
+
+**Added**
+- **Django** (`frameworks/django.md`): unscoped querysets and DRF object permissions, serializer and ModelForm mass assignment (`fields = '__all__'`), `**request` expansion into ORM filters (CVE-2025-64459), `raw()` / `extra()` / cursor SQL, `mark_safe`, and production settings (`DEBUG`, `SECRET_KEY`, allowed hosts).
+- **Rails** (`frameworks/rails.md`): unscoped `find` and missing `authorize`, `permit!` and broad permit lists (and Rails 8 `params.expect`), interpolated SQL and `order()`, `html_safe` / `raw` and other output sinks, and credentials and production config.
+- Mass assignment is tagged A08:2025 (CWE-915), following OWASP's mapping, or A01 when the assigned field is an owner or tenant key.
 
 ### 1.40.0 (2026-10-27)
 
