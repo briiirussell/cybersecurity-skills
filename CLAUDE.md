@@ -33,6 +33,9 @@ scripts/
 ├── grant-check.mjs          # allowed-tools Bash grant check (used by the lint)
 ├── eval-triggers.mjs        # offline trigger eval: ranks evals/triggers prompts against descriptions
 └── test/                    # node:test suites + fixtures (run with npm test)
+examples/
+├── target/                  # deliberately vulnerable notes-api the examples run against (do not deploy)
+└── <skill>/                 # one worked run: report.md, findings.json, findings.sarif (+ coverage.json); tested by scripts/test/examples.test.mjs
 evals/
 ├── README.md                # how the trigger evals work and what the numbers mean
 ├── triggers/<skill>.json    # 5+ prompts that should fire the skill, 5+ near-misses with their owner

@@ -42,6 +42,18 @@ Current versions of all skills. Agents can compare against local versions to che
 
 ## Recent Changes
 
+### 1.23.8 (2026-10-26)
+
+**Added**
+- Worked examples (#127):
+  - `examples/target/` is notes-api, a small deliberately vulnerable Express API with planted bugs and a real vulnerable lockfile.
+  - `examples/<skill>/` holds one real run each of owasp-audit, api-audit, dependency-audit, secrets-audit and finding-triage: the rendered report, `findings.json`, SARIF from `to-sarif.mjs`, and the coverage ledger where the skill keeps one. dependency-audit also includes its raw `npm audit --json` output.
+  - Each run was a separate agent following the skill as written, static and read-only.
+- [examples/README.md](examples/README.md) summarizes the runs and what's worth noticing. For example, the same hard-coded JWT default came out critical in api-audit, high in owasp-audit and needs-validation in secrets-audit.
+- The rough edges each run hit are filed as #159.
+- `scripts/test/examples.test.mjs` checks every example's `findings.json` and `coverage.json` with the shared validators. It also checks that each cited file and line exists in the target and that the committed SARIF matches a fresh conversion, so the examples double as format regression fixtures.
+- The five skills' README rows link to their example run.
+
 ### 1.23.7 (2026-10-26)
 
 **Added**

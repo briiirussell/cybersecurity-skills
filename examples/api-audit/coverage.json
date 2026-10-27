@@ -1,0 +1,686 @@
+[
+  {
+    "id": "src/app.js/GET-/healthz:unauth:API9",
+    "surface": "GET /healthz",
+    "boundary": "anonymous internet client -> app",
+    "owasp_category": "API9:2023",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/app.js"
+    ],
+    "checks": [
+      {
+        "invariant": "unauthenticated health endpoint returns no internal state",
+        "method": "read handler",
+        "result": "holds: app.js:12 sends the static string 'ok'; no DB, env or version data"
+      }
+    ],
+    "finding_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "id": "src/app.js/error-handler:info-disclosure:API8",
+    "surface": "global Express error handler (every route)",
+    "boundary": "anonymous internet client -> internal error details",
+    "owasp_category": "API8:2023",
+    "status": "candidate",
+    "reviewed_paths": [
+      "src/app.js",
+      "src/routes/users.js",
+      "src/auth.js",
+      "src/routes/preview.js",
+      "src/routes/notes.js"
+    ],
+    "checks": [
+      {
+        "invariant": "errors return a generic body without stack, message or internal paths",
+        "method": "read handler; traced unauthenticated throw sites (malformed JSON at app.js:5, missing password at users.js:18 -> auth.js:13)",
+        "result": "fails: app.js:17 returns err.message and err.stack for every error and forces 500"
+      },
+      {
+        "invariant": "authenticated throw sites do not widen the leak",
+        "method": "traced preview.js:16 next(err) and notes.js:35 NOT NULL insert errors to the handler",
+        "result": "fails the same way: axios errors (ECONNREFUSED/timeout/ENOTFOUND) reach app.js:17 and become the SSRF port/host oracle recorded on the SSRF finding; POST /api/notes without a title leaks the SQLite NOT NULL message to the caller about their own request (no boundary crossed)"
+      }
+    ],
+    "finding_fingerprints": [
+      "api-audit/CWE-209/src/app.js/errorHandler"
+    ],
+    "unresolved": []
+  },
+  {
+    "id": "src/app.js/global-config:cors-headers:API8",
+    "surface": "app-wide middleware stack (CORS, security headers, body parsing)",
+    "boundary": "attacker origin -> authenticated API responses",
+    "owasp_category": "API8:2023",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/app.js",
+      "src/auth.js",
+      "package.json"
+    ],
+    "checks": [
+      {
+        "invariant": "no cross-origin read of authenticated responses",
+        "method": "read middleware stack and auth transport",
+        "result": "holds: no CORS middleware is mounted (no Access-Control-Allow-Origin sent) and auth is a Bearer header, not a cookie, so a foreign origin cannot make credentialed reads"
+      },
+      {
+        "invariant": "request bodies are size-bounded",
+        "method": "read app.js:5",
+        "result": "holds: express.json limit 100kb"
+      },
+      {
+        "invariant": "baseline security headers present",
+        "method": "read middleware stack; grep for helmet",
+        "result": "absent (no helmet; Express x-powered-by left on); no traced impact on a JSON API, recorded as a hardening note"
+      }
+    ],
+    "finding_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "id": "src/app.js/route-inventory:API9",
+    "surface": "full route inventory (src/app.js mounts + all routers)",
+    "boundary": "internet -> undocumented or legacy endpoints",
+    "owasp_category": "API9:2023",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/app.js",
+      "src/routes/*.js",
+      "README.md"
+    ],
+    "checks": [
+      {
+        "invariant": "every reachable route is known and there are no legacy/debug twins",
+        "method": "grep for app/router.(get|post|put|patch|delete|all|use) across src/ and diff against README's description",
+        "result": "holds for inventory: 12 routes (healthz, 2 users, 6 notes, 1 preview, 2 admin) plus the error handler; no /v1-/v2 twins, debug routes or framework-default endpoints. Documentation mismatch: the README says notes can be shared, but no endpoint reads notes.shared (db.js:18); it is only writable through PATCH. Recorded here and as evidence on the GET /:id BOLA finding"
+      }
+    ],
+    "finding_fingerprints": [],
+    "unresolved": [
+      "No OpenAPI spec or generated client exists, so the inventory was reconciled against the README only"
+    ]
+  },
+  {
+    "id": "src/auth.js/requireAuth:token-forgery:API2",
+    "surface": "requireAuth (guards /api/notes/*, /api/preview, /api/admin/*)",
+    "boundary": "anonymous internet client -> any authenticated identity",
+    "owasp_category": "API2:2023",
+    "status": "candidate",
+    "reviewed_paths": [
+      "src/auth.js",
+      "src/config.js",
+      ".env.example",
+      "package.json",
+      "package-lock.json"
+    ],
+    "checks": [
+      {
+        "invariant": "tokens can only be minted by the server with a secret an attacker cannot know",
+        "method": "traced config.jwtSecret source; looked for a startup check or dotenv load",
+        "result": "fails: config.js:5 falls back to 'changeme' and .env.example:3 ships it empty"
+      },
+      {
+        "invariant": "verifier refuses alg:none and algorithm confusion",
+        "method": "read jwt.verify call site and secret type; reasoned about jsonwebtoken 8.5.1 defaults",
+        "result": "holds: always a non-empty HMAC string secret, HS-only defaults; rejected candidate"
+      }
+    ],
+    "finding_fingerprints": [
+      "api-audit/CWE-798/src/config.js/jwtSecret",
+      "api-audit/CWE-347/src/auth.js/requireAuth-jwt-alg"
+    ],
+    "unresolved": []
+  },
+  {
+    "id": "src/auth.js/requireAuth:session-lifetime:API2",
+    "surface": "requireAuth token lifetime and revocation",
+    "boundary": "deleted user -> another account",
+    "owasp_category": "API2:2023",
+    "status": "candidate",
+    "reviewed_paths": [
+      "src/auth.js",
+      "src/config.js",
+      "src/db.js",
+      "src/routes/admin.js",
+      "src/routes/users.js"
+    ],
+    "checks": [
+      {
+        "invariant": "a token stops working when its account is removed",
+        "method": "read requireAuth for an existence check; read admin delete; checked users.id allocation",
+        "result": "fails: no DB lookup in requireAuth (auth.js:27-28), 7-day lifetime, and users.id without AUTOINCREMENT (db.js:8) can be reused"
+      }
+    ],
+    "finding_fingerprints": [
+      "api-audit/CWE-613/src/auth.js/requireAuth-no-revocation"
+    ],
+    "unresolved": []
+  },
+  {
+    "id": "src/routes/users.js/POST-/signup:mass-assignment:API3",
+    "surface": "POST /api/users/signup",
+    "boundary": "anonymous client -> elevated role",
+    "owasp_category": "API3:2023",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/routes/users.js",
+      "src/db.js"
+    ],
+    "checks": [
+      {
+        "invariant": "a new account cannot choose its own role",
+        "method": "read handler and schema",
+        "result": "holds: users.js:8 destructures only email and password; users.js:10 inserts only email and password_hash; role takes the DB default 'user' (db.js:11)"
+      },
+      {
+        "invariant": "signup response exposes no secrets",
+        "method": "read response",
+        "result": "holds: users.js:12 returns only a token"
+      }
+    ],
+    "finding_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "id": "src/routes/users.js/POST-/login:authn:API2",
+    "surface": "POST /api/users/login",
+    "boundary": "anonymous client -> another user's account",
+    "owasp_category": "API2:2023",
+    "status": "candidate",
+    "reviewed_paths": [
+      "src/routes/users.js",
+      "src/auth.js",
+      "src/app.js"
+    ],
+    "checks": [
+      {
+        "invariant": "password comparison is constant-time over a salted slow hash",
+        "method": "read hashPassword/checkPassword",
+        "result": "holds: scrypt with a 16-byte random salt (auth.js:6-8), timingSafeEqual (auth.js:14)"
+      },
+      {
+        "invariant": "login does not reveal which emails are registered",
+        "method": "traced known vs unknown email with a missing password",
+        "result": "fails: unknown email -> 401, known email -> TypeError -> 500 with stack (users.js:18 -> auth.js:13 -> app.js:17)"
+      },
+      {
+        "invariant": "login response leaks no hash",
+        "method": "read response",
+        "result": "holds: users.js:19 returns only a token although users.js:17 selects password_hash"
+      }
+    ],
+    "finding_fingerprints": [
+      "api-audit/CWE-209/src/app.js/errorHandler"
+    ],
+    "unresolved": []
+  },
+  {
+    "id": "src/routes/users.js/POST-/login+/signup:rate-limit:API4",
+    "surface": "POST /api/users/login and POST /api/users/signup",
+    "boundary": "anonymous client -> credential guessing / service availability",
+    "owasp_category": "API4:2023",
+    "status": "candidate",
+    "reviewed_paths": [
+      "src/app.js",
+      "src/routes/users.js",
+      "src/auth.js",
+      "package.json",
+      "package-lock.json"
+    ],
+    "checks": [
+      {
+        "invariant": "auth endpoints are rate-limited and hashing cannot starve the event loop",
+        "method": "read middleware stack; grep src/ and lockfile for limiter packages; read hash calls",
+        "result": "no in-repo limiter; scryptSync on the event loop (auth.js:7, auth.js:13); edge behaviour unknown -> needs_validation"
+      }
+    ],
+    "finding_fingerprints": [
+      "api-audit/CWE-307/src/routes/users.js/login-signup-rate-limit"
+    ],
+    "unresolved": [
+      "Edge/proxy rate limiting is outside the repo (see the needs_validation plan)"
+    ]
+  },
+  {
+    "id": "src/routes/users.js/POST-/signup:error-paths:API8",
+    "surface": "POST /api/users/signup (duplicate email, non-string password)",
+    "boundary": "anonymous client -> knowledge of registered accounts / internal error details",
+    "owasp_category": "API8:2023",
+    "status": "candidate",
+    "reviewed_paths": [
+      "src/routes/users.js",
+      "src/auth.js",
+      "src/db.js",
+      "src/app.js"
+    ],
+    "checks": [
+      {
+        "invariant": "signup errors return a generic body",
+        "method": "traced a duplicate email (db.js:9 UNIQUE via users.js:10) and an array password of length >= 8 (passes users.js:9, throws in scryptSync at auth.js:7)",
+        "result": "fails: both reach app.js:17 and return message + stack; a duplicate email reveals registration. Same root cause as the error-handler finding"
+      }
+    ],
+    "finding_fingerprints": [
+      "api-audit/CWE-209/src/app.js/errorHandler"
+    ],
+    "unresolved": []
+  },
+  {
+    "id": "src/routes/users.js/POST-/signup:business-flow:API6",
+    "surface": "POST /api/users/signup",
+    "boundary": "automated client -> business-rate-constrained flow",
+    "owasp_category": "API6:2023",
+    "status": "not_applicable",
+    "reviewed_paths": [
+      "src/routes/users.js",
+      "src/routes/notes.js",
+      "README.md"
+    ],
+    "checks": [
+      {
+        "invariant": "flows with business-rate value (stock, seats, coupons, votes, referrals) resist automation",
+        "method": "read every handler and the README for such flows",
+        "result": "none exist: the app has signup, notes CRUD and link preview only; bulk account creation is covered by the API4 unit"
+      }
+    ],
+    "finding_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "id": "src/routes/notes.js/GET-/:BOLA:API1",
+    "surface": "GET /api/notes",
+    "boundary": "user A -> user B's notes",
+    "owasp_category": "API1:2023",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/routes/notes.js",
+      "src/auth.js"
+    ],
+    "checks": [
+      {
+        "invariant": "list is scoped to the caller",
+        "method": "read query and owner source",
+        "result": "holds: notes.js:15 binds owner_id = req.user.id from the verified token"
+      },
+      {
+        "invariant": "response size is bounded",
+        "method": "read query",
+        "result": "no LIMIT/pagination, but only the caller's own rows are returned; hardening note"
+      }
+    ],
+    "finding_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "id": "src/routes/notes.js/GET-/:sort-injection:A05",
+    "surface": "GET /api/notes?sort=",
+    "boundary": "user -> arbitrary SQL",
+    "owasp_category": "A05:2025",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/routes/notes.js"
+    ],
+    "checks": [
+      {
+        "invariant": "ORDER BY receives only server-defined text",
+        "method": "traced sort through SORT_COLUMNS; tried inherited keys, qs arrays/objects, empty string",
+        "result": "holds: only map values or fixed Object.prototype text reach SQL (notes.js:13-15); inherited keys cause a 500, hardening note"
+      }
+    ],
+    "finding_fingerprints": [
+      "api-audit/CWE-89/src/routes/notes.js/GET-notes-sort"
+    ],
+    "unresolved": []
+  },
+  {
+    "id": "src/routes/notes.js/GET-/search:injection:A05",
+    "surface": "GET /api/notes/search?q=",
+    "boundary": "user A -> all users' notes and the users table",
+    "owasp_category": "A05:2025",
+    "status": "candidate",
+    "reviewed_paths": [
+      "src/routes/notes.js",
+      "src/db.js",
+      "src/app.js",
+      "src/auth.js",
+      "src/config.js"
+    ],
+    "checks": [
+      {
+        "invariant": "q is bound as a parameter and the owner filter cannot be escaped",
+        "method": "read query construction",
+        "result": "fails: notes.js:22 interpolates q into the SQL text"
+      },
+      {
+        "invariant": "req.user.id interpolated at notes.js:22 cannot carry SQL",
+        "method": "traced req.user.id to the JWT sub claim (auth.js:28); sub is attacker-controlled only with a forged token",
+        "result": "second injection source on the same query, reachable only through the default-secret forgery; adds no impact beyond that finding (a forger already reads every account), so it is folded into the q finding and the jwtSecret finding rather than recorded separately"
+      }
+    ],
+    "finding_fingerprints": [
+      "api-audit/CWE-89/src/routes/notes.js/GET-notes-search"
+    ],
+    "unresolved": []
+  },
+  {
+    "id": "src/routes/notes.js/GET-/:id:BOLA:API1",
+    "surface": "GET /api/notes/:id",
+    "boundary": "user A -> user B's note",
+    "owasp_category": "API1:2023",
+    "status": "candidate",
+    "reviewed_paths": [
+      "src/routes/notes.js",
+      "src/auth.js",
+      "src/db.js"
+    ],
+    "checks": [
+      {
+        "invariant": "note is loaded with owner_id = caller (or shared = 1) before it is returned",
+        "method": "read handler; compared with PATCH/DELETE siblings",
+        "result": "fails: notes.js:28 loads by id only; shared is never consulted"
+      }
+    ],
+    "finding_fingerprints": [
+      "api-audit/CWE-639/src/routes/notes.js/GET-notes-id"
+    ],
+    "unresolved": []
+  },
+  {
+    "id": "src/routes/notes.js/POST-/:mass-assignment:API3",
+    "surface": "POST /api/notes",
+    "boundary": "user A -> note owned by user B",
+    "owasp_category": "API3:2023",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/routes/notes.js"
+    ],
+    "checks": [
+      {
+        "invariant": "the creator cannot choose owner_id or shared on create",
+        "method": "read handler",
+        "result": "holds: notes.js:34 destructures title and body only; owner_id comes from req.user.id (notes.js:35)"
+      }
+    ],
+    "finding_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "id": "src/routes/notes.js/PATCH-/:id:mass-assignment:API3",
+    "surface": "PATCH /api/notes/:id",
+    "boundary": "user A -> user B's note / user B's account",
+    "owasp_category": "API3:2023",
+    "status": "candidate",
+    "reviewed_paths": [
+      "src/routes/notes.js",
+      "src/db.js",
+      "src/app.js",
+      "package.json",
+      "package-lock.json"
+    ],
+    "checks": [
+      {
+        "invariant": "only title, body and shared are writable; id and owner_id are server-controlled",
+        "method": "read merge and UPDATE; reasoned about _.merge mutating its target",
+        "result": "fails: notes.js:43 merges the whole body, notes.js:45 writes owner_id and targets note.id from it"
+      },
+      {
+        "invariant": "the merge cannot pollute Object.prototype",
+        "method": "reviewed lodash 4.17.15 merge guards and in-app gadgets",
+        "result": "holds (rejected candidate): __proto__ and function-valued constructor keys are skipped; no in-app gadget"
+      }
+    ],
+    "finding_fingerprints": [
+      "api-audit/CWE-915/src/routes/notes.js/PATCH-notes-id",
+      "api-audit/CWE-1321/src/routes/notes.js/PATCH-notes-id-merge"
+    ],
+    "unresolved": []
+  },
+  {
+    "id": "src/routes/notes.js/PATCH-/:id:BOLA:API1",
+    "surface": "PATCH /api/notes/:id",
+    "boundary": "user A -> user B's note",
+    "owasp_category": "API1:2023",
+    "status": "candidate",
+    "reviewed_paths": [
+      "src/routes/notes.js"
+    ],
+    "checks": [
+      {
+        "invariant": "the row updated is the row whose ownership was checked",
+        "method": "compared the id checked at notes.js:41 with the id used at notes.js:45",
+        "result": "fails: the WHERE id comes from the merged body, not req.params.id (same root cause as the mass-assignment unit)"
+      }
+    ],
+    "finding_fingerprints": [
+      "api-audit/CWE-915/src/routes/notes.js/PATCH-notes-id"
+    ],
+    "unresolved": []
+  },
+  {
+    "id": "src/routes/notes.js/DELETE-/:id:BOLA:API1",
+    "surface": "DELETE /api/notes/:id",
+    "boundary": "user A -> user B's note",
+    "owasp_category": "API1:2023",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/routes/notes.js"
+    ],
+    "checks": [
+      {
+        "invariant": "delete is scoped to the caller",
+        "method": "read query",
+        "result": "holds: notes.js:50 deletes WHERE id = ? AND owner_id = ? with req.user.id; 404 when nothing matched"
+      }
+    ],
+    "finding_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "id": "src/routes/notes.js/all-responses:data-exposure:API3",
+    "surface": "responses of GET /api/notes, /search, /:id and PATCH /:id",
+    "boundary": "user -> fields they should not see",
+    "owasp_category": "API3:2023",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/routes/notes.js",
+      "src/db.js"
+    ],
+    "checks": [
+      {
+        "invariant": "note responses expose no sensitive columns beyond the note itself",
+        "method": "read each res.json and the notes schema",
+        "result": "holds as a projection: notes has only id, owner_id, title, body, shared, created_at (db.js:13-20), so SELECT * leaks nothing extra; PATCH returns the merged object (notes.js:46), which echoes the caller's own body and row, not another user's data. Which rows a caller can read is covered by the BOLA and injection units"
+      }
+    ],
+    "finding_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "id": "src/routes/notes.js/all:BFLA:API5",
+    "surface": "every /api/notes route",
+    "boundary": "anonymous client -> notes API",
+    "owasp_category": "API5:2023",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/routes/notes.js",
+      "src/app.js",
+      "src/auth.js"
+    ],
+    "checks": [
+      {
+        "invariant": "no notes handler is reachable without a verified token",
+        "method": "read router-level middleware order and mounts",
+        "result": "holds: notes.js:7 router.use(requireAuth) precedes every route; router mounted once at app.js:8; /search declared before /:id"
+      }
+    ],
+    "finding_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "id": "src/routes/preview.js/POST-/:SSRF:API7",
+    "surface": "POST /api/preview",
+    "boundary": "user -> server's internal network",
+    "owasp_category": "API7:2023",
+    "status": "candidate",
+    "reviewed_paths": [
+      "src/routes/preview.js",
+      "src/app.js",
+      "src/config.js",
+      ".env.example"
+    ],
+    "checks": [
+      {
+        "invariant": "outbound fetch is limited to public hosts, including after redirects",
+        "method": "read URL validation and the axios call",
+        "result": "fails: scheme-only regex (preview.js:11); no host/IP allow-list; redirects followed"
+      }
+    ],
+    "finding_fingerprints": [
+      "api-audit/CWE-918/src/routes/preview.js/POST-preview"
+    ],
+    "unresolved": []
+  },
+  {
+    "id": "src/routes/preview.js/POST-/:unsafe-consumption:API10",
+    "surface": "POST /api/preview (third-party page content)",
+    "boundary": "remote page -> API consumers",
+    "owasp_category": "API10:2023",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/routes/preview.js"
+    ],
+    "checks": [
+      {
+        "invariant": "untrusted upstream content is not executed or rendered server-side",
+        "method": "read response handling",
+        "result": "holds server-side: only the <title> text is extracted by regex and returned as a JSON string (preview.js:13-14); how a client renders it is outside this repo, hardening note"
+      }
+    ],
+    "finding_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "id": "src/routes/preview.js/POST-/:resource:API4",
+    "surface": "POST /api/preview",
+    "boundary": "user -> server resources / outbound bandwidth",
+    "owasp_category": "API4:2023",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/routes/preview.js"
+    ],
+    "checks": [
+      {
+        "invariant": "each outbound fetch is bounded in time and size",
+        "method": "read axios options",
+        "result": "holds: timeout 5000 ms and maxContentLength 1,000,000 (preview.js:12); no per-user quota, hardening note"
+      }
+    ],
+    "finding_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "id": "src/routes/admin.js/GET-/users:BFLA:API5",
+    "surface": "GET /api/admin/users",
+    "boundary": "regular user -> admin function",
+    "owasp_category": "API5:2023",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/routes/admin.js",
+      "src/auth.js",
+      "src/app.js",
+      "src/config.js"
+    ],
+    "checks": [
+      {
+        "invariant": "only DB-confirmed admins reach the handler",
+        "method": "read router middleware, requireAdmin, every use of role",
+        "result": "holds: admin.js:6 runs requireAuth+requireAdmin first; requireAdmin re-reads role from the DB (auth.js:36-37); the token's role claim is never used. The linked fingerprint is a rejected candidate (role claim trusted). This boundary holds only while token subjects are authentic: a token forged under the default secret with an admin sub passes requireAdmin (see confirmed api-audit/CWE-798/src/config.js/jwtSecret)"
+      },
+      {
+        "invariant": "response is a curated projection",
+        "method": "read query",
+        "result": "holds: admin.js:9 selects id, email, role only (no password_hash)"
+      }
+    ],
+    "finding_fingerprints": [
+      "api-audit/CWE-285/src/auth.js/requireAdmin-role-claim"
+    ],
+    "unresolved": []
+  },
+  {
+    "id": "src/routes/admin.js/DELETE-/users/:id:BFLA:API5",
+    "surface": "DELETE /api/admin/users/:id",
+    "boundary": "regular user -> admin function",
+    "owasp_category": "API5:2023",
+    "status": "covered",
+    "reviewed_paths": [
+      "src/routes/admin.js",
+      "src/auth.js",
+      "src/config.js"
+    ],
+    "checks": [
+      {
+        "invariant": "only DB-confirmed admins can delete users",
+        "method": "read router middleware and requireAdmin",
+        "result": "holds: same admin.js:6 guard; no verb-tampering twin (no other route writes users). The linked fingerprint is a rejected candidate (role claim trusted). This boundary holds only while token subjects are authentic: a token forged under the default secret with an admin sub passes requireAdmin (see confirmed api-audit/CWE-798/src/config.js/jwtSecret)"
+      }
+    ],
+    "finding_fingerprints": [
+      "api-audit/CWE-285/src/auth.js/requireAdmin-role-claim"
+    ],
+    "unresolved": []
+  },
+  {
+    "id": "repo/graphql-rpc-webhooks-ws-jobs",
+    "surface": "GraphQL, RPC, webhook, WebSocket/SSE and background-job entrypoints",
+    "boundary": "n/a",
+    "owasp_category": null,
+    "status": "not_applicable",
+    "reviewed_paths": [
+      "src/**/*.js",
+      "package.json"
+    ],
+    "checks": [
+      {
+        "invariant": "no non-REST entry surfaces exist",
+        "method": "grep src/ for graphql, webhook, cron, queue, worker, socket, setInterval; read package.json dependencies",
+        "result": "none found; the only entrypoints are the Express routes above"
+      }
+    ],
+    "finding_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "id": "package-lock.json/dependency-advisories",
+    "surface": "pinned dependencies (axios 0.21.0, express 4.17.1, jsonwebtoken 8.5.1, lodash 4.17.15, qs 6.7.0)",
+    "boundary": "third-party code -> app",
+    "owasp_category": null,
+    "status": "out_of_scope",
+    "reviewed_paths": [
+      "package.json",
+      "package-lock.json"
+    ],
+    "checks": [],
+    "finding_fingerprints": [],
+    "unresolved": [
+      "Known-advisory review belongs to dependency-audit; this run only reasoned about library behaviour where a call site depended on it (lodash merge, jsonwebtoken verify, axios redirects)"
+    ]
+  },
+  {
+    "id": "repo/.env.example/committed-credentials",
+    "surface": ".env.example AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY",
+    "boundary": "repository reader -> cloud account",
+    "owasp_category": null,
+    "status": "out_of_scope",
+    "reviewed_paths": [
+      ".env.example"
+    ],
+    "checks": [],
+    "finding_fingerprints": [],
+    "unresolved": [
+      "Committed credential values belong to secrets-audit; not an API surface. (The values match AWS's documented example key pair.)"
+    ]
+  }
+]
