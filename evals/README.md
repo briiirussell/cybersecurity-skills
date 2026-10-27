@@ -1,6 +1,6 @@
 # Evals
 
-Thirty-five skills means a lot of overlap. `incident-triage`, `finding-triage` and `breach-patterns` all sound like "triage" to someone in a hurry, and `recon` and `osint-recon` share half a vocabulary. These evals check that a prompt lands on the skill that should handle it.
+Forty-two skills means a lot of overlap. `incident-triage`, `finding-triage` and `breach-patterns` all sound like "triage" to someone in a hurry, and `recon` and `osint-recon` share half a vocabulary. These evals check that a prompt lands on the skill that should handle it.
 
 ## Offline trigger eval (every PR)
 
@@ -13,7 +13,7 @@ Thirty-five skills means a lot of overlap. `incident-triage`, `finding-triage` a
 node scripts/eval-triggers.mjs --verbose
 ```
 
-The script ranks every prompt against all 35 descriptions with BM25, a plain term-matching score, and prints each prompt that ranked wrong. No model, no API key, no cost. CI fails when:
+The script ranks every prompt against every skill's description with BM25, a plain term-matching score, and prints each prompt that ranked wrong. No model, no API key, no cost. CI fails when:
 
 | Check | Floor |
 |---|---|
@@ -27,19 +27,20 @@ The floors sit a little under what the current descriptions score. They're there
 
 ### What it is and isn't
 
-It's a proxy. Claude reads descriptions and understands them; BM25 counts shared words. So a miss here is a hint, not a verdict. "How do we detect jailbroken devices?" belongs to `mobile-audit` and any model gets that, but BM25 ranks it 17th because the description says "jailbreak detection" and the stemmer connects neither "jailbroken" to "jailbreak" nor "detect" to "detection". Real routing needs the model itself, which is what the [plugin evals](#plugin-evals-on-demand) are for.
+It's a proxy. Claude reads descriptions and understands them; BM25 counts shared words. So a miss here is a hint, not a verdict. "How do we detect jailbroken devices?" belongs to `mobile-audit` and any model gets that, but BM25 ranks it 21st because the description says "jailbreak detection" and the stemmer connects neither "jailbroken" to "jailbreak" nor "detect" to "detection". Real routing needs the model itself, which is what the [plugin evals](#plugin-evals-on-demand) are for.
 
 What the proxy is good at: it's free, it runs on every PR, and it notices when two descriptions start sounding alike.
 
 ### Results
 
-At v1.23.4: should-fire top-1 **160/175 (91.4%)**, top-3 170/175 (97.1%); near-miss **171/175 (97.7%)**. The most similar pair is `ai-risk-management` / `prompt-injection` at 0.48.
+At v1.50.1 (42 skills): should-fire top-1 **213/228 (93.4%)**, top-3 223/228 (97.8%); near-miss **217/221 (98.2%)**. The most similar pair is `ai-risk-management` / `prompt-injection` at 0.45. (At v1.23.4, with 35 skills, it was 91.4% and 97.7%.)
 
 The misses worth knowing about, since they point at descriptions that could be sharper:
 
 - `incident-triage` wins only 3 of 5. "Ransomware just hit our file server" and "someone created a new admin user at 3am" go elsewhere, and two near-misses ("we've just been breached…", "we were compromised through that CVE…") go to `breach-patterns` and `patch-sweep`. The description leans on 'incident' and 'breach' words that other skills also use.
 - `prompt-injection` wins 3 of 5. Prompts about agents being hijacked by a web page or an email don't share words with "prompt injection".
 - `mobile-audit` loses the jailbreak prompt (see above).
+- `fuzzing-harness` loses "write a fuzzer for our packet parser? it's C" to `native-code-review`, and `security-start` doesn't take any other skill's prompts.
 - Pasted-code prompts are the weakest group: the Dockerfile goes to `secrets-audit` (it contains `AWS_SECRET_ACCESS_KEY`), and a balance-check race goes to `pci-audit` (it says `charge_card`).
 
 ## Plugin evals (on demand)

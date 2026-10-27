@@ -13,7 +13,9 @@
  *   4. it is a wildcard on a bare multi-command CLI (`git:*`, `vercel:*`, `aws:*`);
  *   5. it is a wildcard on a tool that rewrites source files when given a flag
  *      (`semgrep:*` allows `semgrep --autofix`), since a prefix rule can't exclude
- *      trailing flags.
+ *      trailing flags;
+ *   6. it is a wildcard on a command where a trailing flag turns a read into a write
+ *      (`gh api repos/:*` allows `gh api repos/x -X DELETE`, `exiftool:*` allows `-TAG=`).
  *
  * Not covered on purpose: report-file flags (`--output`, `--report-path`, `git log --output`).
  * Almost every scanner has one, and they write a new report rather than change the project.
@@ -82,6 +84,16 @@ export const SOURCE_REWRITERS = new Set([
   "rubocop", "standardrb", "rustfmt", "clippy-driver", "biome", "stylelint", "terraform fmt",
 ]);
 
+/**
+ * Commands where a trailing flag turns a read into a write. Any wildcard starting with one of
+ * these is flagged, however specific the rest of the prefix is; use an exact rule or none.
+ */
+export const TRAILING_FLAG_WRITERS = [
+  "gh api",   // -X / --method / -f / -F send a write request
+  "exiftool", // -TAG=value rewrites metadata in place
+  "floss",    // --install-right-click-menu changes the Windows registry
+];
+
 /** Parse `Bash(...)`. Returns { pattern, prefix, wildcard } or null for non-Bash tools. */
 export function parseBashRule(tool) {
   if (tool === "Bash") return { pattern: "", prefix: "", wildcard: true };
@@ -121,6 +133,9 @@ export function checkGrant(tool) {
     const tool2 = words.slice(0, 2).join(" ");
     if (SOURCE_REWRITERS.has(words[0]) || SOURCE_REWRITERS.has(tool2))
       reasons.push(`'${SOURCE_REWRITERS.has(tool2) ? tool2 : words[0]}' rewrites files with a flag, which a prefix rule can't exclude; use an exact rule`);
+
+    const flagWriter = TRAILING_FLAG_WRITERS.find((t) => prefix === t || prefix.startsWith(t + " "));
+    if (flagWriter) reasons.push(`a trailing flag turns '${flagWriter}' into a write, which a prefix rule can't exclude; use an exact rule`);
   } else if (DESTRUCTIVE_COMMANDS.some((d) => rule.pattern === d.trim() || rule.pattern.startsWith(d))) {
     reasons.push("exact rule is a destructive command");
   }

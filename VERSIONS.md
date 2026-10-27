@@ -49,12 +49,23 @@ Current versions of all skills. Agents can compare against local versions to che
 
 ## Recent Changes
 
+### 1.50.1 (2026-10-27)
+
+Repo tooling and docs cleanups after the v1.37.0–v1.50.0 build. No skill changes.
+
+**Added**
+- **Lint: trailing-flag writers.** `grant-check.mjs` now fails any wildcard grant on `gh api`, `exiftool` or `floss`, however specific the prefix, because a trailing flag turns each into a write: `-X` / `-f` send a write request, `-TAG=` rewrites file metadata, and `--install-right-click-menu` changes the Windows registry. Use an exact rule or none. No current skill grants these, and a self-test covers it.
+
+**Fixed**
+- `evals/README.md`: skill count and current trigger-eval results (42 skills: should-fire 93.4%, near-miss 98.2%).
+- The VERSIONS.md note for 1.50.0 said the router table has 37 rows; it has 36.
+
 ### 1.50.0 (2026-10-27)
 
 New skill: security-start, a router for vague asks (#131). security-start 1.0.0.
 
 **Added**
-- **security-start 1.0.0.** For asks with no shape ("make this secure", "where do I start?"). It takes a quick read-only look at the repo, then asks at most three questions: what you have, what's happening, and who the result is for. Then it hands off to one to three skills from the catalog, in order. A 37-row table maps situations to a first skill and its follow-ups and covers all 41 other skills. An active incident skips the questions and goes straight to incident-triage. Routing to an offensive skill always comes with a note that it needs written authorization. It does no auditing itself and has no SessionStart hook, so it costs nothing in sessions that don't use it.
+- **security-start 1.0.0.** For asks with no shape ("make this secure", "where do I start?"). It takes a quick read-only look at the repo, then asks at most three questions: what you have, what's happening, and who the result is for. Then it hands off to one to three skills from the catalog, in order. A 36-row table maps situations to a first skill and its follow-ups and covers all 41 other skills. An active incident skips the questions and goes straight to incident-triage. Routing to an offensive skill always comes with a note that it needs written authorization. It does no auditing itself and has no SessionStart hook, so it costs nothing in sessions that don't use it.
 - **Doesn't steal triggers.** Its description claims only vague phrases and tells the model to use the named skill whenever the ask names a framework, target or tool. On the offline trigger eval it takes no other skill's prompts and wins all six of its own.
 - README: new row, map cell, crossover line, and a "Not sure?" bullet at the top of "Where to start".
 
