@@ -41,6 +41,20 @@ Rate likelihood and impact separately, each with a one-line reason, then pick an
 
 Low is a finding: something crossed a boundary. **Defense-in-depth is not Low.** It's a hardening note (section 5).
 
+### Availability
+
+The anchors above are written for confidentiality and integrity. For a crash or hang an attacker can cause:
+
+| Level | Shape |
+|---|---|
+| **High** | One unauthenticated request, or a handful, takes down the whole service or keeps it down: an uncaught exception that kills a single-process server, a ReDoS or `qs`-style parser hang on the main event loop, unbounded memory growth until the process is killed |
+| **Medium** | The same, but it needs an account, only hits one worker of several, or the platform restarts it within seconds so the attacker has to keep sending |
+| **Low** | It only slows or fails the attacker's own request, or needs volumes that rate limits or the platform already absorb |
+
+Volumetric floods (DDoS) are out of scope for code review. Note the edge protection in the report instead. "Restarts
+automatically" lowers likelihood and duration, not the fact that the request crashed it. Keep the restart behaviour
+as a `system_configuration` condition, or as a blocker when you can't see it.
+
 The question that separates High from Medium: *does the attack fully defeat the control, and does that cause damage you can name?* If both, High is on the table. If the control is only weakened, or the damage is vague, it's Medium or lower.
 
 ## 3. Usually NOT High or Critical
@@ -55,7 +69,23 @@ These get over-rated habitually. Rate them High or Critical only when you've tra
 - **Anything that already requires admin, shell, or physical access.** Those principals can usually do the damage directly.
 - **Session weaknesses that need the attacker to already hold a victim secret** (their cookie, their reset token). Getting that secret is the hard part, and it isn't free.
 - **Verbose errors and version banners** without a specific exploitable consequence.
-- **Missing rate limiting** where no concrete abuse with real cost has been traced.
+- **Missing rate limiting** where no concrete abuse with real cost has been traced (see below).
+
+### Missing rate limiting
+
+Checklists list rate limiting (OWASP A07, API4), so reviewers find it missing everywhere. Decide it the same way each
+time:
+
+- **Finding:** there's no limit in the code on an endpoint where repeated requests do concrete harm. Examples are
+  online password guessing against accounts with no lockout, brute-forcing a 6-digit OTP or reset code, and sending
+  paid SMS or email, or paid API calls, at the attacker's choice of volume. The intended control is the limit that
+  login, OTP and paid-send endpoints are expected to have. Usually Medium, since it weakens authentication rather than
+  bypassing it. It's High when the guessable space is small enough to exhaust (a 4- or 6-digit code with no attempt
+  limit).
+- **`needs_validation`:** the code has no limit, but a gateway, WAF or platform limiter might apply and you can't see
+  it. The blocker is that limiter.
+- **Hardening note:** endpoints where repetition costs nothing beyond load (search, list, profile reads), or where
+  another control already caps the harm (a lockout after N failures).
 
 ## 4. High/Critical acceptance checklist
 

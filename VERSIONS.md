@@ -42,6 +42,25 @@ Current versions of all skills. Agents can compare against local versions to che
 
 ## Recent Changes
 
+### 1.26.1 (2026-10-26)
+
+Closes the verdict and severity gaps that the worked-example runs hit (#159). Where the guides were silent, the runs made different calls on the same facts. Shared guides only; the skills that ship them get the new copies.
+
+**Added**
+- **Rejections with no guard to point at** (`verification.md`, `findings-format.md`). There's now a table for each kind, saying what `ruled_out_by.control` states and where `location` points:
+  - never reached: point at the only call site, or the manifest line if nothing imports the package;
+  - a known-inert value, like AWS's documented example key: point at the line holding the value;
+  - a control inside a dependency: point at the lockfile pin.
+  A dependency's guard rejects a candidate only when the installed version is pinned and checked. Otherwise the candidate is `needs_validation`.
+- **Unsafe shipped defaults** (`verification.md`). A hard-coded fallback secret or a permissive default is `confirmed` in every skill:
+  - it gets a `system_configuration` condition;
+  - severity is rated as if the default were live;
+  - the unseen deployment caps confidence at medium.
+  The worked examples split three ways on exactly this. `examples/README.md` now says how a run today would record it.
+- **Missing rate limiting** (`severity-calibration.md`). It's a finding when repeated requests do concrete harm: password guessing with no lockout, OTP brute force, paid sends. It's `needs_validation` when an unseen gateway might limit it, and a hardening note elsewhere.
+- **Availability anchors** (`severity-calibration.md`). A crash or hang from one unauthenticated request is High. It's Medium when it needs an account, hits only one worker of several, or the platform restarts it quickly. It's Low when only the attacker's own request suffers.
+- **Verifier batching for small targets** (`verification.md`). Up to about five candidates that share no code path may go to one verifier. Candidates touching the same handler, and any High or Critical candidate, each still get their own verifier.
+
 ### 1.26.0 (2026-10-26)
 
 Fixes the coverage ledger instructions that the worked examples tripped over (#159). Following them as written could list a confirmed vulnerability under "Items checked and found clean", and the owasp-audit example did exactly that for 11 units.

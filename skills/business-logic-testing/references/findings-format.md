@@ -38,7 +38,7 @@ Every record has exactly one `verdict`. Each verdict has its own shape, and unkn
 |---|---|---|---|
 | `confirmed` | Complete entrypoint → sink trace with impact, or a working PoC | `severity`, `conditions[]`. Optional: `disposition`, `reproduced` | Yes |
 | `needs_validation` | The code supports the claim, but one decisive fact lives outside it (proxy, IdP, deploy config, feature flag) | `blockers[]` (non-empty), `validation_plan` | **No** |
-| `rejected` | A named control at a named location runs on every attacker-reachable path before the sink | `ruled_out_by {control, location}` | **No** |
+| `rejected` | A named control at a named location runs on every attacker-reachable path before the sink, or the claim is ruled out by reachability or a known-inert value | `ruled_out_by {control, location}` | **No** |
 
 `needs_validation` is not a parking spot for a hunch. If you can't name the blocker and a check the owner can run to settle it, the candidate is either rejected or not ready to record. The old "Potential" label is retired.
 
@@ -74,7 +74,9 @@ Common to all three shapes:
 
 `needs_validation` only: `blockers[]` (non-empty strings, one per decisive fact) and `validation_plan` (a concrete check the owner can run locally and/or against the deployment).
 
-`rejected` only: `ruled_out_by.control` (what the control does) and `ruled_out_by.location` (`{file, line}` where it runs).
+`rejected` only: `ruled_out_by.control` (what the control does) and `ruled_out_by.location` (`{file, line}` where it runs). When nothing runs because the code is never reached, the value is a published example, or the guard is inside a dependency, `control` states that fact and `location` points at its evidence: the only call site, the declaring manifest line, the line holding the value, or the lockfile pin. `verification.md` has the table.
+
+A hard-coded fallback or other unsafe shipped default is `confirmed`, not `needs_validation`; the deployment fact caps confidence instead. See "Unsafe shipped defaults" in `verification.md`.
 
 ### Rules the validator enforces
 

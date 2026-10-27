@@ -41,6 +41,8 @@ So these double as regression fixtures for the shared formats.
 
 secrets-audit asks "is it set in production?" first. The other two treat a default that ships unsafe as a finding whatever production does. That's a real difference in how the skills apply the rules, not a typo, and it's the kind of thing these examples exist to surface.
 
+v1.26.1 settles it: an unsafe shipped default is `confirmed`, rated as if it were live, with the unseen deployment capping confidence at medium ("Unsafe shipped defaults" in `shared/verification.md`). A forged token for any user, admin included, is an authentication bypass to any account, so a run today should record it as confirmed critical in all three skills. The runs above are kept as they came out.
+
 **What every run agreed on:**
 
 - the SQL injection in `/search`
