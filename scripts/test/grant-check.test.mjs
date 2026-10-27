@@ -61,3 +61,12 @@ test("every shipped skill's grants pass", () => {
       assert.deepEqual(checkGrant(t), [], `${name}: ${t}`);
   }
 });
+
+test("v1.50.1 trailing-flag writers are flagged even with a specific prefix", () => {
+  for (const g of ["Bash(gh api repos/:*)", "Bash(gh api graphql:*)", "Bash(exiftool:*)", "Bash(exiftool -json:*)", "Bash(floss:*)"]) {
+    assert.ok(checkGrant(g).some((r) => /trailing flag/.test(r)), g);
+  }
+  for (const g of ["Bash(exiftool -json sample.bin)", "Bash(gh workflow list:*)", "Bash(floss --help)"]) {
+    assert.deepEqual(checkGrant(g), [], g);
+  }
+});

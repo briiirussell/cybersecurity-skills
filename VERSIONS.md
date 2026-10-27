@@ -20,7 +20,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | finding-triage | 1.3.1 | 2026-10-27 |
 | fuzzing-harness | 1.0.0 | 2026-10-27 |
 | hipaa-audit | 1.1.1 | 2026-10-27 |
-| iam-audit | 1.1.1 | 2026-10-27 |
+| iam-audit | 1.2.0 | 2026-10-27 |
 | incident-triage | 1.1.1 | 2026-10-27 |
 | log-watch | 1.0.1 | 2026-10-26 |
 | malware-triage | 1.0.0 | 2026-10-27 |
@@ -49,12 +49,44 @@ Current versions of all skills. Agents can compare against local versions to che
 
 ## Recent Changes
 
+### 1.52.0 (2026-10-27)
+
+iam-audit gets a defender-side review of paths to Tier 0 in Active Directory and Entra ID (#138). iam-audit 1.2.0.
+
+#138 asked for a new offensive skill, `ad-attack-paths`. This lands the part defenders need instead, inside iam-audit, which already owns AD and Entra: find every path from an ordinary user to Tier 0, and the change that closes it. Nothing is exploited. A live demonstration stays with authorized engagements under red-team-engagement.
+
+**Added**
+- **Active Directory and Entra ID: paths to Tier 0** (Mode 1), with `references/ad-tier0-paths.md`:
+  - a Tier 0 inventory for on-prem AD and Entra / hybrid (DCs, AD CS, AD FS, DCSync rights, DC-linked GPOs, Entra Connect, privileged roles, Graph-permissioned apps)
+  - getting the paths: prefer exports the team already has (BloodHound / AzureHound, PingCastle, Defender for Identity, Secure Score). New collection needs the directory owner's yes, every time, because it's noisy and may alert. Includes native read-only PowerShell queries for the common classes.
+  - eleven exposure classes, each with what makes it a path and the fix that closes it: privileged nesting, control rights over Tier 0 objects, SPN service accounts, pre-authentication disabled, unconstrained delegation, certificate templates, local admin reuse, GPO edit rights, stale admins, the hybrid bridge, and app permissions
+  - verdict rules: `confirmed` needs every edge shown in saved directory data and caps confidence at medium, because nothing is exercised. A path from Domain Users or all tenant users to domain or tenant control is critical. Fingerprints are `iam-audit/<class>/<directory>/<tier0-object>`, with new `ext` keys and a new `ad` provider value.
+- **SkillSpector baseline.** Two narrow YR4 rules for the tool names in this section, each with a reason.
+
+### 1.51.0 (2026-10-27)
+
+The lint checks `#anchor` links (repo tooling). No skill changes.
+
+**Added**
+- **Anchor check.** `lint-skills.mjs` fails a markdown link whose `#anchor` names no heading in the target `.md` file, using GitHub's slug rules (lowercase, punctuation dropped, spaces to hyphens, `-1` / `-2` for repeated headings) plus explicit `<a id>` / `<a name>` targets. It checks SKILL.md, every skill's `references/` at any depth, and `shared/`. Renaming a heading, as the OWASP 2025 renumbering did, now breaks the build instead of quietly breaking links. All 58 existing anchor links resolve. A self-test covers it.
+
+### 1.50.1 (2026-10-27)
+
+Repo tooling and docs cleanups after the v1.37.0–v1.50.0 build. No skill changes.
+
+**Added**
+- **Lint: trailing-flag writers.** `grant-check.mjs` now fails any wildcard grant on `gh api`, `exiftool` or `floss`, however specific the prefix, because a trailing flag turns each into a write: `-X` / `-f` send a write request, `-TAG=` rewrites file metadata, and `--install-right-click-menu` changes the Windows registry. Use an exact rule or none. No current skill grants these, and a self-test covers it.
+
+**Fixed**
+- `evals/README.md`: skill count and current trigger-eval results (42 skills: should-fire 93.4%, near-miss 98.2%).
+- The VERSIONS.md note for 1.50.0 said the router table has 37 rows; it has 36.
+
 ### 1.50.0 (2026-10-27)
 
 New skill: security-start, a router for vague asks (#131). security-start 1.0.0.
 
 **Added**
-- **security-start 1.0.0.** For asks with no shape ("make this secure", "where do I start?"). It takes a quick read-only look at the repo, then asks at most three questions: what you have, what's happening, and who the result is for. Then it hands off to one to three skills from the catalog, in order. A 37-row table maps situations to a first skill and its follow-ups and covers all 41 other skills. An active incident skips the questions and goes straight to incident-triage. Routing to an offensive skill always comes with a note that it needs written authorization. It does no auditing itself and has no SessionStart hook, so it costs nothing in sessions that don't use it.
+- **security-start 1.0.0.** For asks with no shape ("make this secure", "where do I start?"). It takes a quick read-only look at the repo, then asks at most three questions: what you have, what's happening, and who the result is for. Then it hands off to one to three skills from the catalog, in order. A 36-row table maps situations to a first skill and its follow-ups and covers all 41 other skills. An active incident skips the questions and goes straight to incident-triage. Routing to an offensive skill always comes with a note that it needs written authorization. It does no auditing itself and has no SessionStart hook, so it costs nothing in sessions that don't use it.
 - **Doesn't steal triggers.** Its description claims only vague phrases and tells the model to use the named skill whenever the ask names a framework, target or tool. On the offline trigger eval it takes no other skill's prompts and wins all six of its own.
 - README: new row, map cell, crossover line, and a "Not sure?" bullet at the top of "Where to start".
 

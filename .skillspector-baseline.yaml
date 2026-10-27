@@ -82,6 +82,14 @@ rules:
     path: "iam-audit/SKILL.md"
     message: "*access tokens*"
     reason: "Recommends short-lived access tokens for the client-credentials grant; no credential access"
+  - id: "YR4"
+    path: "iam-audit/SKILL.md"
+    message: "*BloodHound*"
+    reason: "Defender-side Tier 0 review: names BloodHound / AzureHound exports the security team already has as input to read; nothing is run or exploited"
+  - id: "YR4"
+    path: "iam-audit/references/ad-tier0-paths.md"
+    message: "*BloodHound*"
+    reason: "Defender-side Tier 0 review: names the attack-path tools whose existing exports are read, and says new collection needs the directory owner's yes; no path is ever used"
 
   # --- mobile-audit --------------------------------------------------------
   - id: "PE3"
