@@ -1,0 +1,77 @@
+name: Trophy case
+description: These skills found a real bug. Tell me about it, so I know what's working.
+title: "[trophy] <skill>: <bug class>"
+labels: [trophy-case]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Only share what's already fixed and safe to talk about. A link to a public advisory, CVE, bounty report or fix commit is great but optional.
+  - type: dropdown
+    id: skill
+    attributes:
+      label: Skill
+      description: Which skill?
+      options:
+        - agent-supply-chain-audit
+        - ai-risk-management
+        - api-audit
+        - breach-patterns
+        - business-logic-testing
+        - cloud-audit
+        - container-audit
+        - crypto-audit
+        - csf-mapping
+        - dependency-audit
+        - disk-forensics
+        - finding-triage
+        - hipaa-audit
+        - iam-audit
+        - incident-triage
+        - log-watch
+        - mobile-audit
+        - osint-recon
+        - owasp-audit
+        - patch-sweep
+        - pci-audit
+        - personal-opsec
+        - privacy-engineering
+        - prompt-injection
+        - recon
+        - red-team-engagement
+        - scanner-pipeline
+        - secrets-audit
+        - security-comms
+        - siem-detection
+        - soc-operations
+        - threat-hunting
+        - threat-modeling
+        - vuln-research
+        - web-pentest
+    validations:
+      required: true
+  - type: input
+    id: class
+    attributes:
+      label: Bug class
+      placeholder: "IDOR on order export, SSRF via webhook URL, leaked live Stripe key in git history, ..."
+    validations:
+      required: true
+  - type: textarea
+    id: story
+    attributes:
+      label: What happened
+      description: How the skill found it, and what part of the skill did the work (a check, a grep, the verification step).
+    validations:
+      required: true
+  - type: input
+    id: link
+    attributes:
+      label: Public link (optional)
+      placeholder: "https://github.com/advisories/GHSA-..."
+  - type: checkboxes
+    id: ok
+    attributes:
+      label: Permission
+      options:
+        - label: It's fine to mention this in the README or release notes.

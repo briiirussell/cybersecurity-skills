@@ -42,6 +42,22 @@ Current versions of all skills. Agents can compare against local versions to che
 
 ## Recent Changes
 
+### 1.23.7 (2026-10-26)
+
+**Added**
+- Issue forms (#126) in `.github/ISSUE_TEMPLATE/`:
+  - **Field report:** skill, version, what it ran against, what it missed, false positives, suggested change, agent. Redaction is called out.
+  - **Skill request:** problem, overlap with existing skills, example prompts for the trigger eval, outline, and a scope checkbox.
+  - **Skill bug**
+  - **Trophy case:** a real bug found with these skills, with an optional public link.
+  - `config.yml` sends security reports to private vulnerability reporting.
+- A new `trophy-case` label.
+- PR templates:
+  - a default for tooling and docs
+  - `new-skill.md` and `skill-update.md`, which turn the CONTRIBUTING checklist into checkboxes: authorization section, scoped grants, findings format and manifest, trigger prompts, README row/map/crossover, back-references, version bumps, adapters, `npm run check`, SkillSpector
+- `scripts/test/repo-templates.test.mjs` fails when an issue form's skill dropdown drifts from `skills/`.
+- CONTRIBUTING, CLAUDE.md and the README link to the forms and templates.
+
 ### 1.23.6 (2026-10-26)
 
 **Added**
