@@ -26,7 +26,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | patch-sweep | 1.0.2 | 2026-10-26 |
 | pci-audit | 1.1.0 | 2026-10-27 |
 | personal-opsec | 1.0.1 | 2026-10-26 |
-| privacy-engineering | 1.0.4 | 2026-10-26 |
+| privacy-engineering | 1.1.0 | 2026-10-27 |
 | prompt-injection | 1.2.0 | 2026-10-27 |
 | recon | 1.0.1 | 2026-10-26 |
 | red-team-engagement | 1.0.1 | 2026-10-26 |
@@ -41,6 +41,22 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.0 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.36.0 (2026-10-27)
+
+privacy-engineering moves onto the shared findings format (#129). privacy-engineering 1.1.0. With this, all ten skills on #129's list write `findings.json`. Eighteen skills now use the format.
+
+**Changed**
+- **Verify, then record.** A new section after Practice 8. A gap against a GDPR or CCPA obligation is a finding, rated by the exposure for the personal data rather than the size of a possible fine. The data subject is the affected principal.
+  - **Confirmed:** account deletion that skips the Segment and Algolia deletion calls; Sentry set to send every user's email and IP; analytics loading before the user makes a consent choice.
+  - **Needs validation:** whether a DPA is on file; vendor or backup retention settings.
+  - **Rejected:** an erase job that reaches every vendor; a Sentry `beforeSend` scrubber; an SDK that's installed but never initialized, pointing at its dependency declaration.
+- **Paperwork doesn't reject a flow.** A notice, a DPA or legal sign-off doesn't reject a data flow the code actually performs. Evidence files record field names, never personal data values.
+- **Fingerprints:** `privacy-engineering/<class>/<file or resource>/<name>`.
+- **`ext` keys:** `obligation` (e.g. `GDPR Art. 17(1)`), `data_class`, `processor`.
+- **Output Format** is rendered from `findings.json`. It has "Rejected (do not re-raise)" and a "Documentation gaps (not findings)" section, and keeps the data inventory, DSAR, vendor and consent sections.
+- The skill now gets copies of the six shared findings files.
+- **SkillSpector baseline.** Two new rules for verdict examples that describe what to flag.
 
 ### 1.35.0 (2026-10-27)
 

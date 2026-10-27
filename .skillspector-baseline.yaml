@@ -535,6 +535,14 @@ rules:
     path: "hipaa-audit/SKILL.md"
     message: "*register entry to*"
     reason: "Tells the owner to save a redacted BAA register entry as audit evidence; an evidence file, not session persistence"
+  - id: "TM1"
+    path: "privacy-engineering/SKILL.md"
+    message: "*DELETE /account`*"
+    reason: "Verdict example: an account-deletion endpoint that skips vendor deletion calls is the erasure gap the auditor records; documentation, not a tool call"
+  - id: "EA3"
+    path: "privacy-engineering/SKILL.md"
+    message: "*beyond the stated*"
+    reason: "Describes personal data sent to a vendor beyond the stated purpose as a GDPR finding; not the skill's own scope"
 
   # --- api-audit / business-logic-testing ------------------------------------
   - id: "E1"
