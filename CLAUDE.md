@@ -35,13 +35,15 @@ scripts/
 └── test/                    # node:test suites + fixtures (run with npm test)
 evals/
 ├── README.md                # how the trigger evals work and what the numbers mean
-└── triggers/<skill>.json    # 5+ prompts that should fire the skill, 5+ near-misses with their owner
+├── triggers/<skill>.json    # 5+ prompts that should fire the skill, 5+ near-misses with their owner
+└── cases/<case>/            # claude plugin eval suite: prompt.md + graders/ (paid; evals.yml, on demand)
 package.json                 # npm test / npm run build — no dependencies, Node >= 21
 .github/
 ├── workflows/ci.yml   # lint, trigger eval, versions, plugin validate, adapter drift, tests, SkillSpector (+ weekly on main)
 ├── workflows/links.yml  # weekly link check; opens a broken-links issue
+├── workflows/evals.yml  # claude plugin eval on demand + on main (needs ANTHROPIC_API_KEY)
 ├── dependabot.yml     # weekly grouped bumps for the pinned actions
-└── scripts/           # SkillSpector baseline splitter + SARIF merge
+└── scripts/           # SkillSpector baseline splitter, SARIF merge, plugin-validate, eval summary
 .skillspector-baseline.yaml
 docs/
 └── security-scanning.md
