@@ -12,7 +12,7 @@ The skill is structured around the four HIPAA rules with emphasis on the Securit
 
 Final compliance determinations stay with counsel and your privacy officer; this skill is the technical engineering layer.
 
-Cross-references: `privacy-engineering` for the GDPR / CCPA-shaped privacy work that often overlaps; `iam-audit` for access control and authentication; `crypto-audit` for encryption-at-rest and in-transit detail; `secrets-audit` for key management; `siem-detection` for audit-log engineering; `incident-triage` and `security-comms` for breach response.
+Cross-references: `privacy-engineering` for the GDPR / CCPA-shaped privacy work that often overlaps; `iam-audit` for access control and authentication; `crypto-audit` for encryption-at-rest and in-transit detail; `secrets-audit` for key management; `siem-detection` for audit-log engineering; `incident-triage` and `security-comms` for breach response; `control-audit` for program-level control readiness (SOC 2 / ISO 27001) over the same systems.
 
 ## Authorization
 

@@ -12,13 +12,14 @@ Current versions of all skills. Agents can compare against local versions to che
 | cicd-security | 1.0.0 | 2026-10-27 |
 | cloud-audit | 1.2.0 | 2026-10-26 |
 | container-audit | 1.1.0 | 2026-10-26 |
+| control-audit | 1.0.0 | 2026-10-27 |
 | crypto-audit | 1.1.2 | 2026-10-27 |
-| csf-mapping | 1.0.2 | 2026-10-26 |
+| csf-mapping | 1.0.3 | 2026-10-27 |
 | dependency-audit | 1.2.4 | 2026-10-27 |
 | disk-forensics | 1.0.2 | 2026-10-27 |
 | finding-triage | 1.3.1 | 2026-10-27 |
 | fuzzing-harness | 1.0.0 | 2026-10-27 |
-| hipaa-audit | 1.1.0 | 2026-10-27 |
+| hipaa-audit | 1.1.1 | 2026-10-27 |
 | iam-audit | 1.1.1 | 2026-10-27 |
 | incident-triage | 1.1.1 | 2026-10-27 |
 | log-watch | 1.0.1 | 2026-10-26 |
@@ -28,7 +29,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | osint-recon | 1.0.2 | 2026-10-26 |
 | owasp-audit | 1.6.0 | 2026-10-27 |
 | patch-sweep | 1.0.2 | 2026-10-26 |
-| pci-audit | 1.1.0 | 2026-10-27 |
+| pci-audit | 1.1.1 | 2026-10-27 |
 | personal-opsec | 1.0.1 | 2026-10-26 |
 | privacy-engineering | 1.1.0 | 2026-10-27 |
 | prompt-injection | 1.2.0 | 2026-10-27 |
@@ -46,6 +47,26 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.47.0 (2026-10-27)
+
+New skill: control-audit, starting with SOC 2 (#140). control-audit 1.0.0. Back-references: csf-mapping 1.0.3, pci-audit 1.1.1, hipaa-audit 1.1.1.
+
+#140 asked whether SOC 2, ISO 27001 and NIST 800-53 / FedRAMP should be one skill or three. They're one skill, with a reference file per framework, because the workflow is the same and three skills would fight over the same trigger phrases. pci-audit and hipaa-audit stay separate because they review code.
+
+**Added**
+- **control-audit 1.0.0.** Control-level audit readiness:
+  - scope the audit: framework, criteria, systems in scope, audit period, Type 1 vs Type 2
+  - build the control inventory, and write an evidence request per control: what artifact, from whom, which sample period, and how it's tested (inquiry / observation / inspection / reperformance)
+  - test what the repo and config can show, read-only, and hand technical checks to the owning skill (cloud-audit, iam-audit, siem-detection, ...)
+  - record control gaps in the shared findings format. A gap is `confirmed` only with evidence that the control is missing or failing. Evidence held by a person or system the agent can't read goes to `needs_validation`, with the evidence request as the validation plan. An evidenced control is `rejected`.
+  - rate severity by exposure, not audit-opinion risk; pure documentation gaps go in their own section
+- **SOC 2** (`references/soc2.md`): the 2017 Trust Services Criteria with the 2022 revised points of focus (CC1–CC9 plus Availability, Confidentiality, Processing Integrity and Privacy), common evidence by criterion, and Type 1 vs Type 2.
+- Output: a control matrix, an evidence-request list, findings and documentation gaps. Fingerprints are `control-audit/<framework>/<control id>/<scope>`, with `ext` keys for the framework, control id, test method and evidence request. Crosswalks go through csf-mapping.
+
+**Changed**
+- csf-mapping points readiness work for SOC 2 / ISO 27001 / FedRAMP to control-audit. pci-audit and hipaa-audit cross-reference it.
+- README: new row, map cell, crossover line, and a "Where to start" mention.
 
 ### 1.46.0 (2026-10-27)
 

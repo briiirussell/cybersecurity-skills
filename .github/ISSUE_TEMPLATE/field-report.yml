@@ -22,6 +22,7 @@ body:
         - cicd-security
         - cloud-audit
         - container-audit
+        - control-audit
         - crypto-audit
         - csf-mapping
         - dependency-audit
