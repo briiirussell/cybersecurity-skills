@@ -14,7 +14,8 @@
       "container-audit",
       "iam-audit",
       "crypto-audit",
-      "mobile-audit"
+      "mobile-audit",
+      "web-pentest"
     ],
     "validate-findings.mjs": [
       "agent-supply-chain-audit",
@@ -29,7 +30,8 @@
       "container-audit",
       "iam-audit",
       "crypto-audit",
-      "mobile-audit"
+      "mobile-audit",
+      "web-pentest"
     ],
     "to-sarif.mjs": [
       "agent-supply-chain-audit",
@@ -44,7 +46,8 @@
       "container-audit",
       "iam-audit",
       "crypto-audit",
-      "mobile-audit"
+      "mobile-audit",
+      "web-pentest"
     ],
     "findings-format.md": [
       "agent-supply-chain-audit",
@@ -59,7 +62,8 @@
       "container-audit",
       "iam-audit",
       "crypto-audit",
-      "mobile-audit"
+      "mobile-audit",
+      "web-pentest"
     ],
     "severity-calibration.md": [
       "agent-supply-chain-audit",
