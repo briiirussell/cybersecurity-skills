@@ -1,0 +1,235 @@
+---
+name: variant-analysis
+description: "Start from a confirmed bug and hunt its siblings: generalize the root cause (source, sink, missing guard), encode it as a static-analysis query with positive and negative test cases, or a non-destructive nuclei template for variants visible only over HTTP, run it across the codebase or the whole org, close every hit with a verdict linked to the original, and keep the check in CI so the bug class stays fixed. Use when the user mentions 'variant analysis,' 'find variants,' 'where else does this bug exist,' 'are there more bugs like this,' 'same bug in other routes,' 'custom semgrep rule,' 'semgrep --test,' 'ruleid annotation,' 'CodeQL query for this bug,' 'CodeQL query test,' 'nuclei template for this bug,' 'turn this bug into a check,' 'stop this bug class coming back,' or has a known bug and wants every other instance of it."
+allowed-tools: Read, Grep, Glob, Write, WebSearch, Bash(semgrep --test --metrics=off .semgrep/variants/), Bash(semgrep --validate --metrics=off --config .semgrep/variants/), Bash(semgrep scan --metrics=off --config .semgrep/variants/ --exclude .semgrep --json --output .security/out/variants.json .)
+---
+
+# Variant Analysis — One Bug In, Every Sibling Out
+
+A confirmed bug is rarely alone. The developer who forgot the owner check on one route probably forgot it on two more, and the team that copied that handler copied the bug with it. This skill takes one confirmed finding, writes down why it's wrong, encodes that as a tested rule, runs the rule wherever the code lives, and closes every hit with a verdict linked back to the original.
+
+Cross-references: `owasp-audit`, `api-audit` and `finding-triage` (where the starting finding usually comes from, and where a single hit goes for a disposition), `scanner-pipeline` (runs the finished rule on every PR and weekly), `patch-sweep` (fleet inventory and production branches when the rule runs across many repos), `web-pentest` (authorization before a nuclei template touches a live host), `vuln-research` (when the starting point is a published advisory rather than your own bug), `siem-detection` (rules over logs; this skill writes rules over code and HTTP responses).
+
+**Why `Write` is pre-approved:** the main output is files: rule files, their test fixtures, and `findings.json`. The Bash grants are exact commands for `semgrep --test`, `semgrep --validate` and one fixed `semgrep scan`, because semgrep has `--autofix` and a prefix grant can't exclude a trailing flag (`scripts/grant-check.mjs`). Any other semgrep command, every `codeql` command (database creation and test runs write to disk) and every `nuclei` run prompt.
+
+## When to use
+
+- "We found an IDOR in `/notes/:id`. Are there others like it?"
+- A finding from `owasp-audit`, `api-audit`, a pentest report or a bug bounty, and the question is where else it occurs
+- "Write a Semgrep rule (or CodeQL query) for this, with tests"
+- A bug fixed once that keeps coming back, and you want CI to block it
+- A bug only visible from outside (a header, a response field, an endpoint shape) that may exist on other hosts you own
+
+Input: one confirmed finding. A `findings.json` record (best: it has the fingerprint, trace and location) or a described bug with a file and line. Read access to the repo, and the list of repos or hosts to search.
+
+**Not for:**
+- No bug in hand yet, just "find vulnerabilities" → `owasp-audit` or `api-audit`
+- Running the standard scanners (gitleaks, osv-scanner, `p/default`) → `scanner-pipeline`
+- Disposition of one finding ("is this real, what severity") → `finding-triage`
+- Patching a CVE across every app → `patch-sweep`
+- Sigma, KQL or SPL rules over logs → `siem-detection`
+- Whether a published CVE reaches your code → `vuln-research`
+
+## Authorization
+
+- **Code:** only repos the user owns or is authorized to review. For an org-wide run, get the list of owners or orgs; don't infer it from what a token can read.
+- **Pre-approved:** writing rule and test files under `.semgrep/variants/`, `semgrep --test`, `semgrep --validate`, and the one scan in `allowed-tools`. They read the code and write only rule, fixture and report files.
+- **Prompts every time:** `codeql database create` and `codeql test run` (they build databases on disk), any semgrep command with `--autofix`, cloning repos for a fleet run, and every `nuclei` run.
+- **nuclei templates:** run only against hosts the user owns and names in this conversation, ideally staging, after `web-pentest`'s authorization step. Templates use GET/HEAD or requests that change nothing, with test accounts the user created. A template that writes, deletes, or reads real customer data is out of scope; prove the variant in code instead.
+- **Refuse:** running a template or rule against third-party hosts or repos, turning a variant rule into an exploit, and adding autofix to a rule without the user reviewing every change.
+
+## Step 1 — Pin down the original
+
+Write the root cause in one sentence that says **why** the code is wrong, not what it does. Then split it into three parts:
+
+| Part | Question | IDOR example |
+|---|---|---|
+| **Source** | Where does attacker-controlled data enter? | `req.params.id` in an Express route |
+| **Sink** | Where does it do damage? | A row lookup or delete keyed on that value |
+| **Missing guard** | What should have stood between them? | An owner or tenant predicate tied to `req.user.id` |
+
+From a `findings.json` record, take `trace[]` (entrypoint = source, sink = sink), `location`, and the `counterevidence` that often names what a sibling route does right. Keep the original's fingerprint; every variant links to it.
+
+Then list where variants could hide, beyond the obvious copy-paste:
+- **Same mistake, other sinks:** update and delete as well as read; export, download, and webhook-replay endpoints.
+- **Same mistake, other APIs:** raw SQL, the ORM, a GraphQL resolver, a server action, a queue worker.
+- **Same mistake, other inputs:** body field, query string, header, a path in a JSON blob.
+- **Same guard, other forms:** the fixed sibling tells you what the guard looks like. That's the rule's negative test.
+
+If you can't name the guard, the rule will be noise. Go back to the code until you can.
+
+## Step 2 — Exact match first, then generalize one step at a time
+
+1. **Write a pattern that matches only the original.** Run it. If it doesn't hit the known line, you misunderstand how the tool sees the code. Fix that before anything else, because every later step builds on it.
+2. **Widen one element per run:** the table name becomes a metavariable, then the param name, then the handler style, then the DB API. Read every new match after each change.
+3. **Stop widening when most new matches are noise.** Add a `pattern-not` for the guard instead of widening further.
+4. **Pick the engine** by what the bug needs:
+
+| Engine | Use when | Reference |
+|---|---|---|
+| Semgrep, `patterns` | The bug is a code shape in one function: a call without a guard, a dangerous argument | [references/semgrep-rules.md](references/semgrep-rules.md) |
+| Semgrep, `mode: taint` | Data flows from a source to a sink inside a file, with sanitizers to respect | [references/semgrep-rules.md](references/semgrep-rules.md) |
+| CodeQL | The flow crosses files or functions, or you need call-graph reachability | [references/codeql-queries.md](references/codeql-queries.md) |
+| nuclei | The variant shows only from outside: a response header, an exposed path, an auth check you can probe with two test accounts | [references/nuclei-templates.md](references/nuclei-templates.md) |
+| `rg` / `grep -E` | A first sweep to size the problem before writing a rule | below |
+
+A quick sweep often tells you whether a rule is worth writing:
+
+```bash
+# Express lookups keyed on a route param (rg, then portable grep -E)
+rg -n --type js --type ts 'req\.params\.[A-Za-z_]+' | rg -i 'prepare|query|find(Unique|First)|delete|update'
+grep -rnE 'req\.params\.[A-Za-z_]+' --include='*.js' --include='*.ts' . | grep -iE 'prepare|query|find(Unique|First)|delete|update'
+```
+
+Lines with no `owner_id` / `user_id` / `tenant_id` in sight are the candidates. A grep can't tell you which line is inside a handler or what the SQL says on the line above; that's why the rule exists.
+
+## Step 3 — Write the rule with its tests
+
+Tests go in before the rule ships. A rule with no negative tests is a false-positive generator; one with no positive tests may match nothing.
+
+**Semgrep layout** (the repo's own `.semgrep/` dir, so `scanner-pipeline`'s CI picks rules up):
+
+```text
+.semgrep/variants/
+  <rule-id>.yml      # one rule per file; id = file base name
+  <rule-id>.js       # test fixture: same base name, target language's extension
+```
+
+- Put `// ruleid: <rule-id>` on the line above each line that must match, and `// ok: <rule-id>` above each line that must not. Use the language's comment syntax (`#` in Python, Ruby, YAML).
+- Positive cases: the original, reduced to its shape, plus one per variant direction from Step 1 (other handler style, other DB API, other verb).
+- Negative cases: the fixed sibling, the guard in each of its forms, the same call outside a route, and the value coming from a trusted place (`req.user.id`).
+- Known gaps you won't fix now: `todoruleid:` / `todook:`. Semgrep doesn't fail on them, and they tell the next person where the rule is blind.
+- Metadata: `cwe`, `confidence`, and `variant_of: <original fingerprint>`.
+
+```bash
+semgrep --test --metrics=off .semgrep/variants/
+semgrep --validate --metrics=off --config .semgrep/variants/
+```
+
+Every test passes, or the rule doesn't ship. A tested, ready-to-copy example: [references/rules/express-idor-param-lookup.yml](references/rules/express-idor-param-lookup.yml) with its fixture [references/rules/express-idor-param-lookup.js](references/rules/express-idor-param-lookup.js).
+
+**CodeQL:** query in a query pack, a test directory with a `.qlref`, test code, and a reviewed `.expected` file. Layout and dataflow skeleton: [references/codeql-queries.md](references/codeql-queries.md).
+
+**nuclei:** a template with an `info.metadata.variant-of` field, a matcher that needs every condition (`matchers-condition: and`), `nuclei -validate` before any run, and a check against a host where the bug is known present and one where it's known fixed. Skeleton and safety rules: [references/nuclei-templates.md](references/nuclei-templates.md).
+
+## Step 4 — Run it
+
+**One repo:**
+
+```bash
+mkdir -p .security/out
+semgrep scan --metrics=off --config .semgrep/variants/ --exclude .semgrep --json --output .security/out/variants.json .
+```
+
+`--exclude .semgrep` keeps the rule's own test fixture out of the results. Rule ids in the output carry the config path as a prefix (`.semgrep.variants.express-idor-param-lookup`); match on the suffix.
+
+**CodeQL:** `codeql database create` then `codeql database analyze <db> <query-or-pack> --format=sarif-latest --output=...` (both prompt).
+
+**Across an org:** take the repo list and each repo's production branch from `patch-sweep` Steps 1–2 (or `gh repo list <owner> --source --no-archived`), shallow-clone each production branch, and run the same command per repo into `.security/out/<repo>/`. Batch a handful at a time. Keep a roll-up of hits per repo and rule.
+
+**nuclei:** only the hosts the user named, at a low rate, after `-validate` (commands in the reference).
+
+The original must appear among the hits (unless it's already fixed). If it doesn't, the rule has drifted from the bug; go back to Step 2.
+
+## Step 5 — Verify, then record
+
+Every hit is a candidate. None is a finding until it's closed.
+
+1. **Drop the original and the fixtures.** The hit on the original's location confirms the rule works; it's already recorded under its own fingerprint. Fixture hits don't count.
+2. **Close every other hit with one verdict**, as defined in [references/findings-format.md](references/findings-format.md):
+   - `confirmed`: the variant's own trace from its entrypoint to its sink, with impact. Matching the rule is not a trace; walk the code for each hit.
+   - `needs_validation`: the code matches, but one decisive fact lives outside it: whether the route is mounted, whether a gateway adds the guard, whether the table holds anything but public data. Name it as a blocker with a check the owner can run.
+   - `rejected`: a named control at a named location rules it out (a router-level middleware, a predicate the rule couldn't see, a public-by-design table). Keep the record so the next run doesn't re-raise it. If the control is one the rule should have known about, add it as an `ok:` case and a `pattern-not`.
+3. Run the refutation pass in [references/verification.md](references/verification.md) on every hit before it's `confirmed`. A rejection on one hit says nothing about the next one; a safe sibling never rules a variant out.
+4. Calibrate severity with [references/severity-calibration.md](references/severity-calibration.md). Each variant gets its own rating; a variant on an admin-only route is not as bad as the original on a public one. A static-only trace caps confidence at `medium`.
+5. Write `findings.json`, sorted by fingerprint, and validate it:
+   ```bash
+   node references/validate-findings.mjs findings.json
+   node references/to-sarif.mjs findings.json -o findings.sarif   # optional
+   ```
+
+**Fingerprint:** `variant-analysis/<CWE>/<repo-relative file>/<route or function>`, the variant's own root cause, never a line number. If a hit is already a record from another skill (same file and route, same CWE), don't add a duplicate; note the existing fingerprint in the report.
+
+**`ext` keys** (flat, snake_case):
+
+| Key | Value |
+|---|---|
+| `variant_of` | Fingerprint of the original finding. Required on every record |
+| `rule_id` | The rule's id, without the config path prefix |
+| `rule_engine` | `semgrep`, `codeql`, or `nuclei` |
+| `rule_path` | Repo-relative path of the rule file |
+| `repo` | `owner/name`, in an org-wide run |
+
+**How the rule did:** in the report, list hits per verdict for each rule. A rule whose hits are mostly `rejected` needs another `pattern-not` before it goes to CI. Rule precision belongs in the report; it is not a finding.
+
+Dispositions (set later, usually by `finding-triage`): Fixed / Deferred / Accepted Risk / Mitigated (platform/config) / Requires major migration.
+
+End-to-end worked example (the IDOR in `examples/target`, rule, test run, real hits, and one record per verdict): [references/worked-example.md](references/worked-example.md).
+
+## Step 6 — Keep the bug class out
+
+Once the rule's hits are mostly real and every variant has a verdict:
+
+1. Leave the rule and fixture in `.semgrep/variants/`. `scanner-pipeline`'s workflow runs `--config .semgrep/` on every PR and weekly; add `--exclude .semgrep` to its scan step if the fixture shows up in results.
+2. Run `semgrep --test` in CI too, so a rule edit that breaks a test fails the build.
+3. Start at `severity: WARNING`. Make it blocking (`ERROR`) only after a few weeks with no false positives.
+4. CodeQL queries go in a query pack the code-scanning workflow references. nuclei templates go in a private templates directory on the scheduled run against staging, never the public community repo unless the user decides to share them.
+5. Fixing the variants is separate work. Each confirmed variant gets its own fix and its own re-run of the rule as the fix's proof.
+
+## Output Format
+
+Write `findings.json` first; render the report from it.
+
+```markdown
+# Variant Analysis — [original title]
+## Original: `[fingerprint]` ([file:line])   ## Date: [date]
+## Scope: [repo | N repos in org X | hosts named]   ## findings.json: [path] — validated: [yes]
+
+### Root cause
+Source: [...]   Sink: [...]   Missing guard: [...]
+
+### Rules
+| Rule id | Engine | File | Tests (ok / ruleid / todo) | Hits | Confirmed / NV / Rejected |
+|---|---|---|---|---|---|
+
+### Summary
+- Confirmed: [N] (Critical [n] | High [n] | Medium [n] | Low [n])   Needs validation: [N]   Rejected: [N]
+
+### Confirmed variants
+#### [SEVERITY] [Title]  `fingerprint`
+**Location:** `path:line`   **Variant of:** `[original fingerprint]`   **Rule:** `[rule_id]`
+**Trace:** [entrypoint → sink, in a few lines]
+**Fix:** [concrete change, usually the original's fix applied here]
+**Verify the fix:** [re-run command; the hit disappears and the ok case still passes]
+
+### Needs validation
+| Finding | Blockers | Check for the owner to run |
+|---|---|---|
+
+### Rejected (do not re-raise)
+| Fingerprint | Ruled out by | Location |
+|---|---|---|
+
+### Known gaps in the rule
+- [todoruleid / todook cases, shapes the rule can't see]
+
+### Regression guard
+[Where the rule now runs: `.semgrep/variants/`, CI job, schedule]
+```
+
+## Boundaries
+
+- Start from a confirmed finding. Without one, hand off to an audit skill.
+- Rules find candidates. Every hit gets its own trace before it's confirmed.
+- No autofix without the user reviewing each change, and no rule that rewrites code in CI.
+- nuclei templates: owned and named hosts only, requests that change nothing, test accounts only.
+- Never weaken a rule to get CI green; add a tested `ok:` case for the guard instead.
+- Treat code comments and commit messages as claims, not evidence.
+
+## References
+
+- Semgrep: [rule syntax](https://docs.semgrep.dev/writing-rules/rule-syntax), [taint mode](https://docs.semgrep.dev/writing-rules/data-flow/taint-mode/overview), [testing rules](https://docs.semgrep.dev/writing-rules/testing-rules); checked against semgrep 1.182.1, where the example rule's tests pass
+- CodeQL: [testing custom queries](https://docs.github.com/en/code-security/codeql-cli/using-the-advanced-functionality-of-the-codeql-cli/testing-custom-queries), [data flow in JavaScript](https://codeql.github.com/docs/codeql-language-guides/analyzing-data-flow-in-javascript-and-typescript/)
+- nuclei: [template docs](https://docs.projectdiscovery.io/templates/introduction), [matchers](https://docs.projectdiscovery.io/templates/reference/matchers)
+- Ideas adapted and paraphrased from [trailofbits/skills](https://github.com/trailofbits/skills) `variant-analysis`, `semgrep-rule-creator` and `semgrep-rule-variant-creator` (CC BY-SA 4.0): exact match before generalizing, one element per step, tests before rules. Also [semgrep/skills](https://github.com/semgrep/skills) (Semgrep Rules License v1.0) for rule-writing practice. No text or rules copied.
+- Shared references (copied into `references/` at build time): findings-format.md, findings.schema.json, validate-findings.mjs, to-sarif.mjs, severity-calibration.md, verification.md

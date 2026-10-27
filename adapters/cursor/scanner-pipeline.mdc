@@ -71,7 +71,7 @@ Add `.security/out/` to `.gitignore`. Flag versions differ between tool majors (
 
 ### Custom rule: always-true RLS policy
 
-The motivating bug: `using (csr.collection_id = csr.collection_id)` compares a column with itself, so the policy passes for every row. The author meant the outer table's column. Semgrep has no first-class SQL parser, so use generic mode: `pattern-inside: create policy ... ;` plus a regex that backreferences the left-hand side. Full rule file (self-comparison, literal `true`, and public tables to cross-check for RLS): [references/semgrep/supabase-rls.yml](references/semgrep/supabase-rls.yml). Copy it into the repo's `.semgrep/` so the CI workflow picks it up.
+The motivating bug: `using (csr.collection_id = csr.collection_id)` compares a column with itself, so the policy passes for every row. The author meant the outer table's column. Semgrep has no first-class SQL parser, so use generic mode: `pattern-inside: create policy ... ;` plus a regex that backreferences the left-hand side. Full rule file (self-comparison, literal `true`, and public tables to cross-check for RLS): [references/semgrep/supabase-rls.yml](references/semgrep/supabase-rls.yml). Copy it into the repo's `.semgrep/` so the CI workflow picks it up. To write a rule like this from a confirmed finding, with tests, see `variant-analysis`.
 
 ```bash
 semgrep scan --metrics=off --config .semgrep/supabase-rls.yml supabase/migrations/

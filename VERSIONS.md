@@ -16,7 +16,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | csf-mapping | 1.0.2 | 2026-10-26 |
 | dependency-audit | 1.2.4 | 2026-10-27 |
 | disk-forensics | 1.0.1 | 2026-10-26 |
-| finding-triage | 1.3.0 | 2026-10-27 |
+| finding-triage | 1.3.1 | 2026-10-27 |
 | hipaa-audit | 1.1.0 | 2026-10-27 |
 | iam-audit | 1.1.1 | 2026-10-27 |
 | incident-triage | 1.1.0 | 2026-10-26 |
@@ -31,17 +31,38 @@ Current versions of all skills. Agents can compare against local versions to che
 | prompt-injection | 1.2.0 | 2026-10-27 |
 | recon | 1.0.1 | 2026-10-26 |
 | red-team-engagement | 1.0.1 | 2026-10-26 |
-| scanner-pipeline | 1.0.3 | 2026-10-27 |
+| scanner-pipeline | 1.0.4 | 2026-10-27 |
 | secrets-audit | 1.1.4 | 2026-10-27 |
 | security-comms | 1.0.3 | 2026-10-26 |
-| siem-detection | 1.0.3 | 2026-10-26 |
+| siem-detection | 1.0.4 | 2026-10-27 |
 | soc-operations | 1.0.4 | 2026-10-26 |
 | threat-hunting | 1.0.4 | 2026-10-26 |
 | threat-modeling | 1.0.4 | 2026-10-26 |
+| variant-analysis | 1.0.0 | 2026-10-27 |
 | vuln-research | 1.0.3 | 2026-10-26 |
 | web-pentest | 1.2.0 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.43.0 (2026-10-27)
+
+New skill: variant-analysis (#136). variant-analysis 1.0.0. Back-references: finding-triage 1.3.1, scanner-pipeline 1.0.4, siem-detection 1.0.4.
+
+**Added**
+- **variant-analysis 1.0.0.** Starts from one confirmed finding and hunts its siblings:
+  - pin down the original
+  - write an exact-match rule, then widen it one element at a time
+  - write the rule with tests: a Semgrep rule with `ruleid:` / `ok:` annotations and `semgrep --test`, a CodeQL query with a test pack and `.expected` file, or a nuclei v3 template for variants only visible over HTTP. The nuclei template only sends GET, needs both a status and a planted marker to match, and is checked against a known-bad and a known-fixed host first.
+  - run it on one repo, or across the org via patch-sweep
+  - close every hit with a verdict, linked to the original through `ext.variant_of`
+  - hand the rule to scanner-pipeline so the bug can't come back
+- Ships a tested Express IDOR rule (`references/rules/express-idor-param-lookup.yml` and its fixture; `semgrep --test` passes). The end-to-end example starts from the owasp-audit example's IDOR and finds one more hit in `examples/target`, rejected because `requireAdmin` guards it.
+- Grants are exact Semgrep commands only (`--test`, `--validate`, one fixed `scan`), so `--autofix` is never pre-approved. CodeQL and nuclei always prompt. Write is granted because rule files are the main output.
+- The CodeQL skeleton follows GitHub's docs but hasn't been compiled. The reference says to run `codeql test run` before trusting it.
+
+**Changed**
+- finding-triage, scanner-pipeline and siem-detection point to variant-analysis (siem-detection keeps log rules, variant-analysis takes rules over code and HTTP).
+- README: new row, map cell and crossover line.
 
 ### 1.42.0 (2026-10-27)
 
