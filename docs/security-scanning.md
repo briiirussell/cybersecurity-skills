@@ -14,7 +14,7 @@ Every PR into `development` or `main`, and every push to either branch, runs [`.
 | Baseline check | `node .github/scripts/skillspector-baseline.mjs --check` | a baseline rule lacks `id`, `path`, `message` or `reason`, or names a skill that doesn't exist |
 | Adapter drift | `node scripts/build-adapters.mjs`, then `git diff --exit-code adapters/ skills/` | generated adapters or the `shared/` → `skills/*/references/` copies are stale |
 | Plugin validate | `claude plugin validate --json .` via `.github/scripts/plugin-validate.mjs` (CLI pinned in the workflow) | any manifest or content error, or any warning not listed in `ALLOWED` in that script with a reason. Only the root `CLAUDE.md` warning is accepted: it's contributor guidance, not plugin context |
-| Tests | `npm test` (`node --test "scripts/test/*.test.mjs"`, Node ≥ 21) | a validator, `to-sarif`, build, grant-check or version-check test fails, or a self-test shows a checker (lint, baseline check, SARIF merge, plugin-validate) no longer catches a known-bad fixture |
+| Tests | `npm test` (`node --test "scripts/test/*.test.mjs"`, Node ≥ 21) | a validator, `to-sarif`, build, grant-check, version-check, trigger-eval or eval-case shape test fails, or a self-test shows a checker (lint, baseline check, SARIF merge, plugin-validate) no longer catches a known-bad fixture |
 | SkillSpector | per-skill `skillspector scan … --no-llm --baseline … --fail-on-findings --format sarif` | any finding that the baseline doesn't cover |
 
 The lint also **fails** when two skills claim the same single-quoted trigger phrase, for example `'security review'` in both `owasp-audit` and `threat-modeling`, because the same request could activate either skill. SkillSpector's TR2 rule looks for the same thing. Fix it by keeping the phrase in the skill that owns the work and narrowing or dropping it in the other (v1.19.5 did this for seven phrases).
@@ -24,6 +24,10 @@ Run the lint locally before you push:
 ```bash
 npm run check   # lint, baseline check, version check, adapter drift, tests
 ```
+
+### Paid checks
+
+[`evals.yml`](../.github/workflows/evals.yml) runs the `claude plugin eval` routing suite in `evals/cases/`. It runs on demand, and on pushes to `main` that change a skill or a case, with a pinned model and CLI, a $15 ceiling and a 0.8 threshold. It never runs on PRs, and it skips until the repo has an `ANTHROPIC_API_KEY` secret. See [evals/README.md](../evals/README.md).
 
 ### Scheduled checks
 

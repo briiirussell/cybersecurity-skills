@@ -1,0 +1,97 @@
+name: Plugin evals
+
+# Real routing check: `claude plugin eval` runs each case in evals/cases/ against a pinned model and
+# grades whether the right skill loaded (and the rivals didn't). It costs API money, so it never runs
+# on PRs: on demand, and on pushes to main that touch a skill or a case. Forks don't get the secret.
+on:
+  workflow_dispatch:
+    inputs:
+      case:
+        description: "Case name glob (blank = all cases)"
+        required: false
+        default: ""
+      runs:
+        description: "Runs per case"
+        required: false
+        default: "3"
+  push:
+    branches: [main]
+    paths:
+      - "skills/*/SKILL.md"
+      - "evals/cases/**"
+      - ".github/workflows/evals.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: evals
+  cancel-in-progress: false
+
+jobs:
+  eval:
+    name: claude plugin eval
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      # Pinned like ci.yml. Bump both deliberately; v2.1.299+ also stops grading runs that hit an API error
+      # (eval-summary.mjs fails on those runs in the meantime).
+      CLAUDE_CODE_VERSION: "2.1.296"
+      EVAL_MODEL: claude-sonnet-5-5
+      MAX_COST_USD: "15"
+      THRESHOLD: "0.8"
+      DISABLE_AUTOUPDATER: "1"
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - name: Skip without an API key
+        id: key
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::notice::ANTHROPIC_API_KEY is not set; skipping plugin evals. Add it under Settings → Secrets → Actions."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.key.outputs.ok == 'true'
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: steps.key.outputs.ok == 'true'
+        with:
+          node-version: "22"
+      - name: Install Claude Code CLI
+        if: steps.key.outputs.ok == 'true'
+        run: npm install -g --no-audit --no-fund "@anthropic-ai/claude-code@$CLAUDE_CODE_VERSION"
+      - name: Run evals/cases
+        if: steps.key.outputs.ok == 'true'
+        env:
+          CASE: ${{ inputs.case }}
+          RUNS: ${{ inputs.runs || '3' }}
+        run: |
+          args=(--eval-dir evals/cases --trust-plugin --no-publish --ablation none
+                --model "$EVAL_MODEL" --runs "$RUNS" --threshold "$THRESHOLD" --max-cost-usd "$MAX_COST_USD"
+                --output-dir evals/results/ci)
+          [ -n "$CASE" ] && args+=(--case "$CASE")
+          set +e
+          claude plugin eval . "${args[@]}"
+          rc=$?
+          set -e
+          echo "EVAL_EXIT=$rc" >> "$GITHUB_ENV"
+          echo "claude plugin eval exited $rc"
+      - name: Summarize
+        if: always() && steps.key.outputs.ok == 'true'
+        run: |
+          if [ ! -f evals/results/ci/aggregate-result.json ]; then
+            echo "::error::claude plugin eval wrote no aggregate-result.json (exit ${EVAL_EXIT:-?})"
+            exit 1
+          fi
+          node .github/scripts/eval-summary.mjs evals/results/ci/aggregate-result.json >> "$GITHUB_STEP_SUMMARY"
+          [ "${EVAL_EXIT:-1}" = "0" ] || { echo "::error::claude plugin eval exited $EVAL_EXIT (a case scored under $THRESHOLD, or the run was partial)"; exit 1; }
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always() && steps.key.outputs.ok == 'true'
+        with:
+          name: plugin-eval-results
+          path: evals/results/ci/
+          if-no-files-found: ignore
+          retention-days: 30

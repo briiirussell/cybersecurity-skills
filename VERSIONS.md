@@ -42,6 +42,26 @@ Current versions of all skills. Agents can compare against local versions to che
 
 ## Recent Changes
 
+### 1.23.5 (2026-10-26)
+
+**Added**
+- `claude plugin eval` routing suite (#124). `evals/cases/` holds 11 cases for the skills most likely to collide:
+  - owasp-audit vs api-audit
+  - incident-triage vs finding-triage vs breach-patterns
+  - recon vs osint-recon
+  - secrets-audit vs scanner-pipeline
+  - two everyday coding requests where no security skill should load
+- Each routing case has a `fires-<skill>` grader. It also has `quiet-<rival>` graders that check the rival skills don't load (`min: 0`, `max: 0`, `arm: both`).
+- New **Plugin evals** workflow (`.github/workflows/evals.yml`):
+  - runs on demand, and on pushes to `main` that change a skill or a case
+  - never runs on PRs
+  - pinned model and CLI, 3 runs per case, threshold 0.8, $15 cost ceiling, `--ablation none`, `--no-publish`
+  - uploads the results as an artifact
+  - skips with a notice until the repo has an `ANTHROPIC_API_KEY` secret
+- `.github/scripts/eval-summary.mjs` writes the score table to the run summary. It fails on runs that ended in an API error, because the pinned CLI (before 2.1.299) still grades those.
+- `scripts/test/eval-cases.test.mjs` checks the suite's shape on every PR at no cost: graders name real skills, prompt.md keys are valid, and each routing case has a rival.
+- `evals/results/` is git-ignored. [evals/README.md](evals/README.md) documents the suite and has a results table to record which wordings fire, with model and CLI version.
+
 ### 1.23.4 (2026-10-26)
 
 **Added**

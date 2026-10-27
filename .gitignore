@@ -10,3 +10,6 @@ Thumbs.db
 
 # Node (if dependencies are added later)
 node_modules/
+
+# Plugin eval output (claude plugin eval)
+evals/results/
