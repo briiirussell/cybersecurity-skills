@@ -11,7 +11,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | business-logic-testing | 1.0.2 | 2026-10-26 |
 | cloud-audit | 1.2.0 | 2026-10-26 |
 | container-audit | 1.1.0 | 2026-10-26 |
-| crypto-audit | 1.0.3 | 2026-10-26 |
+| crypto-audit | 1.1.0 | 2026-10-27 |
 | csf-mapping | 1.0.2 | 2026-10-26 |
 | dependency-audit | 1.2.3 | 2026-10-26 |
 | disk-forensics | 1.0.1 | 2026-10-26 |
@@ -41,6 +41,21 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.1.3 | 2026-10-26 |
 
 ## Recent Changes
+
+### 1.30.0 (2026-10-27)
+
+crypto-audit moves onto the shared findings format (#129). crypto-audit 1.1.0.
+
+**Changed**
+- **Verify, then record.** A new step after the checklist, with examples for each verdict:
+  - **Confirmed:** a fixed GCM IV reused with one key, `Math.random()` session tokens, a `JWT_SECRET || 'dev-secret'` fallback (an unsafe shipped default), unsalted SHA-256 passwords.
+  - **Needs validation:** `nginx.conf` allows TLS 1.0, but a CDN may terminate TLS first. The check is a `testssl.sh` run.
+  - **Rejected:** `jwt.verify` without `algorithms`, ruled out by the pinned `jsonwebtoken` version (a control inside a dependency); MD5 used only for an ETag, ruled out at its only call site.
+- **Hardening notes.** bcrypt cost 10, correct CBC+HMAC, extra TLS 1.2 CBC suites and no KMS rotation are hardening notes. Custom crypto is a finding only when you trace what it fails to protect.
+- **Fingerprints:** `crypto-audit/<class>/<file or resource>/<symbol or name>`. A live TLS endpoint is written as `host/<name>/<port>`.
+- **`ext` keys:** `primitive`, `library`, `standard`.
+- **Output Format** is rendered from `findings.json`. It has "Rejected (do not re-raise)" and keeps the TLS posture and key inventory sections. "Verify Fixes at Runtime" is unchanged.
+- The skill now gets copies of the six shared findings files.
 
 ### 1.29.0 (2026-10-26)
 
