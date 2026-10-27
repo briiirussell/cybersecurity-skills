@@ -15,7 +15,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | csf-mapping | 1.0.2 | 2026-10-26 |
 | dependency-audit | 1.2.3 | 2026-10-26 |
 | disk-forensics | 1.0.1 | 2026-10-26 |
-| finding-triage | 1.1.1 | 2026-10-26 |
+| finding-triage | 1.1.2 | 2026-10-26 |
 | hipaa-audit | 1.0.2 | 2026-10-26 |
 | iam-audit | 1.0.3 | 2026-10-26 |
 | incident-triage | 1.1.0 | 2026-10-26 |
@@ -41,6 +41,20 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.1.3 | 2026-10-26 |
 
 ## Recent Changes
+
+### 1.26.4 (2026-10-26)
+
+finding-triage fixes from the worked-example run (#159). finding-triage 1.1.2.
+
+**Fixed**
+- **"Fix now" versus `Fixed`.** The disposition table said a Fix now decision is "recorded as Fixed". But writing `Fixed` before the fix ships is false, and `to-sarif.mjs` drops Fixed records, so the alert would vanish while the bug was still live.
+  - A Fix now finding now keeps `disposition` unset until the change has shipped and its verification passed.
+  - The writeup records the commit or release.
+  - The final checklist asks about any early `Fixed`.
+  The worked example already did this by hand.
+
+**Added**
+- **"Related candidates (not triaged here)".** A new section in the session output for things noticed while triaging, such as a sibling route or a second call site. Each gets a location, why it's related, and the skill that should review it. None gets a verdict or severity until someone triages it.
 
 ### 1.26.3 (2026-10-26)
 
