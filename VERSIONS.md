@@ -32,7 +32,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | pci-audit | 1.1.1 | 2026-10-27 |
 | personal-opsec | 1.0.1 | 2026-10-26 |
 | privacy-engineering | 1.1.0 | 2026-10-27 |
-| prompt-injection | 1.2.0 | 2026-10-27 |
+| prompt-injection | 1.2.1 | 2026-10-27 |
 | recon | 1.0.1 | 2026-10-26 |
 | red-team-engagement | 1.0.1 | 2026-10-26 |
 | scanner-pipeline | 1.0.4 | 2026-10-27 |
@@ -48,6 +48,13 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.52.3 (2026-10-27)
+
+prompt-injection description names indirect injection through what an agent reads (a malicious web page in a browsing agent; emails, documents or tickets reaching an agent that can act). prompt-injection 1.2.1.
+
+**Changed**
+- prompt-injection: description wording only. "Can a malicious web page hijack our browsing agent?" and "our agent reads incoming emails and can send replies" now route here instead of log-watch and threat-modeling. Offline trigger eval: should-fire 216 → 218 of 228. Its overlap with ai-risk-management drops from 0.45 to 0.40.
 
 ### 1.52.2 (2026-10-27)
 
