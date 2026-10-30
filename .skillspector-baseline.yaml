@@ -50,6 +50,10 @@ rules:
     reason: "Narrative of the 2020 Twitter insider-tool breach; no exploit content"
 
   # --- container-audit -----------------------------------------------------
+  - id: "E1"
+    path: "container-audit/references/vendor-severity.md"
+    message: "*api.osv.dev*"
+    reason: "Public, keyless OSV lookups of Debian/Ubuntu package state (issue #207); sends one OS package name and version, never code or secrets"
   - id: "TM4"
     path: "container-audit/SKILL.md"
     message: "*privileged: true*"

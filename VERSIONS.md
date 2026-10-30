@@ -11,11 +11,11 @@ Current versions of all skills. Agents can compare against local versions to che
 | business-logic-testing | 1.0.2 | 2026-10-26 |
 | cicd-security | 1.0.0 | 2026-10-27 |
 | cloud-audit | 1.2.0 | 2026-10-26 |
-| container-audit | 1.1.0 | 2026-10-26 |
+| container-audit | 1.2.0 | 2026-10-29 |
 | control-audit | 1.2.0 | 2026-10-27 |
 | crypto-audit | 1.1.2 | 2026-10-27 |
 | csf-mapping | 1.0.3 | 2026-10-27 |
-| dependency-audit | 1.3.1 | 2026-10-29 |
+| dependency-audit | 1.3.2 | 2026-10-29 |
 | disk-forensics | 1.0.2 | 2026-10-27 |
 | finding-triage | 1.3.1 | 2026-10-27 |
 | fuzzing-harness | 1.0.1 | 2026-10-27 |
@@ -48,6 +48,24 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.56.0 (2026-10-29)
+
+container-audit checks the distro's own answer for OS-package CVEs (#207, part 5 of 5). container-audit 1.2.0, dependency-audit 1.3.2. This finishes #207.
+
+**Added**
+- **Vendor severity** (`container-audit/references/vendor-severity.md`). Trivy rates OS packages mostly by NVD. RHEL/UBI, Debian and Ubuntu backport fixes without changing the upstream version, so the skill now checks the vendor's state for the image's release first:
+  - **Red Hat:** the Security Data API (`threat_severity`, per-product `fix_state`, and RHSA fixed versions).
+  - **Debian and Ubuntu:** OSV's distro ecosystems, one query per package and version. Debian's tracker page gives per-CVE notes. Its full JSON export is 87 MB, so the skill doesn't use it for lookups.
+- **Verdict mapping:**
+  - "Not affected", or a backported fix already installed, is `rejected` with the vendor statement saved as evidence. That's the common trivy false positive on UBI images.
+  - "Affected" or "Fix deferred" leaves the finding to the reachability rule.
+  - "Will not fix" leaves it standing; the plan is a new base image or the owner's `Accepted Risk`. The vendor's call is input, not the decision.
+- New `ext` keys: `vendor`, `vendor_severity`, `vendor_fix_state`, `vendor_advisory`. container-audit also gets `enrich-advisories.mjs`, so OS-package CVEs get KEV and EPSS too.
+- `WebFetch` pre-approved for the Red Hat API; OSV queries are POSTs and prompt. docs/security-scanning.md and the SkillSpector baseline are updated.
+
+**Fixed**
+- dependency-audit's exploitation-signals reference linked to a 404 EPSS docs URL; it now points at `https://api.first.org/epss/`.
 
 ### 1.55.0 (2026-10-29)
 
