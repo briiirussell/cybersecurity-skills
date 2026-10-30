@@ -17,6 +17,7 @@ Cross-references:
 - `finding-triage` — rank the leftovers that can't be patched in range.
 - `security-comms` — client and stakeholder notices, especially for client repos you can only PR.
 - `vuln-research` — when an advisory's affected range or code path is unclear.
+- `personal-opsec` C7 and `agent-supply-chain-audit` RT1 — the browsers agents download on one machine, and which extensions bring them.
 
 ## Authorization — confirm before touching anything
 
@@ -129,6 +130,8 @@ An app is affected only if all three line up: **vulnerable runtime or dependency
 - **EOL lines get no fix.** Ruby 3.2, Next.js 13/14 for the 2026 RCEs, any Node major past end-of-life. These go straight to "needs a major-version upgrade" with an effort estimate; don't list them beside in-range fixes.
 - **Managed runtimes that patch themselves.** Vercel applies Node patch releases to its managed runtime; Heroku and Render images get OS-level updates on rebuild. An advisory in the runtime may need only a redeploy or no action. Confirm what the platform's docs or changelog say for that release before marking it.
 - **Code path not used.** A static Vite or Astro site isn't affected by Next.js server advisories. An app without libvips (no Active Storage variants, no `image_processing` with vips) isn't affected by a libvips RCE. A Next.js app with no Server Actions or middleware may sit outside a specific advisory's preconditions — read the advisory's exact conditions (`vuln-research`).
+
+**Chrome or Chromium advisories** also hit browsers that agents and test suites download: operator machines, repos that pin Playwright or Puppeteer, CI images, and production services that render HTML in a headless browser (the worst case: a renderer bug there is a server RCE). Inventory, affected test, patch table and a separate board are in [references/browser-runtimes.md](references/browser-runtimes.md). Flag `--no-sandbox` in launch args whatever the version.
 
 Mark each row `affected` / `not affected (reason)` / `unknown (what's needed)`. Unknown rows don't get skipped; they get an owner action.
 
