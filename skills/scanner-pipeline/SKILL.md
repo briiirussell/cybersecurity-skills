@@ -1,7 +1,7 @@
 ---
 name: scanner-pipeline
 description: "Set up and run deterministic security scanners across a repo or a whole fleet of repos — gitleaks, trufflehog, semgrep, osv-scanner, trivy, checkov, Brakeman, govulncheck, Supabase advisors, and (guarded) nuclei/ZAP — then normalize their output to findings.json or SARIF, dedupe, suppress with expiry, schedule in CI, and hand findings to fix agents. Use when the user mentions 'run scanners,' 'security scanning pipeline,' 'set up gitleaks,' 'semgrep in CI,' 'osv-scanner,' 'trivy fs,' 'SARIF,' 'code scanning,' 'scan all my repos,' 'security-scan workflow,' 'weekly security scan,' 'Supabase RLS advisor,' 'dedupe scanner findings,' 'suppression file,' 'stop asking Claude to hack my app,' or wants tools, not an agent, to find the bugs."
-allowed-tools: Read, Grep, Glob, Write, Bash(gitleaks:*), Bash(trufflehog:*), Bash(osv-scanner scan:*), Bash(trivy fs:*), Bash(trivy image:*), Bash(trivy config:*), Bash(checkov:*), Bash(bundle-audit:*), Bash(brakeman:*), Bash(gosec:*), Bash(govulncheck:*), Bash(gh repo list:*)
+allowed-tools: Read, Grep, Glob, Write, Bash(gitleaks:*), Bash(osv-scanner scan:*), Bash(trivy fs:*), Bash(trivy image:*), Bash(trivy config:*), Bash(checkov:*), Bash(bundle-audit:*), Bash(brakeman:*), Bash(gosec:*), Bash(govulncheck:*), Bash(gh repo list:*)
 ---
 
 # Scanner Pipeline — Run the Real Tools, Normalize, Hand Off
@@ -90,7 +90,7 @@ where schemaname = 'public' and rowsecurity = false;
 ## 2. Secrets, done carefully
 
 - **Scan full history, not HEAD.** `gitleaks git` walks every commit; `gitleaks dir` only sees the working tree. A secret deleted last year is still in every clone.
-- **Verified means live.** `trufflehog --only-verified` checks each candidate against the provider's API. A verified hit is **P0**: record it as `confirmed`, and **rotate before you clean history**. Rewriting history first leaves a live key in every fork and clone while you work. Hand rotation to `secrets-audit`.
+- **Verified means live.** `trufflehog --only-verified` checks each candidate against the provider's API. That sends the found key to its provider, which uses it, so trufflehog isn't pre-approved: the run prompts, and the user says yes to the check. A verified hit is **P0**: record it as `confirmed`, and **rotate before you clean history**. Rewriting history first leaves a live key in every fork and clone while you work. Hand rotation to `secrets-audit`.
 - **Never print values.** Use `--redact` for gitleaks; strip `Raw`/`RawV2` from trufflehog JSON. Reports, issues, PR comments, and agent hand-offs name the detector, file, commit, and a hash of the value — never the value. Fingerprint secrets as `secret:<detector>:<sha256(value)[:12]>` so the same key in five files dedupes to one finding.
 - **Unverified hits** are `needs_validation`, not noise: the provider may not support verification, or the key may be for an internal system.
 
