@@ -28,7 +28,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | native-code-review | 1.0.1 | 2026-10-27 |
 | osint-recon | 1.0.2 | 2026-10-26 |
 | owasp-audit | 1.6.0 | 2026-10-27 |
-| patch-sweep | 1.2.0 | 2026-10-30 |
+| patch-sweep | 1.3.0 | 2026-10-30 |
 | pci-audit | 1.1.1 | 2026-10-27 |
 | personal-opsec | 1.1.0 | 2026-10-30 |
 | privacy-engineering | 1.1.0 | 2026-10-27 |
@@ -48,6 +48,32 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.64.0 (2026-10-30)
+
+patch-sweep adds a Linux hosts and kernel CVE track (#220). patch-sweep 1.3.0.
+
+**Added**
+- **Linux hosts and kernel CVEs** (`patch-sweep/references/linux-hosts.md`) for VPSes, EC2, bare metal, nodes and relays, self-hosted runners and Kubernetes nodes:
+  - **Inventory:** host listing from AWS, DigitalOcean, Hetzner and GCP, then asking about the rest. Each host row records the running and installed kernel.
+  - **Affected test:** read the running kernel package against the **distro tracker** (Debian, Ubuntu, Red Hat, Amazon Linux, SUSE, OSV), never `uname -r` against upstream version numbers, because distros backport fixes under their own versions. A fix that's installed but not yet rebooted into still counts as affected.
+  - **Mitigations:** livepatch, sysctls (and that many are per network namespace), host-firewall rules through the host's own manager, app-level switches. Each needs verify and persist lines and a removal date.
+  - **Patching:** update, reboot in the owner's window, confirm, re-check mitigations. Notes for Kubernetes node pools and Lightning nodes.
+  - A **host board** with its sort order, and prevention items.
+- **Worked example: CVE-2026-98432**, dated 2026-10-30:
+  - the IPv4 TCP use-after-free and its second trigger path;
+  - exploitation (Anthropic's MPTCP exploit; not in KEV; EPSS 0.0045);
+  - CVSS 9.8 versus Red Hat and Amazon's 8.1;
+  - every upstream fixed branch, including 5.10 and 5.15;
+  - status for Debian, Ubuntu, Red Hat, Amazon Linux and SUSE;
+  - exposure checks (`net.mptcp.enabled`, `ss -Mltnp`, `tcp_migrate_req`) and five mitigations.
+- **Pre-approved, read-only:** `aws ec2 describe-instances`, `doctl compute droplet list`, `hcloud server list`, `gcloud compute instances list`.
+
+**Departures from the issue draft**
+- The IP-options nftables rule is labelled as our reasoning from the fix, not a vendor mitigation. No vendor publishes it, and Red Hat says no mitigation meets its criteria.
+- The draft said running programs see errors after MPTCP is turned off. No source says that, so it was dropped.
+- Added the request-socket migration path from the fix description.
+- Amazon Linux 2's extra kernels and part of the SUSE product line are still pending, not shipped.
 
 ### 1.63.0 (2026-10-30)
 
