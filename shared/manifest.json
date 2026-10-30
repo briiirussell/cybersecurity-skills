@@ -172,7 +172,8 @@
     ],
     "enrich-advisories.mjs": [
       "dependency-audit",
-      "patch-sweep"
+      "patch-sweep",
+      "container-audit"
     ]
   }
 }
