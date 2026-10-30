@@ -17,7 +17,8 @@ Cross-references: `prompt-injection` for the same hidden-instruction and tool-po
 *application* (RAG corpora, system prompts, the MCP servers the app exposes); `secrets-audit` for tokens sitting in MCP
 `env` blocks, agent settings, and session transcripts; `dependency-audit` for the npm / PyPI packages behind MCP servers
 and bundled scripts; `ai-risk-management` for where agent tooling sits in the org's AI inventory; `incident-triage`
-when a malicious item has already run; `personal-opsec` for the operator's own machine and accounts around the agent;
+when a malicious item has already run; `personal-opsec` for the operator's own machine and accounts around the agent
+(C7 checks cached browser versions); `patch-sweep` for the fleet response when a Chrome CVE lands;
 `cicd-security` for agents that run inside CI workflows (claude-code-action and similar).
 
 ## Step 0 — Authorization and scope
@@ -49,8 +50,9 @@ agent loads, at every scope. The per-agent path tables and a one-shot discovery 
 | Copilot | `.github/copilot-instructions.md`, `.github/instructions/*.instructions.md` | `.github/prompts`, `.github/agents`, `.github/chatmodes` | `.vscode/mcp.json`, VS Code user settings |
 
 For each item record: **type**, **agent**, **scope**, **source** (marketplace, git URL, npm/PyPI package, docker image,
-remote URL, hand-written), **pin** (commit SHA, exact version, digest — or "unpinned"), and **what it can run**
-(nothing / pre-approved tools / hooks / a server process). An item with no identifiable source is itself worth a note.
+remote URL, hand-written), **pin** (commit SHA, exact version, digest — or "unpinned"), **what it can run**
+(nothing / pre-approved tools / hooks / a server process), and **what runtime it launches** (`chromium <version>`,
+`system Chrome`, `node`, …; browser servers and CLIs are listed in [references/browser-runtimes.md](references/browser-runtimes.md)). An item with no identifiable source is itself worth a note.
 
 ## Step 2 — Content checks
 
@@ -107,6 +109,7 @@ rg -n '"(Bash|Bash\(\*\)|WebFetch|Read\(~?/\*\*\)|mcp__[^"]*)"' $S
 # BH4: settings keys that run a command on their own, and env that reroutes or injects
 rg -n '"(apiKeyHelper|awsAuthRefresh|awsCredentialExport|otelHeadersHelper|statusLine|fileSuggestion)"' $S
 rg -n '"(ANTHROPIC_BASE_URL|ANTHROPIC_API_URL|HTTPS?_PROXY|NODE_OPTIONS|LD_PRELOAD|DYLD_INSERT_LIBRARIES|GIT_SSH_COMMAND|CLAUDE_CODE_SHELL_PREFIX)"' $S
+rg -n '"(PLAYWRIGHT_BROWSERS_PATH|PUPPETEER_EXECUTABLE_PATH|AGENT_BROWSER_EXECUTABLE_PATH)"' $S   # which browser binary runs (RT1)
 ```
 
 What to weigh:
@@ -121,6 +124,7 @@ What to weigh:
 | `apiKeyHelper`, `statusLine`, `awsAuthRefresh`, … | Shell commands that run on their own schedule; `disableAllHooks` doesn't cover every one of them — read each |
 | `env.ANTHROPIC_BASE_URL` / proxy vars | Route every prompt and file the agent reads through someone else's host |
 | `NODE_OPTIONS=--require`, `LD_PRELOAD`, `GIT_SSH_COMMAND` | Code injection into processes the agent spawns |
+| `PLAYWRIGHT_BROWSERS_PATH`, `PUPPETEER_EXECUTABLE_PATH`, `--executablePath` | Pick which browser binary runs. Check its version under RT1; a target in the repo or `/tmp` is its own finding |
 | `enableAllProjectMcpServers: true` | Auto-approves whatever `.mcp.json` a repo ships |
 
 Equivalents elsewhere: Codex `approval_policy = "never"` with `sandbox_mode = "danger-full-access"`
@@ -150,6 +154,17 @@ Unpinned package runners are a confirmed finding (condition `third_party_depende
 reach. Remote `url` servers can't be pinned at all — the vendor can change tools any time; record that and lean on
 the diff process below. Secrets in `env` / `headers` blocks go to `secrets-audit`; config should hold `${VAR}`
 references only.
+
+### Bundled browser runtimes (RT1)
+
+Browser servers and CLIs (Playwright MCP, Puppeteer servers, agent-browser) launch their own Chromium, which never
+updates itself and runs every page the agent visits. Find the version each one starts and compare it with Chrome for
+Testing stable. Below a known-exploited or sandbox-escape fix is `confirmed`: High when it browses untrusted URLs from
+an app that holds Accessibility, Medium for untrusted URLs alone, Low for localhost only. More than 2 majors behind
+with no named CVE is `needs_validation`. A pinned browser server also needs an update budget: once its Chromium is
+more than one major behind, bumping the pin is a security fix. Recognizers, the grep, the ladder and the RP1
+reconciliation are in [references/browser-runtimes.md](references/browser-runtimes.md); the per-machine version check
+is `personal-opsec` C7.
 
 ### Tool definitions (TP1–TP4, LP1–LP4)
 
@@ -253,9 +268,10 @@ Write the machine-readable findings first, validate them, then render the markdo
 ## Date: [date] — SkillSpector: [version, --no-llm | not run]
 
 ### Inventory
-| # | Item | Type | Agent | Scope | Source | Pin | Runs | Verdict |
-|---|------|------|-------|-------|--------|-----|------|---------|
-| 1 | .claude/skills/pdf-helper | skill | Claude Code | project | github.com/x/y | unpinned (main) | Bash (unscoped) | DO-NOT-INSTALL |
+| # | Item | Type | Agent | Scope | Source | Pin | Runs | Runtime | Verdict |
+|---|------|------|-------|-------|--------|-----|------|---------|---------|
+| 1 | .claude/skills/pdf-helper | skill | Claude Code | project | github.com/x/y | unpinned (main) | Bash (unscoped) | — | DO-NOT-INSTALL |
+| 2 | playwright (MCP) | MCP server | Claude Code | user | npm @playwright/mcp | 0.0.41 (pinned 2026-06-02) | server process | chromium 149.0.7827.55 ⚠️ | CAUTION |
 
 ### Findings
 #### [SEVERITY] [RULE-ID] [Title]
@@ -305,6 +321,7 @@ Write the machine-readable findings first, validate them, then render the markdo
 
 This skill links to supporting files under `references/`. They are not inlined in this adapter; open them on GitHub (or in `skills/agent-supply-chain-audit/references/` if you have the repo checked out):
 
+- [references/browser-runtimes.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/agent-supply-chain-audit/references/browser-runtimes.md)
 - [references/content-checks.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/agent-supply-chain-audit/references/content-checks.md)
 - [references/findings-format.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/agent-supply-chain-audit/references/findings-format.md)
 - [references/findings.schema.json](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/agent-supply-chain-audit/references/findings.schema.json)

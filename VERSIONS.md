@@ -4,7 +4,7 @@ Current versions of all skills. Agents can compare against local versions to che
 
 | Skill | Version | Last Updated |
 |-------|---------|--------------|
-| agent-supply-chain-audit | 1.0.2 | 2026-10-27 |
+| agent-supply-chain-audit | 1.1.0 | 2026-10-30 |
 | ai-risk-management | 1.1.2 | 2026-10-26 |
 | api-audit | 1.1.7 | 2026-10-27 |
 | breach-patterns | 1.0.4 | 2026-10-26 |
@@ -48,6 +48,19 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.62.0 (2026-10-30)
+
+agent-supply-chain-audit checks the browser each extension launches (#218). agent-supply-chain-audit 1.1.0.
+
+**Added**
+- **RT1, bundled browser is behind** (`references/browser-runtimes.md`):
+  - A recognizer table for extensions that bring Chromium: Playwright MCP, Puppeteer servers, agent-browser, `chrome-devtools-mcp`'s executable-path overrides, skills that tell users to install a browser, and computer-use servers that hold Accessibility themselves.
+  - A grep that finds them.
+  - The severity ladder. Below a known-exploited or sandbox-escape fix: High with untrusted browsing from an app holding Accessibility, Medium with untrusted URLs alone, Low for localhost only. More than 2 majors behind with no named CVE: `needs_validation`. Remote browser services are out of scope.
+- **RP1 and RT1 together.** A pinned browser server needs an update budget. Once its Chromium is more than one major behind stable, bumping the pin is a security fix, so the inventory records the pin date.
+- **BH4:** `PLAYWRIGHT_BROWSERS_PATH`, `PUPPETEER_EXECUTABLE_PATH`, `AGENT_BROWSER_EXECUTABLE_PATH` and `--executablePath` choose which binary runs. A target in the repo or `/tmp` is its own finding.
+- The inventory gains a **Runtime** column, and there are cross-references to `personal-opsec` C7 and `patch-sweep`.
 
 ### 1.61.0 (2026-10-30)
 
