@@ -105,6 +105,8 @@ Rules for this repo:
   - a prefix that also matches a known destructive command. `Bash(heroku releases:*)` also matches `heroku releases:rollback`, so use `Bash(heroku releases -a:*)`.
   - a wildcard on a bare multi-command CLI (`git:*`, `vercel:*`, `aws:*`)
   - a wildcard on a tool that rewrites source files with a flag (`semgrep:*` allows `semgrep --autofix`)
+  - a wildcard on a command where a trailing flag turns a read into a write (`gh api`, `exiftool`, `floss`)
+  - a secret scanner that can check found keys with their providers (`trufflehog`, `betterleaks`): any wildcard, and an exact rule that verifies (trufflehog without `--no-verification`; betterleaks with `-v`, `-a`, `validate` or `analyze`). Checking a key uses it, so it always prompts
 
   When a skill starts using a new CLI, add its destructive subcommands to `DESTRUCTIVE_COMMANDS` in that file. Report-file flags (`--output`, `--report-path`) aren't checked; nearly every scanner has one, and they write a new report rather than change the project.
 - Add `Write` only if the skill's main output is a file it has to write.
@@ -136,7 +138,7 @@ If you relied on the old grants to run commands without prompts, you'll now see 
 | `prompt-injection` | `Read, Grep, Glob, Bash, Write, WebSearch` | `Read, Grep, Glob, WebSearch` | Runs no commands; it handles injection payloads, so it gets the least |
 | `recon` | `Bash, Read, Write, WebSearch, WebFetch` | `Read, WebSearch, WebFetch, Bash(whois:*), Bash(dig:*)` | Passive lookups only; `nmap`, `curl` and directory brute-forcing prompt so each target is confirmed |
 | `red-team-engagement` | `Read, Write, Bash, Grep, Glob, WebSearch` | `Read, Grep, Glob, WebSearch` | Planning skill; runs no commands |
-| `secrets-audit` | `Bash, Read, Write, Grep, Glob, WebSearch` | `Read, Grep, Glob, WebSearch, Bash(trufflehog git:*)` | grep and `git log` are already prompt-free; history rewrites and live-key checks prompt |
+| `secrets-audit` | `Bash, Read, Write, Grep, Glob, WebSearch` | `Read, Grep, Glob, WebSearch` | grep and `git log` are already prompt-free; history rewrites and live-key checks prompt. `trufflehog git:*` removed in 1.1.5: trufflehog verifies found keys with their providers by default, which uses them |
 | `security-comms` | `Read, Write, WebSearch` | `Read, WebSearch` | Output is text in chat |
 | `siem-detection` | `Read, Write, Bash, Grep, Glob, WebSearch` | `Read, Write, Grep, Glob, WebSearch` | Keeps `Write`: main output is detection-as-code rule files; runs no shell commands |
 | `soc-operations` | `Read, Write, Grep, Glob, WebSearch` | `Read, Grep, Glob, WebSearch` | Output is text in chat |
@@ -156,7 +158,7 @@ These shipped with scoped grants from the start (no "before"):
 | `log-watch` | `Read, Grep, Glob, Write` | `Write` because the main output is the `log-watch.md` plan (plus an optional scaffolded job); log/API queries prompt |
 | `patch-sweep` | `Read, Grep, Glob, WebFetch` + `gh repo list/view`, `git log/ls-remote`, `vercel project ls/inspect`, `vercel ls/inspect/domains ls`, `heroku apps/releases/stack` | Read-only inventory of the user's repos and PaaS projects; deploys, upgrades and PRs prompt. `git branch:*` removed in 1.19.2 (it also matched `git branch -D`). `WebFetch` reads the public KEV and EPSS feeds once per sweep |
 | `personal-opsec` | `Read, Grep, Glob` + read-only OS status checks (`fdesetup status`, `socketfilterfw --getglobalstate/--getstealthmode`, `scutil --dns`, `spctl --status`, `csrutil status`, `sw_vers`, `manage-bde -status`, `lsblk`, `resolvectl status`), `which`, `ls -l`, `gh auth status`, `whois` | Checks the user's own machine without changing it; anything needing `sudo` or changing a setting prompts |
-| `scanner-pipeline` | `Read, Grep, Glob, Write` + `gitleaks`, `trufflehog`, `checkov`, `bundle-audit`, `brakeman`, `gosec`, `govulncheck` (`:*`), `osv-scanner scan:*`, `trivy fs/image/config:*`, `gh repo list:*` | `Write` because the main output is the workflow + config files; scanners run locally against the user's own repo. 1.19.2 narrowed `osv-scanner` to `scan` (not `fix`) and `trivy` to its scan subcommands, and dropped `semgrep` and `pip-audit` (`--autofix` / `--fix` rewrite files and a prefix rule can't exclude a trailing flag), so those prompt |
+| `scanner-pipeline` | `Read, Grep, Glob, Write` + `gitleaks`, `checkov`, `bundle-audit`, `brakeman`, `gosec`, `govulncheck` (`:*`), `osv-scanner scan:*`, `trivy fs/image/config:*`, `gh repo list:*` | `Write` because the main output is the workflow + config files; scanners run locally against the user's own repo. 1.19.2 narrowed `osv-scanner` to `scan` (not `fix`) and `trivy` to its scan subcommands, and dropped `semgrep` and `pip-audit` (`--autofix` / `--fix` rewrite files and a prefix rule can't exclude a trailing flag), so those prompt. 1.0.5 dropped `trufflehog:*`: its verification sends found keys to their providers |
 
 ## Cursor and Codex adapters carry no tool restrictions
 

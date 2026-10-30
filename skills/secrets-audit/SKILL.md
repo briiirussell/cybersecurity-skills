@@ -1,7 +1,7 @@
 ---
 name: secrets-audit
 description: "Find leaked secrets in source code, Git history, build artifacts, and infrastructure — and audit the secrets-management posture preventing future leaks. Use when the user mentions 'secrets audit,' 'secret scanning,' 'leaked credentials,' 'API key in code,' 'gitleaks,' 'trufflehog,' 'git history scan,' 'secrets management,' 'vault audit,' 'rotation policy,' 'AWS Secrets Manager,' 'HashiCorp Vault,' 'Doppler,' '1Password Secrets Automation,' 'sealed-secrets,' 'External Secrets Operator,' 'secrets in MCP config,' 'API key in Claude transcript,' 'is this key public,' or needs to find or prevent credential exposure."
-allowed-tools: Read, Grep, Glob, WebSearch, Bash(trufflehog git:*)
+allowed-tools: Read, Grep, Glob, WebSearch
 ---
 
 # Secrets Audit — Credential Exposure and Secrets-Management Review
@@ -14,7 +14,7 @@ Cross-references: `dependency-audit` (CI-related secrets risk in build-time expo
 
 ## Authorization
 
-Scan only repositories, CI systems and machines the user owns or is authorized to audit. Never print a full secret: give the type, location, and prefix plus last four. Checking that a key is live ("Verify it's live" below) uses the key, so ask first, use the provider's read-only identity call, and never use a found credential to read data. Rotation and history rewrites are the owner's call and always prompt.
+Scan only repositories, CI systems and machines the user owns or is authorized to audit. Never print a full secret: give the type, location, and prefix plus last four. Checking that a key is live ("Verify it's live" below) uses the key, so ask first. That includes scanners that verify: trufflehog checks every candidate with its provider unless you pass `--no-verification`, so no secret scanner is pre-approved. Ask, use the provider's read-only identity call, and never use a found credential to read data. Rotation and history rewrites are the owner's call and always prompt.
 
 ## Part 1 — Find leaked secrets
 
@@ -91,7 +91,7 @@ data the enabled API returns); otherwise it's a hardening note.
 | Tool | Use |
 |---|---|
 | `gitleaks detect` | Fast, low FP, run as pre-commit and in CI; supports custom rules |
-| `trufflehog git file://.` | Verifies findings against the real API (high confidence) |
+| `trufflehog git file://. --no-verification` | Detection only. Without the flag it checks each candidate with its provider (high confidence, but it uses the key): ask first |
 | `detect-secrets scan` | Yelp's tool; good baseline file workflow |
 | GitHub Secret Scanning | Free for public repos; covers most providers automatically; pushes get blocked at push time when enabled with push protection |
 | GitLab Secret Detection | Similar, built-in to CI |
@@ -109,7 +109,7 @@ git log -p -S "sk_live_" --all
 git log -p --all | grep -E "^-.*sk_live_"
 
 # Trufflehog historical scan
-trufflehog git file://. --since-commit=<first-commit>
+trufflehog git file://. --since-commit=<first-commit> --no-verification
 
 # Git history rewrite — destructive, coordinate first
 git filter-repo --invert-paths --path config/secrets.yml

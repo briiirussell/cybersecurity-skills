@@ -35,8 +35,8 @@ Current versions of all skills. Agents can compare against local versions to che
 | prompt-injection | 1.2.1 | 2026-10-27 |
 | recon | 1.0.1 | 2026-10-26 |
 | red-team-engagement | 1.0.1 | 2026-10-26 |
-| scanner-pipeline | 1.0.4 | 2026-10-27 |
-| secrets-audit | 1.1.4 | 2026-10-27 |
+| scanner-pipeline | 1.0.5 | 2026-10-30 |
+| secrets-audit | 1.1.5 | 2026-10-30 |
 | security-comms | 1.0.3 | 2026-10-26 |
 | security-start | 1.0.0 | 2026-10-27 |
 | siem-detection | 1.0.5 | 2026-10-27 |
@@ -48,6 +48,17 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.57.0 (2026-10-30)
+
+Lint: secret scanners that check found keys must prompt. secrets-audit 1.1.5, scanner-pipeline 1.0.5. Groundwork for #214 and #216.
+
+**Added**
+- **Lint: credential checkers.** `grant-check.mjs` now fails any wildcard grant on `trufflehog` or `betterleaks`, and any exact rule that verifies (trufflehog without `--no-verification`; betterleaks with `-v`, `-a`, `validate` or `analyze`). Checking a found key sends it to the provider, which uses it, and the skills already say to ask first. A self-test covers it.
+
+**Fixed**
+- secrets-audit pre-approved `trufflehog git:*`, and scanner-pipeline pre-approved `trufflehog:*`. trufflehog verifies every candidate by default, so the agent could use a leaked key without asking, against secrets-audit's own Authorization rule. Both grants are gone, so trufflehog prompts.
+- secrets-audit's trufflehog commands now pass `--no-verification` for detection, and the Tooling row says verification needs a yes first.
 
 ### 1.56.0 (2026-10-29)
 
