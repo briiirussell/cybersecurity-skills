@@ -28,7 +28,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | native-code-review | 1.0.1 | 2026-10-27 |
 | osint-recon | 1.0.2 | 2026-10-26 |
 | owasp-audit | 1.6.0 | 2026-10-27 |
-| patch-sweep | 1.1.1 | 2026-10-29 |
+| patch-sweep | 1.2.0 | 2026-10-30 |
 | pci-audit | 1.1.1 | 2026-10-27 |
 | personal-opsec | 1.1.0 | 2026-10-30 |
 | privacy-engineering | 1.1.0 | 2026-10-27 |
@@ -48,6 +48,21 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.63.0 (2026-10-30)
+
+patch-sweep covers the browsers that agents and test suites download (#219). patch-sweep 1.2.0.
+
+**Added**
+- **Browser runtimes in a sweep** (`patch-sweep/references/browser-runtimes.md`), for an advisory set that includes a Chrome or Chromium CVE:
+  - **Inventory** of four asset types:
+    - lockfiles that pin Playwright, Puppeteer or `@sparticuz/chromium`, with how to map each version to its Chromium (`playwright install --dry-run`, Puppeteer's `PUPPETEER_REVISIONS`);
+    - CI images and install steps;
+    - production services that render HTML in a headless browser (`npm ls --omit=dev`);
+    - operator machines, through personal-opsec C7.
+  - **Affected test.** The usual three-part test, mapped to browsers: platform, what the browser loads, and what launched it. A macOS-only CVE doesn't affect Linux CI, but the same Chrome release usually fixes renderer bugs that do. Server-side renderers count as loading untrusted content, and `--no-sandbox` is flagged whatever the version.
+  - **Patch table and board:** Playwright, Puppeteer, `@sparticuz/chromium`, CI images pinned by digest, operator machines (restart sessions after updating). A separate board puts production renderers first.
+  - **Prevention:** grouped dependency bumps, a weekly CI-image Chromium check, operator reminders.
 
 ### 1.62.0 (2026-10-30)
 
