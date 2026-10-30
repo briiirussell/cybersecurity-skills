@@ -76,6 +76,14 @@ rules:
     path: "dependency-audit/SKILL.md"
     message: "*.npmrc*"
     reason: "Tells the auditor to check .npmrc for committed registry tokens; detection guidance"
+  - id: "E1"
+    path: "dependency-audit/references/exploitation-signals.md"
+    message: "*api.osv.dev*"
+    reason: "Public, keyless OSV advisory lookups (issue #207); the batch call sends package names and versions only, and the file says a private repo's internal names need the owner's OK first"
+  - id: "E1"
+    path: "dependency-audit/references/exploitation-signals.md"
+    message: "*api.first.org*"
+    reason: "Public, keyless FIRST EPSS lookup by CVE id (issue #207); sends CVE ids only"
 
   # --- iam-audit -----------------------------------------------------------
   - id: "PE3"

@@ -15,7 +15,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | control-audit | 1.2.0 | 2026-10-27 |
 | crypto-audit | 1.1.2 | 2026-10-27 |
 | csf-mapping | 1.0.3 | 2026-10-27 |
-| dependency-audit | 1.2.4 | 2026-10-27 |
+| dependency-audit | 1.3.0 | 2026-10-29 |
 | disk-forensics | 1.0.2 | 2026-10-27 |
 | finding-triage | 1.3.1 | 2026-10-27 |
 | fuzzing-harness | 1.0.1 | 2026-10-27 |
@@ -48,6 +48,34 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.53.0 (2026-10-29)
+
+dependency-audit ranks advisories by exploitation, and can find them without a scanner (#207, part 2 of 5). dependency-audit 1.3.0.
+
+**Added**
+- **Step 2b: Enrich with Exploitation Signals.** For every advisory, get its CVE id (OSV `aliases` maps a GHSA id), then check CISA KEV (one catalog download per run, matched on `cveID`) and EPSS (one call per 100 CVEs). Record KEV date added, due date and ransomware use, and the EPSS score, percentile and date. Offline, write `not checked`; never infer KEV status from memory. Advisories with no CVE are kept and marked "no CVE".
+- **`references/exploitation-signals.md`.** It has the commands (KEV, EPSS, OSV, and GitHub's advisory API, whose EPSS is under `epss.percentage`) and three worked examples:
+  - React Server Components CVE-2025-55182: KEV-listed, ransomware use Known
+  - Next.js CVE-2025-29927: EPSS 0.992
+  - a lodash medium: EPSS 0.003
+
+  It also has the report column legend, and nine `ext` keys for `findings.json` (`advisory_ids`, `in_kev`, `kev_date_added`, `kev_due_date`, `kev_ransomware_use`, `epss`, `epss_percentile`, `epss_date`, `reachability`), so no schema change is needed. Every endpoint was rechecked on 2026-10-29: KEV catalog 2026.10.29 has 1,764 entries.
+- **No-scanner fallback.** Lockfile `name@version` pairs go to the OSV batch API, then OSV details, then KEV and EPSS. The report header says `Scanner: none (OSV API fallback)`. Because the batch call sends package names to OSV, a private repo with sensitive internal package names needs the owner's OK first.
+- **`WebFetch` pre-approved** for the public feeds, as vuln-research has. The OSV batch POST goes through `curl` and prompts.
+
+**Changed**
+- **Known Vulnerabilities table:** new KEV and EPSS columns.
+- **Prioritized Action Plan:** the order is now explicit:
+  1. KEV-listed and runtime-reachable
+  2. KEV-listed, build- or dev-only
+  3. Critical/High with EPSS above 0.7
+  4. the remaining Critical/High, by EPSS
+  5. Medium
+  6. Low
+  - It ends with a "Signals not checked" line so a partial ordering is visible. The old plan opened with "actively exploited CVEs" without any step that checked.
+- **Trimmed to fit SkillSpector's size limit.** The package-manager traps and the verify-after-fixing checklist are now short pointers to `references/fixing-safely.md`, which already had both in full.
+- **SkillSpector baseline:** two E1 rules for the OSV and EPSS calls, each with a reason. docs/security-scanning.md lists the new grant.
 
 ### 1.52.5 (2026-10-29)
 

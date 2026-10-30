@@ -1,7 +1,7 @@
 ---
 name: dependency-audit
 description: "Audit project dependencies, frameworks, languages, and dev tools for known vulnerabilities, CVEs, and security anti-patterns. Use when the user mentions 'dependency audit,' 'npm audit,' 'CVE,' 'vulnerable packages,' 'supply chain security,' 'outdated dependencies,' 'known vulnerabilities,' 'security advisory,' 'package security,' 'framework vulnerability,' 'is this package safe,' 'pnpm audit,' 'yarn audit,' 'bundle audit,' 'patch this CVE,' 'audit fix broke,' 'lockfile diff,' 'dependency confusion,' 'registry redirection,' 'MCP server pinning,' 'release pipeline,' or needs to check whether their stack, CI, or release pipeline has known security issues."
-allowed-tools: Read, Grep, Glob, WebSearch, Bash(npm audit), Bash(npm audit --json), Bash(npm audit --omit=dev), Bash(npm audit --omit=dev --json), Bash(npm ls:*), Bash(npm view:*), Bash(npm outdated:*), Bash(pnpm audit --prod), Bash(pnpm audit --prod --json), Bash(pnpm why:*), Bash(yarn audit --groups dependencies --json), Bash(yarn npm audit:*), Bash(yarn why:*), Bash(osv-scanner scan:*), Bash(govulncheck:*), Bash(bundle audit:*), Bash(composer audit:*), Bash(dotnet list package:*), Bash(trivy fs:*), Bash(trivy image:*)
+allowed-tools: Read, Grep, Glob, WebSearch, WebFetch, Bash(npm audit), Bash(npm audit --json), Bash(npm audit --omit=dev), Bash(npm audit --omit=dev --json), Bash(npm ls:*), Bash(npm view:*), Bash(npm outdated:*), Bash(pnpm audit --prod), Bash(pnpm audit --prod --json), Bash(pnpm why:*), Bash(yarn audit --groups dependencies --json), Bash(yarn npm audit:*), Bash(yarn why:*), Bash(osv-scanner scan:*), Bash(govulncheck:*), Bash(bundle audit:*), Bash(composer audit:*), Bash(dotnet list package:*), Bash(trivy fs:*), Bash(trivy image:*)
 ---
 
 # Dependency Audit — Framework, Package, and Toolchain Security
@@ -126,18 +126,13 @@ npm audit fix --force           # only after reviewing the dry-run
 3. **Consider swapping the parent provider entirely.**
 4. **If none apply:** document explicitly, track upstream, and note in the audit report rather than silently dropping the finding.
 
-**Package-manager traps that pass install and build but break at runtime** (full detail and commands in [references/fixing-safely.md](references/fixing-safely.md)):
-- **`pnpm audit --fix` writes open-ended `>=` overrides** (`nanoid@<3.3.8: >=3.3.8`) that force major jumps. Rewrite each to a same-major range (`^3.3.8`), or update the package within its range instead.
-- **In-range re-resolves can duplicate singletons.** Two copies of `react`, `react-dom`, `prosemirror-*`, `@tiptap/pm`, `yjs`, `graphql`, `styled-components`, or `@emotion/*` pass the build and throw at runtime. Check with `npm ls <pkg> --all` / `pnpm why <pkg>` / `yarn why <pkg>`.
-- **Exact pins in an intermediate package block the fix.** Don't report "no fix available". Name the pinning parent (`npm ls <pkg>` shows the chain) and recommend a scoped override (`"overrides": {"<parent>": {"<pkg>": "^x.y.z"}}`) or an upstream issue.
-- **Fixes can raise the Node `engines` floor.** Compare new lockfile entries' `engines.node` against `.nvmrc` / `.node-version` / `engines`. yarn v1 hard-fails on a mismatch.
+**Package-manager traps that pass the build but break at runtime** (open-ended `>=` overrides from `pnpm audit --fix`, duplicated singletons, exact pins in a parent blocking the fix, a raised `engines` floor): [references/fixing-safely.md](references/fixing-safely.md).
 
-**Verify after fixing** (checklist with commands in [references/fixing-safely.md](references/fixing-safely.md)):
-- [ ] Advisory gone on re-audit, not suppressed; no unintended downgrades or major jumps in the lockfile diff
-- [ ] No duplicate singleton packages
-- [ ] Engines floor still met by every pinned runtime
-- [ ] Clean frozen install: `npm ci`, `pnpm install --frozen-lockfile`, `yarn install --frozen-lockfile` (v1) / `--immutable` (Berry), `BUNDLE_FROZEN=true bundle install`
-- [ ] Full test suite, then a preview smoke test of the features those packages power (editor, image upload, auth), watching the browser console and server logs
+**Verify after fixing** ([checklist with commands](references/fixing-safely.md)): advisory gone on re-audit, not suppressed; no downgrades or major jumps in the lockfile diff; no duplicate singletons; engines floor met; clean frozen install; full tests, then a preview smoke test of the features those packages power.
+
+### Step 2b: Enrich with Exploitation Signals
+
+For every advisory, check **CISA KEV** (exploited now) and **EPSS** (likely in 30 days), via its CVE id (OSV `aliases` maps a GHSA id). They set the order of work, never severity above impact. Offline: `not checked`; never infer KEV from memory. No scanner? Use the OSV batch API. Commands, fallback, `ext` keys: [references/exploitation-signals.md](references/exploitation-signals.md).
 
 ### Step 3: Research Framework-Specific Known Issues
 
@@ -347,8 +342,8 @@ Rejected records go in the report's "Rejected (do not re-raise)" table, so the n
 Latest comes from `npm view <package> version` or `npm outdated --json` (both need network). In an offline run, write "not checked" rather than guessing.
 
 ### Known Vulnerabilities (CVEs)
-| Package | Installed | Vuln | Severity | Where reachable | CVE | Fix Version | Disposition |
-|---------|-----------|------|----------|-----------------|-----|-------------|-------------|
+| Package | Installed | Vuln | Severity | KEV | EPSS | Where reachable | CVE | Fix Version | Disposition |
+|---------|-----------|------|----------|-----|------|-----------------|-----|-------------|-------------|
 
 Where reachable values: `runtime` / `build-only` / `dev-only`. Confirm with `npm ls --omit=dev <package>` or inspect the deployment artifact (Vercel function bundle, Docker layer). Build- and dev-only vulnerabilities should not block a release on their own; runtime-reachable ones should.
 
@@ -388,10 +383,13 @@ For CI/release trust handoffs (Step 5b), each row names the lower-trust actor, t
 |-------------|---------|--------------|----------|
 
 ### Prioritized Action Plan
-1. [Critical — actively exploited CVEs, RCE vulnerabilities]
-2. [High — known CVEs with public exploits, supply chain risks]
-3. [Medium — framework misconfigurations, outdated dependencies]
-4. [Low — maintenance risks, best practice improvements]
+1. KEV-listed, runtime-reachable: patch or mitigate now (CISA's due date is a ceiling, not the plan)
+2. KEV-listed, build- or dev-only: patch this cycle; check CI runners and dev machines
+3. Critical/High with EPSS above 0.7: patch this cycle
+4. Remaining Critical/High (incl. supply chain risks), ordered by EPSS
+5. Medium: framework misconfigurations, outdated dependencies
+6. Low: maintenance risks, best-practice improvements
+- Signals not checked: [advisories with no KEV/EPSS lookup, so the order above is partial]
 ```
 
 ## Boundaries
@@ -409,6 +407,7 @@ For CI/release trust handoffs (Step 5b), each row names the lower-trust actor, t
 - OWASP Dependency-Check
 - National Vulnerability Database (NVD)
 - GitHub Advisory Database
+- CISA KEV, FIRST EPSS, OSV API: [references/exploitation-signals.md](references/exploitation-signals.md)
 - Snyk Vulnerability Database
 - npm audit / pip-audit / bundler-audit documentation
 - SLSA (Supply-chain Levels for Software Artifacts) framework
