@@ -105,6 +105,7 @@ Audit only images, registries and clusters the user owns or is authorized to rev
 - Runtime detection — Falco / Tracee / Tetragon catches "shell spawned in a pod that has never opened a shell" patterns
 - Audit logs enabled — kube-apiserver audit log captures `exec`, `attach`, `port-forward` events for incident response
 - `kubectl exec` access tracked — not free for any cluster-admin to silently shell into prod
+- **Kernel CVEs are fixed on the host, not in the image.** Every container shares the node's kernel, so rebuilding images doesn't help; hand the host to `patch-sweep` (Linux hosts track) and record the image as "not the fix location". When the bug needs a socket feature, check it per workload: `net.mptcp.enabled` is per network namespace and every new one starts at `1`, so turning it off on the host doesn't reach containers. Per-pod settings, `hostNetwork`, and the Go binary check (Go ≥ 1.24 listens with MPTCP) are in [references/runtime-exposure.md](references/runtime-exposure.md)
 
 ## Useful one-liners
 
@@ -282,6 +283,7 @@ This skill links to supporting files under `references/`. They are not inlined i
 - [references/enrich-advisories.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/container-audit/references/enrich-advisories.mjs)
 - [references/findings-format.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/container-audit/references/findings-format.md)
 - [references/findings.schema.json](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/container-audit/references/findings.schema.json)
+- [references/runtime-exposure.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/container-audit/references/runtime-exposure.md)
 - [references/severity-calibration.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/container-audit/references/severity-calibration.md)
 - [references/to-sarif.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/container-audit/references/to-sarif.mjs)
 - [references/validate-findings.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/container-audit/references/validate-findings.mjs)
