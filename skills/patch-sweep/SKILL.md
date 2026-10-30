@@ -1,7 +1,7 @@
 ---
 name: patch-sweep
 description: "Respond to a CVE wave across a whole portfolio of apps at once: inventory every repo and the platform project and domain it actually serves, find the real production branch, spot stale manual deploys, decide which apps are affected, mitigate, patch, ship, and confirm production. Use when the user mentions 'patch sweep,' 'patch all my apps,' 'fleet-wide CVE,' 'are any of my apps affected,' 'Next.js RCE across all projects,' 'Rails CVE on all our Heroku apps,' 'patch every repo,' 'CVE wave,' 'security release across the fleet,' 'which of our sites run the vulnerable version,' 'mass dependency update,' or has more than a handful of apps to patch against the same advisories."
-allowed-tools: Read, Grep, Glob, Bash(gh repo list:*), Bash(gh repo view:*), Bash(git log:*), Bash(git ls-remote:*), Bash(vercel project ls:*), Bash(vercel project inspect:*), Bash(vercel ls:*), Bash(vercel inspect:*), Bash(vercel domains ls:*), Bash(heroku apps --all --json), Bash(heroku apps:info:*), Bash(heroku domains -a:*), Bash(heroku releases -a:*), Bash(heroku releases:info:*), Bash(heroku pipelines:info:*)
+allowed-tools: Read, Grep, Glob, WebFetch, Bash(gh repo list:*), Bash(gh repo view:*), Bash(git log:*), Bash(git ls-remote:*), Bash(vercel project ls:*), Bash(vercel project inspect:*), Bash(vercel ls:*), Bash(vercel inspect:*), Bash(vercel domains ls:*), Bash(heroku apps --all --json), Bash(heroku apps:info:*), Bash(heroku domains -a:*), Bash(heroku releases -a:*), Bash(heroku releases:info:*), Bash(heroku pipelines:info:*)
 ---
 
 # Patch Sweep — Fleet-Wide CVE Response
@@ -132,6 +132,8 @@ An app is affected only if all three line up: **vulnerable runtime or dependency
 
 Mark each row `affected` / `not affected (reason)` / `unknown (what's needed)`. Unknown rows don't get skipped; they get an owner action.
 
+**Exploitation signals, once for the whole advisory set.** When the affected rows are known, look up each advisory in CISA KEV (being exploited now) and EPSS (likely in the next 30 days) once, not once per repo. The commands are in `dependency-audit` Step 2b, or run `node references/enrich-advisories.mjs findings.json -o findings.json` on the sweep's findings. Put the result in the board header and the `kev` column. Offline, write `not checked`; never infer KEV status from memory. When one person is patching 30 repos, the KEV-listed rows go first.
+
 ## Step 5 — Mitigate before patching
 
 Patching 40 apps takes days. A platform or env-level compensating control can take minutes. Look for one per advisory and apply it first, on apps the user controls:
@@ -140,6 +142,8 @@ Patching 40 apps takes days. A platform or env-level compensating control can ta
 - **WAF / firewall rule** at the platform or CDN that blocks the exploit's request shape (Vercel Firewall custom rule, Cloudflare WAF managed rule for the CVE).
 - **Turn off the vulnerable feature** behind a flag until the patch ships.
 - **Deployment protection** on legacy or preview URLs that would otherwise serve vulnerable code publicly.
+
+**A KEV-listed advisory with a slow patch path needs a mitigation entry before you move on.** A slow path is a major upgrade, a client approval, or a frozen release branch. The entry is either a control you applied or a written reason none exists. Don't leave it optional: that advisory is being exploited while the patch waits.
 
 Record mitigations with disposition `Mitigated (platform/config)` on the board. A mitigation doesn't close the row — the patch still ships — but it changes how urgent the remaining rows are.
 
@@ -190,16 +194,18 @@ Run it over every non-fork, non-archived repo from Step 1. In one real account a
 # Patch Sweep — [advisory set] — [date]
 
 **Scope:** [GitHub owners/orgs] · [platform teams/accounts] · **Owner-only repos (PR, no merge):** [list]
-**Advisories:** [CVE / GHSA ids, fixed versions]
+**Advisories:** [CVE / GHSA ids, fixed versions, KEV yes/no + date added, EPSS]
 **Mitigations applied:** [e.g., VIPS_BLOCK_UNTRUSTED=1 on 5 Heroku apps, 2026-10-22]
 
 ## Status board
 
-| repo | platform/project | domain | prod branch | runtime/framework old→new | crit/high before→after | merged? | prod 200? | leftover (needs major) | owner action |
-|---|---|---|---|---|---|---|---|---|---|
-| acme/site | vercel/acme-site | acme.com | development | next 15.5.10→15.5.24 | 2/3→0/0 | yes | yes | — | — |
-| client/app | vercel/client-app | client.com | cf-development | next 14.2.3→14.2.3 | 1/2→1/0 | PR #41 | — | next 14→15.5.24 | client to review PR, schedule Next 15 upgrade |
-| acme/old-site | vercel/acme-old | acme-old.vercel.app | main | next 13.4→— | 3/4→3/4 | no | — | next 13→16 | legacy project, no custom domain: owner to delete or protect |
+| repo | platform/project | domain | prod branch | runtime/framework old→new | kev | crit/high before→after | merged? | prod 200? | leftover (needs major) | owner action |
+|---|---|---|---|---|---|---|---|---|---|---|
+| client/app | vercel/client-app | client.com | cf-development | next 14.2.3→14.2.3 | yes | 1/2→1/0 | PR #41 | — | next 14→15.5.24 | client to review PR, schedule Next 15 upgrade; WAF rule applied meanwhile |
+| acme/old-site | vercel/acme-old | acme-old.vercel.app | main | next 13.4→— | yes | 3/4→3/4 | no | — | next 13→16 | legacy project, no custom domain: deployment protection on, owner to delete |
+| acme/site | vercel/acme-site | acme.com | development | next 15.5.10→15.5.24 | — | 2/3→0/0 | yes | yes | — | — |
+
+Sort rows by `kev` first, then crit/high, then EPSS. A KEV-listed medium goes above an unexploited critical.
 
 ## Not shipped, and why
 - [repo] — [manual prod deploy by X, 96 days old; owner decision needed] / [git deploys failing: Ignored Build Step + .vercelignore] / [client PR awaiting review] / [build queue] / [not affected: static site]

@@ -11,11 +11,11 @@ Current versions of all skills. Agents can compare against local versions to che
 | business-logic-testing | 1.0.2 | 2026-10-26 |
 | cicd-security | 1.0.0 | 2026-10-27 |
 | cloud-audit | 1.2.0 | 2026-10-26 |
-| container-audit | 1.1.0 | 2026-10-26 |
+| container-audit | 1.2.0 | 2026-10-29 |
 | control-audit | 1.2.0 | 2026-10-27 |
 | crypto-audit | 1.1.2 | 2026-10-27 |
 | csf-mapping | 1.0.3 | 2026-10-27 |
-| dependency-audit | 1.2.4 | 2026-10-27 |
+| dependency-audit | 1.3.2 | 2026-10-29 |
 | disk-forensics | 1.0.2 | 2026-10-27 |
 | finding-triage | 1.3.1 | 2026-10-27 |
 | fuzzing-harness | 1.0.1 | 2026-10-27 |
@@ -28,7 +28,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | native-code-review | 1.0.1 | 2026-10-27 |
 | osint-recon | 1.0.2 | 2026-10-26 |
 | owasp-audit | 1.6.0 | 2026-10-27 |
-| patch-sweep | 1.0.2 | 2026-10-26 |
+| patch-sweep | 1.1.1 | 2026-10-29 |
 | pci-audit | 1.1.1 | 2026-10-27 |
 | personal-opsec | 1.0.1 | 2026-10-26 |
 | privacy-engineering | 1.1.0 | 2026-10-27 |
@@ -48,6 +48,100 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.56.0 (2026-10-29)
+
+container-audit checks the distro's own answer for OS-package CVEs (#207, part 5 of 5). container-audit 1.2.0, dependency-audit 1.3.2. This finishes #207.
+
+**Added**
+- **Vendor severity** (`container-audit/references/vendor-severity.md`). Trivy rates OS packages mostly by NVD. RHEL/UBI, Debian and Ubuntu backport fixes without changing the upstream version, so the skill now checks the vendor's state for the image's release first:
+  - **Red Hat:** the Security Data API (`threat_severity`, per-product `fix_state`, and RHSA fixed versions).
+  - **Debian and Ubuntu:** OSV's distro ecosystems, one query per package and version. Debian's tracker page gives per-CVE notes. Its full JSON export is 87 MB, so the skill doesn't use it for lookups.
+- **Verdict mapping:**
+  - "Not affected", or a backported fix already installed, is `rejected` with the vendor statement saved as evidence. That's the common trivy false positive on UBI images.
+  - "Affected" or "Fix deferred" leaves the finding to the reachability rule.
+  - "Will not fix" leaves it standing; the plan is a new base image or the owner's `Accepted Risk`. The vendor's call is input, not the decision.
+- New `ext` keys: `vendor`, `vendor_severity`, `vendor_fix_state`, `vendor_advisory`. container-audit also gets `enrich-advisories.mjs`, so OS-package CVEs get KEV and EPSS too.
+- `WebFetch` pre-approved for the Red Hat API; OSV queries are POSTs and prompt. docs/security-scanning.md and the SkillSpector baseline are updated.
+
+**Fixed**
+- dependency-audit's exploitation-signals reference linked to a 404 EPSS docs URL; it now points at `https://api.first.org/epss/`.
+
+### 1.55.0 (2026-10-29)
+
+A shared script that adds KEV and EPSS to findings, and SARIF that shows them (#207, part 4 of 5). dependency-audit 1.3.1, patch-sweep 1.1.1.
+
+**Added**
+- **`shared/enrich-advisories.mjs`** (copied into dependency-audit and patch-sweep). Usage: `node references/enrich-advisories.mjs findings.json -o findings.json`. For each record with an advisory id (the fingerprint's second segment, or `ext.advisory_ids`) it:
+  - resolves CVE ids through OSV aliases
+  - downloads the CISA KEV catalog once
+  - batches EPSS 100 CVEs per call
+  - writes the `ext` keys from dependency-audit's exploitation-signals reference
+
+  It doesn't need any packages, and uses Node's built-in `fetch`. It sends advisory and CVE ids only. It never changes a verdict, severity or disposition, and it re-validates before writing. A failed lookup or `--offline` writes `not checked` and exits 1, so the gaps get reported. `--kev` takes a downloaded catalog.
+  - Checked live against the example run's 27 records: 26 advisories enriched in about 5 seconds, and the output validates.
+  - Tests use canned responses and need no network.
+- **SARIF:** `to-sarif.mjs` tags KEV-listed results `kev` (on the rule and the result) and copies a numeric `ext.epss` to `properties.epss`, so code scanning shows both.
+
+**Changed**
+- dependency-audit's `references/exploitation-signals.md` leads with the script; the manual commands stay for checking one advisory by hand. patch-sweep Step 4 points to it, and patch-sweep now gets `validate-findings.mjs`, which the script imports.
+- SkillSpector baseline: shared-copy rules for the script's OSV and EPSS calls, and the scanner's parse limit on it, each with a reason.
+
+### 1.54.0 (2026-10-29)
+
+patch-sweep orders the fleet by exploitation (#207, part 3 of 5). patch-sweep 1.1.0.
+
+**Added**
+- **Step 4: exploitation signals, once for the whole advisory set.** When the affected rows are known, look up each advisory in CISA KEV and EPSS once, not per repo, using dependency-audit Step 2b's commands. Offline: `not checked`, never from memory.
+- **Status board `kev` column, and a sort order:** KEV first, then crit/high, then EPSS. A KEV-listed medium goes above an unexploited critical. The example board is reordered to match.
+- **Step 5: a KEV-listed advisory with a slow patch path needs a mitigation entry before moving on.** A slow path is a major upgrade, a client approval, or a frozen branch. The entry is a control you applied, or a written reason none exists.
+- `WebFetch` pre-approved for the public feeds; docs/security-scanning.md lists it.
+
+**Changed**
+- The board header's **Advisories** field records KEV (yes/no and date added) and EPSS next to the ids and fixed versions.
+
+### 1.53.0 (2026-10-29)
+
+dependency-audit ranks advisories by exploitation, and can find them without a scanner (#207, part 2 of 5). dependency-audit 1.3.0.
+
+**Added**
+- **Step 2b: Enrich with Exploitation Signals.** For every advisory, get its CVE id (OSV `aliases` maps a GHSA id), then check CISA KEV (one catalog download per run, matched on `cveID`) and EPSS (one call per 100 CVEs). Record KEV date added, due date and ransomware use, and the EPSS score, percentile and date. Offline, write `not checked`; never infer KEV status from memory. Advisories with no CVE are kept and marked "no CVE".
+- **`references/exploitation-signals.md`.** It has the commands (KEV, EPSS, OSV, and GitHub's advisory API, whose EPSS is under `epss.percentage`) and three worked examples:
+  - React Server Components CVE-2025-55182: KEV-listed, ransomware use Known
+  - Next.js CVE-2025-29927: EPSS 0.992
+  - a lodash medium: EPSS 0.003
+
+  It also has the report column legend, and nine `ext` keys for `findings.json` (`advisory_ids`, `in_kev`, `kev_date_added`, `kev_due_date`, `kev_ransomware_use`, `epss`, `epss_percentile`, `epss_date`, `reachability`), so no schema change is needed. Every endpoint was rechecked on 2026-10-29: KEV catalog 2026.10.29 has 1,764 entries.
+- **No-scanner fallback.** Lockfile `name@version` pairs go to the OSV batch API, then OSV details, then KEV and EPSS. The report header says `Scanner: none (OSV API fallback)`. Because the batch call sends package names to OSV, a private repo with sensitive internal package names needs the owner's OK first.
+- **`WebFetch` pre-approved** for the public feeds, as vuln-research has. The OSV batch POST goes through `curl` and prompts.
+
+**Changed**
+- **Known Vulnerabilities table:** new KEV and EPSS columns.
+- **Prioritized Action Plan:** the order is now explicit:
+  1. KEV-listed and runtime-reachable
+  2. KEV-listed, build- or dev-only
+  3. Critical/High with EPSS above 0.7
+  4. the remaining Critical/High, by EPSS
+  5. Medium
+  6. Low
+  - It ends with a "Signals not checked" line so a partial ordering is visible. The old plan opened with "actively exploited CVEs" without any step that checked.
+- **Trimmed to fit SkillSpector's size limit.** The package-manager traps and the verify-after-fixing checklist are now short pointers to `references/fixing-safely.md`, which already had both in full.
+- **SkillSpector baseline:** two E1 rules for the OSV and EPSS calls, each with a reason. docs/security-scanning.md lists the new grant.
+
+### 1.52.5 (2026-10-29)
+
+Exploitation signals in the shared severity calibration (#207, part 1 of 5). Shared doc only; the 22 skills that copy `severity-calibration.md` get it at build time.
+
+**Added**
+- **Exploitation signals** (`severity-calibration.md` §2). For a finding that rests on a published advisory, check CISA KEV (being exploited now) and EPSS (likelihood of exploitation in the next 30 days):
+  - KEV-listed: likelihood is High.
+  - EPSS above 0.7: High. 0.1 to 0.7: Medium. Below 0.1: use the CVSS exploitability metrics. These match vuln-research's cut points.
+  - The signals change likelihood and the order of work, never severity above demonstrated impact.
+  - KEV plus runtime reachability plus a traced path is the strongest case for High/Critical.
+  - A KEV-listed CVE in a build- or dev-only package stays capped by impact but moves to the top of its band.
+  - A failed lookup is recorded as `not checked`; KEV status is never inferred from memory.
+
+Thanks to @coreyhaines31 for the issue.
 
 ### 1.52.4 (2026-10-27)
 

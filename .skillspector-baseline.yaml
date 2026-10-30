@@ -50,6 +50,10 @@ rules:
     reason: "Narrative of the 2020 Twitter insider-tool breach; no exploit content"
 
   # --- container-audit -----------------------------------------------------
+  - id: "E1"
+    path: "container-audit/references/vendor-severity.md"
+    message: "*api.osv.dev*"
+    reason: "Public, keyless OSV lookups of Debian/Ubuntu package state (issue #207); sends one OS package name and version, never code or secrets"
   - id: "TM4"
     path: "container-audit/SKILL.md"
     message: "*privileged: true*"
@@ -76,6 +80,14 @@ rules:
     path: "dependency-audit/SKILL.md"
     message: "*.npmrc*"
     reason: "Tells the auditor to check .npmrc for committed registry tokens; detection guidance"
+  - id: "E1"
+    path: "dependency-audit/references/exploitation-signals.md"
+    message: "*api.osv.dev*"
+    reason: "Public, keyless OSV advisory lookups (issue #207); the batch call sends package names and versions only, and the file says a private repo's internal names need the owner's OK first"
+  - id: "E1"
+    path: "dependency-audit/references/exploitation-signals.md"
+    message: "*api.first.org*"
+    reason: "Public, keyless FIRST EPSS lookup by CVE id (issue #207); sends CVE ids only"
 
   # --- iam-audit -----------------------------------------------------------
   - id: "PE3"
@@ -249,6 +261,18 @@ rules:
     path: "*/SKILL.md"
     message: "*references/validate-coverage.mjs (partial)*"
     reason: "Scanner's bounded static parser hits its span budget on the shared coverage validator's error-message template literals (plain JS, no network or exec); reviewed by hand"
+  - id: "E1"
+    path: "*/references/enrich-advisories.mjs"
+    message: "*api.osv.dev*"
+    reason: "Shared enrichment script (issue #207): GET to the public OSV API with advisory ids only, to resolve CVE aliases"
+  - id: "E1"
+    path: "*/references/enrich-advisories.mjs"
+    message: "*api.first.org*"
+    reason: "Shared enrichment script (issue #207): GET to the public FIRST EPSS API with CVE ids only"
+  - id: "AE1"
+    path: "*/SKILL.md"
+    message: "*references/enrich-advisories.mjs (partial)*"
+    reason: "Scanner's bounded static parser hits its span limit on the shared enrichment script's template literals (plain JS: GETs to OSV, CISA KEV and FIRST EPSS, no exec); reviewed by hand"
 
   # --- agent-supply-chain-audit (audits agent configs, skills and MCP servers) ---
   - id: "AS1"

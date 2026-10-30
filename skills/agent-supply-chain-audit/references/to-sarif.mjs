@@ -16,7 +16,8 @@
 //   - severity.overall -> rule + result property "security-severity" (critical 9.5, high 8.0, medium 5.5, low 3.0)
 //     and level (critical/high -> error, medium -> warning, low -> note).
 //   - trace[] -> codeFlows[0].threadFlows[0].locations; evidence[] -> relatedLocations.
-//   - ext (skill-specific fields) -> result properties.ext, unchanged.
+//   - ext (skill-specific fields) -> result properties.ext, unchanged. Exploitation signals are also surfaced:
+//     ext.in_kev === true adds the tag "kev" (rule and result); a numeric ext.epss -> result properties.epss.
 //   - Paths are emitted relative to uriBaseId "%SRCROOT%".
 
 import { readFileSync, writeFileSync, realpathSync } from "node:fs";
@@ -41,6 +42,7 @@ function ruleFor(rec) {
   const tags = ["security"];
   if (rec.cwe) tags.push(`external/cwe/${rec.cwe.toLowerCase()}`);
   if (rec.owasp_category) tags.push(`owasp/${rec.owasp_category}`);
+  if (rec.ext?.in_kev === true) tags.push("kev");
   const properties = { tags, skill: rec.skill };
   if (rec.verdict === "confirmed") properties["security-severity"] = SECURITY_SEVERITY[rec.severity.overall];
   const rule = {
@@ -77,6 +79,8 @@ function resultFor(rec, ruleIndex) {
       result.suppressions = [{ kind: "external", status: "accepted", justification: `Disposition: ${rec.disposition}` }];
   }
   if (rec.ext) result.properties.ext = rec.ext;
+  if (rec.ext?.in_kev === true) result.properties.tags = ["kev"];
+  if (typeof rec.ext?.epss === "number") result.properties.epss = rec.ext.epss;
   if (rec.trace.length > 0) {
     result.codeFlows = [
       {

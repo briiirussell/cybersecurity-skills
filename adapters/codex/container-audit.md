@@ -158,6 +158,8 @@ Escape paths that need code execution in the container first (privileged, `hostP
 
 **Image CVEs** from `trivy image` follow `dependency-audit`'s rule: a vulnerable package is a finding only when you show it is reachable from what the container runs. Otherwise it is `needs_validation` or a hardening note.
 
+**OS-package CVEs: ask the distro first.** Trivy rates OS packages mostly by NVD. RHEL/UBI, Debian and Ubuntu backport fixes without changing the upstream version, so check the vendor's own state for the image's release. "Not affected", or a backported fix at or below the installed version, is `rejected` with the vendor statement saved as evidence. "Will not fix" leaves the finding standing; the plan is a new base image or the owner's `Accepted Risk`. Lookups, the verdict mapping and `ext` keys: [references/vendor-severity.md](references/vendor-severity.md). Then add CISA KEV and EPSS with `node references/enrich-advisories.mjs findings.json -o findings.json`.
+
 **Cluster evidence.** Findings about a live cluster, registry or image (not a file in the repo) point at saved output. Save the read-only command output, redacted, to `<audit dir>/evidence/<name>.json` or `.txt` (for example `kubectl get clusterrolebindings -o json`, `kube-bench run --json`, `trivy image -f json`), and point `location` and `evidence[]` at that file and line. Never save Secret values: strip `.data` and `.stringData` (`kubectl get secret -o json | jq 'del(.items[].data, .items[].stringData)'`) and redact tokens in env vars. A check described but not run is `needs_validation`.
 
 **Fingerprint:** `container-audit/<class>/<file or resource>/<name>`, no line numbers, image tags or digests:
@@ -175,6 +177,7 @@ Write image references without the tag (`registry.example.com/api`, not `api:1.4
 | `resource` | Kubernetes kind, namespace and name, or the image repository | `"Deployment/payments/api"`, `"registry.example.com/api"` |
 | `cis` | CIS Docker or Kubernetes Benchmark control | `"CIS Kubernetes 5.1.1"`, `"CIS Docker 4.1"` |
 | `pss` | The Pod Security Standards level the config violates | `"baseline"`, `"restricted"` |
+| `vendor`, `vendor_severity`, `vendor_fix_state`, `vendor_advisory` | The distro's own state for an OS-package CVE ([references/vendor-severity.md](references/vendor-severity.md)) | `"redhat"`, `"Moderate"`, `"Not affected"`, `"RHSA-2023:3354"` |
 
 Then write `findings.json` sorted by fingerprint, validate it, and optionally export SARIF:
 
@@ -267,15 +270,18 @@ Dispositions for confirmed findings (set later, usually by `finding-triage`): Fi
 - OWASP Docker Security Cheat Sheet
 - OWASP Kubernetes Security Cheat Sheet
 - MITRE ATT&CK for Containers
+- Red Hat Security Data API, OSV (Debian and Ubuntu), CISA KEV, FIRST EPSS: [references/vendor-severity.md](references/vendor-severity.md)
 - Shared references (copied into `references/` at build time): [findings-format.md](references/findings-format.md), [severity-calibration.md](references/severity-calibration.md), [verification.md](references/verification.md), [validate-findings.mjs](references/validate-findings.mjs), [to-sarif.mjs](references/to-sarif.mjs), [findings.schema.json](references/findings.schema.json)
 
 ## Reference files
 
 This skill links to supporting files under `references/`. They are not inlined in this adapter; open them on GitHub (or in `skills/container-audit/references/` if you have the repo checked out):
 
+- [references/enrich-advisories.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/container-audit/references/enrich-advisories.mjs)
 - [references/findings-format.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/container-audit/references/findings-format.md)
 - [references/findings.schema.json](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/container-audit/references/findings.schema.json)
 - [references/severity-calibration.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/container-audit/references/severity-calibration.md)
 - [references/to-sarif.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/container-audit/references/to-sarif.mjs)
 - [references/validate-findings.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/container-audit/references/validate-findings.mjs)
+- [references/vendor-severity.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/container-audit/references/vendor-severity.md)
 - [references/verification.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/container-audit/references/verification.md)
