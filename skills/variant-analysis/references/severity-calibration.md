@@ -30,6 +30,24 @@ Rate likelihood and impact separately, each with a one-line reason, then pick an
 
 **Overall may never exceed demonstrated impact.** High likelihood of a low-impact bug is a low finding. If you can't state the concrete damage, the severity is lower than it feels.
 
+### Exploitation signals (dependency and OS-package findings)
+
+For a finding that rests on a published advisory, look up two free signals before rating likelihood, and record them.
+Both are public feeds that need no key:
+
+- **CISA KEV** (Known Exploited Vulnerabilities): the CVE is being exploited now. Likelihood is **High**.
+- **EPSS** (probability of exploitation in the next 30 days, updated daily): above 0.7, likelihood is **High**;
+  0.1 to 0.7, **Medium**; below 0.1, fall back to the CVSS exploitability metrics. These are the same cut points
+  `vuln-research` uses.
+
+These signals change **likelihood and the order of work**. They never raise severity above the impact you can show.
+KEV plus runtime reachability plus a traced path to the vulnerable function is the strongest case for High or
+Critical. A KEV-listed CVE in a build-only or dev-only package stays capped by its impact, but moves to the top of its
+severity band: the CI runner or the developer's machine is now what's being attacked.
+
+If a lookup wasn't possible (offline, egress blocked), record the signal as `not checked`. Never infer KEV status from
+memory: the catalog grows every week.
+
 ### Severity anchors
 
 | Level | Anchor | Typical shape |
@@ -135,4 +153,5 @@ Paraphrased and adapted; no text copied.
 
 - Cloudflare, [security-audit-skill](https://github.com/cloudflare/security-audit-skill) (MIT): `SKILL.md` ("Require a boundary and result", "Separate priority from certainty", anti-patterns), `ATTACK-CLASSES.md` (a flag is not a finding), `WEB-PROTOCOL-AND-AUTH.md` (public identifiers vs secrets).
 - Strix, [`analysis/severity_calibration.md`](https://github.com/usestrix/strix/blob/main/strix/skills/analysis/severity_calibration.md) and the CVSS block in [`tools/reporting/tool.py`](https://github.com/usestrix/strix/blob/main/strix/tools/reporting/tool.py) (Apache-2.0): over-rating list, High/Critical acceptance checklist, downgrade-rather-than-delete.
-- FIRST, [CVSS v4.0](https://www.first.org/cvss/) for teams that need a numeric score alongside this.
+- FIRST, [CVSS v4.0](https://www.first.org/cvss/) for teams that need a numeric score
+- CISA, [Known Exploited Vulnerabilities catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog), and FIRST, [EPSS](https://www.first.org/epss/): exploitation signals. Proposed for these skills by @coreyhaines31 in issue #207 alongside this.

@@ -49,6 +49,21 @@ Current versions of all skills. Agents can compare against local versions to che
 
 ## Recent Changes
 
+### 1.52.5 (2026-10-29)
+
+Exploitation signals in the shared severity calibration (#207, part 1 of 5). Shared doc only; the 22 skills that copy `severity-calibration.md` get it at build time.
+
+**Added**
+- **Exploitation signals** (`severity-calibration.md` §2). For a finding that rests on a published advisory, check CISA KEV (being exploited now) and EPSS (likelihood of exploitation in the next 30 days):
+  - KEV-listed: likelihood is High.
+  - EPSS above 0.7: High. 0.1 to 0.7: Medium. Below 0.1: use the CVSS exploitability metrics. These match vuln-research's cut points.
+  - The signals change likelihood and the order of work, never severity above demonstrated impact.
+  - KEV plus runtime reachability plus a traced path is the strongest case for High/Critical.
+  - A KEV-listed CVE in a build- or dev-only package stays capped by impact but moves to the top of its band.
+  - A failed lookup is recorded as `not checked`; KEV status is never inferred from memory.
+
+Thanks to @coreyhaines31 for the issue.
+
 ### 1.52.4 (2026-10-27)
 
 README skill map: the connector lines are now drawn from the column positions. Docs only.
