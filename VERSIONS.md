@@ -11,7 +11,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | business-logic-testing | 1.0.2 | 2026-10-26 |
 | cicd-security | 1.0.0 | 2026-10-27 |
 | cloud-audit | 1.2.0 | 2026-10-26 |
-| container-audit | 1.2.0 | 2026-10-29 |
+| container-audit | 1.2.1 | 2026-10-30 |
 | control-audit | 1.2.0 | 2026-10-27 |
 | crypto-audit | 1.1.2 | 2026-10-27 |
 | csf-mapping | 1.0.3 | 2026-10-27 |
@@ -36,7 +36,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | recon | 1.0.1 | 2026-10-26 |
 | red-team-engagement | 1.0.1 | 2026-10-26 |
 | scanner-pipeline | 1.0.5 | 2026-10-30 |
-| secrets-audit | 1.2.0 | 2026-10-30 |
+| secrets-audit | 1.3.0 | 2026-10-30 |
 | security-comms | 1.0.3 | 2026-10-26 |
 | security-start | 1.0.0 | 2026-10-27 |
 | siem-detection | 1.0.5 | 2026-10-27 |
@@ -48,6 +48,24 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.59.0 (2026-10-30)
+
+secrets-audit scans for secrets beyond the repo (#215). secrets-audit 1.3.0, container-audit 1.2.1.
+
+**Added**
+- **Beyond the repo** (`secrets-audit/references/beyond-the-repo.md`): Betterleaks v2 commands for the places keys leak outside git:
+  - GitHub issues, PRs, discussions, Actions logs and artifacts, releases and their assets, and gists, with the exact `--include` values from Betterleaks' scanning guide.
+  - GitLab issues, MRs, releases and CI jobs.
+  - Container images by digest. The scan reports files a later layer deleted or replaced, and names the layer that hid them.
+  - A second pass over agent transcripts that catches generic secrets. Only counts and locations are read back, never the matching lines.
+  - Hugging Face repos, discussions and PRs, and S3/R2 buckets.
+- **Cleanup by surface.** A table for each place a key can leak: how to clean it up, and whether it can be purged at all. Examples: a comment's edit history, run logs, artifacts, secret gists that are only unlisted, deleted image layers. Rotation still comes first.
+- **`ext.surface`** records where each key was found: `repo-head`, `git-history`, `issue`, `pr`, `actions-log`, `image-layer`, `transcript`, `bucket` and others.
+- **Authorization:** remote sources only for accounts the user owns and names, with their own token. None of these commands is pre-approved.
+
+**Changed**
+- container-audit points image-layer secrets to secrets-audit.
 
 ### 1.58.0 (2026-10-30)
 
