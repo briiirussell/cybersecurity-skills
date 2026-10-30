@@ -1,6 +1,6 @@
 # secrets-audit
 
-> Find leaked secrets in source code, Git history, build artifacts, and infrastructure — and audit the secrets-management posture preventing future leaks. Use when the user mentions 'secrets audit,' 'secret scanning,' 'leaked credentials,' 'API key in code,' 'gitleaks,' 'trufflehog,' 'git history scan,' 'secrets management,' 'vault audit,' 'rotation policy,' 'AWS Secrets Manager,' 'HashiCorp Vault,' 'Doppler,' '1Password Secrets Automation,' 'sealed-secrets,' 'External Secrets Operator,' 'secrets in MCP config,' 'API key in Claude transcript,' 'is this key public,' or needs to find or prevent credential exposure.
+> Find leaked secrets in source code, Git history, build artifacts, and infrastructure — and audit the secrets-management posture preventing future leaks. Use when the user mentions 'secrets audit,' 'secret scanning,' 'leaked credentials,' 'API key in code,' 'gitleaks,' 'trufflehog,' 'betterleaks,' 'git history scan,' 'secrets management,' 'vault audit,' 'rotation policy,' 'AWS Secrets Manager,' 'HashiCorp Vault,' 'Doppler,' '1Password Secrets Automation,' 'sealed-secrets,' 'External Secrets Operator,' 'secrets in MCP config,' 'API key in Claude transcript,' 'is this key public,' or needs to find or prevent credential exposure.
 
 # Secrets Audit — Credential Exposure and Secrets-Management Review
 
@@ -86,9 +86,14 @@ data the enabled API returns); otherwise it's a hardening note.
 
 ### Tooling
 
+Start with Betterleaks. Commands, the v1/v2 flag differences, safety rules and report fields are in
+[references/betterleaks.md](references/betterleaks.md). In short: detection only and redacted, with the report written
+to a file, never printed. The default scan is pre-approved, and checking liveness prompts.
+
 | Tool | Use |
 |---|---|
-| `gitleaks detect` | Fast, low FP, run as pre-commit and in CI; supports custom rules |
+| `betterleaks git . --validate=false --analyze=false --redact -o .security/out/betterleaks.json` | Default. Full history, fewer generic-secret false positives, value fingerprints that dedupe. After asking, `-v` checks liveness and `-a` adds identity and permissions |
+| `gitleaks git --redact` | Fast, low FP, run as pre-commit and in CI; supports custom rules. Keep it where the repo already has a `.gitleaks.toml` or hook |
 | `trufflehog git file://. --no-verification` | Detection only. Without the flag it checks each candidate with its provider (high confidence, but it uses the key): ask first |
 | `detect-secrets scan` | Yelp's tool; good baseline file workflow |
 | GitHub Secret Scanning | Free for public repos; covers most providers automatically; pushes get blocked at push time when enabled with push protection |
@@ -200,10 +205,10 @@ headings.
 When you find a leaked secret:
 
 1. **Identify the key type** — publishable, restricted, or secret, and what it can reach (see "Confirm the key type before rating it")
-2. **Verify it's live** — use the provider's verification (`aws sts get-caller-identity`, `stripe balance retrieve`, `curl -H "Authorization: Bearer $TOKEN" ...`) — don't assume; some leaked keys are already revoked or were sandbox-only
+2. **Verify it's live** — ask first. If the rule can validate (`betterleaks config show ids --validation`), re-scan the file that holds it with `-v` ([references/betterleaks.md](references/betterleaks.md#commands)). Otherwise use the provider's read-only identity call (`aws sts get-caller-identity`, `stripe balance retrieve`, `curl -H "Authorization: Bearer $TOKEN" ...`). Don't assume; some leaked keys are already revoked or were sandbox-only. `unknown` is not `invalid`: record it as `needs_validation`
 3. **Determine exposure window** — first commit it appeared in, when the repo went public, when CI logs were retained from
-4. **Determine blast radius** — what does this key access? What can be done with it? IAM permissions, Stripe live vs test, GitHub `repo` vs `admin:org`
-5. **Rotate immediately** — generate a new key, deploy it, then revoke the old one (revoke-first breaks prod)
+4. **Determine blast radius** — what does this key access? What can be done with it? For rules that support analysis (`config show ids --analysis`), the same re-scan with `-a` returns the identity, account and permissions; copy them into the evidence, redacted. Otherwise check by hand: IAM permissions, Stripe live vs test, GitHub `repo` vs `admin:org`
+5. **Rotate immediately** — generate a new key, deploy it, then revoke the old one (revoke-first breaks prod). Then confirm the old key is dead: re-run the `-v` scan where it was found and expect `invalid`. Never use a scanner's `revoke` command; revocation is the owner's step
 6. **Audit for use** — provider audit logs (CloudTrail, GitHub audit log, Stripe events) for any activity from the leaked credential
 7. **Then clean** — remove from current code, then optionally history-rewrite (low priority once rotated)
 8. **Document** — incident report, even if rotation was clean; recurrence patterns surface trends
@@ -266,6 +271,8 @@ or severity. Record shape and the validate / SARIF-export commands are in
   `secrets-audit/stripe-secret-key/config/payments.ts/STRIPE_SECRET_KEY`. When the value has no variable name (an
   inline literal, a URL with credentials), use the enclosing symbol, or `last4-<last 4>` if there's none:
   `secrets-audit/github-pat/scripts/deploy.sh/last4-9f2c`. No line numbers.
+- Scanner data (detector, validation result, identity, permissions, value fingerprint) goes in `ext`; the keys are in
+  [references/betterleaks.md](references/betterleaks.md#verdicts-and-ext-keys).
 - `skill: "secrets-audit"`. Run each candidate through the refutation pass in
   [references/verification.md](references/verification.md), and rate with
   [references/severity-calibration.md](references/severity-calibration.md) (key types are in its section 6).
@@ -326,7 +333,7 @@ Dispositions for confirmed findings: Fixed / Deferred / Accepted Risk / Mitigate
 - OWASP Cheat Sheet: Secrets Management
 - NIST SP 800-57 (Recommendation for Key Management)
 - GitGuardian "State of Secrets Sprawl" annual reports — useful for industry context
-- `gitleaks`, `trufflehog`, `detect-secrets` documentation
+- `betterleaks`, `gitleaks`, `trufflehog`, `detect-secrets` documentation
 - GitHub Secret Scanning + Push Protection documentation
 - HashiCorp Vault Architecture / Best Practices
 - AWS Secrets Manager Best Practices
@@ -337,6 +344,7 @@ Dispositions for confirmed findings: Fixed / Deferred / Accepted Risk / Mitigate
 
 This skill links to supporting files under `references/`. They are not inlined in this adapter; open them on GitHub (or in `skills/secrets-audit/references/` if you have the repo checked out):
 
+- [references/betterleaks.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/secrets-audit/references/betterleaks.md)
 - [references/findings-format.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/secrets-audit/references/findings-format.md)
 - [references/findings.schema.json](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/secrets-audit/references/findings.schema.json)
 - [references/severity-calibration.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/secrets-audit/references/severity-calibration.md)
