@@ -1,0 +1,133 @@
+{
+ "schema_version": "1",
+ "findings": [
+ {
+  "rule_id": "github-pat",
+  "rule_hash": "fa244a9a14a505f0a218c334c7164d3ebb2b39623b1fe71a2276b0a1a4f8837b",
+  "description": "Uncovered a GitHub Personal Access Token, potentially leading to unauthorized repository access and sensitive content exposure.",
+  "confidence": "high",
+  "match": {
+   "full": "REDACTED",
+   "value": "REDACTED",
+   "fingerprint": "620e24b631970fdc64de36b73f4ce2206a2e3fe2d040e02f2d0d7d88fdc198b8"
+  },
+  "attributes": {
+   "git.author_email": "t@e.x",
+   "git.author_name": "t",
+   "git.blob_sha": "efc26b4755ff665ab4240bb887de9aa46d9085c8",
+   "git.committer_date": "2026-10-30T22:54:22Z",
+   "git.committer_email": "t@e.x",
+   "git.committer_name": "t",
+   "git.date": "2026-10-30T22:54:22Z",
+   "git.message": "init",
+   "git.sha": "6589ed85250e95e8632058f74407dde126f45b07",
+   "resource": "git.patch_content"
+  },
+  "location": {
+   "path": "src/a.js",
+   "start_line": 1,
+   "end_line": 1,
+   "start_column": 16,
+   "end_column": 55
+  }
+ },
+ {
+  "rule_id": "github-pat",
+  "rule_hash": "fa244a9a14a505f0a218c334c7164d3ebb2b39623b1fe71a2276b0a1a4f8837b",
+  "description": "Uncovered a GitHub Personal Access Token, potentially leading to unauthorized repository access and sensitive content exposure.",
+  "confidence": "high",
+  "match": {
+   "full": "REDACTED",
+   "value": "REDACTED",
+   "fingerprint": "620e24b631970fdc64de36b73f4ce2206a2e3fe2d040e02f2d0d7d88fdc198b8"
+  },
+  "attributes": {
+   "git.author_email": "t@e.x",
+   "git.author_name": "t",
+   "git.blob_sha": "efc26b4755ff665ab4240bb887de9aa46d9085c8",
+   "git.committer_date": "2026-10-30T22:54:22Z",
+   "git.committer_email": "t@e.x",
+   "git.committer_name": "t",
+   "git.date": "2026-10-30T22:54:22Z",
+   "git.message": "init",
+   "git.sha": "6589ed85250e95e8632058f74407dde126f45b07",
+   "resource": "git.patch_content"
+  },
+  "location": {
+   "path": "src/b.js",
+   "start_line": 1,
+   "end_line": 1,
+   "start_column": 16,
+   "end_column": 55
+  }
+ },
+ {
+  "rule_id": "stripe-access-token",
+  "rule_hash": "eb7129674cca1eff2fd643772d26d752a5200e5bd1aa9afba530db012ed1fc73",
+  "description": "Found a Stripe Access Token, posing a risk to payment processing services and sensitive financial data.",
+  "confidence": "high",
+  "match": {
+   "full": "REDACTED",
+   "value": "REDACTED",
+   "fingerprint": "f4908923673ca38e20776dc62b4bcf32122e5f5d667c593e350f09ae027c27f8"
+  },
+  "attributes": {
+   "git.author_email": "t@e.x",
+   "git.author_name": "t",
+   "git.blob_sha": "07573bacf5f3662eb378e4876ad9ed46c7513ad3",
+   "git.committer_date": "2026-10-30T22:54:22Z",
+   "git.committer_email": "t@e.x",
+   "git.committer_name": "t",
+   "git.date": "2026-10-30T22:54:22Z",
+   "git.message": "init",
+   "git.sha": "6589ed85250e95e8632058f74407dde126f45b07",
+   "resource": "git.patch_content"
+  },
+  "location": {
+   "path": ".env.production",
+   "start_line": 1,
+   "end_line": 1,
+   "start_column": 19,
+   "end_column": 61
+  }
+ }
+]
+,
+ "scan": {
+  "state": "complete",
+  "source": {
+   "type": "git",
+   "targets": [
+    "."
+   ]
+  },
+  "started": "2026-10-30T22:54:22.345885Z",
+  "finished": "2026-10-30T22:54:22.59768Z",
+  "betterleaks_version": "2.0.0-rc.6",
+  "config_hash": "b43613651a5af9bcb4b33623d686a0ee81573d888d7c9a579fbf27a6232b87b9",
+  "bytes_scanned": 178,
+  "num_findings": 3,
+  "confidence_counts": {
+   "high": 3,
+   "medium": 0,
+   "low": 0,
+   "none": 0,
+   "other": 0
+  },
+  "severity_counts": {
+   "high": 0,
+   "medium": 0,
+   "unknown": 0,
+   "none": 3
+  },
+  "status_counts": {
+   "valid": 0,
+   "invalid": 0,
+   "revoked": 0,
+   "needs_validation": 0,
+   "unknown": 0,
+   "error": 0,
+   "none": 3
+  }
+ }
+}

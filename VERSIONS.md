@@ -35,8 +35,8 @@ Current versions of all skills. Agents can compare against local versions to che
 | prompt-injection | 1.2.1 | 2026-10-27 |
 | recon | 1.0.1 | 2026-10-26 |
 | red-team-engagement | 1.0.1 | 2026-10-26 |
-| scanner-pipeline | 1.0.5 | 2026-10-30 |
-| secrets-audit | 1.3.0 | 2026-10-30 |
+| scanner-pipeline | 1.1.0 | 2026-10-30 |
+| secrets-audit | 1.3.1 | 2026-10-30 |
 | security-comms | 1.0.3 | 2026-10-26 |
 | security-start | 1.0.0 | 2026-10-27 |
 | siem-detection | 1.0.5 | 2026-10-27 |
@@ -48,6 +48,32 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.60.0 (2026-10-30)
+
+scanner-pipeline adds Betterleaks, with a converter for its reports (#216). scanner-pipeline 1.1.0, secrets-audit 1.3.1.
+
+**Added**
+- **Betterleaks in the pipeline.** It's a secrets option alongside gitleaks: the two use the same rule ids and both honour `gitleaks:allow`. The default command is detection-only and silent, and it's pre-approved as an exact rule.
+- **`betterleaks-to-findings.mjs`** (`scanner-pipeline/references/`). Betterleaks v2 dropped SARIF, so this converts a v2 JSON or JSONL report to `findings.json`; `to-sarif.mjs` then exports it.
+  - It builds one record per rule and value, so the same key in several files is one finding with one evidence entry per place.
+  - The fingerprint is the existing dedupe key, `secret:<rule>:<value hash[:12]>`, taken from `match.fingerprint`. It still works on `--redact` reports and with HMAC fingerprints.
+  - Every record is imported as `needs_validation`.
+  - It refuses a report that isn't redacted, and paths that aren't repo-relative.
+  - Six tests run against real output from 2.0.0-rc.6.
+- **Fleet secrets in one process:** `betterleaks github … https://github.com/<org>` replaces the clone loop. It prompts.
+- **Betterleaks in CI**, written up for when v2 is stable:
+  - pin the image by digest;
+  - never validate in CI, since on a fork's PR that would send planted keys out;
+  - read `.betterleaks.toml` from the base branch, so a PR can't switch off its own rules;
+  - use HMAC fingerprints;
+  - convert, then upload SARIF.
+
+**Changed**
+- The secrets dedupe note is honest now. gitleaks `--redact` and trufflehog with `Raw` stripped don't keep the value, so they can't produce the value hash; Betterleaks can.
+
+**Fixed**
+- secrets-audit: every Betterleaks command now passes `--silent`. Running 2.0.0-rc.6 showed it prints every finding to the terminal even when `-o` is set. With `--redact` the values are masked, but paths and commit authors still landed in the transcript. The safety rule now says so.
 
 ### 1.59.0 (2026-10-30)
 

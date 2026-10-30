@@ -24,7 +24,7 @@ Needs `GITHUB_TOKEN` in the environment. `--include` / `--exclude` take `repos` 
 `releases`, `release-assets` and `gists`.
 
 ```bash
-F="--validate=false --analyze=false --redact"
+F="--validate=false --analyze=false --redact --silent"
 # Issue and PR text, with comments (org-wide, or one repo)
 betterleaks github --include=issues,issue-comments,prs,discussions --exclude=repos $F -o .security/out/gh-text.json https://github.com/<org-or-repo>
 # Actions run logs and artifacts (the "echo $SECRET" / debug-dump class)
