@@ -132,7 +132,7 @@ An app is affected only if all three line up: **vulnerable runtime or dependency
 
 Mark each row `affected` / `not affected (reason)` / `unknown (what's needed)`. Unknown rows don't get skipped; they get an owner action.
 
-**Exploitation signals, once for the whole advisory set.** When the affected rows are known, look up each advisory in CISA KEV (being exploited now) and EPSS (likely in the next 30 days) once, not once per repo. The commands are in `dependency-audit` Step 2b. Put the result in the board header and the `kev` column. Offline, write `not checked`; never infer KEV status from memory. When one person is patching 30 repos, the KEV-listed rows go first.
+**Exploitation signals, once for the whole advisory set.** When the affected rows are known, look up each advisory in CISA KEV (being exploited now) and EPSS (likely in the next 30 days) once, not once per repo. The commands are in `dependency-audit` Step 2b, or run `node references/enrich-advisories.mjs findings.json -o findings.json` on the sweep's findings. Put the result in the board header and the `kev` column. Offline, write `not checked`; never infer KEV status from memory. When one person is patching 30 repos, the KEV-listed rows go first.
 
 ## Step 5 — Mitigate before patching
 
@@ -234,3 +234,10 @@ Dispositions on the board use the shared set: `Fixed`, `Deferred`, `Accepted Ris
 - [Render API — list services](https://api-docs.render.com/reference/list-services)
 - [GitHub REST — vulnerability alerts](https://docs.github.com/en/rest/repos/repos#check-if-vulnerability-alerts-are-enabled-for-a-repository)
 - Field source: a ~45-app sweep, October 2026 (5 Heroku Rails apps, 1 Render app, ~39 Vercel Next.js apps), issue #80
+
+## Reference files
+
+This skill links to supporting files under `references/`. They are not inlined in this adapter; open them on GitHub (or in `skills/patch-sweep/references/` if you have the repo checked out):
+
+- [references/enrich-advisories.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/patch-sweep/references/enrich-advisories.mjs)
+- [references/validate-findings.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/patch-sweep/references/validate-findings.mjs)

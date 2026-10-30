@@ -257,6 +257,18 @@ rules:
     path: "*/SKILL.md"
     message: "*references/validate-coverage.mjs (partial)*"
     reason: "Scanner's bounded static parser hits its span budget on the shared coverage validator's error-message template literals (plain JS, no network or exec); reviewed by hand"
+  - id: "E1"
+    path: "*/references/enrich-advisories.mjs"
+    message: "*api.osv.dev*"
+    reason: "Shared enrichment script (issue #207): GET to the public OSV API with advisory ids only, to resolve CVE aliases"
+  - id: "E1"
+    path: "*/references/enrich-advisories.mjs"
+    message: "*api.first.org*"
+    reason: "Shared enrichment script (issue #207): GET to the public FIRST EPSS API with CVE ids only"
+  - id: "AE1"
+    path: "*/SKILL.md"
+    message: "*references/enrich-advisories.mjs (partial)*"
+    reason: "Scanner's bounded static parser hits its span limit on the shared enrichment script's template literals (plain JS: GETs to OSV, CISA KEV and FIRST EPSS, no exec); reviewed by hand"
 
   # --- agent-supply-chain-audit (audits agent configs, skills and MCP servers) ---
   - id: "AS1"

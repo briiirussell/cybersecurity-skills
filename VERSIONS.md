@@ -15,7 +15,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | control-audit | 1.2.0 | 2026-10-27 |
 | crypto-audit | 1.1.2 | 2026-10-27 |
 | csf-mapping | 1.0.3 | 2026-10-27 |
-| dependency-audit | 1.3.0 | 2026-10-29 |
+| dependency-audit | 1.3.1 | 2026-10-29 |
 | disk-forensics | 1.0.2 | 2026-10-27 |
 | finding-triage | 1.3.1 | 2026-10-27 |
 | fuzzing-harness | 1.0.1 | 2026-10-27 |
@@ -28,7 +28,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | native-code-review | 1.0.1 | 2026-10-27 |
 | osint-recon | 1.0.2 | 2026-10-26 |
 | owasp-audit | 1.6.0 | 2026-10-27 |
-| patch-sweep | 1.1.0 | 2026-10-29 |
+| patch-sweep | 1.1.1 | 2026-10-29 |
 | pci-audit | 1.1.1 | 2026-10-27 |
 | personal-opsec | 1.0.1 | 2026-10-26 |
 | privacy-engineering | 1.1.0 | 2026-10-27 |
@@ -48,6 +48,26 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.55.0 (2026-10-29)
+
+A shared script that adds KEV and EPSS to findings, and SARIF that shows them (#207, part 4 of 5). dependency-audit 1.3.1, patch-sweep 1.1.1.
+
+**Added**
+- **`shared/enrich-advisories.mjs`** (copied into dependency-audit and patch-sweep). Usage: `node references/enrich-advisories.mjs findings.json -o findings.json`. For each record with an advisory id (the fingerprint's second segment, or `ext.advisory_ids`) it:
+  - resolves CVE ids through OSV aliases
+  - downloads the CISA KEV catalog once
+  - batches EPSS 100 CVEs per call
+  - writes the `ext` keys from dependency-audit's exploitation-signals reference
+
+  It doesn't need any packages, and uses Node's built-in `fetch`. It sends advisory and CVE ids only. It never changes a verdict, severity or disposition, and it re-validates before writing. A failed lookup or `--offline` writes `not checked` and exits 1, so the gaps get reported. `--kev` takes a downloaded catalog.
+  - Checked live against the example run's 27 records: 26 advisories enriched in about 5 seconds, and the output validates.
+  - Tests use canned responses and need no network.
+- **SARIF:** `to-sarif.mjs` tags KEV-listed results `kev` (on the rule and the result) and copies a numeric `ext.epss` to `properties.epss`, so code scanning shows both.
+
+**Changed**
+- dependency-audit's `references/exploitation-signals.md` leads with the script; the manual commands stay for checking one advisory by hand. patch-sweep Step 4 points to it, and patch-sweep now gets `validate-findings.mjs`, which the script imports.
+- SkillSpector baseline: shared-copy rules for the script's OSV and EPSS calls, and the scanner's parse limit on it, each with a reason.
 
 ### 1.54.0 (2026-10-29)
 

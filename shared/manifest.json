@@ -49,7 +49,8 @@
       "variant-analysis",
       "native-code-review",
       "fuzzing-harness",
-      "control-audit"
+      "control-audit",
+      "patch-sweep"
     ],
     "to-sarif.mjs": [
       "agent-supply-chain-audit",
@@ -168,6 +169,10 @@
       "owasp-audit",
       "api-audit",
       "dependency-audit"
+    ],
+    "enrich-advisories.mjs": [
+      "dependency-audit",
+      "patch-sweep"
     ]
   }
 }

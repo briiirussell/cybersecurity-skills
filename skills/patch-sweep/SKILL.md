@@ -132,7 +132,7 @@ An app is affected only if all three line up: **vulnerable runtime or dependency
 
 Mark each row `affected` / `not affected (reason)` / `unknown (what's needed)`. Unknown rows don't get skipped; they get an owner action.
 
-**Exploitation signals, once for the whole advisory set.** When the affected rows are known, look up each advisory in CISA KEV (being exploited now) and EPSS (likely in the next 30 days) once, not once per repo. The commands are in `dependency-audit` Step 2b. Put the result in the board header and the `kev` column. Offline, write `not checked`; never infer KEV status from memory. When one person is patching 30 repos, the KEV-listed rows go first.
+**Exploitation signals, once for the whole advisory set.** When the affected rows are known, look up each advisory in CISA KEV (being exploited now) and EPSS (likely in the next 30 days) once, not once per repo. The commands are in `dependency-audit` Step 2b, or run `node references/enrich-advisories.mjs findings.json -o findings.json` on the sweep's findings. Put the result in the board header and the `kev` column. Offline, write `not checked`; never infer KEV status from memory. When one person is patching 30 repos, the KEV-listed rows go first.
 
 ## Step 5 — Mitigate before patching
 

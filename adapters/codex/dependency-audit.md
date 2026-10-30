@@ -419,6 +419,7 @@ This skill links to supporting files under `references/`. They are not inlined i
 
 - [references/ci-release.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/dependency-audit/references/ci-release.md)
 - [references/diff-review.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/dependency-audit/references/diff-review.md)
+- [references/enrich-advisories.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/dependency-audit/references/enrich-advisories.mjs)
 - [references/exploitation-signals.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/dependency-audit/references/exploitation-signals.md)
 - [references/findings-format.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/dependency-audit/references/findings-format.md)
 - [references/findings.schema.json](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/dependency-audit/references/findings.schema.json)
