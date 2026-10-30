@@ -30,7 +30,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | owasp-audit | 1.6.0 | 2026-10-27 |
 | patch-sweep | 1.1.1 | 2026-10-29 |
 | pci-audit | 1.1.1 | 2026-10-27 |
-| personal-opsec | 1.0.1 | 2026-10-26 |
+| personal-opsec | 1.1.0 | 2026-10-30 |
 | privacy-engineering | 1.1.0 | 2026-10-27 |
 | prompt-injection | 1.2.1 | 2026-10-27 |
 | recon | 1.0.1 | 2026-10-26 |
@@ -48,6 +48,30 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.61.0 (2026-10-30)
+
+personal-opsec checks the Chromium builds that agent tools download (#217). personal-opsec 1.1.0.
+
+**Added**
+- **C7, agent browser runtimes.** Playwright, Puppeteer, agent-browser and the browser MCP servers download their own Chromium, and it never updates on its own. C7 lists every cached build and whether it's running, compares each with Chrome for Testing stable, and asks which apps hold Accessibility, Input Monitoring or Screen Recording.
+  - **Below a known-exploited or sandbox-escape fix:** High if it's launched with Accessibility or browses untrusted sites, Medium if it only loads localhost.
+  - **More than 2 majors behind stable:** Medium.
+  - **Accessibility on its own:** a hardening note.
+  - **Worked example: CVE-2026-106378**, a macOS GPU-process sandbox escape. It was fixed in Chrome 155 per the pwn.ai write-up. On 2026-10-30 it wasn't in CISA KEV (EPSS 0.003).
+- **Local checks** (`references/local-checks.md`):
+  - An inventory loop. On macOS it reads versions from the app bundle with `defaults read`, which runs nothing.
+  - A `pgrep` count of running builds.
+  - Project-local browser paths to Glob.
+  - How to ask for the Accessibility grants without requesting Full Disk Access.
+  - An update-and-clean table for Playwright, Puppeteer, agent-browser and the MCP servers.
+- P0 and P1 entries, and a hand-off to agent-supply-chain-audit.
+- **Pre-approved:** `defaults read` and `pgrep -fl`. A browser's `--version` runs the binary, so it prompts.
+
+**Fixed (against the issue draft)**
+- `npx playwright uninstall` removes the current install's browsers, not unused revisions; Playwright already removes unneeded builds on its own. The table now says so.
+- agent-browser's docs don't name its download folder, so the loop searches `~/.agent-browser` and the table points to its config.
+- agent-browser updates with `agent-browser upgrade`.
 
 ### 1.60.0 (2026-10-30)
 

@@ -1,7 +1,7 @@
 ---
 name: personal-opsec
 description: "Audit one person's own security setup — the founder or operator who holds the keys to the stack — and produce a prioritized gap report. Walks Karpathy's 15-control digital security checklist, adds account-recovery, SIM-swap, registrar, and hardware-key checks, and covers the AI-agent era: tokens your coding agents can read, MCP server trust, inbox-assistant prompt injection, clipboard exposure. Use when the user mentions 'personal opsec,' 'personal security audit,' 'secure my own accounts,' 'founder security,' 'Karpathy security checklist,' 'am I secure,' 'hardware key,' 'YubiKey,' 'SIM swap,' 'port-out PIN,' 'FileVault,' 'BitLocker,' 'password manager,' 'recovery codes,' 'registrar lock,' 'what can my AI agent see,' 'API keys on my laptop,' 'MCP trust,' or wants to harden their own accounts and machine."
-allowed-tools: Read, Grep, Glob, Bash(fdesetup status:*), Bash(/usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate:*), Bash(/usr/libexec/ApplicationFirewall/socketfilterfw --getstealthmode:*), Bash(scutil --dns:*), Bash(spctl --status:*), Bash(csrutil status:*), Bash(sw_vers:*), Bash(which:*), Bash(ls -l:*), Bash(gh auth status:*), Bash(whois:*), Bash(manage-bde -status:*), Bash(lsblk:*), Bash(resolvectl status:*)
+allowed-tools: Read, Grep, Glob, Bash(fdesetup status:*), Bash(/usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate:*), Bash(/usr/libexec/ApplicationFirewall/socketfilterfw --getstealthmode:*), Bash(scutil --dns:*), Bash(spctl --status:*), Bash(csrutil status:*), Bash(sw_vers:*), Bash(which:*), Bash(ls -l:*), Bash(gh auth status:*), Bash(whois:*), Bash(manage-bde -status:*), Bash(lsblk:*), Bash(resolvectl status:*), Bash(defaults read:*), Bash(pgrep -fl:*)
 ---
 
 # Personal OpSec — Audit One Operator's Own Security Setup
@@ -117,10 +117,18 @@ Coding agents, MCP servers, and inbox assistants run with the operator's file ac
 
 **C6 — Clipboard and screen exposure.** Glob for clipboard-history managers (Maccy, Paste, Raycast/Alfred clipboard history); **ask** whether the password manager clears the clipboard and whether clipboard history excludes it. Agents with screen or clipboard access (computer-use tools, screen-recording assistants) see whatever is copied. Secrets persisting in clipboard history that agents or sync can read → finding low–medium; hardening note if the PM is excluded and clears in ≤90 s.
 
+**C7 — Agent browser runtimes.** Playwright, Puppeteer, agent-browser and the browser MCP servers built on them download their own Chromium and never update it on their own, unlike the everyday Chrome. Run the inventory in [references/local-checks.md](references/local-checks.md#agent-browser-runtimes-c7): every cached build, its version, and whether it's running, against current Chrome for Testing stable. Then **ask** which apps hold Accessibility, Input Monitoring or Screen Recording. A browser launched from Terminal or an IDE can run with that app's permissions.
+- **Below the fix for a known-exploited or sandbox-escape Chromium bug** → finding. **High** if it's launched from an app with Accessibility, or it browses untrusted sites (agent research, scraping, following links). **Medium** if it only loads localhost or the user's own previews.
+- **More than 2 majors behind stable**, no specific CVE → medium. It's missing every renderer fix since, and a renderer bug is the first step of any chain.
+- **Terminal, IDE or agent app holds Accessibility** on its own → hardening note. Paired with an old browser, it's part of the high rating. Recommend removing Accessibility from apps that don't need it, or running browser agents from an app or user account without it.
+- Fix with the tool's own updater, delete old builds, restart sessions (commands in the same reference). Which servers and CLIs bring a browser, and their pinning → `agent-supply-chain-audit`; a fleet response to a Chrome CVE → `patch-sweep`.
+
+Example of the bug class: CVE-2026-106378 ([pwn.ai write-up](https://pwn.ai/blog/chrome-escape), fixed in Chrome 155 per the write-up). Code running in the macOS GPU process could post keystrokes through WindowServer using the launching app's permissions. It's a sandbox escape, so it needs a renderer or GPU bug first. An old cached build is missing those fixes too. On 2026-10-30 it wasn't in CISA KEV (EPSS 0.003).
+
 ## Prioritization
 
-- **P0 — this week.** Any confirmed/needs_validation gap that gives account takeover of a crown-jewel account or prod access: SMS-only or SMS-recoverable primary email/GitHub/registrar, no carrier port-out PIN when the number is a recovery factor, no disk encryption on a laptop with prod keys, plaintext admin tokens readable by a no-prompt agent, inbox assistant that can send/share without confirmation.
-- **P1 — this month.** Single hardware key with no spare, recovery codes only in the PM, broad long-lived tokens, MCP servers with network + private-data reach, Gatekeeper/SIP off, stale OS.
+- **P0 — this week.** Any confirmed/needs_validation gap that gives account takeover of a crown-jewel account or prod access: SMS-only or SMS-recoverable primary email/GitHub/registrar, no carrier port-out PIN when the number is a recovery factor, no disk encryption on a laptop with prod keys, plaintext admin tokens readable by a no-prompt agent, inbox assistant that can send/share without confirmation, an agent browser below a sandbox-escape fix that's launched from an app holding Accessibility.
+- **P1 — this month.** Single hardware key with no spare, recovery codes only in the PM, broad long-lived tokens, MCP servers with network + private-data reach, Gatekeeper/SIP off, stale OS, any agent browser more than 2 majors behind stable.
 - **P2 — when convenient.** Remaining low findings.
 - **Hardening notes** — privacy preferences (K6–K14 mostly). Listed, never ranked against findings.
 
@@ -154,7 +162,7 @@ P0: X · P1: X · P2: X · Needs validation: X · Hardening notes: X
 
 ### Hand-offs
 - secrets-audit: [C1 items to rotate/clean]
-- agent-supply-chain-audit: [C2 servers to review]
+- agent-supply-chain-audit: [C2 servers to review; C7 browser-bringing servers and their pins]
 - prompt-injection: [C4 assistants]
 - iam-audit: [X5 org-wide enforcement]
 - finding-triage: every confirmed finding, for disposition

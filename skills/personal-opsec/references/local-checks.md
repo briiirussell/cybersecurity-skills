@@ -63,3 +63,63 @@ grep -cE '(sk-ant-|sk_live_|ghp_|github_pat_|AKIA|xox[baprs]-)' ~/.zshrc ~/.zsh_
 ```
 
 A non-zero count is enough to raise the finding. Don't open the file to "confirm" — the user can rotate and clean it.
+
+## Agent browser runtimes (C7)
+
+Every Chromium that an agent tool downloaded, with its version, oldest first. On macOS the version comes from the
+app bundle (`defaults read`, which runs nothing). A headless shell or a Linux `chrome` has no bundle, so its version
+needs `--version`, which runs the binary; that call prompts.
+
+```bash
+for r in "$HOME/Library/Caches/ms-playwright" "$HOME/.cache/ms-playwright" "${PLAYWRIGHT_BROWSERS_PATH:-}" \
+         "$HOME/.cache/puppeteer" "$HOME/.agent-browser" "$HOME/Library/Caches/Cypress" "$HOME/.cache/Cypress" \
+         "$HOME/.cache/selenium"; do
+  [ -n "$r" ] && [ -d "$r" ] || continue
+  find "$r" -maxdepth 5 \( -name "*.app" -o -name chrome -o -name chrome-headless-shell -o -name headless_shell \) -prune 2>/dev/null |
+  while read -r p; do
+    if [ -d "$p" ]; then v=$(defaults read "$p/Contents/Info" CFBundleShortVersionString 2>/dev/null)
+    else v=$("$p" --version 2>/dev/null | grep -Eo '[0-9]+(\.[0-9]+){3}'); fi
+    printf '%s\t%s\n' "${v:-unknown}" "$p"
+  done
+done | sort -t. -k1,1n
+# Current Chrome for Testing stable (what a fresh `playwright install` would pull)
+curl -s https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions.json | jq -r .channels.Stable.version
+```
+
+- Playwright's WebKit build shows up as `Playwright.app` with version `1.0`; skip it, it isn't Chromium.
+- Puppeteer puts the version in the folder name (`~/.cache/puppeteer/chrome/mac_arm-<version>/`), so the folder list
+  is enough.
+- agent-browser can use its own download, or an existing Chrome, Brave, Playwright or Puppeteer install. Its docs
+  don't say where the download goes, so the loop searches `~/.agent-browser`; check `~/.agent-browser/config.json`
+  and `AGENT_BROWSER_EXECUTABLE_PATH` for an explicit path.
+- **Project-local browsers** the loop misses: Glob `**/node_modules/playwright-core/.local-browsers/*` (installed with
+  `PLAYWRIGHT_BROWSERS_PATH=0`) and `**/node_modules/puppeteer*/.local-chromium/*` (old Puppeteer). These come back on
+  every `npm ci` at whatever version the lockfile pins, so the fix belongs to `dependency-audit`.
+- Windows: `%USERPROFILE%\AppData\Local\ms-playwright` and `%USERPROFILE%\.cache\puppeteer`. Read the version from
+  the folder name, or from the `chrome.exe` file properties.
+
+Which builds are running right now (an old build that's live is worse than one on disk):
+
+```bash
+pgrep -fl 'Chrome for Testing|chrome-headless-shell|Chromium' | awk '{print $2}' | sort | uniq -c
+```
+
+**Accessibility, Input Monitoring and Screen Recording grants.** Listing them needs Full Disk Access, so from a normal
+shell the TCC database query fails with `authorization denied`. **Ask** the user to open System Settings → Privacy &
+Security → Accessibility (then Input Monitoring and Screen Recording) and read out what's enabled. Don't ask them to
+grant Full Disk Access for the audit; that widens the very access this control is about. The apps that matter are
+the ones that launch browsers: Terminal, iTerm, Warp, Ghostty, Cursor, VS Code, Windsurf, Zed, the Claude desktop
+app, Raycast or Alfred, and any automation helper.
+
+### Updating each runtime
+
+| Tool | Update | Clean old builds |
+|---|---|---|
+| Playwright | Upgrade `playwright` / `@playwright/test` in the project, then `npx playwright install chromium` | Playwright removes builds no installed version needs (unless `PLAYWRIGHT_SKIP_BROWSER_GC=1`). `npx playwright uninstall --all` removes every Playwright browser |
+| Puppeteer | Upgrade `puppeteer`, then `npx puppeteer browsers install chrome` | `npx @puppeteer/browsers clear` |
+| agent-browser | `agent-browser upgrade` (detects npm, Homebrew or Cargo), then `agent-browser install` | `agent-browser doctor --fix` can reinstall Chrome; delete older downloads once sessions are closed |
+| `@playwright/mcp` and other MCP browser servers | Pin a current version in the MCP config, then run its install step | As Playwright |
+| `chrome-devtools-mcp` | Uses the installed Chrome by default, which updates itself. Check `--executablePath` / `--channel` in the MCP config | — |
+
+A running browser keeps the old binary in memory, so restart its sessions after updating. Closing sessions can
+interrupt other agents that are running, so the user does that, not the audit.
