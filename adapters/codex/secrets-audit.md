@@ -87,12 +87,12 @@ data the enabled API returns); otherwise it's a hardening note.
 ### Tooling
 
 Start with Betterleaks. Commands, the v1/v2 flag differences, safety rules and report fields are in
-[references/betterleaks.md](references/betterleaks.md). In short: detection only and redacted, with the report written
-to a file, never printed. The default scan is pre-approved, and checking liveness prompts.
+[references/betterleaks.md](references/betterleaks.md). In short: detection only, redacted and silent, with the report
+written to a file, never printed. The default scan is pre-approved, and checking liveness prompts.
 
 | Tool | Use |
 |---|---|
-| `betterleaks git . --validate=false --analyze=false --redact -o .security/out/betterleaks.json` | Default. Full history, fewer generic-secret false positives, value fingerprints that dedupe. After asking, `-v` checks liveness and `-a` adds identity and permissions |
+| `betterleaks git . --validate=false --analyze=false --redact --silent -o .security/out/betterleaks.json` | Default. Full history, fewer generic-secret false positives, value fingerprints that dedupe. After asking, `-v` checks liveness and `-a` adds identity and permissions |
 | `gitleaks git --redact` | Fast, low FP, run as pre-commit and in CI; supports custom rules. Keep it where the repo already has a `.gitleaks.toml` or hook |
 | `trufflehog git file://. --no-verification` | Detection only. Without the flag it checks each candidate with its provider (high confidence, but it uses the key): ask first |
 | `detect-secrets scan` | Yelp's tool; good baseline file workflow |

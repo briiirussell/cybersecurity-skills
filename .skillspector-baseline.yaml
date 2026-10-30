@@ -273,6 +273,10 @@ rules:
     path: "*/SKILL.md"
     message: "*references/enrich-advisories.mjs (partial)*"
     reason: "Scanner's bounded static parser hits its span limit on the shared enrichment script's template literals (plain JS: GETs to OSV, CISA KEV and FIRST EPSS, no exec); reviewed by hand"
+  - id: "AE1"
+    path: "scanner-pipeline/SKILL.md"
+    message: "*references/betterleaks-to-findings.mjs (partial)*"
+    reason: "Scanner's bounded static parser hits its span limit on the Betterleaks converter (issue #216: plain JS that reads a report file and writes findings.json; no network, no exec); reviewed by hand"
 
   # --- agent-supply-chain-audit (audits agent configs, skills and MCP servers) ---
   - id: "AS1"

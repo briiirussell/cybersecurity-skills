@@ -11,7 +11,8 @@ here:
 - **Value fingerprints.** Each finding carries a SHA-256 of the exact value, so the same key found in five places, or
   by gitleaks and trufflehog too, dedupes to one.
 
-Checked on 2026-10-30 against the README, the v2 migration guide and `docs/scanning.md`.
+Checked on 2026-10-30 against the README, the v2 migration guide and `docs/scanning.md`, and by running 2.0.0-rc.6
+on a test repo of fake keys.
 
 ## Which version
 
@@ -42,8 +43,9 @@ These follow from the skill's Authorization section.
    `--validate=false --analyze=false` (v2), so a stray variable can't make the agent use a found key.
 2. **`-v`, `-a`, `validate` and `analyze` only after asking.** They send the found key to its provider, which counts as
    using it. None is pre-approved, and the lint fails a grant that would allow one.
-3. **Always `--redact`, and write the report to a file with `-o`.** Never `-o -` or terminal output inside an agent
-   session: whatever prints lands in the session transcript, one of the places this skill tells people to scrub.
+3. **Always `--redact --silent`, and write the report to a file with `-o`.** Betterleaks prints every finding to the
+   terminal even when `-o` is set; only `--silent` stops it. Inside an agent session, whatever prints lands in the
+   session transcript, one of the places this skill tells people to scrub. Never `-o -`.
    Summarize the report by rule id and file. Don't print matching lines.
 4. **Remote sources still use the network** in detection-only mode (cloning, the GitHub API, image pulls). When the user
    wants no outbound traffic, scan only with `fs`, a local `git` repo, or `stdin`.
@@ -57,15 +59,15 @@ These follow from the skill's Authorization section.
 ```bash
 mkdir -p .security/out
 # Default scan: full git history, detection only, redacted, report to a file
-betterleaks git . --validate=false --analyze=false --redact -o .security/out/betterleaks.json
+betterleaks git . --validate=false --analyze=false --redact --silent -o .security/out/betterleaks.json
 # Working tree only (untracked files, build output)
-betterleaks fs . --validate=false --analyze=false --redact -o .security/out/betterleaks-fs.json
+betterleaks fs . --validate=false --analyze=false --redact --silent -o .security/out/betterleaks-fs.json
 # Which rules can check liveness / resolve identity
 betterleaks config show ids --validation
 betterleaks config show ids --analysis
 # After the user says yes: check liveness for the keys in one file (step 2), or identity and permissions (step 4)
-betterleaks fs config/payments.ts -v --redact -o .security/out/validate.json
-betterleaks fs config/payments.ts -a --redact -o .security/out/analyze.json
+betterleaks fs config/payments.ts -v --redact --silent -o .security/out/validate.json
+betterleaks fs config/payments.ts -a --redact --silent -o .security/out/analyze.json
 ```
 
 `betterleaks validate --rule <id> --simple` and `betterleaks analyze --rule <id>` read a single value from stdin. Use
@@ -82,9 +84,9 @@ A v2 JSON report is one object: `schema_version`, `findings`, and `scan` (run me
 | Field | Meaning |
 |---|---|
 | `rule_id` | Detector, for example `github-pat` |
-| `location.path`, `location.start_line` | Where it was found |
+| `location.path`, `location.start_line` | Where it was found (`fs` scans prefix paths with `./`) |
 | `attributes["git.sha"]`, `attributes["git.author_name"]` | Commit and author for history findings |
-| `match.fingerprint` | SHA-256 of the exact value (64 hex characters), or `hmac-sha256:<hex>` with `--hmac-key` |
+| `match.fingerprint` | SHA-256 of the exact value (64 hex characters), or `hmac-sha256:<hex>` with `--hmac-key`. Computed before redaction, so a `--redact` report still has it |
 | `rule_hash` | Which version of the rule matched |
 | validation / `analysis.status` | `valid`, `invalid` or `unknown` when `-v` / `-a` ran |
 
