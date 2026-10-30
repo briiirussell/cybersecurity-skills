@@ -36,7 +36,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | recon | 1.0.1 | 2026-10-26 |
 | red-team-engagement | 1.0.1 | 2026-10-26 |
 | scanner-pipeline | 1.0.5 | 2026-10-30 |
-| secrets-audit | 1.1.5 | 2026-10-30 |
+| secrets-audit | 1.2.0 | 2026-10-30 |
 | security-comms | 1.0.3 | 2026-10-26 |
 | security-start | 1.0.0 | 2026-10-27 |
 | siem-detection | 1.0.5 | 2026-10-27 |
@@ -48,6 +48,25 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.58.0 (2026-10-30)
+
+secrets-audit uses Betterleaks as its main scanner (#214). secrets-audit 1.2.0.
+
+**Added**
+- **Betterleaks** (`secrets-audit/references/betterleaks.md`): the scanner from gitleaks' original author and maintainers. It has fewer false positives on generic secrets, built-in liveness checks (`-v`), identity and permission analysis (`-a`), and value fingerprints that dedupe. The reference covers:
+  - **Versions.** v1.9.0 is the latest stable release and v2 is at release candidate, so there's a flag table for both. In v2, `-v` means validate, where in v1 it meant verbose, and the config file isn't read unless you pass `--config`.
+  - **Six safety rules.** Every scan is explicitly detection-only (`--validate=false --analyze=false`), so a stray `BETTERLEAKS_VALIDATE=true` can't make the agent use a key. `-v`, `-a`, `validate` and `analyze` run only after asking. Always `--redact`, and write the report to a file, never the terminal. Remote sources use the network even in detection-only mode. Never run `revoke`. Keep the value off the command line.
+  - **Reading the report:** the JSON and JSONL report shapes, and HMAC fingerprints for anything that leaves the machine.
+  - **Mapping to findings:** the verdict mapping (`unknown` is `needs_validation`, not `invalid`) and six `ext` keys.
+- **Triage:**
+  - Step 2 checks liveness by re-scanning the file with `-v`.
+  - Step 4 gets identity and permissions from `-a`.
+  - Step 5 confirms the old key is dead after rotation (`invalid` on a re-scan).
+- **Pre-approved:** `betterleaks version`, `config show ids`, and the exact detection-only default scan. Liveness checks prompt.
+
+**Changed**
+- The Tooling table puts Betterleaks first, and keeps gitleaks for repos that already have a `.gitleaks.toml` or a pre-commit hook.
 
 ### 1.57.0 (2026-10-30)
 
