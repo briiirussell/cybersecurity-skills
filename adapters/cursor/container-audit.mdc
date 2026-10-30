@@ -31,7 +31,7 @@ Audit only images, registries and clusters the user owns or is authorized to rev
 
 ### Build-time exposure
 
-- Secrets passed via `--build-arg` end up in image layers visible to anyone who pulls the image — use BuildKit secrets (`--mount=type=secret`) or runtime env vars instead
+- Secrets passed via `--build-arg` end up in image layers visible to anyone who pulls the image — use BuildKit secrets (`--mount=type=secret`) or runtime env vars instead. To find secrets already in an image's layers, including files a later layer deleted, see `secrets-audit` → Beyond the repo → Container images
 - `COPY . .` ships everything in the build context — `.dockerignore` should exclude `.git`, `.env`, `node_modules`, `*.pem`, `.aws/`, `.ssh/`
 - `ADD <url>` follows redirects and disables checksum verification — prefer `RUN curl ... && sha256sum -c`
 - Grep for: `ARG .*KEY`, `ARG .*TOKEN`, `ARG .*SECRET`, `ENV .*=.*[A-Za-z0-9]{32,}`, `ADD http`
