@@ -58,6 +58,8 @@ heroku apps --all --json          # includes team apps
 heroku domains -a <app>
 heroku apps:info -a <app> --json  # stack, region, git url
 ```
+**Self-managed Linux hosts** (VPSes, EC2, bare metal, nodes and relays, self-hosted runners, Kubernetes nodes) get their own rows when the advisory set includes a kernel CVE: running vs installed kernel, distro tracker status, mitigations, reboot. The whole track, with CVE-2026-98432 as a worked example, is in [references/linux-hosts.md](references/linux-hosts.md).
+
 Heroku doesn't record a "source repo" unless the GitHub integration or a pipeline is set up; check `heroku pipelines:info <pipeline>` or the dashboard's Deploy tab, and ask when it isn't there.
 
 **Render** (API; token from the dashboard):
@@ -131,6 +133,8 @@ An app is affected only if all three line up: **vulnerable runtime or dependency
 - **Managed runtimes that patch themselves.** Vercel applies Node patch releases to its managed runtime; Heroku and Render images get OS-level updates on rebuild. An advisory in the runtime may need only a redeploy or no action. Confirm what the platform's docs or changelog say for that release before marking it.
 - **Code path not used.** A static Vite or Astro site isn't affected by Next.js server advisories. An app without libvips (no Active Storage variants, no `image_processing` with vips) isn't affected by a libvips RCE. A Next.js app with no Server Actions or middleware may sit outside a specific advisory's preconditions — read the advisory's exact conditions (`vuln-research`).
 
+**Kernel advisories:** compare the host's running kernel package with the distro tracker, never `uname -r` with upstream version numbers; Ubuntu, RHEL and Amazon backport fixes under their own versions. Installed-but-not-rebooted is still affected ([references/linux-hosts.md](references/linux-hosts.md#step-4--is-each-host-affected)).
+
 **Chrome or Chromium advisories** also hit browsers that agents and test suites download: operator machines, repos that pin Playwright or Puppeteer, CI images, and production services that render HTML in a headless browser (the worst case: a renderer bug there is a server RCE). Inventory, affected test, patch table and a separate board are in [references/browser-runtimes.md](references/browser-runtimes.md). Flag `--no-sandbox` in launch args whatever the version.
 
 Mark each row `affected` / `not affected (reason)` / `unknown (what's needed)`. Unknown rows don't get skipped; they get an owner action.
@@ -145,6 +149,7 @@ Patching 40 apps takes days. A platform or env-level compensating control can ta
 - **WAF / firewall rule** at the platform or CDN that blocks the exploit's request shape (Vercel Firewall custom rule, Cloudflare WAF managed rule for the CVE).
 - **Turn off the vulnerable feature** behind a flag until the patch ships.
 - **Deployment protection** on legacy or preview URLs that would otherwise serve vulnerable code publicly.
+- **Kernel CVEs:** livepatch, a sysctl that turns the feature off, or a host-firewall rule for the trigger's packet shape. Each needs a verify line, a persist line and a removal date ([references/linux-hosts.md](references/linux-hosts.md#step-5--mitigate-while-the-distro-hasnt-shipped)).
 
 **A KEV-listed advisory with a slow patch path needs a mitigation entry before you move on.** A slow path is a major upgrade, a client approval, or a frozen release branch. The entry is either a control you applied or a written reason none exists. Don't leave it optional: that advisory is being exploited while the patch waits.
 
@@ -165,6 +170,8 @@ For each affected app the user owns. For other owners' repos, do the same up to 
 9. **If the sync conflicts with unrelated work** on `development`, don't resolve someone else's feature conflicts. Cherry-pick just the patch commits onto `development` instead: `git cherry-pick <patch-sha>...`.
 
 Re-run the scanner from Step 4 against the merged branch and record crit/high before → after.
+
+**Hosts** follow update → reboot (owner's window) → confirm `uname -r` → re-check mitigations, with a separate host board ([references/linux-hosts.md](references/linux-hosts.md#step-6--patch-update-reboot-verify)).
 
 ## Step 7 — Delegation and parallelism
 
@@ -244,4 +251,5 @@ This skill links to supporting files under `references/`. They are not inlined i
 
 - [references/browser-runtimes.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/patch-sweep/references/browser-runtimes.md)
 - [references/enrich-advisories.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/patch-sweep/references/enrich-advisories.mjs)
+- [references/linux-hosts.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/patch-sweep/references/linux-hosts.md)
 - [references/validate-findings.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/patch-sweep/references/validate-findings.mjs)
