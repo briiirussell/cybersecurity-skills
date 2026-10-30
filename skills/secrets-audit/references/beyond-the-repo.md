@@ -24,7 +24,6 @@ Needs `GITHUB_TOKEN` in the environment. `--include` / `--exclude` take `repos` 
 `releases`, `release-assets` and `gists`.
 
 ```bash
-mkdir -p .security/out
 F="--validate=false --analyze=false --redact"
 # Issue and PR text, with comments (org-wide, or one repo)
 betterleaks github --include=issues,issue-comments,prs,discussions --exclude=repos $F -o .security/out/gh-text.json https://github.com/<org-or-repo>
@@ -58,7 +57,7 @@ betterleaks container --archive image.tar $F -o .security/out/image.json
 
 It scans every platform and every historical layer, including files a later layer deleted or replaced. Each finding
 says whether its file is `visible`, `overwritten`, `deleted` or `unknown`, and names the layer that hid it.
-`COPY .env . && RUN rm .env` leaves the key in the lower layer, and this is how it shows up. Anyone who can pull the
+Copying a dotenv file in one layer and deleting it in the next leaves the key in the lower layer, and this is how it shows up. Anyone who can pull the
 image can extract a deleted layer, so a `deleted` finding is as exposed as a `visible` one. Without v2, use
 `trivy image --scanners secret` and `docker history --no-trunc`. `container-audit` sends layer secrets here.
 
@@ -83,7 +82,7 @@ transcript. Then follow SKILL.md: rotate first, scrub the session file, shorten 
 ```bash
 # Models, datasets, Spaces, and their discussions / PRs (HF_TOKEN or HUGGINGFACE_TOKEN for private ones)
 betterleaks hf --include=repos,discussions,prs $F -o .security/out/hf.json https://huggingface.co/<org>
-# A bucket prefix the owner named, with their credentials from AWS_* env vars (it never reads ~/.aws/credentials)
+# A bucket prefix the owner named, with their credentials from AWS_* env vars (it never reads the shared AWS credentials file)
 betterleaks s3 $F -o .security/out/bucket.json s3://<bucket>/<prefix>/
 ```
 
