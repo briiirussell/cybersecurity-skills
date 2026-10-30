@@ -28,7 +28,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | native-code-review | 1.0.1 | 2026-10-27 |
 | osint-recon | 1.0.2 | 2026-10-26 |
 | owasp-audit | 1.6.0 | 2026-10-27 |
-| patch-sweep | 1.0.2 | 2026-10-26 |
+| patch-sweep | 1.1.0 | 2026-10-29 |
 | pci-audit | 1.1.1 | 2026-10-27 |
 | personal-opsec | 1.0.1 | 2026-10-26 |
 | privacy-engineering | 1.1.0 | 2026-10-27 |
@@ -48,6 +48,19 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.54.0 (2026-10-29)
+
+patch-sweep orders the fleet by exploitation (#207, part 3 of 5). patch-sweep 1.1.0.
+
+**Added**
+- **Step 4: exploitation signals, once for the whole advisory set.** When the affected rows are known, look up each advisory in CISA KEV and EPSS once, not per repo, using dependency-audit Step 2b's commands. Offline: `not checked`, never from memory.
+- **Status board `kev` column, and a sort order:** KEV first, then crit/high, then EPSS. A KEV-listed medium goes above an unexploited critical. The example board is reordered to match.
+- **Step 5: a KEV-listed advisory with a slow patch path needs a mitigation entry before moving on.** A slow path is a major upgrade, a client approval, or a frozen branch. The entry is a control you applied, or a written reason none exists.
+- `WebFetch` pre-approved for the public feeds; docs/security-scanning.md lists it.
+
+**Changed**
+- The board header's **Advisories** field records KEV (yes/no and date added) and EPSS next to the ids and fixed versions.
 
 ### 1.53.0 (2026-10-29)
 
