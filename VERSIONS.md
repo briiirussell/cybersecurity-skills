@@ -7,8 +7,8 @@ Current versions of all skills. Agents can compare against local versions to che
 | agent-supply-chain-audit | 1.3.0 | 2026-10-30 |
 | ai-risk-management | 1.1.3 | 2026-10-30 |
 | api-audit | 1.1.7 | 2026-10-27 |
-| breach-patterns | 1.0.4 | 2026-10-26 |
-| business-logic-testing | 1.0.2 | 2026-10-26 |
+| breach-patterns | 1.1.0 | 2026-10-30 |
+| business-logic-testing | 1.1.0 | 2026-10-30 |
 | cicd-security | 1.0.0 | 2026-10-27 |
 | cloud-audit | 1.2.0 | 2026-10-26 |
 | container-audit | 1.3.0 | 2026-10-30 |
@@ -48,6 +48,18 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.70.0 (2026-10-30)
+
+breach-patterns: Pattern 11, a compromised third-party script acting inside logged-in sessions (Polymarket via DebugBear, 2026-10-29). breach-patterns 1.1.0, business-logic-testing 1.1.0.
+
+**Added**
+- breach-patterns Pattern 11 and `references/third-party-scripts.md` (TP1–TP6), for vendor scripts SRI can't pin: real-user monitoring, tag managers, chat, A/B testing, session replay. The checks are third-party scripts by page type, whether each can be pinned, a step-up on sensitive actions, credentials exposed to page scripts, CSP allowlists as an exfil channel, and change detection. Greps and a live CSP check are included. The incident facts were checked against BleepingComputer, Ohey and SecurityWeek, and the page says the defenses are our recommendations.
+- Two corrections to the issue draft. Only email-login accounts had positions sold; browser-wallet accounts had them transferred out, with a signature request per batch. No source says email-login users saw no prompt. How the DebugBear file was replaced isn't public.
+- breach-patterns: a coverage table row, Pattern 2 now points to Pattern 11, and the description mentions the incident. Added a trigger prompt (should-fire 219/229 → 220/230).
+- business-logic-testing Step 5: "Sensitive actions without fresh intent". Replay withdrawals, payouts, account changes and API key creation with only the existing session; if that works, any script on the page can do it.
+
+Proposed by @coreyhaines31 in #243.
 
 ### 1.69.2 (2026-10-30)
 
