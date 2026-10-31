@@ -67,6 +67,7 @@ Each of these is a candidate for the concurrency amplifier in Step 6 — a windo
 ## Step 5 — Stale authorization and saga gaps
 
 - **Stale feature gates and roles.** After a downgrade, cancellation, or role change, does the old capability keep working until a cache expires? Test the gated action immediately after revoking the entitlement, and with a token minted before the change.
+- **Sensitive actions without fresh intent.** Withdrawals, payouts, email or password changes, MFA changes and API key creation should need a step-up (re-auth, passkey, or a confirmation outside the page) that a script running in the logged-in page can't complete. Test each one with only the existing session: replay the request from the browser console or a proxy with no new credential. If it succeeds, any third-party script on that page can do it too (`breach-patterns` Pattern 11). That's a finding sized by what the action moves.
 - **Event-driven saga gaps.** Multi-service workflows coordinated by events (order -> payment -> inventory -> fulfillment) have no single transaction. Look for: a step that commits before a prior step's compensation can run, a compensation (refund, release-inventory) that never fires on partial failure, and a consumer that is not idempotent so a redelivered event double-applies. The dynamic tell is a state that is internally inconsistent across services after an interrupted or duplicated flow.
 
 ## Step 6 — Concurrency methodology

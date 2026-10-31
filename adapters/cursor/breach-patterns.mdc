@@ -1,5 +1,5 @@
 ---
-description: "Learn from public breach disclosures — extract the audit question each one implies and check your own stack. Capital One IMDS abuse, LastPass vault exfiltration, Okta Lapsus$, Snowflake credential reuse, MOVEit, SolarWinds, Equifax, Target POS, Codecov, Uber, Twilio — what would you check now if your boss said 'could that happen to us?' Use when the user mentions 'breach analysis,' 'lessons learned,' 'security postmortem,' 'breach patterns,' 'breach lessons,' 'has this happened to us,' 'apply breach lessons,' 'preempt breaches,' 'security retrospective,' 'real-world security incidents,' or wants to harden against known attacker playbooks."
+description: "Learn from public breach disclosures — extract the audit question each one implies and check your own stack. Capital One IMDS abuse, LastPass vault exfiltration, Okta Lapsus$, Snowflake credential reuse, MOVEit, SolarWinds, Equifax, Target POS, Codecov, Uber, Twilio, Polymarket's compromised DebugBear script — what would you check now if your boss said 'could that happen to us?' Use when the user mentions 'breach analysis,' 'lessons learned,' 'security postmortem,' 'breach patterns,' 'breach lessons,' 'has this happened to us,' 'apply breach lessons,' 'preempt breaches,' 'security retrospective,' 'real-world security incidents,' or wants to harden against known attacker playbooks."
 globs:
 alwaysApply: false
 ---
@@ -50,7 +50,7 @@ The output is a "breach-pattern coverage" document — not a fixed report, an ev
 **Check:**
 - CI/CD secrets minimized to scope (read-only deploy tokens, not full admin)
 - Signed commit / signed artifact enforcement where critical
-- Third-party JavaScript pinned to specific versions or SHA-pinned via SRI
+- Third-party JavaScript pinned to specific versions or SHA-pinned via SRI. Vendor scripts that can't be pinned (RUM, tag managers) are Pattern 11
 - Vendor-managed services audited for blast radius — see `iam-audit` for cross-account trust patterns
 
 ## Pattern 3 — Vault exfiltration via developer endpoint (LastPass, 2022)
@@ -171,6 +171,21 @@ The output is a "breach-pattern coverage" document — not a fixed report, an ev
 - Contractor accounts subject to same MFA and review as employees
 - Privileged Access Management (PAM) systems themselves audited as crown-jewel assets
 
+## Pattern 11 — Compromised monitoring script in logged-in sessions (Polymarket via DebugBear, 2026)
+
+**What happened:** Polymarket loaded DebugBear's real-user-monitoring script on its app. On 2026-10-29 the file served from DebugBear's CDN was a wallet drainer for about an hour. It read the session from localStorage, borrowed the page's own trading client, and moved positions out of 33 accounts through Polymarket's relayer, with roughly $2.2–2.7M lost by various estimates. No password or key was sent anywhere; the script used the authority the logged-in page already had. Polymarket's CSP was in place, and the exfil host was the allowed vendor domain. How the file was replaced isn't public yet.
+
+**Audit question:** If any third-party script on our logged-in or money-moving pages were swapped tonight, could it move money, change account details or read session tokens without the user approving?
+
+**Check** (TP1–TP6, greps and sources in [references/third-party-scripts.md](references/third-party-scripts.md)):
+- Inventory third-party scripts by page type (logged-in, checkout, payout, admin)
+- Vendor scripts that change by design can't take SRI: self-host a reviewed copy, keep them off authenticated pages, or remove them. Versioned files get SRI — see `owasp-audit` A03
+- Withdrawals, payouts, email or password changes and API key creation need a step-up page JavaScript can't complete — see `business-logic-testing` Step 5
+- No long-lived session or API credentials in web storage — see `owasp-audit` A04 and A07
+- CSP allowlists aren't a fence for vendor domains; monitor the hash or size of each vendor script that stays
+
+These defenses are our recommendations, not claims the sources make.
+
 ## Patterns to add (your job)
 
 This skill should grow with each major public breach. Process:
@@ -200,6 +215,7 @@ Good post-mortem sources:
 |---------|----------------|--------|-------|
 | IMDS abuse (Capital One) | SSRF-to-metadata reachable? | Clean | sec |
 | Supplier blast radius (SolarWinds) | CI/CD blast radius? | Gap — plan attached | platform |
+| Third-party script in session (Polymarket/DebugBear) | Can a swapped vendor script move money without user approval? | Gap — plan attached | web |
 | ... | | | |
 
 ### Gaps with plans
@@ -229,3 +245,9 @@ This is a quarterly-rerunable document — not one-and-done. Industry patterns e
 - Project Zero — Google's offensive security team writeups
 - Mandiant / CrowdStrike threat reports
 - "Tracing Stolen Bitcoin" — investigative writeups on attacker workflows
+
+## Reference files
+
+This skill links to supporting files under `references/`. They are not inlined in this adapter; open them on GitHub (or in `skills/breach-patterns/references/` if you have the repo checked out):
+
+- [references/third-party-scripts.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/breach-patterns/references/third-party-scripts.md)
