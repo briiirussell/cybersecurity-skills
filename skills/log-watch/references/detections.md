@@ -118,7 +118,7 @@ WHERE event_type IN ('api_key_created', 'api_key_rotated')
   AND created_at > :checkpoint;
 ```
 
-AWS access keys: `CreateAccessKey` via CloudTrail (D9 query with `EventName`). GitHub: `phrase=action:personal_access_token` / deploy keys **(verify)**.
+AWS access keys: `CreateAccessKey` via CloudTrail (D9 query with `EventName`). GitHub org audit log: `phrase=action:personal_access_token` (fine-grained token access requests and grants to the org) and `phrase=action:public_key.create` (an SSH key added to an account, or a deploy key added to a repo). Token creation itself (`personal_access_token.create`) is in each user's security log, not the org log.
 
 ## D4 — 401/403/404 spikes on sensitive paths
 

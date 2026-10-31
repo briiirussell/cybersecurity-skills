@@ -135,7 +135,7 @@ The persistent layer that makes the above work over time.
 
 ## Regulatory layer (high level — counsel determines specifics)
 
-Status as of **October 2026**. Regulatory dates move; state the "as of" date in the report and re-check anything marked (verify) against the primary source before relying on it.
+Status as of **October 2026**. Regulatory dates move; state the "as of" date in the report and re-check dates against the primary source before relying on them. Checked on 2026-10-30.
 
 ### EU AI Act (Regulation (EU) 2024/1689)
 
@@ -155,20 +155,20 @@ Timeline:
 | 2 Feb 2025 | Prohibited practices; AI literacy duty for providers and deployers |
 | 2 Aug 2025 | GPAI model obligations; governance and penalties |
 | 2 Aug 2026 | Article 50 transparency obligations; most remaining provisions |
-| 2 Dec 2027 | Annex III high-risk obligations — moved from 2 Aug 2026 by the 2026 Digital Omnibus on AI (verify against EUR-Lex) |
-| 2 Aug 2028 | High-risk AI in Annex I products — moved from 2 Aug 2027 by the same amendment (verify) |
+| 2 Dec 2027 | Annex III high-risk obligations — moved from 2 Aug 2026 by the Digital Omnibus on AI (in force 27 July 2026; OJ L, 2026/1744) |
+| 2 Aug 2028 | High-risk AI in Annex I products — moved from 2 Aug 2027 by the same amendment |
 
 The Omnibus also changed other details (a grace period for machine-readable marking on systems already on the market, new prohibited categories). Check the consolidated text on EUR-Lex rather than summaries.
 
 ### US (federal patchwork)
 
-- **Executive Order 14110 (2023) was rescinded on 20 January 2025.** Don't cite it as current. Federal policy since then: EO 14179 (January 2025) and America's AI Action Plan (July 2025), which favor deregulation, and an EO of 11 December 2025 directing agencies to challenge state AI laws seen as burdensome (it names Colorado's) through an AI Litigation Task Force. Its effect on any given state law is contested and may be in litigation (verify)
+- **Executive Order 14110 (2023) was rescinded on 20 January 2025.** Don't cite it as current. Federal policy since then: EO 14179 (January 2025) and America's AI Action Plan (July 2025), which favor deregulation, and EO 14365 of 11 December 2025 ("Ensuring a National Policy Framework for Artificial Intelligence"), which has the Attorney General set up an AI Litigation Task Force to challenge state AI laws (it names Colorado's) and makes states with such laws ineligible for some federal broadband funds. An executive order doesn't repeal a state law: before relying on one, check whether the Task Force or a court has acted against it
 - The Action Plan directed NIST to revise the AI RMF. Cite the revision you actually used
 - FTC enforcement under unfair / deceptive practices authority — particularly for AI claims and AI used in pricing / hiring / housing
 - EEOC enforcement for employment AI
 - Sector-specific (HUD for housing, CFPB for credit, FDA for medical AI)
 - State laws — still in force unless a court or the legislature says otherwise:
-  - Colorado AI Act (SB 24-205) — effective date pushed to 30 June 2026, with amendments expected; confirm the current text and date with the General Assembly (verify)
+  - Colorado: SB 24-205 never took effect as written. Its start was delayed to 30 June 2026 (SB25B-004), then SB26-189 (signed 14 May 2026) repealed and re-enacted it as an automated decision-making technology (ADMT) law: developer duties from 1 January 2027, Attorney General rules on adverse-decision disclosures due by then, a 60-day notice-and-cure period before AG enforcement until 2030, and no private right of action. Cite SB26-189, not SB 24-205
   - NYC Local Law 144 bias audits for automated employment decision tools
   - Illinois BIPA for biometrics
   - California AB 2013 (training-data transparency) and SB 942 (AI content provenance)
