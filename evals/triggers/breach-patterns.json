@@ -5,7 +5,8 @@
     "what lessons from the Snowflake credential-reuse breaches should we check in our own stack?",
     "my boss read about the LastPass breach and asked 'could that happen to us?' where do I start",
     "walk me through what MOVEit and SolarWinds teach us and turn it into an audit checklist",
-    "security retrospective: apply lessons from real-world breaches to our setup"
+    "security retrospective: apply lessons from real-world breaches to our setup",
+    "after the Polymarket DebugBear script hack, could a swapped vendor analytics script on our logged-in pages drain accounts?"
   ],
   "near_miss": [
     {
