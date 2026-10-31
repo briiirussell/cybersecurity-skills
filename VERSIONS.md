@@ -49,6 +49,13 @@ Current versions of all skills. Agents can compare against local versions to che
 
 ## Recent Changes
 
+### 1.69.1 (2026-10-30)
+
+evals/README: current trigger-eval results and misses. Docs only.
+
+**Fixed**
+- The results section quoted v1.50.1. It now gives v1.69.0's numbers (should-fire 219/229, 95.6%; top-3 98.7%; near-miss 219/221, 99.1%; most similar pair 0.40) and lists today's misses: pasted code, DPIA prompts going to threat-modeling, near-synonyms in neighbouring descriptions, and the budget and jailbreak prompts. It also notes that the incident-triage, prompt-injection and fuzzing-harness misses listed at v1.50.1 were fixed in v1.52.1–v1.52.3.
+
 ### 1.69.0 (2026-10-30)
 
 agent-supply-chain-audit checks where agents get launched (#234). agent-supply-chain-audit 1.3.0, personal-opsec 1.2.1.
