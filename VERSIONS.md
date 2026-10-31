@@ -4,7 +4,7 @@ Current versions of all skills. Agents can compare against local versions to che
 
 | Skill | Version | Last Updated |
 |-------|---------|--------------|
-| agent-supply-chain-audit | 1.1.0 | 2026-10-30 |
+| agent-supply-chain-audit | 1.2.0 | 2026-10-30 |
 | ai-risk-management | 1.1.2 | 2026-10-26 |
 | api-audit | 1.1.7 | 2026-10-27 |
 | breach-patterns | 1.0.4 | 2026-10-26 |
@@ -30,7 +30,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | owasp-audit | 1.6.0 | 2026-10-27 |
 | patch-sweep | 1.3.0 | 2026-10-30 |
 | pci-audit | 1.1.1 | 2026-10-27 |
-| personal-opsec | 1.1.0 | 2026-10-30 |
+| personal-opsec | 1.1.1 | 2026-10-30 |
 | privacy-engineering | 1.1.0 | 2026-10-27 |
 | prompt-injection | 1.2.1 | 2026-10-27 |
 | recon | 1.0.1 | 2026-10-26 |
@@ -48,6 +48,29 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.66.0 (2026-10-30)
+
+agent-supply-chain-audit audits IDE extensions (#222). agent-supply-chain-audit 1.2.0, personal-opsec 1.1.1.
+
+**Added**
+- **IDE extensions as a first-class item** (`references/ide-extensions.md`):
+  - **Folders and marketplaces** for Cursor, VS Code, VS Code Insiders, Windsurf, VSCodium, remote and SSH servers, and JetBrains.
+  - **A read-only inventory from each `extensions.json`.** Its fields were checked against real registries: id, version, `source` (`gallery` or `vsix`), publisher, install time.
+  - **Every version folder on disk**, because IDEs keep old builds after an update.
+- **EX1–EX6:**
+  - EX1, known-bad version on disk, starting with `anthropic.claude-code` 2.1.312 and 2.1.313 from Cursor's marketplace (2026-10-29), sourced from Cursor's notice;
+  - EX2, auto-update on for high-privilege extensions;
+  - EX3, the same id from a different marketplace;
+  - EX4, code prepended to `extension.js`;
+  - EX5, unverified publisher or typosquat;
+  - EX6, no extension policy.
+  - EX1 and EX4 are Critical and go to `incident-triage` before anything is cleaned up.
+- Severity anchors, a fingerprint shape, an Inventory row, trigger phrases ("audit my IDE extensions"), and one trigger-eval prompt.
+- personal-opsec C2 includes IDE extensions in the "what's connected" pass.
+
+**Changed**
+- `locations.md` no longer just names `~/.cursor/extensions/` as out of scope; it points to the EX checks.
 
 ### 1.65.0 (2026-10-30)
 
