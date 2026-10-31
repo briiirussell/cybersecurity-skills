@@ -5,14 +5,14 @@ Current versions of all skills. Agents can compare against local versions to che
 | Skill | Version | Last Updated |
 |-------|---------|--------------|
 | agent-supply-chain-audit | 1.3.0 | 2026-10-30 |
-| ai-risk-management | 1.1.2 | 2026-10-26 |
+| ai-risk-management | 1.1.3 | 2026-10-30 |
 | api-audit | 1.1.7 | 2026-10-27 |
 | breach-patterns | 1.0.4 | 2026-10-26 |
 | business-logic-testing | 1.0.2 | 2026-10-26 |
 | cicd-security | 1.0.0 | 2026-10-27 |
 | cloud-audit | 1.2.0 | 2026-10-26 |
 | container-audit | 1.3.0 | 2026-10-30 |
-| control-audit | 1.2.0 | 2026-10-27 |
+| control-audit | 1.2.1 | 2026-10-30 |
 | crypto-audit | 1.1.2 | 2026-10-27 |
 | csf-mapping | 1.0.3 | 2026-10-27 |
 | dependency-audit | 1.4.0 | 2026-10-30 |
@@ -22,7 +22,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | hipaa-audit | 1.1.1 | 2026-10-27 |
 | iam-audit | 1.2.0 | 2026-10-27 |
 | incident-triage | 1.2.0 | 2026-10-30 |
-| log-watch | 1.0.1 | 2026-10-26 |
+| log-watch | 1.0.2 | 2026-10-30 |
 | malware-triage | 1.0.0 | 2026-10-27 |
 | mobile-audit | 1.1.1 | 2026-10-27 |
 | native-code-review | 1.0.1 | 2026-10-27 |
@@ -48,6 +48,26 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.69.2 (2026-10-30)
+
+Resolved the "(verify)" markers: every one was checked against a primary source on 2026-10-30 and replaced with a dated, sourced fact. ai-risk-management 1.1.3, control-audit 1.2.1, log-watch 1.0.2.
+
+**Fixed**
+- **ai-risk-management: Colorado was out of date.** SB 24-205 never took effect as written. After the delay to 30 June 2026, SB26-189 (signed 14 May 2026) repealed and re-enacted it as an automated decision-making technology law:
+  - developer duties start 1 January 2027;
+  - Attorney General rules are due by the same date;
+  - the AG must give 60 days' notice and a chance to cure before enforcing, until 2030;
+  - there's no private right of action.
+- ai-risk-management: the EU Digital Omnibus on AI is in force (27 July 2026, OJ L 2026/1744). That confirms the Annex III date of 2 December 2027 and the Annex I date of 2 August 2028. The December 2025 order is named as EO 14365, with what it actually does, and the skill now says to check whether its Task Force has acted against a given state law.
+- control-audit (NIST 800-53 / FedRAMP):
+  - 5.1.1 is dated 7 November 2023 and added IA-13 (checked in NIST's OSCAL catalog history), and 5.2.0 is still current.
+  - FedRAMP's own wording on certification classes ("loosely align", "not a direct correlation") replaces the secondary sources.
+  - The CR26 Rev5 minimum control lists are counted from FedRAMP's machine-readable rules: 155 for Class B, 322 for C, 409 for D.
+  - NIST's 800-53 to ISO/IEC 27001:2022 crosswalk and AICPA's TSC to 800-53 mapping are both confirmed.
+- control-audit (SOC 2): the attestation-standards project (AT-C 105/205/210) has exposure drafts from February and March 2026, comments closed 30 June, and a proposed effective date of 15 June 2029. There's no final standard yet.
+- control-audit (ISO 27001): the AICPA's TSC to ISO 27001 mapping is dated May 2018, so it covers the 2013 edition.
+- log-watch: the GitHub audit-log actions are named. `personal_access_token` covers fine-grained token access in the org log, and `public_key.create` covers SSH and deploy keys. Token creation is in each user's security log, not the org log.
 
 ### 1.69.1 (2026-10-30)
 
