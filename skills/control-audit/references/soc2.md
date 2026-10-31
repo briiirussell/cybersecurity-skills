@@ -6,7 +6,7 @@ For `control-audit`. Criteria are paraphrased, not quoted: the AICPA text is cop
 
 - **Criteria:** 2017 Trust Services Criteria (TSP section 100), with the **revised points of focus published in 2022**. The 2022 revision changed only the points of focus; the criteria themselves are unchanged since 2017. Points of focus are guidance for designing and assessing controls, not requirements a control must tick off one by one.
 - **Guide:** the AICPA SOC 2 Guide, 2022 edition, which is what the service auditor follows.
-- **2026:** the AICPA Auditing Standards Board has an open project revising the attestation standards (AT-C 105/205/210); exposure drafts were issued in early 2026. As of late 2026 no final standard is out and the project does not change the criteria (verify before relying on this; check the AICPA project page).
+- **2026:** the AICPA Auditing Standards Board proposed revisions to the attestation standards AT-C 105, 205 and 210 (exposure draft 26 February 2026, conforming amendments in March; comments closed 30 June 2026). The proposed effective date is engagements beginning on or after 15 June 2029. As of October 2026 no final standard has been issued, and the project doesn't change the Trust Services Criteria. Check the AICPA project page for the current stage.
 
 ## Report types
 
@@ -192,6 +192,6 @@ A Type 2 exception and a security exposure aren't the same thing. Rate the expos
 ## Sources
 
 - AICPA & CIMA, 2017 Trust Services Criteria (Revised Points of Focus — 2022) and the SOC 2 Guide (2022). Paraphrased; consult the official text.
-- AICPA Auditing Standards Board, attestation standards project (2026 exposure drafts) — status per secondary sources as of 2026 (verify).
+- AICPA Auditing Standards Board, proposed attestation standards (exposure drafts February and March 2026); coverage in the Journal of Accountancy (April 2026) and the GAO's comment letter. No final standard as of 2026-10-30.
 - COSO, Internal Control — Integrated Framework (2013).
 - Sample-size ranges are common practitioner guidance, not an AICPA requirement; each firm sets its own.
