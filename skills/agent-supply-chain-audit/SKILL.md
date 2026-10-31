@@ -50,6 +50,7 @@ agent loads, at every scope. The per-agent path tables and a one-shot discovery 
 | Codex | `AGENTS.md`, `~/.codex/AGENTS.md` | `~/.codex/prompts`, `~/.codex/skills` | `~/.codex/config.toml` (`[mcp_servers.*]`, approval and sandbox policy) |
 | Gemini CLI | `GEMINI.md`, `~/.gemini/GEMINI.md` | `.gemini/commands`, `~/.gemini/extensions/*` | `.gemini/settings.json`, `~/.gemini/settings.json` (`mcpServers`) |
 | Copilot | `.github/copilot-instructions.md`, `.github/instructions/*.instructions.md` | `.github/prompts`, `.github/agents`, `.github/chatmodes` | `.vscode/mcp.json`, VS Code user settings |
+| Launch folders | Any `AGENTS.md` / `CLAUDE.md` in the folder an agent starts in (`~/Downloads`, `~/Desktop`, `$HOME`) | Codex `projects.<path>.trust_level` in `~/.codex/config.toml`; Claude Code's folder-trust prompt | Whatever those instructions tell the agent to do (LD1–LD4, [references/launch-directories.md](references/launch-directories.md)) |
 | IDE extensions | — | `~/.cursor/extensions`, `~/.vscode/extensions`, `~/.windsurf/extensions`, `~/.vscode-oss/extensions`, remote `~/.*-server/extensions`, JetBrains `plugins/` | Every extension: the extension host runs it with the user's full access |
 
 For each item record: **type**, **agent**, **scope**, **source** (marketplace, git URL, npm/PyPI package, docker image,
@@ -168,6 +169,15 @@ with no named CVE is `needs_validation`. A pinned browser server also needs an u
 more than one major behind, bumping the pin is a security fix. Recognizers, the grep, the ladder and the RP1
 reconciliation are in [references/browser-runtimes.md](references/browser-runtimes.md); the per-machine version check
 is `personal-opsec` C7.
+
+### Launch directories and folder trust (LD1–LD4)
+
+Ask where agents get started, and inventory instruction files and settings in catch-all folders the browser writes to.
+In October 2026 a planted `AGENTS.md` in a customer's `~/Downloads` told Codex to add a server to the machine-wide
+`~/.codex/config.toml` and install a malicious npm package. Checks: a trusted catch-all folder (LD1), an instruction
+file nobody wrote (LD2), a machine-wide server or base URL the user doesn't recognize (LD3), a package from a known
+campaign (LD4). LD2–LD4 are Critical. Codex trust is per exact path, so an `untrusted` entry for `~/Downloads`
+doesn't cover folders inside it. Details: [references/launch-directories.md](references/launch-directories.md).
 
 ### IDE extensions (EX1–EX6)
 
