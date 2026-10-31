@@ -1,6 +1,6 @@
 # agent-supply-chain-audit
 
-> Audit the extensions AI coding agents load and trust (skills, plugins, marketplaces, hooks, settings, MCP servers, and instruction files like CLAUDE.md, AGENTS.md, GEMINI.md, .cursor/rules and copilot-instructions.md) across Claude Code, Cursor, Codex, Gemini CLI and GitHub Copilot. Read-only: inventories each item with its source and pin, greps for hidden instructions, exfiltration, credential reads, persistence, curl|bash and over-broad tool grants, reviews hooks and MCP pinning and tool poisoning, and gives each item a SAFE / CAUTION / DO-NOT-INSTALL verdict. Use when the user mentions 'audit my skills,' 'is this skill malicious,' 'is this skill safe,' 'is this MCP server safe,' 'review CLAUDE.md,' 'review AGENTS.md,' 'plugin security,' 'check my hooks,' 'audit my MCP servers,' 'agent supply chain,' 'SkillSpector,' 'tool poisoning,' 'rug pull,' or is about to install a skill, plugin, or MCP server.
+> Audit the extensions AI coding agents load and trust (skills, plugins, marketplaces, hooks, settings, MCP servers, and instruction files like CLAUDE.md, AGENTS.md, GEMINI.md, .cursor/rules and copilot-instructions.md) across Claude Code, Cursor, Codex, Gemini CLI and GitHub Copilot. Read-only: inventories each item with its source and pin, greps for hidden instructions, exfiltration, credential reads, persistence, curl|bash and over-broad tool grants, reviews hooks and MCP pinning and tool poisoning, and gives each item a SAFE / CAUTION / DO-NOT-INSTALL verdict. Use when the user mentions 'audit my skills,' 'is this skill malicious,' 'is this skill safe,' 'is this MCP server safe,' 'review CLAUDE.md,' 'review AGENTS.md,' 'plugin security,' 'check my hooks,' 'audit my MCP servers,' 'agent supply chain,' 'SkillSpector,' 'tool poisoning,' 'rug pull,' 'audit my IDE extensions,' 'is this VS Code extension safe,' or is about to install a skill, plugin, MCP server, or IDE extension.
 
 # Agent Supply-Chain Audit — Skills, Plugins, Hooks, MCP Servers, Instruction Files
 
@@ -48,6 +48,7 @@ agent loads, at every scope. The per-agent path tables and a one-shot discovery 
 | Codex | `AGENTS.md`, `~/.codex/AGENTS.md` | `~/.codex/prompts`, `~/.codex/skills` | `~/.codex/config.toml` (`[mcp_servers.*]`, approval and sandbox policy) |
 | Gemini CLI | `GEMINI.md`, `~/.gemini/GEMINI.md` | `.gemini/commands`, `~/.gemini/extensions/*` | `.gemini/settings.json`, `~/.gemini/settings.json` (`mcpServers`) |
 | Copilot | `.github/copilot-instructions.md`, `.github/instructions/*.instructions.md` | `.github/prompts`, `.github/agents`, `.github/chatmodes` | `.vscode/mcp.json`, VS Code user settings |
+| IDE extensions | — | `~/.cursor/extensions`, `~/.vscode/extensions`, `~/.windsurf/extensions`, `~/.vscode-oss/extensions`, remote `~/.*-server/extensions`, JetBrains `plugins/` | Every extension: the extension host runs it with the user's full access |
 
 For each item record: **type**, **agent**, **scope**, **source** (marketplace, git URL, npm/PyPI package, docker image,
 remote URL, hand-written), **pin** (commit SHA, exact version, digest — or "unpinned"), **what it can run**
@@ -166,6 +167,16 @@ more than one major behind, bumping the pin is a security fix. Recognizers, the 
 reconciliation are in [references/browser-runtimes.md](references/browser-runtimes.md); the per-machine version check
 is `personal-opsec` C7.
 
+### IDE extensions (EX1–EX6)
+
+Read each IDE's `extensions.json` and list **every version folder on disk**: IDEs keep old versions after an update,
+so a malicious build can outlive the update. Checks: known-bad version (EX1), auto-update on for high-privilege
+extensions (EX2), same id from a different marketplace (EX3), code prepended to `extension.js` (EX4), unverified
+publisher or typosquat (EX5), no extension policy (EX6). An EX1 or EX4 hit is Critical and goes to `incident-triage`
+before anything is cleaned up. The prompting case is the malicious `Anthropic.claude-code` 2.1.312 and 2.1.313 builds
+in Cursor's marketplace on 2026-10-29. Inventory command, check details and severity are in
+[references/ide-extensions.md](references/ide-extensions.md).
+
 ### Tool definitions (TP1–TP4, LP1–LP4)
 
 Read every tool's name, description, and each parameter's name, description, default, and enum labels. That text goes
@@ -221,9 +232,9 @@ Anchors for this surface:
 
 | Severity | Typical shape |
 |---|---|
-| Critical | Active item sends credentials, transcripts, or source to an external host; concealed directive that runs commands or disables approvals |
+| Critical | Active item sends credentials, transcripts, or source to an external host; concealed directive that runs commands or disables approvals; a known-bad or code-prepended IDE extension on disk (EX1, EX4) |
 | High | Hook or bundled script with undeclared egress; project settings that bypass permissions or reroute model traffic; persistence into instruction files, settings, or shell init |
-| Medium | Unpinned MCP server or git-installed skill with broad tool access; unscoped `Bash` + `WebFetch` pre-approval; tool description that steers the model toward another tool or extra data |
+| Medium | Unpinned MCP server or git-installed skill with broad tool access; an unreviewed agent extension on auto-update on a machine with production access (EX2); unscoped `Bash` + `WebFetch` pre-approval; tool description that steers the model toward another tool or extra data |
 | Low | Unpinned item with narrow reach; over-broad trigger that shadows another skill |
 
 Not findings — **hardening notes**: no tool-definition snapshot, missing `permissions.deny` rules, a pinned tag rather
@@ -325,6 +336,7 @@ This skill links to supporting files under `references/`. They are not inlined i
 - [references/content-checks.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/agent-supply-chain-audit/references/content-checks.md)
 - [references/findings-format.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/agent-supply-chain-audit/references/findings-format.md)
 - [references/findings.schema.json](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/agent-supply-chain-audit/references/findings.schema.json)
+- [references/ide-extensions.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/agent-supply-chain-audit/references/ide-extensions.md)
 - [references/locations.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/agent-supply-chain-audit/references/locations.md)
 - [references/severity-calibration.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/agent-supply-chain-audit/references/severity-calibration.md)
 - [references/to-sarif.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/agent-supply-chain-audit/references/to-sarif.mjs)

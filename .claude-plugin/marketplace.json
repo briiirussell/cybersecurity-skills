@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Cybersecurity skills for AI agents — source-code audits, dependency triage, cloud config review, incident response, OSINT, AI/LLM security",
-    "version": "1.65.0"
+    "version": "1.66.0"
   },
   "plugins": [
     {
