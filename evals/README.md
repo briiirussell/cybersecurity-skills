@@ -33,15 +33,23 @@ What the proxy is good at: it's free, it runs on every PR, and it notices when t
 
 ### Results
 
-At v1.50.1 (42 skills): should-fire top-1 **213/228 (93.4%)**, top-3 223/228 (97.8%); near-miss **217/221 (98.2%)**. The most similar pair is `ai-risk-management` / `prompt-injection` at 0.45. (At v1.23.4, with 35 skills, it was 91.4% and 97.7%.)
+At v1.69.0 (42 skills): should-fire top-1 **219/229 (95.6%)**, top-3 226/229 (98.7%); near-miss **219/221 (99.1%)**. The most similar pair is `ai-risk-management` / `prompt-injection` at 0.40. (At v1.50.1 it was 93.4% and 98.2%; at v1.23.4, with 35 skills, 91.4% and 97.7%.)
 
 The misses worth knowing about, since they point at descriptions that could be sharper:
 
-- `incident-triage` wins only 3 of 5. "Ransomware just hit our file server" and "someone created a new admin user at 3am" go elsewhere, and two near-misses ("we've just been breached…", "we were compromised through that CVE…") go to `breach-patterns` and `patch-sweep`. The description leans on 'incident' and 'breach' words that other skills also use.
-- `prompt-injection` wins 3 of 5. Prompts about agents being hijacked by a web page or an email don't share words with "prompt injection".
+- **Pasted code is the weakest group.** The Dockerfile goes to `secrets-audit` (it contains `AWS_SECRET_ACCESS_KEY`), and a balance-check race goes to `pci-audit` (it says `charge_card`). BM25 reads the paste's words, not what the user is asking for.
+- **DPIA prompts go to `threat-modeling`.** "Do a DPIA for the new feature that tracks user location" (should-fire) and "DPIA for the new feature" (near-miss) both land there instead of `privacy-engineering`.
+- **Near-synonyms in a neighbour's description:**
+  - "Are the Supabase RLS policies on our tables actually enabled?" goes to `scanner-pipeline`, whose description names the Supabase RLS advisor, instead of `cloud-audit`.
+  - "Tune this noisy alert" goes to `soc-operations` instead of `siem-detection`.
+  - "HTB box at 10.10.11.5, start recon" goes to `web-pentest` instead of `recon`.
+  - "Find vulnerabilities in my Flask app" goes to `finding-triage` instead of `owasp-audit`.
+  - "Walk me through what MOVEit and SolarWinds teach us" goes to `personal-opsec` instead of `breach-patterns`.
+  - "A service account key was found in the repo" (near-miss) ranks `secrets-audit` fourth.
+- `security-comms` loses "help me justify the security budget to the CFO": no description says "budget" or "CFO".
 - `mobile-audit` loses the jailbreak prompt (see above).
-- `fuzzing-harness` loses "write a fuzzer for our packet parser? it's C" to `native-code-review`, and `security-start` doesn't take any other skill's prompts.
-- Pasted-code prompts are the weakest group: the Dockerfile goes to `secrets-audit` (it contains `AWS_SECRET_ACCESS_KEY`), and a balance-check race goes to `pci-audit` (it says `charge_card`).
+
+The `incident-triage`, `prompt-injection` and `fuzzing-harness` misses listed at v1.50.1 were fixed by the description edits in v1.52.1–v1.52.3.
 
 ## Plugin evals (on demand)
 
