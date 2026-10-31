@@ -44,6 +44,7 @@ Determine incident type:
 - **Denial of service**
 - **Web compromise:** defacement, skimming, backdoor
 - **Phishing / social engineering**
+- **Dev-tool compromise:** a malicious IDE extension, MCP server, npm `postinstall`, skill or plugin on a developer machine. It has its own playbook (scope, contain before cleaning, IOC sweep for SSH keys, reverse tunnels and vendor-named persistence, fleet scope) and a dated IOC list for the October 2026 malicious Claude Code extension in Cursor's marketplace: [references/dev-tool-compromise.md](references/dev-tool-compromise.md)
 
 Determine severity:
 - **Critical:** active data exfiltration, ransomware spreading, critical system compromise
@@ -233,3 +234,9 @@ Triage ends when the incident is contained and scoped. Record, for the next owne
 - NIST Cybersecurity Framework 2.0 (Respond and Recover Functions)
 - SANS Incident Handler's Handbook
 - MITRE ATT&CK Framework
+
+## Reference files
+
+This skill links to supporting files under `references/`. They are not inlined in this adapter; open them on GitHub (or in `skills/incident-triage/references/` if you have the repo checked out):
+
+- [references/dev-tool-compromise.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/incident-triage/references/dev-tool-compromise.md)

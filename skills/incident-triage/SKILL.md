@@ -1,7 +1,7 @@
 ---
 name: incident-triage
 description: "Guide rapid triage and initial response to a live security incident happening right now (ransomware hitting a file server, an attacker still in the network, a new admin user nobody created, a host compromised through a CVE) following NIST SP 800-61 Rev. 3 (CSF 2.0 Respond and Recover) — declare, validate and prioritize, contain, preserve evidence, scope, extract IOCs, start the notification clocks, and hand off to eradication, recovery and lessons learned. Use when the user mentions 'incident response,' 'security incident,' 'incident triage,' 'active incident,' 'we've been hacked,' 'we've been breached,' 'compromised,' 'ransomware,' 'contain the incident,' 'malware detected,' 'suspicious activity,' 'IOC,' 'indicators of compromise,' or needs help handling a security event."
-allowed-tools: Read, Grep, Glob, WebSearch, Bash(ps:*), Bash(netstat:*), Bash(lsof:*), Bash(who:*)
+allowed-tools: Read, Grep, Glob, WebSearch, Bash(ps:*), Bash(netstat:*), Bash(lsof:*), Bash(who:*), Bash(launchctl list:*), Bash(shasum -a 256:*)
 ---
 
 # Incident Triage — Security Incident Response
@@ -46,6 +46,7 @@ Determine incident type:
 - **Denial of service**
 - **Web compromise:** defacement, skimming, backdoor
 - **Phishing / social engineering**
+- **Dev-tool compromise:** a malicious IDE extension, MCP server, npm `postinstall`, skill or plugin on a developer machine. It has its own playbook (scope, contain before cleaning, IOC sweep for SSH keys, reverse tunnels and vendor-named persistence, fleet scope) and a dated IOC list for the October 2026 malicious Claude Code extension in Cursor's marketplace: [references/dev-tool-compromise.md](references/dev-tool-compromise.md)
 
 Determine severity:
 - **Critical:** active data exfiltration, ransomware spreading, critical system compromise

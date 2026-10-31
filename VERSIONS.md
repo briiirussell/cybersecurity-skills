@@ -21,7 +21,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | fuzzing-harness | 1.0.1 | 2026-10-27 |
 | hipaa-audit | 1.1.1 | 2026-10-27 |
 | iam-audit | 1.2.0 | 2026-10-27 |
-| incident-triage | 1.1.2 | 2026-10-27 |
+| incident-triage | 1.2.0 | 2026-10-30 |
 | log-watch | 1.0.1 | 2026-10-26 |
 | malware-triage | 1.0.0 | 2026-10-27 |
 | mobile-audit | 1.1.1 | 2026-10-27 |
@@ -30,7 +30,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | owasp-audit | 1.6.0 | 2026-10-27 |
 | patch-sweep | 1.3.0 | 2026-10-30 |
 | pci-audit | 1.1.1 | 2026-10-27 |
-| personal-opsec | 1.1.1 | 2026-10-30 |
+| personal-opsec | 1.2.0 | 2026-10-30 |
 | privacy-engineering | 1.1.0 | 2026-10-27 |
 | prompt-injection | 1.2.1 | 2026-10-27 |
 | recon | 1.0.1 | 2026-10-26 |
@@ -41,13 +41,41 @@ Current versions of all skills. Agents can compare against local versions to che
 | security-start | 1.0.0 | 2026-10-27 |
 | siem-detection | 1.0.5 | 2026-10-27 |
 | soc-operations | 1.0.4 | 2026-10-26 |
-| threat-hunting | 1.0.5 | 2026-10-27 |
+| threat-hunting | 1.1.0 | 2026-10-30 |
 | threat-modeling | 1.0.4 | 2026-10-26 |
 | variant-analysis | 1.0.0 | 2026-10-27 |
 | vuln-research | 1.0.4 | 2026-10-27 |
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.67.0 (2026-10-30)
+
+incident-triage gets a compromised-developer-machine playbook, threat-hunting a dev-tool backdoor hunt (#223). incident-triage 1.2.0, threat-hunting 1.1.0, personal-opsec 1.2.0.
+
+**Added**
+- **Dev-tool compromise** (`incident-triage/references/dev-tool-compromise.md`), for when an IDE extension, MCP server, npm `postinstall`, skill or plugin turns out to be malicious:
+  - **Scope:** was it installed in the window, did it activate, do the IOCs match?
+  - **Contain before cleaning:** cut access, collect evidence first (uninstalling doesn't remove the persistence), rotate from a clean machine.
+  - **A read-only sweep** for macOS, Linux and Windows: attacker SSH keys, vendor-named LaunchAgents, scheduled tasks and `@reboot` cron entries, Remote Login, live reverse tunnels.
+  - **Fleet and downstream scope.** A tunnel only gave a shell where an SSH server was running.
+  - **Recovery hand-offs.**
+- **Dated IOCs** for the malicious `Anthropic.claude-code` 2.1.312 and 2.1.313 builds in Cursor's marketplace (2026-10-29), taken from Cursor's notice as updated 2026-10-30 11:30 PT:
+  - network indicators;
+  - SSH key comment and fingerprints;
+  - dropped files and persistence on all three OSes;
+  - `extension.js` and VSIX hashes;
+  - the remediation scripts, and how to run each.
+  - It notes where sources disagree: whether 2.1.312 was malicious, and 2.1.314 as the fixed version.
+- **threat-hunting: "Developer workstations"** in the hunt catalog. It's pattern-based rather than tied to one incident: `authorized_keys` on laptops, vendor-impersonating user persistence, executable hidden scripts in `~/.config`, reverse tunnels, Remote Login turned on, a changed `extension.js`.
+- **personal-opsec C8, inbound remote access:** Remote Login off unless needed, `authorized_keys` absent or reviewed, and an alert on any change to it.
+- **incident-triage:** the new incident type, plus pre-approved `launchctl list` and `shasum -a 256`.
+
+**Departures from the issue draft**
+- No source says "don't uninstall first". The playbook says to collect evidence before removing anything, and that uninstalling alone isn't enough (Cursor).
+- Turning on SSH failed unless Cursor ran with admin rights (Cursor), so scoping asks whether an SSH server was already running.
+- `ssh-keygen -lf:*`, `plutil -p:*` and `crontab -l` aren't pre-approved: `ssh-keygen -R` edits `known_hosts`, and `plutil` can write files. They prompt.
+- The full attacker public key isn't reprinted. The comment and fingerprint identify it.
 
 ### 1.66.0 (2026-10-30)
 
