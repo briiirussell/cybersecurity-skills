@@ -4,7 +4,7 @@ Current versions of all skills. Agents can compare against local versions to che
 
 | Skill | Version | Last Updated |
 |-------|---------|--------------|
-| agent-supply-chain-audit | 1.2.0 | 2026-10-30 |
+| agent-supply-chain-audit | 1.3.0 | 2026-10-30 |
 | ai-risk-management | 1.1.2 | 2026-10-26 |
 | api-audit | 1.1.7 | 2026-10-27 |
 | breach-patterns | 1.0.4 | 2026-10-26 |
@@ -30,7 +30,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | owasp-audit | 1.7.0 | 2026-10-30 |
 | patch-sweep | 1.3.0 | 2026-10-30 |
 | pci-audit | 1.1.1 | 2026-10-27 |
-| personal-opsec | 1.2.0 | 2026-10-30 |
+| personal-opsec | 1.2.1 | 2026-10-30 |
 | privacy-engineering | 1.1.0 | 2026-10-27 |
 | prompt-injection | 1.2.1 | 2026-10-27 |
 | recon | 1.0.1 | 2026-10-26 |
@@ -48,6 +48,28 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.69.0 (2026-10-30)
+
+agent-supply-chain-audit checks where agents get launched (#234). agent-supply-chain-audit 1.3.0, personal-opsec 1.2.1.
+
+**Added**
+- **Launch directories and folder trust** (`references/launch-directories.md`). In October 2026, Forever Security found a planted `AGENTS.md` in a customer's `~/Downloads` that told Codex to add a server to the machine-wide `~/.codex/config.toml` and install `function-color` (the MALFEX campaign). It's cited from The Hacker News, Help Net Security and BleepingComputer, with the disagreement between them noted.
+  - **Folder trust per agent:** Codex `projects.<path>.trust_level` and Claude Code's trust prompt.
+  - **A read-only inventory** of instruction files and project settings in `~/Downloads`, `~/Desktop`, `$HOME` and `/tmp`.
+  - **LD1–LD4:**
+    - LD1, a trusted catch-all folder;
+    - LD2, an instruction file nobody wrote;
+    - LD3, a machine-wide server or base URL the user doesn't recognize (rotate the login token);
+    - LD4, a package from a known campaign.
+    - LD2–LD4 are Critical and go to `incident-triage`.
+  - Hardening notes.
+- An Inventory row and a `locations.md` row for folder trust.
+- personal-opsec C2 asks where agents are launched from.
+
+**Departures from the issue draft**
+- **Codex trust is per exact path, both ways.** A comment on openai/codex#19426 (Codex 0.163.0) reports that an `untrusted` parent didn't stop a child folder's `AGENTS.md` from loading. So the fix for LD1 is not launching agents in Downloads, not just setting the folder to untrusted.
+- The reports disagree on the Claude Code code-execution rate (about a fifth in Help Net, about half in BleepingComputer). Both are named.
 
 ### 1.68.0 (2026-10-30)
 
