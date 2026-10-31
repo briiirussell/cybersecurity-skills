@@ -5,7 +5,7 @@ framework-specific surfaces and checks on top of the main checklist. It doesn't 
 through the normal verification pass and is recorded in `findings.json` with an OWASP Top 10:2025 category, a verdict,
 and a fingerprint like `owasp-audit/<class>/<file>/<name>`.
 
-Version notes below were checked against the advisories linked in [Sources](#sources) in October 2026. Re-check the
+Version notes below were checked against the advisories linked in [Sources](#sources) on 2026-10-30. Re-check the
 installed version against current advisories on each run. Known-CVE triage belongs to `dependency-audit`.
 
 ## Add these surfaces to the ledger
@@ -160,11 +160,37 @@ issue is `needs_validation` until someone runs `curl -sI` against the deployed o
 
 Check the installed `next` and React versions against current advisories. Examples worth knowing:
 
-| CVE | What | Fixed in |
+| Advisory | What | Fixed in |
 |---|---|---|
 | CVE-2025-29927 | Middleware could be skipped from outside (check 2) | 12.3.5, 13.5.9, 14.2.25, 15.2.3 |
 | CVE-2024-34351 | Server action redirect to a relative path trusted the `Host` header (SSRF), self-hosted only | 14.1.1 |
 | CVE-2025-55182 | React Server Components payload decoding allowed remote code execution in App Router apps ("React2Shell"; the Next.js-specific ID CVE-2025-66478 was merged into it) | Next.js 15.0.5, 15.1.9, 15.2.6, 15.3.6, 15.4.8, 15.5.7, 16.0.7; React 19.0.1, 19.1.2, 19.2.1 |
+| GHSA-673q-mjm6-r5xr (no CVE) | Critical. Unauthenticated RCE in App Router apps with Cache Components when a `use cache` function returns multiple typed arrays (upstream React GHSA-xqc2-xf4c-x3h3). No workaround; Next.js says to upgrade even if no function looks like that | 16.4.1 (affected 16.0.0–16.4.0; GitHub lists no 15.x range) |
+| GHSA-2464-fhr4-w9xw (CVE-2026-96889) | Critical. RCE through the Image Optimization API with SVG, from a memory bug in an upstream library, when Next.js runs on glibc-based Linux. Workaround: the `sharp` Next.js uses must be 0.35.5 or later | 15.5.28, 16.4.1 (affected 10.0.0–15.5.27, 16.0.0–16.4.0) |
+| GHSA-p3m5-59mp-jv5r (CVE-2026-94482) | High. CPU-exhaustion DoS in App Router apps with at least one Server Action (upstream React GHSA-h3gv-c5rc-p453). Pages Router apps and apps without Server Actions aren't affected | 15.5.28, 16.4.1 (affected 13.0.0–15.5.27, 16.0.0–16.4.0) |
+
+**Match on GHSA id and fixed version, not CVE.** Some Next.js advisories ship with no CVE, or with a CVE that names
+the upstream library. GitHub's record for GHSA-2464 has no `cve_id`, and NVD describes CVE-2026-96889 as a librsvg
+use-after-free (Red Hat, CVSS 3.1 7.8 with a local vector), not as a Next.js bug. A CVE-only lookup on `next` misses
+the `use cache` RCE entirely. The release went out on 2026-10-14, but GitHub's advisory database published all three on
+2026-10-22, so scanners that read it stayed quiet for eight days. Read the framework's own security posts too.
+
+**`sharp` is resolved separately from `next`.** Upgrading `next` normally pulls a fixed `sharp`, but a lockfile, an
+override or a Docker layer can keep an old one. Check what the app actually resolves:
+
+```bash
+npm ls next sharp 2>/dev/null || pnpm why sharp || yarn why sharp
+node -p "require('next/package.json').version"
+node -p "require('sharp/package.json').version" 2>/dev/null     # want >= 0.35.5
+rg -n "dangerouslyAllowSVG|images\s*:" next.config.* 2>/dev/null  # image optimizer settings, SVG allowed?
+rg -n "'use cache'|\"use cache\"" -g '!node_modules' .           # GHSA-673q exposure (upgrade anyway)
+```
+
+An affected `next` version is an A03 hand-off to `dependency-audit` either way. Call out `sharp` below 0.35.5 on a
+glibc Linux deployment where the optimizer serves SVG. Record the runtime's libc (Alpine images use musl) rather than
+guessing. Runtime advisories that need a Node.js upgrade rather than a `next` upgrade, such as the Node.js Brotli
+decoder RCE (CVE-2026-111497, which Next.js image optimization doesn't block when self-hosted), belong to
+`patch-sweep`.
 
 The image optimizer's `remotePatterns` wildcard (SSRF) and `headers()` merging are already in the main checklist.
 
@@ -211,6 +237,13 @@ Paraphrased, not copied:
 - Next.js security advisories: [GHSA-f82v-jwr5-mffw](https://github.com/vercel/next.js/security/advisories/GHSA-f82v-jwr5-mffw)
   (CVE-2025-29927), [GHSA-fr5h-rqp8-mj6g](https://github.com/vercel/next.js/security/advisories/GHSA-fr5h-rqp8-mj6g)
   (CVE-2024-34351), [Vercel CVE-2025-55182 summary](https://vercel.com/changelog/cve-2025-55182),
-  [React advisory](https://react.dev/blog/2025/12/03/critical-security-vulnerability-in-react-server-components)
+  [React advisory](https://react.dev/blog/2025/12/03/critical-security-vulnerability-in-react-server-components),
+  [Next.js security update, 2026-10-14](https://nextjs.org/blog/nextjs-security-update-october-14-2026) with
+  [GHSA-673q-mjm6-r5xr](https://github.com/vercel/next.js/security/advisories/GHSA-673q-mjm6-r5xr),
+  [GHSA-2464-fhr4-w9xw](https://github.com/vercel/next.js/security/advisories/GHSA-2464-fhr4-w9xw) and
+  [GHSA-p3m5-59mp-jv5r](https://github.com/vercel/next.js/security/advisories/GHSA-p3m5-59mp-jv5r);
+  [NVD CVE-2026-96889](https://nvd.nist.gov/vuln/detail/CVE-2026-96889);
+  [Vercel: Node.js Brotli advisory](https://vercel.com/kb/bulletin/node-js-security-advisory). Proposed by
+  @coreyhaines31 in issue #233
 - Next.js docs: [Data security](https://nextjs.org/docs/app/guides/data-security),
   [Upgrading to version 16](https://nextjs.org/docs/app/guides/upgrading/version-16) (`middleware` → `proxy`)

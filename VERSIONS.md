@@ -27,7 +27,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | mobile-audit | 1.1.1 | 2026-10-27 |
 | native-code-review | 1.0.1 | 2026-10-27 |
 | osint-recon | 1.0.2 | 2026-10-26 |
-| owasp-audit | 1.6.0 | 2026-10-27 |
+| owasp-audit | 1.7.0 | 2026-10-30 |
 | patch-sweep | 1.3.0 | 2026-10-30 |
 | pci-audit | 1.1.1 | 2026-10-27 |
 | personal-opsec | 1.2.0 | 2026-10-30 |
@@ -48,6 +48,25 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.68.0 (2026-10-30)
+
+owasp-audit's Next.js playbook adds the 2026-10-14 security release (#233). owasp-audit 1.7.0.
+
+**Added**
+- **Three advisories in section 6** of `references/frameworks/nextjs.md`, fixed in 16.4.1 and 15.5.28:
+  - GHSA-673q-mjm6-r5xr: `use cache` RCE, no CVE, no workaround, 16.x only per GitHub.
+  - GHSA-2464-fhr4-w9xw / CVE-2026-96889: Image Optimization RCE with SVG on glibc Linux; the workaround is `sharp` 0.35.5 or later.
+  - GHSA-p3m5-59mp-jv5r / CVE-2026-94482: Server Action CPU DoS.
+- **Match on GHSA id and fixed version, not CVE.** GitHub's records carry no CVE for two of the three. NVD describes CVE-2026-96889 as a librsvg bug (7.8, local vector). GitHub published all three eight days after the release.
+- **A resolved-`sharp` check:** what the app actually installs, the image optimizer and SVG settings, `use cache` use, and recording the runtime's libc.
+- A pointer to `patch-sweep` for Node.js runtime advisories such as the Brotli decoder RCE (CVE-2026-111497).
+
+**Changed**
+- The first column of the advisory table is now `Advisory`, and the "checked" date is 2026-10-30.
+
+**Fixed (against the issue draft)**
+- GHSA-673q's only affected range in GitHub's record is 16.0.0–16.4.0, so it's listed as fixed in 16.4.1 only.
 
 ### 1.67.0 (2026-10-30)
 
