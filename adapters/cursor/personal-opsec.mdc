@@ -125,6 +125,8 @@ Coding agents, MCP servers, and inbox assistants run with the operator's file ac
 
 Example of the bug class: CVE-2026-106378 ([pwn.ai write-up](https://pwn.ai/blog/chrome-escape), fixed in Chrome 155 per the write-up). Code running in the macOS GPU process could post keystrokes through WindowServer using the launching app's permissions. It's a sandbox escape, so it needs a renderer or GPU bug first. An old cached build is missing those fixes too. On 2026-10-30 it wasn't in CISA KEV (EPSS 0.003).
 
+**C8 — Inbound remote access.** A laptop rarely needs to accept SSH. Check Remote Login / OpenSSH Server is off unless the user needs it (macOS **ask** them to look in System Settings → General → Sharing; `systemsetup -getremotelogin` needs admin), and Glob for `~/.ssh/authorized_keys`: absent is the right default for a laptop, present means review every key. Remote access on with an unreviewed key → finding medium; an unknown key → hand off to `incident-triage` (dev-tool compromise). Recommend an alert on any change to `authorized_keys` (a periodic hash check is enough).
+
 ## Prioritization
 
 - **P0 — this week.** Any confirmed/needs_validation gap that gives account takeover of a crown-jewel account or prod access: SMS-only or SMS-recoverable primary email/GitHub/registrar, no carrier port-out PIN when the number is a recovery factor, no disk encryption on a laptop with prod keys, plaintext admin tokens readable by a no-prompt agent, inbox assistant that can send/share without confirmation, an agent browser below a sandbox-escape fix that's launched from an app holding Accessibility.

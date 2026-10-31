@@ -111,6 +111,17 @@ Hunts that don't produce artifacts are work without compounding return. The whol
 - **Login items / launch daemons (macOS)** — `/Library/LaunchDaemons/*.plist`, `~/Library/LaunchAgents/*.plist`
 - **Cron / systemd timers (Linux)** — `/etc/cron.*`, `/etc/systemd/system/*.timer`, user crontabs
 
+### Developer workstations (dev-tool backdoors)
+
+The patterns malicious IDE extensions, MCP servers and packages use, so the hunt doesn't depend on one incident's IOCs
+(for those, and the response, see `incident-triage` → dev-tool compromise):
+- **`authorized_keys` on laptops at all** — most dev laptops shouldn't accept inbound SSH. Then keys with service-like comments (`svc-*`, `telemetry`, `backup`) or a recent modification time
+- **User-level persistence with vendor-impersonating names** — `~/Library/LaunchAgents/com.apple.*`, `com.google.*`, scheduled tasks named `SysMon` or `Microsoft*`, `@reboot` user crontabs
+- **Executable hidden scripts in `~/.config/`**
+- **Reverse tunnels** — `ssh -R` or `autossh` processes; `StrictHostKeyChecking=no` with `UserKnownHostsFile=/dev/null` in any command line
+- **Remote Login / OpenSSH Server turned on** without a ticket — macOS `systemsetup -getremotelogin`, Windows `OpenSSH.Server` capability
+- **Recently changed `extension.js`** in IDE extension folders whose first bytes aren't the bundler's banner
+
 ### Defense evasion
 
 - **PowerShell with `-EncodedCommand`** — base64-encoded scripts are evasion 80% of the time
