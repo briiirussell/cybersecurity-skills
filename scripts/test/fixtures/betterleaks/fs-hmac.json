@@ -1,0 +1,106 @@
+{
+ "schema_version": "1",
+ "findings": [
+ {
+  "rule_id": "stripe-access-token",
+  "rule_hash": "eb7129674cca1eff2fd643772d26d752a5200e5bd1aa9afba530db012ed1fc73",
+  "description": "Found a Stripe Access Token, posing a risk to payment processing services and sensitive financial data.",
+  "confidence": "high",
+  "match": {
+   "full": "REDACTED",
+   "value": "REDACTED",
+   "fingerprint": "hmac-sha256:f1991da716a88aaaee5afee45c941c43e5fae9935a5ef81c3722b4a831295b54"
+  },
+  "attributes": {
+   "resource": "fs.content"
+  },
+  "location": {
+   "path": "./.env.production",
+   "start_line": 1,
+   "end_line": 1,
+   "start_column": 19,
+   "end_column": 61
+  }
+ },
+ {
+  "rule_id": "github-pat",
+  "rule_hash": "fa244a9a14a505f0a218c334c7164d3ebb2b39623b1fe71a2276b0a1a4f8837b",
+  "description": "Uncovered a GitHub Personal Access Token, potentially leading to unauthorized repository access and sensitive content exposure.",
+  "confidence": "high",
+  "match": {
+   "full": "REDACTED",
+   "value": "REDACTED",
+   "fingerprint": "hmac-sha256:52426a2604505f1f03a5d9d9dc52f330cb62ed99e7d7d35ac030fe4f34646de9"
+  },
+  "attributes": {
+   "resource": "fs.content"
+  },
+  "location": {
+   "path": "./src/a.js",
+   "start_line": 1,
+   "end_line": 1,
+   "start_column": 16,
+   "end_column": 55
+  }
+ },
+ {
+  "rule_id": "github-pat",
+  "rule_hash": "fa244a9a14a505f0a218c334c7164d3ebb2b39623b1fe71a2276b0a1a4f8837b",
+  "description": "Uncovered a GitHub Personal Access Token, potentially leading to unauthorized repository access and sensitive content exposure.",
+  "confidence": "high",
+  "match": {
+   "full": "REDACTED",
+   "value": "REDACTED",
+   "fingerprint": "hmac-sha256:52426a2604505f1f03a5d9d9dc52f330cb62ed99e7d7d35ac030fe4f34646de9"
+  },
+  "attributes": {
+   "resource": "fs.content"
+  },
+  "location": {
+   "path": "./src/b.js",
+   "start_line": 1,
+   "end_line": 1,
+   "start_column": 16,
+   "end_column": 55
+  }
+ }
+]
+,
+ "scan": {
+  "state": "complete",
+  "source": {
+   "type": "filesystem",
+   "targets": [
+    "."
+   ]
+  },
+  "started": "2026-10-30T22:54:22.786004Z",
+  "finished": "2026-10-30T22:54:22.853874Z",
+  "betterleaks_version": "2.0.0-rc.6",
+  "config_hash": "b43613651a5af9bcb4b33623d686a0ee81573d888d7c9a579fbf27a6232b87b9",
+  "bytes_scanned": 27504,
+  "num_findings": 3,
+  "confidence_counts": {
+   "high": 3,
+   "medium": 0,
+   "low": 0,
+   "none": 0,
+   "other": 0
+  },
+  "severity_counts": {
+   "high": 0,
+   "medium": 0,
+   "unknown": 0,
+   "none": 3
+  },
+  "status_counts": {
+   "valid": 0,
+   "invalid": 0,
+   "revoked": 0,
+   "needs_validation": 0,
+   "unknown": 0,
+   "error": 0,
+   "none": 3
+  }
+ }
+}

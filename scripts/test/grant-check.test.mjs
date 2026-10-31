@@ -70,3 +70,15 @@ test("v1.50.1 trailing-flag writers are flagged even with a specific prefix", ()
     assert.deepEqual(checkGrant(g), [], g);
   }
 });
+
+test("v1.57.0 secret scanners that check found keys are flagged", () => {
+  for (const g of ["Bash(trufflehog:*)", "Bash(trufflehog git:*)", "Bash(trufflehog git file://. --no-verification:*)",
+    "Bash(betterleaks:*)", "Bash(betterleaks git:*)", "Bash(trufflehog git file://.)",
+    "Bash(betterleaks git . -v)", "Bash(betterleaks validate --rule github-pat)", "Bash(betterleaks git . --analyze)"]) {
+    assert.ok(checkGrant(g).some((r) => /found secrets/.test(r)), g);
+  }
+  for (const g of ["Bash(trufflehog git file://. --no-verification --json)", "Bash(trufflehog --version)",
+    "Bash(betterleaks version)", "Bash(betterleaks git . --validate=false --analyze=false --redact -o out.json)"]) {
+    assert.deepEqual(checkGrant(g), [], g);
+  }
+});

@@ -4,50 +4,310 @@ Current versions of all skills. Agents can compare against local versions to che
 
 | Skill | Version | Last Updated |
 |-------|---------|--------------|
-| agent-supply-chain-audit | 1.0.2 | 2026-10-27 |
+| agent-supply-chain-audit | 1.3.0 | 2026-10-30 |
 | ai-risk-management | 1.1.2 | 2026-10-26 |
 | api-audit | 1.1.7 | 2026-10-27 |
 | breach-patterns | 1.0.4 | 2026-10-26 |
 | business-logic-testing | 1.0.2 | 2026-10-26 |
 | cicd-security | 1.0.0 | 2026-10-27 |
 | cloud-audit | 1.2.0 | 2026-10-26 |
-| container-audit | 1.2.0 | 2026-10-29 |
+| container-audit | 1.3.0 | 2026-10-30 |
 | control-audit | 1.2.0 | 2026-10-27 |
 | crypto-audit | 1.1.2 | 2026-10-27 |
 | csf-mapping | 1.0.3 | 2026-10-27 |
-| dependency-audit | 1.3.2 | 2026-10-29 |
+| dependency-audit | 1.4.0 | 2026-10-30 |
 | disk-forensics | 1.0.2 | 2026-10-27 |
 | finding-triage | 1.3.1 | 2026-10-27 |
 | fuzzing-harness | 1.0.1 | 2026-10-27 |
 | hipaa-audit | 1.1.1 | 2026-10-27 |
 | iam-audit | 1.2.0 | 2026-10-27 |
-| incident-triage | 1.1.2 | 2026-10-27 |
+| incident-triage | 1.2.0 | 2026-10-30 |
 | log-watch | 1.0.1 | 2026-10-26 |
 | malware-triage | 1.0.0 | 2026-10-27 |
 | mobile-audit | 1.1.1 | 2026-10-27 |
 | native-code-review | 1.0.1 | 2026-10-27 |
 | osint-recon | 1.0.2 | 2026-10-26 |
-| owasp-audit | 1.6.0 | 2026-10-27 |
-| patch-sweep | 1.1.1 | 2026-10-29 |
+| owasp-audit | 1.7.0 | 2026-10-30 |
+| patch-sweep | 1.3.0 | 2026-10-30 |
 | pci-audit | 1.1.1 | 2026-10-27 |
-| personal-opsec | 1.0.1 | 2026-10-26 |
+| personal-opsec | 1.2.1 | 2026-10-30 |
 | privacy-engineering | 1.1.0 | 2026-10-27 |
 | prompt-injection | 1.2.1 | 2026-10-27 |
 | recon | 1.0.1 | 2026-10-26 |
 | red-team-engagement | 1.0.1 | 2026-10-26 |
-| scanner-pipeline | 1.0.4 | 2026-10-27 |
-| secrets-audit | 1.1.4 | 2026-10-27 |
+| scanner-pipeline | 1.1.0 | 2026-10-30 |
+| secrets-audit | 1.3.1 | 2026-10-30 |
 | security-comms | 1.0.3 | 2026-10-26 |
 | security-start | 1.0.0 | 2026-10-27 |
 | siem-detection | 1.0.5 | 2026-10-27 |
 | soc-operations | 1.0.4 | 2026-10-26 |
-| threat-hunting | 1.0.5 | 2026-10-27 |
+| threat-hunting | 1.1.0 | 2026-10-30 |
 | threat-modeling | 1.0.4 | 2026-10-26 |
 | variant-analysis | 1.0.0 | 2026-10-27 |
 | vuln-research | 1.0.4 | 2026-10-27 |
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.69.0 (2026-10-30)
+
+agent-supply-chain-audit checks where agents get launched (#234). agent-supply-chain-audit 1.3.0, personal-opsec 1.2.1.
+
+**Added**
+- **Launch directories and folder trust** (`references/launch-directories.md`). In October 2026, Forever Security found a planted `AGENTS.md` in a customer's `~/Downloads` that told Codex to add a server to the machine-wide `~/.codex/config.toml` and install `function-color` (the MALFEX campaign). It's cited from The Hacker News, Help Net Security and BleepingComputer, with the disagreement between them noted.
+  - **Folder trust per agent:** Codex `projects.<path>.trust_level` and Claude Code's trust prompt.
+  - **A read-only inventory** of instruction files and project settings in `~/Downloads`, `~/Desktop`, `$HOME` and `/tmp`.
+  - **LD1–LD4:**
+    - LD1, a trusted catch-all folder;
+    - LD2, an instruction file nobody wrote;
+    - LD3, a machine-wide server or base URL the user doesn't recognize (rotate the login token);
+    - LD4, a package from a known campaign.
+    - LD2–LD4 are Critical and go to `incident-triage`.
+  - Hardening notes.
+- An Inventory row and a `locations.md` row for folder trust.
+- personal-opsec C2 asks where agents are launched from.
+
+**Departures from the issue draft**
+- **Codex trust is per exact path, both ways.** A comment on openai/codex#19426 (Codex 0.163.0) reports that an `untrusted` parent didn't stop a child folder's `AGENTS.md` from loading. So the fix for LD1 is not launching agents in Downloads, not just setting the folder to untrusted.
+- The reports disagree on the Claude Code code-execution rate (about a fifth in Help Net, about half in BleepingComputer). Both are named.
+
+### 1.68.0 (2026-10-30)
+
+owasp-audit's Next.js playbook adds the 2026-10-14 security release (#233). owasp-audit 1.7.0.
+
+**Added**
+- **Three advisories in section 6** of `references/frameworks/nextjs.md`, fixed in 16.4.1 and 15.5.28:
+  - GHSA-673q-mjm6-r5xr: `use cache` RCE, no CVE, no workaround, 16.x only per GitHub.
+  - GHSA-2464-fhr4-w9xw / CVE-2026-96889: Image Optimization RCE with SVG on glibc Linux; the workaround is `sharp` 0.35.5 or later.
+  - GHSA-p3m5-59mp-jv5r / CVE-2026-94482: Server Action CPU DoS.
+- **Match on GHSA id and fixed version, not CVE.** GitHub's records carry no CVE for two of the three. NVD describes CVE-2026-96889 as a librsvg bug (7.8, local vector). GitHub published all three eight days after the release.
+- **A resolved-`sharp` check:** what the app actually installs, the image optimizer and SVG settings, `use cache` use, and recording the runtime's libc.
+- A pointer to `patch-sweep` for Node.js runtime advisories such as the Brotli decoder RCE (CVE-2026-111497).
+
+**Changed**
+- The first column of the advisory table is now `Advisory`, and the "checked" date is 2026-10-30.
+
+**Fixed (against the issue draft)**
+- GHSA-673q's only affected range in GitHub's record is 16.0.0–16.4.0, so it's listed as fixed in 16.4.1 only.
+
+### 1.67.0 (2026-10-30)
+
+incident-triage gets a compromised-developer-machine playbook, threat-hunting a dev-tool backdoor hunt (#223). incident-triage 1.2.0, threat-hunting 1.1.0, personal-opsec 1.2.0.
+
+**Added**
+- **Dev-tool compromise** (`incident-triage/references/dev-tool-compromise.md`), for when an IDE extension, MCP server, npm `postinstall`, skill or plugin turns out to be malicious:
+  - **Scope:** was it installed in the window, did it activate, do the IOCs match?
+  - **Contain before cleaning:** cut access, collect evidence first (uninstalling doesn't remove the persistence), rotate from a clean machine.
+  - **A read-only sweep** for macOS, Linux and Windows: attacker SSH keys, vendor-named LaunchAgents, scheduled tasks and `@reboot` cron entries, Remote Login, live reverse tunnels.
+  - **Fleet and downstream scope.** A tunnel only gave a shell where an SSH server was running.
+  - **Recovery hand-offs.**
+- **Dated IOCs** for the malicious `Anthropic.claude-code` 2.1.312 and 2.1.313 builds in Cursor's marketplace (2026-10-29), taken from Cursor's notice as updated 2026-10-30 11:30 PT:
+  - network indicators;
+  - SSH key comment and fingerprints;
+  - dropped files and persistence on all three OSes;
+  - `extension.js` and VSIX hashes;
+  - the remediation scripts, and how to run each.
+  - It notes where sources disagree: whether 2.1.312 was malicious, and 2.1.314 as the fixed version.
+- **threat-hunting: "Developer workstations"** in the hunt catalog. It's pattern-based rather than tied to one incident: `authorized_keys` on laptops, vendor-impersonating user persistence, executable hidden scripts in `~/.config`, reverse tunnels, Remote Login turned on, a changed `extension.js`.
+- **personal-opsec C8, inbound remote access:** Remote Login off unless needed, `authorized_keys` absent or reviewed, and an alert on any change to it.
+- **incident-triage:** the new incident type, plus pre-approved `launchctl list` and `shasum -a 256`.
+
+**Departures from the issue draft**
+- No source says "don't uninstall first". The playbook says to collect evidence before removing anything, and that uninstalling alone isn't enough (Cursor).
+- Turning on SSH failed unless Cursor ran with admin rights (Cursor), so scoping asks whether an SSH server was already running.
+- `ssh-keygen -lf:*`, `plutil -p:*` and `crontab -l` aren't pre-approved: `ssh-keygen -R` edits `known_hosts`, and `plutil` can write files. They prompt.
+- The full attacker public key isn't reprinted. The comment and fingerprint identify it.
+
+### 1.66.0 (2026-10-30)
+
+agent-supply-chain-audit audits IDE extensions (#222). agent-supply-chain-audit 1.2.0, personal-opsec 1.1.1.
+
+**Added**
+- **IDE extensions as a first-class item** (`references/ide-extensions.md`):
+  - **Folders and marketplaces** for Cursor, VS Code, VS Code Insiders, Windsurf, VSCodium, remote and SSH servers, and JetBrains.
+  - **A read-only inventory from each `extensions.json`.** Its fields were checked against real registries: id, version, `source` (`gallery` or `vsix`), publisher, install time.
+  - **Every version folder on disk**, because IDEs keep old builds after an update.
+- **EX1–EX6:**
+  - EX1, known-bad version on disk, starting with `anthropic.claude-code` 2.1.312 and 2.1.313 from Cursor's marketplace (2026-10-29), sourced from Cursor's notice;
+  - EX2, auto-update on for high-privilege extensions;
+  - EX3, the same id from a different marketplace;
+  - EX4, code prepended to `extension.js`;
+  - EX5, unverified publisher or typosquat;
+  - EX6, no extension policy.
+  - EX1 and EX4 are Critical and go to `incident-triage` before anything is cleaned up.
+- Severity anchors, a fingerprint shape, an Inventory row, trigger phrases ("audit my IDE extensions"), and one trigger-eval prompt.
+- personal-opsec C2 includes IDE extensions in the "what's connected" pass.
+
+**Changed**
+- `locations.md` no longer just names `~/.cursor/extensions/` as out of scope; it points to the EX checks.
+
+### 1.65.0 (2026-10-30)
+
+dependency-audit and container-audit find runtime defaults that widen a kernel CVE's reach (#221). dependency-audit 1.4.0, container-audit 1.3.0.
+
+**Added**
+- **Runtime exposure** (new shared file `runtime-exposure.md`, copied into both skills), with Go and MPTCP as the worked example for CVE-2026-98432:
+  - Go's `multipathtcp` values. Since Go 1.24 the default is `2`, which turns MPTCP on for listeners.
+  - **The default follows the main module's `go` line, not the toolchain**, so a `go 1.23` module built with Go 1.25 keeps MPTCP off.
+  - Source checks (go.mod, `//go:debug`, `SetMultipathTCP`, a GODEBUG setting in the deploy config) and the authoritative binary check: `go version -m` reading `DefaultGODEBUG`.
+  - An exposure table, and a `needs_validation` finding shape that hands off to `patch-sweep`.
+- **Containers share the host kernel.** Rebuilding an image can't fix a kernel CVE, so the image is recorded as "not the fix location".
+  - **MPTCP is per network namespace, and every new namespace starts with it on** (`net/mptcp/ctrl.c`). Turning it off on the host doesn't reach containers, so it's checked per container with `nsenter`.
+  - Compose and Kubernetes per-workload settings. `net.mptcp.enabled` isn't in the kubelet's safe set, so it needs `--allowed-unsafe-sysctls`.
+  - `hostNetwork`, and pulling Go binaries out of images without running them.
+- dependency-audit Step 3 and container-audit's runtime checklist point to it.
+
+### 1.64.0 (2026-10-30)
+
+patch-sweep adds a Linux hosts and kernel CVE track (#220). patch-sweep 1.3.0.
+
+**Added**
+- **Linux hosts and kernel CVEs** (`patch-sweep/references/linux-hosts.md`) for VPSes, EC2, bare metal, nodes and relays, self-hosted runners and Kubernetes nodes:
+  - **Inventory:** host listing from AWS, DigitalOcean, Hetzner and GCP, then asking about the rest. Each host row records the running and installed kernel.
+  - **Affected test:** read the running kernel package against the **distro tracker** (Debian, Ubuntu, Red Hat, Amazon Linux, SUSE, OSV), never `uname -r` against upstream version numbers, because distros backport fixes under their own versions. A fix that's installed but not yet rebooted into still counts as affected.
+  - **Mitigations:** livepatch, sysctls (and that many are per network namespace), host-firewall rules through the host's own manager, app-level switches. Each needs verify and persist lines and a removal date.
+  - **Patching:** update, reboot in the owner's window, confirm, re-check mitigations. Notes for Kubernetes node pools and Lightning nodes.
+  - A **host board** with its sort order, and prevention items.
+- **Worked example: CVE-2026-98432**, dated 2026-10-30:
+  - the IPv4 TCP use-after-free and its second trigger path;
+  - exploitation (Anthropic's MPTCP exploit; not in KEV; EPSS 0.0045);
+  - CVSS 9.8 versus Red Hat and Amazon's 8.1;
+  - every upstream fixed branch, including 5.10 and 5.15;
+  - status for Debian, Ubuntu, Red Hat, Amazon Linux and SUSE;
+  - exposure checks (`net.mptcp.enabled`, `ss -Mltnp`, `tcp_migrate_req`) and five mitigations.
+- **Pre-approved, read-only:** `aws ec2 describe-instances`, `doctl compute droplet list`, `hcloud server list`, `gcloud compute instances list`.
+
+**Departures from the issue draft**
+- The IP-options nftables rule is labelled as our reasoning from the fix, not a vendor mitigation. No vendor publishes it, and Red Hat says no mitigation meets its criteria.
+- The draft said running programs see errors after MPTCP is turned off. No source says that, so it was dropped.
+- Added the request-socket migration path from the fix description.
+- Amazon Linux 2's extra kernels and part of the SUSE product line are still pending, not shipped.
+
+### 1.63.0 (2026-10-30)
+
+patch-sweep covers the browsers that agents and test suites download (#219). patch-sweep 1.2.0.
+
+**Added**
+- **Browser runtimes in a sweep** (`patch-sweep/references/browser-runtimes.md`), for an advisory set that includes a Chrome or Chromium CVE:
+  - **Inventory** of four asset types:
+    - lockfiles that pin Playwright, Puppeteer or `@sparticuz/chromium`, with how to map each version to its Chromium (`playwright install --dry-run`, Puppeteer's `PUPPETEER_REVISIONS`);
+    - CI images and install steps;
+    - production services that render HTML in a headless browser (`npm ls --omit=dev`);
+    - operator machines, through personal-opsec C7.
+  - **Affected test.** The usual three-part test, mapped to browsers: platform, what the browser loads, and what launched it. A macOS-only CVE doesn't affect Linux CI, but the same Chrome release usually fixes renderer bugs that do. Server-side renderers count as loading untrusted content, and `--no-sandbox` is flagged whatever the version.
+  - **Patch table and board:** Playwright, Puppeteer, `@sparticuz/chromium`, CI images pinned by digest, operator machines (restart sessions after updating). A separate board puts production renderers first.
+  - **Prevention:** grouped dependency bumps, a weekly CI-image Chromium check, operator reminders.
+
+### 1.62.0 (2026-10-30)
+
+agent-supply-chain-audit checks the browser each extension launches (#218). agent-supply-chain-audit 1.1.0.
+
+**Added**
+- **RT1, bundled browser is behind** (`references/browser-runtimes.md`):
+  - A recognizer table for extensions that bring Chromium: Playwright MCP, Puppeteer servers, agent-browser, `chrome-devtools-mcp`'s executable-path overrides, skills that tell users to install a browser, and computer-use servers that hold Accessibility themselves.
+  - A grep that finds them.
+  - The severity ladder. Below a known-exploited or sandbox-escape fix: High with untrusted browsing from an app holding Accessibility, Medium with untrusted URLs alone, Low for localhost only. More than 2 majors behind with no named CVE: `needs_validation`. Remote browser services are out of scope.
+- **RP1 and RT1 together.** A pinned browser server needs an update budget. Once its Chromium is more than one major behind stable, bumping the pin is a security fix, so the inventory records the pin date.
+- **BH4:** `PLAYWRIGHT_BROWSERS_PATH`, `PUPPETEER_EXECUTABLE_PATH`, `AGENT_BROWSER_EXECUTABLE_PATH` and `--executablePath` choose which binary runs. A target in the repo or `/tmp` is its own finding.
+- The inventory gains a **Runtime** column, and there are cross-references to `personal-opsec` C7 and `patch-sweep`.
+
+### 1.61.0 (2026-10-30)
+
+personal-opsec checks the Chromium builds that agent tools download (#217). personal-opsec 1.1.0.
+
+**Added**
+- **C7, agent browser runtimes.** Playwright, Puppeteer, agent-browser and the browser MCP servers download their own Chromium, and it never updates on its own. C7 lists every cached build and whether it's running, compares each with Chrome for Testing stable, and asks which apps hold Accessibility, Input Monitoring or Screen Recording.
+  - **Below a known-exploited or sandbox-escape fix:** High if it's launched with Accessibility or browses untrusted sites, Medium if it only loads localhost.
+  - **More than 2 majors behind stable:** Medium.
+  - **Accessibility on its own:** a hardening note.
+  - **Worked example: CVE-2026-106378**, a macOS GPU-process sandbox escape. It was fixed in Chrome 155 per the pwn.ai write-up. On 2026-10-30 it wasn't in CISA KEV (EPSS 0.003).
+- **Local checks** (`references/local-checks.md`):
+  - An inventory loop. On macOS it reads versions from the app bundle with `defaults read`, which runs nothing.
+  - A `pgrep` count of running builds.
+  - Project-local browser paths to Glob.
+  - How to ask for the Accessibility grants without requesting Full Disk Access.
+  - An update-and-clean table for Playwright, Puppeteer, agent-browser and the MCP servers.
+- P0 and P1 entries, and a hand-off to agent-supply-chain-audit.
+- **Pre-approved:** `defaults read` and `pgrep -fl`. A browser's `--version` runs the binary, so it prompts.
+
+**Fixed (against the issue draft)**
+- `npx playwright uninstall` removes the current install's browsers, not unused revisions; Playwright already removes unneeded builds on its own. The table now says so.
+- agent-browser's docs don't name its download folder, so the loop searches `~/.agent-browser` and the table points to its config.
+- agent-browser updates with `agent-browser upgrade`.
+
+### 1.60.0 (2026-10-30)
+
+scanner-pipeline adds Betterleaks, with a converter for its reports (#216). scanner-pipeline 1.1.0, secrets-audit 1.3.1.
+
+**Added**
+- **Betterleaks in the pipeline.** It's a secrets option alongside gitleaks: the two use the same rule ids and both honour `gitleaks:allow`. The default command is detection-only and silent, and it's pre-approved as an exact rule.
+- **`betterleaks-to-findings.mjs`** (`scanner-pipeline/references/`). Betterleaks v2 dropped SARIF, so this converts a v2 JSON or JSONL report to `findings.json`; `to-sarif.mjs` then exports it.
+  - It builds one record per rule and value, so the same key in several files is one finding with one evidence entry per place.
+  - The fingerprint is the existing dedupe key, `secret:<rule>:<value hash[:12]>`, taken from `match.fingerprint`. It still works on `--redact` reports and with HMAC fingerprints.
+  - Every record is imported as `needs_validation`.
+  - It refuses a report that isn't redacted, and paths that aren't repo-relative.
+  - Six tests run against real output from 2.0.0-rc.6.
+- **Fleet secrets in one process:** `betterleaks github … https://github.com/<org>` replaces the clone loop. It prompts.
+- **Betterleaks in CI**, written up for when v2 is stable:
+  - pin the image by digest;
+  - never validate in CI, since on a fork's PR that would send planted keys out;
+  - read `.betterleaks.toml` from the base branch, so a PR can't switch off its own rules;
+  - use HMAC fingerprints;
+  - convert, then upload SARIF.
+
+**Changed**
+- The secrets dedupe note is honest now. gitleaks `--redact` and trufflehog with `Raw` stripped don't keep the value, so they can't produce the value hash; Betterleaks can.
+
+**Fixed**
+- secrets-audit: every Betterleaks command now passes `--silent`. Running 2.0.0-rc.6 showed it prints every finding to the terminal even when `-o` is set. With `--redact` the values are masked, but paths and commit authors still landed in the transcript. The safety rule now says so.
+
+### 1.59.0 (2026-10-30)
+
+secrets-audit scans for secrets beyond the repo (#215). secrets-audit 1.3.0, container-audit 1.2.1.
+
+**Added**
+- **Beyond the repo** (`secrets-audit/references/beyond-the-repo.md`): Betterleaks v2 commands for the places keys leak outside git:
+  - GitHub issues, PRs, discussions, Actions logs and artifacts, releases and their assets, and gists, with the exact `--include` values from Betterleaks' scanning guide.
+  - GitLab issues, MRs, releases and CI jobs.
+  - Container images by digest. The scan reports files a later layer deleted or replaced, and names the layer that hid them.
+  - A second pass over agent transcripts that catches generic secrets. Only counts and locations are read back, never the matching lines.
+  - Hugging Face repos, discussions and PRs, and S3/R2 buckets.
+- **Cleanup by surface.** A table for each place a key can leak: how to clean it up, and whether it can be purged at all. Examples: a comment's edit history, run logs, artifacts, secret gists that are only unlisted, deleted image layers. Rotation still comes first.
+- **`ext.surface`** records where each key was found: `repo-head`, `git-history`, `issue`, `pr`, `actions-log`, `image-layer`, `transcript`, `bucket` and others.
+- **Authorization:** remote sources only for accounts the user owns and names, with their own token. None of these commands is pre-approved.
+
+**Changed**
+- container-audit points image-layer secrets to secrets-audit.
+
+### 1.58.0 (2026-10-30)
+
+secrets-audit uses Betterleaks as its main scanner (#214). secrets-audit 1.2.0.
+
+**Added**
+- **Betterleaks** (`secrets-audit/references/betterleaks.md`): the scanner from gitleaks' original author and maintainers. It has fewer false positives on generic secrets, built-in liveness checks (`-v`), identity and permission analysis (`-a`), and value fingerprints that dedupe. The reference covers:
+  - **Versions.** v1.9.0 is the latest stable release and v2 is at release candidate, so there's a flag table for both. In v2, `-v` means validate, where in v1 it meant verbose, and the config file isn't read unless you pass `--config`.
+  - **Six safety rules.** Every scan is explicitly detection-only (`--validate=false --analyze=false`), so a stray `BETTERLEAKS_VALIDATE=true` can't make the agent use a key. `-v`, `-a`, `validate` and `analyze` run only after asking. Always `--redact`, and write the report to a file, never the terminal. Remote sources use the network even in detection-only mode. Never run `revoke`. Keep the value off the command line.
+  - **Reading the report:** the JSON and JSONL report shapes, and HMAC fingerprints for anything that leaves the machine.
+  - **Mapping to findings:** the verdict mapping (`unknown` is `needs_validation`, not `invalid`) and six `ext` keys.
+- **Triage:**
+  - Step 2 checks liveness by re-scanning the file with `-v`.
+  - Step 4 gets identity and permissions from `-a`.
+  - Step 5 confirms the old key is dead after rotation (`invalid` on a re-scan).
+- **Pre-approved:** `betterleaks version`, `config show ids`, and the exact detection-only default scan. Liveness checks prompt.
+
+**Changed**
+- The Tooling table puts Betterleaks first, and keeps gitleaks for repos that already have a `.gitleaks.toml` or a pre-commit hook.
+
+### 1.57.0 (2026-10-30)
+
+Lint: secret scanners that check found keys must prompt. secrets-audit 1.1.5, scanner-pipeline 1.0.5. Groundwork for #214 and #216.
+
+**Added**
+- **Lint: credential checkers.** `grant-check.mjs` now fails any wildcard grant on `trufflehog` or `betterleaks`, and any exact rule that verifies (trufflehog without `--no-verification`; betterleaks with `-v`, `-a`, `validate` or `analyze`). Checking a found key sends it to the provider, which uses it, and the skills already say to ask first. A self-test covers it.
+
+**Fixed**
+- secrets-audit pre-approved `trufflehog git:*`, and scanner-pipeline pre-approved `trufflehog:*`. trufflehog verifies every candidate by default, so the agent could use a leaked key without asking, against secrets-audit's own Authorization rule. Both grants are gone, so trufflehog prompts.
+- secrets-audit's trufflehog commands now pass `--no-verification` for detection, and the Tooling row says verification needs a yes first.
 
 ### 1.56.0 (2026-10-29)
 

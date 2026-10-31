@@ -15,7 +15,10 @@
  *      (`semgrep:*` allows `semgrep --autofix`), since a prefix rule can't exclude
  *      trailing flags;
  *   6. it is a wildcard on a command where a trailing flag turns a read into a write
- *      (`gh api repos/:*` allows `gh api repos/x -X DELETE`, `exiftool:*` allows `-TAG=`).
+ *      (`gh api repos/:*` allows `gh api repos/x -X DELETE`, `exiftool:*` allows `-TAG=`);
+ *   7. it lets a secret scanner send the secrets it finds to their providers to check them
+ *      (`trufflehog git:*` verifies by default; `betterleaks git:*` allows `-v`). Checking a
+ *      key uses it, so it must prompt.
  *
  * Not covered on purpose: report-file flags (`--output`, `--report-path`, `git log --output`).
  * Almost every scanner has one, and they write a new report rather than change the project.
@@ -94,6 +97,20 @@ export const TRAILING_FLAG_WRITERS = [
   "floss",    // --install-right-click-menu changes the Windows registry
 ];
 
+/**
+ * Secret scanners that can send found credentials to the provider to check them: trufflehog by
+ * default (unless `--no-verification`), betterleaks with `-v` / `-a` or `validate` / `analyze`.
+ * Any wildcard on these is flagged, and so is an exact rule that verifies.
+ */
+export const CREDENTIAL_CHECKERS = ["trufflehog", "betterleaks"];
+
+/** True when an exact rule for a CREDENTIAL_CHECKERS tool would check found keys against the provider. */
+function exactRuleChecksKeys(tool, pattern) {
+  const words = pattern.split(/\s+/);
+  if (tool === "trufflehog") return words.length > 1 && !/^(--help|-h|--version)$/.test(words[1]) && !words.includes("--no-verification");
+  return words.some((w) => /^(validate|analyze|-v|-a|--validate|--analyze|--validate=true|--analyze=true)$/.test(w));
+}
+
 /** Parse `Bash(...)`. Returns { pattern, prefix, wildcard } or null for non-Bash tools. */
 export function parseBashRule(tool) {
   if (tool === "Bash") return { pattern: "", prefix: "", wildcard: true };
@@ -136,6 +153,11 @@ export function checkGrant(tool) {
 
     const flagWriter = TRAILING_FLAG_WRITERS.find((t) => prefix === t || prefix.startsWith(t + " "));
     if (flagWriter) reasons.push(`a trailing flag turns '${flagWriter}' into a write, which a prefix rule can't exclude; use an exact rule`);
+
+    if (CREDENTIAL_CHECKERS.includes(words[0]))
+      reasons.push(`a trailing flag makes '${words[0]}' send found secrets to their providers, which uses them; use an exact rule that doesn't verify`);
+  } else if (CREDENTIAL_CHECKERS.includes(rule.pattern.split(/\s+/)[0]) && exactRuleChecksKeys(rule.pattern.split(/\s+/)[0], rule.pattern)) {
+    reasons.push("exact rule checks found secrets against their providers, which uses them; it must prompt");
   } else if (DESTRUCTIVE_COMMANDS.some((d) => rule.pattern === d.trim() || rule.pattern.startsWith(d))) {
     reasons.push("exact rule is a destructive command");
   }

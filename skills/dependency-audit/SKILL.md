@@ -136,7 +136,7 @@ For every advisory, check **CISA KEV** (exploited now) and **EPSS** (likely in 3
 
 ### Step 3: Research Framework-Specific Known Issues
 
-Beyond CVEs in packages, check for known vulnerability patterns specific to the framework in use. Search for recent advisories and common misconfiguration issues.
+Beyond CVEs in packages, check for known vulnerability patterns specific to the framework in use. Search for recent advisories and common misconfiguration issues. Runtime defaults that widen a kernel CVE's reach (Go ≥ 1.24 listens with MPTCP) are in [references/runtime-exposure.md](references/runtime-exposure.md).
 
 For every direct dependency, cross-reference the installed version against:
 - `https://github.com/advisories?ecosystem=npm&query=<package>`

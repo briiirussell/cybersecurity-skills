@@ -107,7 +107,7 @@ Coding agents, MCP servers, and inbox assistants run with the operator's file ac
 - Grep with **count output only** (never content) for exported secrets in shell startup files and history: pattern `(sk-ant-|sk_live_|ghp_|github_pat_|AKIA|xox[baprs]-)` against `~/.zshrc`, `~/.bashrc`, `~/.zprofile`, `~/.zsh_history`, `~/.bash_history`
 - Finding severity by what the token unlocks: a live production cloud key or a GitHub token with `repo`/`admin:org` in a plaintext file → high; secrets in shell history → medium (rotate, then clear). Hand the cleanup and rotation to `secrets-audit`.
 
-**C2 — MCP servers and agent extensions.** Inventory what's connected and what each can reach. Check config files (Grep for server names and `command`/`url` keys only; count, don't print, any `env` values): `~/.claude.json`, `~/.claude/settings.json`, project `.mcp.json`, `~/.cursor/mcp.json`, `~/Library/Application Support/Claude/claude_desktop_config.json`, VS Code `mcp.json`. For each server, ask: who publishes it, is it pinned to a version, what credentials does it hold, can it send data out (HTTP, email, Slack)? A server that can both read private data and reach the network is an exfiltration path. Secrets inline in MCP config → finding (C1 rules). The trust review itself → `agent-supply-chain-audit`.
+**C2 — MCP servers and agent extensions.** Inventory what's connected and what each can reach. Check config files (Grep for server names and `command`/`url` keys only; count, don't print, any `env` values): `~/.claude.json`, `~/.claude/settings.json`, project `.mcp.json`, `~/.cursor/mcp.json`, `~/Library/Application Support/Claude/claude_desktop_config.json`, VS Code `mcp.json`. For each server, ask: who publishes it, is it pinned to a version, what credentials does it hold, can it send data out (HTTP, email, Slack)? A server that can both read private data and reach the network is an exfiltration path. Secrets inline in MCP config → finding (C1 rules). Also **ask** where they launch agents from: starting one in `~/Downloads` or `$HOME` means any instruction file dropped there is obeyed (`agent-supply-chain-audit` LD1–LD4). IDE extensions belong in the same pass: list what's installed in Cursor, VS Code or Windsurf, since each runs with full user access. The trust review itself, including extensions (EX1–EX6) → `agent-supply-chain-audit`.
 
 **C3 — Agent permission modes.** **Ask** (or Grep `~/.claude/settings.json` for `permissions`/`defaultMode`): does any agent run with auto-approve / bypass-permissions / unscoped shell on the machine that holds prod credentials? Finding medium–high depending on C1: a no-prompt agent plus plaintext admin keys means any prompt injection it reads can act with those keys.
 
@@ -117,10 +117,20 @@ Coding agents, MCP servers, and inbox assistants run with the operator's file ac
 
 **C6 — Clipboard and screen exposure.** Glob for clipboard-history managers (Maccy, Paste, Raycast/Alfred clipboard history); **ask** whether the password manager clears the clipboard and whether clipboard history excludes it. Agents with screen or clipboard access (computer-use tools, screen-recording assistants) see whatever is copied. Secrets persisting in clipboard history that agents or sync can read → finding low–medium; hardening note if the PM is excluded and clears in ≤90 s.
 
+**C7 — Agent browser runtimes.** Playwright, Puppeteer, agent-browser and the browser MCP servers built on them download their own Chromium and never update it on their own, unlike the everyday Chrome. Run the inventory in [references/local-checks.md](references/local-checks.md#agent-browser-runtimes-c7): every cached build, its version, and whether it's running, against current Chrome for Testing stable. Then **ask** which apps hold Accessibility, Input Monitoring or Screen Recording. A browser launched from Terminal or an IDE can run with that app's permissions.
+- **Below the fix for a known-exploited or sandbox-escape Chromium bug** → finding. **High** if it's launched from an app with Accessibility, or it browses untrusted sites (agent research, scraping, following links). **Medium** if it only loads localhost or the user's own previews.
+- **More than 2 majors behind stable**, no specific CVE → medium. It's missing every renderer fix since, and a renderer bug is the first step of any chain.
+- **Terminal, IDE or agent app holds Accessibility** on its own → hardening note. Paired with an old browser, it's part of the high rating. Recommend removing Accessibility from apps that don't need it, or running browser agents from an app or user account without it.
+- Fix with the tool's own updater, delete old builds, restart sessions (commands in the same reference). Which servers and CLIs bring a browser, and their pinning → `agent-supply-chain-audit`; a fleet response to a Chrome CVE → `patch-sweep`.
+
+Example of the bug class: CVE-2026-106378 ([pwn.ai write-up](https://pwn.ai/blog/chrome-escape), fixed in Chrome 155 per the write-up). Code running in the macOS GPU process could post keystrokes through WindowServer using the launching app's permissions. It's a sandbox escape, so it needs a renderer or GPU bug first. An old cached build is missing those fixes too. On 2026-10-30 it wasn't in CISA KEV (EPSS 0.003).
+
+**C8 — Inbound remote access.** A laptop rarely needs to accept SSH. Check Remote Login / OpenSSH Server is off unless the user needs it (macOS **ask** them to look in System Settings → General → Sharing; `systemsetup -getremotelogin` needs admin), and Glob for `~/.ssh/authorized_keys`: absent is the right default for a laptop, present means review every key. Remote access on with an unreviewed key → finding medium; an unknown key → hand off to `incident-triage` (dev-tool compromise). Recommend an alert on any change to `authorized_keys` (a periodic hash check is enough).
+
 ## Prioritization
 
-- **P0 — this week.** Any confirmed/needs_validation gap that gives account takeover of a crown-jewel account or prod access: SMS-only or SMS-recoverable primary email/GitHub/registrar, no carrier port-out PIN when the number is a recovery factor, no disk encryption on a laptop with prod keys, plaintext admin tokens readable by a no-prompt agent, inbox assistant that can send/share without confirmation.
-- **P1 — this month.** Single hardware key with no spare, recovery codes only in the PM, broad long-lived tokens, MCP servers with network + private-data reach, Gatekeeper/SIP off, stale OS.
+- **P0 — this week.** Any confirmed/needs_validation gap that gives account takeover of a crown-jewel account or prod access: SMS-only or SMS-recoverable primary email/GitHub/registrar, no carrier port-out PIN when the number is a recovery factor, no disk encryption on a laptop with prod keys, plaintext admin tokens readable by a no-prompt agent, inbox assistant that can send/share without confirmation, an agent browser below a sandbox-escape fix that's launched from an app holding Accessibility.
+- **P1 — this month.** Single hardware key with no spare, recovery codes only in the PM, broad long-lived tokens, MCP servers with network + private-data reach, Gatekeeper/SIP off, stale OS, any agent browser more than 2 majors behind stable.
 - **P2 — when convenient.** Remaining low findings.
 - **Hardening notes** — privacy preferences (K6–K14 mostly). Listed, never ranked against findings.
 
@@ -154,7 +164,7 @@ P0: X · P1: X · P2: X · Needs validation: X · Hardening notes: X
 
 ### Hand-offs
 - secrets-audit: [C1 items to rotate/clean]
-- agent-supply-chain-audit: [C2 servers to review]
+- agent-supply-chain-audit: [C2 servers to review; C7 browser-bringing servers and their pins]
 - prompt-injection: [C4 assistants]
 - iam-audit: [X5 org-wide enforcement]
 - finding-triage: every confirmed finding, for disposition

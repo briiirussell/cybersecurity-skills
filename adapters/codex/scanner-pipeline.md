@@ -1,6 +1,6 @@
 # scanner-pipeline
 
-> Set up and run deterministic security scanners across a repo or a whole fleet of repos — gitleaks, trufflehog, semgrep, osv-scanner, trivy, checkov, Brakeman, govulncheck, Supabase advisors, and (guarded) nuclei/ZAP — then normalize their output to findings.json or SARIF, dedupe, suppress with expiry, schedule in CI, and hand findings to fix agents. Use when the user mentions 'run scanners,' 'security scanning pipeline,' 'set up gitleaks,' 'semgrep in CI,' 'osv-scanner,' 'trivy fs,' 'SARIF,' 'code scanning,' 'scan all my repos,' 'security-scan workflow,' 'weekly security scan,' 'Supabase RLS advisor,' 'dedupe scanner findings,' 'suppression file,' 'stop asking Claude to hack my app,' or wants tools, not an agent, to find the bugs.
+> Set up and run deterministic security scanners across a repo or a whole fleet of repos — gitleaks, trufflehog, semgrep, osv-scanner, trivy, checkov, Brakeman, govulncheck, Supabase advisors, and (guarded) nuclei/ZAP — then normalize their output to findings.json or SARIF, dedupe, suppress with expiry, schedule in CI, and hand findings to fix agents. Use when the user mentions 'run scanners,' 'security scanning pipeline,' 'set up gitleaks,' 'betterleaks in CI,' 'semgrep in CI,' 'osv-scanner,' 'trivy fs,' 'SARIF,' 'code scanning,' 'scan all my repos,' 'security-scan workflow,' 'weekly security scan,' 'Supabase RLS advisor,' 'dedupe scanner findings,' 'suppression file,' 'stop asking Claude to hack my app,' or wants tools, not an agent, to find the bugs.
 
 # Scanner Pipeline — Run the Real Tools, Normalize, Hand Off
 
@@ -32,7 +32,7 @@ Read the repo first: lockfiles, `Dockerfile`, `*.tf`, `supabase/`, `Gemfile`, `g
 
 | Layer | Primary | Stack-specific add-ons | Fallback |
 |---|---|---|---|
-| Secrets | `gitleaks git` (full history) | `trufflehog git --only-verified` for live verification | — |
+| Secrets | `betterleaks git` or `gitleaks git` (full history) | Liveness, after asking: `betterleaks … -v` / `-a`, or `trufflehog git --only-verified` | — |
 | Code (SAST) | `semgrep scan` | Brakeman (Rails), gosec (Go), CodeQL (if GHAS), custom semgrep rules (below) | — |
 | Dependencies | `osv-scanner scan source -r .` (npm, pnpm, yarn, Bundler, pip, Go, Cargo, Composer, Maven in one pass) | `bundle-audit` (Rails), `govulncheck` (Go, call-graph reachability), `pip-audit` | `npm audit` / `pnpm audit --prod` / `yarn audit` |
 | Infra / IaC / containers | `trivy fs --scanners vuln,misconfig,secret .` | `checkov -d .` (Terraform, CloudFormation, k8s, Actions), `trivy image <img>` | — |
@@ -45,6 +45,11 @@ Commands, non-interactive, one output file per tool under `.security/out/`:
 mkdir -p .security/out
 # Secrets — full history, values redacted
 gitleaks git . --redact --report-format sarif --report-path .security/out/gitleaks.sarif
+# or Betterleaks: detection only and silent, so a stray BETTERLEAKS_VALIDATE=true can't use found keys and nothing prints.
+# v2 has no SARIF reporter: convert, then export (needs_validation records go out at level "note")
+betterleaks git . --validate=false --analyze=false --redact --silent -o .security/out/betterleaks.json
+node references/betterleaks-to-findings.mjs .security/out/betterleaks.json -o .security/out/betterleaks.findings.json
+node references/to-sarif.mjs .security/out/betterleaks.findings.json --include-needs-validation -o .security/out/betterleaks.sarif
 trufflehog git file://. --only-verified --json --no-update | jq -c 'del(.Raw, .RawV2)' > .security/out/trufflehog.jsonl
 # Code
 semgrep scan --config p/default --config .semgrep/ --metrics=off --sarif --output .security/out/semgrep.sarif
@@ -65,7 +70,7 @@ curl -s -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
   "https://api.supabase.com/v1/projects/<ref>/advisors/security" > .security/out/supabase-advisors.json
 ```
 
-Add `.security/out/` to `.gitignore`. Flag versions differ between tool majors (gitleaks 8.19+ uses `git`/`dir` subcommands; osv-scanner v2 uses `scan source`); run `<tool> --help` once and adjust rather than guessing.
+Add `.security/out/` to `.gitignore`. Flag versions differ between tool majors (gitleaks 8.19+ uses `git`/`dir` subcommands; osv-scanner v2 uses `scan source`; Betterleaks v2 renamed `dir` to `fs`, `--report-path` to `-o`, and `--validation` to `-v`, which meant `--verbose` in v1); run `<tool> --help` once and adjust rather than guessing.
 
 ### Custom rule: always-true RLS policy
 
@@ -87,9 +92,10 @@ where schemaname = 'public' and rowsecurity = false;
 
 ## 2. Secrets, done carefully
 
+- **Betterleaks or gitleaks.** Same rule ids, same `gitleaks:allow` comments. Betterleaks adds fewer generic-secret false positives, a value hash on every finding, and liveness checks. v2 is still a release candidate (`betterleaks version`; package managers may install v1.9.0), drops SARIF, and doesn't read `.betterleaks.toml` unless you pass `--config`. Flags, safety rules and report fields: `secrets-audit` → `references/betterleaks.md`.
 - **Scan full history, not HEAD.** `gitleaks git` walks every commit; `gitleaks dir` only sees the working tree. A secret deleted last year is still in every clone.
-- **Verified means live.** `trufflehog --only-verified` checks each candidate against the provider's API. A verified hit is **P0**: record it as `confirmed`, and **rotate before you clean history**. Rewriting history first leaves a live key in every fork and clone while you work. Hand rotation to `secrets-audit`.
-- **Never print values.** Use `--redact` for gitleaks; strip `Raw`/`RawV2` from trufflehog JSON. Reports, issues, PR comments, and agent hand-offs name the detector, file, commit, and a hash of the value — never the value. Fingerprint secrets as `secret:<detector>:<sha256(value)[:12]>` so the same key in five files dedupes to one finding.
+- **Verified means live.** `trufflehog --only-verified` checks each candidate against the provider's API. That sends the found key to its provider, which uses it, so trufflehog isn't pre-approved: the run prompts, and the user says yes to the check. A verified hit is **P0**: record it as `confirmed`, and **rotate before you clean history**. Rewriting history first leaves a live key in every fork and clone while you work. Hand rotation to `secrets-audit`.
+- **Never print values.** Use `--redact` for gitleaks; strip `Raw`/`RawV2` from trufflehog JSON. Reports, issues, PR comments, and agent hand-offs name the detector, file, commit, and a hash of the value — never the value. Fingerprint secrets as `secret:<detector>:<sha256(value)[:12]>` so the same key in five files dedupes to one finding. Betterleaks puts that hash in `match.fingerprint`, computed before redaction; [references/betterleaks-to-findings.mjs](references/betterleaks-to-findings.mjs) builds the records from it. gitleaks `--redact` and trufflehog with `Raw` stripped don't keep the value, so their hits dedupe by file and commit instead. For hashes that leave the machine (CI artifacts, issues), use `--hmac-key`: a plain SHA-256 of a short token can be brute-forced.
 - **Unverified hits** are `needs_validation`, not noise: the provider may not support verification, or the key may be for an internal system.
 
 ## 3. Live-app scanning guardrails
@@ -120,7 +126,7 @@ Every tool speaks a different format. Convert all of them to the repo's findings
 | Kind | Fingerprint | Collapses |
 |---|---|---|
 | Dependency | `dep:<ecosystem>:<package>:<canonical-id>` (CVE if one exists, else GHSA, else OSV id) | osv-scanner + trivy + npm audit + Dependabot on the same advisory |
-| Secret | `secret:<detector>:<sha256(value)[:12]>` | gitleaks + trufflehog + trivy on the same key, across files and commits |
+| Secret | `secret:<detector>:<sha256(value)[:12]>` | The same key across files and commits; Betterleaks and gitleaks share rule ids |
 | Code | `sast:<cwe>:<file>:<enclosing function or route>` | semgrep + CodeQL + Brakeman on the same sink |
 | IaC | `iac:<resource address>:<check family>` | trivy misconfig + checkov on the same resource |
 | Database | `db:<project>:<schema.table>:<lint name>` | advisor + custom semgrep rule on the same table |
@@ -143,7 +149,7 @@ Rules: every entry has a reason, owner, and expiry (90 days max); expired entrie
 ```bash
 gh repo list <owner> --limit 1000 --source --no-archived --json nameWithOwner,defaultBranchRef,pushedAt
 ```
-`--source` drops forks; `--no-archived` drops archived repos. Repeat per owner/org. For each repo: shallow-clone the **production branch** (from `patch-sweep` Step 2 if you have it; default branch otherwise) — except for secrets, which need full history (`git clone --filter=blob:none` is enough for gitleaks). Run the per-repo pipeline in parallel (a handful at a time), writing `.security/out/<repo>/`. Then roll up:
+`--source` drops forks; `--no-archived` drops archived repos. Repeat per owner/org. For secrets only, Betterleaks can scan every repo in an org in one process, full history, instead of the clone loop: `betterleaks github --validate=false --analyze=false --redact --silent -o .security/out/fleet-betterleaks.json https://github.com/<org>` (needs a GitHub token in the environment; `--exclude-repo '<org>/*-archive'`; forks only with `--include=forks`). It prompts. For each repo: shallow-clone the **production branch** (from `patch-sweep` Step 2 if you have it; default branch otherwise) — except for secrets, which need full history (`git clone --filter=blob:none` is enough for gitleaks). Run the per-repo pipeline in parallel (a handful at a time), writing `.security/out/<repo>/`. Then roll up:
 
 ```markdown
 | repo | layer | tool | sev | finding | status |
@@ -162,6 +168,13 @@ Scaffold [references/security-scan.yml](references/security-scan.yml) into the r
 - can be called from other repos with `workflow_call`, so one copy serves a fleet;
 - uploads SARIF to GitHub code scanning when available (public repos, or private with GitHub Advanced Security) and always keeps SARIF as a workflow artifact otherwise;
 - pins every Action to a full commit SHA and every container image to a digest (`cicd-security`). The SHAs in the template were looked up from the upstream release tags on 2026-10-26; update them with Dependabot or Renovate, not by switching to tags.
+
+**Betterleaks in CI** (optional, once v2 is stable). Add a job next to gitleaks:
+- Pin the image by digest, as with the others. Don't use `:latest` or a moving `:v2` tag.
+- Set `BETTERLEAKS_VALIDATE: "false"` and `BETTERLEAKS_ANALYZE: "false"` in the step's `env`, and pass `--validate=false --analyze=false`. **Never validate in CI.** On a fork's pull request, validation would send any key the PR author planted to whatever endpoint a rule calls.
+- Read `.betterleaks.toml` from the **base** branch (`git show "origin/$GITHUB_BASE_REF:.betterleaks.toml"`) and pass it with `--config`. A PR can edit the file in its own head and switch off the rules that would catch it (`cicd-security`).
+- Use `--hmac-key` from a secret (`BETTERLEAKS_FINGERPRINT_HMAC_KEY`), since report artifacts leave the machine.
+- Convert with `betterleaks-to-findings.mjs`, then `to-sarif.mjs --include-needs-validation`, then upload. v2 exits 1 on findings: keep `continue-on-error: true` like the gitleaks step.
 
 When code scanning isn't available, open or update one issue per fingerprint (title = fingerprint, body = evidence without secret values) instead of dumping SARIF into a comment.
 
@@ -214,7 +227,7 @@ Optional scaffolds: `.github/workflows/security-scan.yml`, `.gitleaks.toml` (ext
 
 ## References
 
-- [gitleaks](https://github.com/gitleaks/gitleaks), [trufflehog](https://github.com/trufflesecurity/trufflehog), [semgrep](https://semgrep.dev/docs/), [osv-scanner](https://google.github.io/osv-scanner/), [trivy](https://trivy.dev/), [checkov](https://www.checkov.io/), [Brakeman](https://brakemanscanner.org/), [govulncheck](https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck), [ZAP baseline](https://www.zaproxy.org/docs/docker/baseline-scan/), [nuclei](https://docs.projectdiscovery.io/tools/nuclei/)
+- [Betterleaks](https://github.com/betterleaks/betterleaks), [gitleaks](https://github.com/gitleaks/gitleaks), [trufflehog](https://github.com/trufflesecurity/trufflehog), [semgrep](https://semgrep.dev/docs/), [osv-scanner](https://google.github.io/osv-scanner/), [trivy](https://trivy.dev/), [checkov](https://www.checkov.io/), [Brakeman](https://brakemanscanner.org/), [govulncheck](https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck), [ZAP baseline](https://www.zaproxy.org/docs/docker/baseline-scan/), [nuclei](https://docs.projectdiscovery.io/tools/nuclei/)
 - [Supabase database advisors](https://supabase.com/docs/guides/database/database-advisors) and [Splinter](https://github.com/supabase/splinter); [`supabase db lint`](https://supabase.com/docs/reference/cli/supabase-db-lint)
 - [GitHub — uploading SARIF](https://docs.github.com/en/code-security/code-scanning/integrating-with-code-scanning/uploading-a-sarif-file-to-github)
 - Idea source: @neilsuperduper, 2026-10-25 (paraphrased) — run real tools per layer and hand their findings to agents to fix; issue #84
@@ -223,6 +236,7 @@ Optional scaffolds: `.github/workflows/security-scan.yml`, `.gitleaks.toml` (ext
 
 This skill links to supporting files under `references/`. They are not inlined in this adapter; open them on GitHub (or in `skills/scanner-pipeline/references/` if you have the repo checked out):
 
+- [references/betterleaks-to-findings.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/scanner-pipeline/references/betterleaks-to-findings.mjs)
 - [references/findings-format.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/scanner-pipeline/references/findings-format.md)
 - [references/findings.schema.json](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/scanner-pipeline/references/findings.schema.json)
 - [references/security-scan.yml](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/scanner-pipeline/references/security-scan.yml)

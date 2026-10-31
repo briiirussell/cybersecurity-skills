@@ -38,7 +38,8 @@ where the agent walks up the tree, every parent and nested directory too.
 | Project | `.cursor/hooks.json` (where present), `.cursor/commands/` | **Yes** (hooks) |
 | User | `~/.cursor/mcp.json`, `~/.cursor/hooks.json` | **Yes** |
 | User | User Rules and auto-run / allowlist settings live in the app's settings UI | Ask the user to export or screenshot |
-| User | `~/.cursor/extensions/` | VS Code-style extensions — a separate, larger supply chain |
+| User | `~/.codex/config.toml` `projects.<path>.trust_level` | Codex folder trust (`trust_level`), per exact path. Trusted catch-all folders are LD1 ([launch-directories.md](launch-directories.md)) |
+| User | `~/.cursor/extensions/` | IDE extensions, a larger supply chain that runs with the user's full access. Audited with EX1–EX6 ([ide-extensions.md](ide-extensions.md)), with VS Code, Windsurf, VSCodium, remote-server and JetBrains folders |
 
 ## Codex (OpenAI)
 
