@@ -11,11 +11,11 @@ Current versions of all skills. Agents can compare against local versions to che
 | business-logic-testing | 1.0.2 | 2026-10-26 |
 | cicd-security | 1.0.0 | 2026-10-27 |
 | cloud-audit | 1.2.0 | 2026-10-26 |
-| container-audit | 1.2.1 | 2026-10-30 |
+| container-audit | 1.3.0 | 2026-10-30 |
 | control-audit | 1.2.0 | 2026-10-27 |
 | crypto-audit | 1.1.2 | 2026-10-27 |
 | csf-mapping | 1.0.3 | 2026-10-27 |
-| dependency-audit | 1.3.2 | 2026-10-29 |
+| dependency-audit | 1.4.0 | 2026-10-30 |
 | disk-forensics | 1.0.2 | 2026-10-27 |
 | finding-triage | 1.3.1 | 2026-10-27 |
 | fuzzing-harness | 1.0.1 | 2026-10-27 |
@@ -48,6 +48,22 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.65.0 (2026-10-30)
+
+dependency-audit and container-audit find runtime defaults that widen a kernel CVE's reach (#221). dependency-audit 1.4.0, container-audit 1.3.0.
+
+**Added**
+- **Runtime exposure** (new shared file `runtime-exposure.md`, copied into both skills), with Go and MPTCP as the worked example for CVE-2026-98432:
+  - Go's `multipathtcp` values. Since Go 1.24 the default is `2`, which turns MPTCP on for listeners.
+  - **The default follows the main module's `go` line, not the toolchain**, so a `go 1.23` module built with Go 1.25 keeps MPTCP off.
+  - Source checks (go.mod, `//go:debug`, `SetMultipathTCP`, a GODEBUG setting in the deploy config) and the authoritative binary check: `go version -m` reading `DefaultGODEBUG`.
+  - An exposure table, and a `needs_validation` finding shape that hands off to `patch-sweep`.
+- **Containers share the host kernel.** Rebuilding an image can't fix a kernel CVE, so the image is recorded as "not the fix location".
+  - **MPTCP is per network namespace, and every new namespace starts with it on** (`net/mptcp/ctrl.c`). Turning it off on the host doesn't reach containers, so it's checked per container with `nsenter`.
+  - Compose and Kubernetes per-workload settings. `net.mptcp.enabled` isn't in the kubelet's safe set, so it needs `--allowed-unsafe-sysctls`.
+  - `hostNetwork`, and pulling Go binaries out of images without running them.
+- dependency-audit Step 3 and container-audit's runtime checklist point to it.
 
 ### 1.64.0 (2026-10-30)
 

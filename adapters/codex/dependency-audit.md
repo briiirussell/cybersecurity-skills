@@ -134,7 +134,7 @@ For every advisory, check **CISA KEV** (exploited now) and **EPSS** (likely in 3
 
 ### Step 3: Research Framework-Specific Known Issues
 
-Beyond CVEs in packages, check for known vulnerability patterns specific to the framework in use. Search for recent advisories and common misconfiguration issues.
+Beyond CVEs in packages, check for known vulnerability patterns specific to the framework in use. Search for recent advisories and common misconfiguration issues. Runtime defaults that widen a kernel CVE's reach (Go ≥ 1.24 listens with MPTCP) are in [references/runtime-exposure.md](references/runtime-exposure.md).
 
 For every direct dependency, cross-reference the installed version against:
 - `https://github.com/advisories?ecosystem=npm&query=<package>`
@@ -424,6 +424,7 @@ This skill links to supporting files under `references/`. They are not inlined i
 - [references/findings-format.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/dependency-audit/references/findings-format.md)
 - [references/findings.schema.json](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/dependency-audit/references/findings.schema.json)
 - [references/fixing-safely.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/dependency-audit/references/fixing-safely.md)
+- [references/runtime-exposure.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/dependency-audit/references/runtime-exposure.md)
 - [references/severity-calibration.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/dependency-audit/references/severity-calibration.md)
 - [references/source-redirection.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/dependency-audit/references/source-redirection.md)
 - [references/to-sarif.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/dependency-audit/references/to-sarif.mjs)
