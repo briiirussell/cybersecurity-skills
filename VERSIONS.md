@@ -49,6 +49,14 @@ Current versions of all skills. Agents can compare against local versions to che
 
 ## Recent Changes
 
+### 1.70.1 (2026-11-02)
+
+README: install steps for OpenCode and oh-my-pi (`omp`). No skill changes.
+
+**Added**
+- Option 1 says which agents read `SKILL.md` natively through `npx skills`, with an OpenCode example (`-g -a opencode`).
+- Option 7: oh-my-pi. `omp` isn't an `npx skills` target; it loads project `.agents/skills/` and `.claude/skills/`, plus `~/.omp/agent/skills/` and `.omp/skills/`. The git submodule option is now Option 8.
+
 ### 1.70.0 (2026-10-30)
 
 breach-patterns: Pattern 11, a compromised third-party script acting inside logged-in sessions (Polymarket via DebugBear, 2026-10-29). breach-patterns 1.1.0, business-logic-testing 1.1.0.
