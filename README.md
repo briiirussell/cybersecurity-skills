@@ -193,6 +193,13 @@ npx skills add briiirussell/cybersecurity-skills --skill owasp-audit api-audit
 
 Installs to your `.agents/skills/` directory with a symlink into `.claude/skills/` for Claude Code compatibility.
 
+Agents that read `SKILL.md` folders natively (OpenCode, Gemini CLI, GitHub Copilot, Windsurf, Goose, Pi and [the rest of the `npx skills` list](https://github.com/vercel-labs/skills/blob/main/docs/agents.md)) use the canonical skills directly; no adapter needed. Pick the agent with `-a`, and add `-g` to install for your user instead of the project:
+
+```bash
+# OpenCode, all projects (~/.config/opencode/skills/)
+npx skills add briiirussell/cybersecurity-skills -g -a opencode
+```
+
 ### Option 2: Claude Code plugin marketplace
 
 ```bash
@@ -235,7 +242,17 @@ cp adapters/cursor/owasp-audit.mdc .cursor/rules/
 cp adapters/codex/owasp-audit.md <your-codex-config-dir>/
 ```
 
-### Option 7: Git submodule (easy updates)
+### Option 7: oh-my-pi (`omp`)
+
+`omp` isn't an `npx skills` target, but it reads `SKILL.md` folders natively. It already loads a project's `.agents/skills/` and `.claude/skills/`, so Option 1 works per project. For all projects, copy into omp's user skills directory:
+
+```bash
+cp -r cybersecurity-skills/skills/owasp-audit ~/.omp/agent/skills/
+```
+
+For one project only, use `.omp/skills/` instead.
+
+### Option 8: Git submodule (easy updates)
 
 ```bash
 git submodule add https://github.com/briiirussell/cybersecurity-skills.git .agents/cybersecurity-skills
