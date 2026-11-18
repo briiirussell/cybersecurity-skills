@@ -6,7 +6,8 @@
     "review this PR for security before I merge it",
     "find vulnerabilities in my Flask app",
     "check our code for XSS and SSRF",
-    "do a security review of this Rails upload code. config.active_storage.variant_processor = :mini_magick and anyone can attach a file. Is that an OWASP finding?"
+    "do a security review of this Rails upload code. config.active_storage.variant_processor = :mini_magick and anyone can attach a file. Is that an OWASP finding?",
+    "do a security review of this login code. We sign the state query parameter with the app secret, and the email verification link uses that same secret. Is that an authentication failure?"
   ],
   "near_miss": [
     {

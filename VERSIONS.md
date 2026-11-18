@@ -15,7 +15,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | control-audit | 1.2.1 | 2026-10-30 |
 | crypto-audit | 1.1.2 | 2026-10-27 |
 | csf-mapping | 1.0.3 | 2026-10-27 |
-| dependency-audit | 1.5.0 | 2026-11-18 |
+| dependency-audit | 1.6.0 | 2026-11-18 |
 | disk-forensics | 1.0.2 | 2026-10-27 |
 | finding-triage | 1.3.1 | 2026-10-27 |
 | fuzzing-harness | 1.0.1 | 2026-10-27 |
@@ -27,8 +27,8 @@ Current versions of all skills. Agents can compare against local versions to che
 | mobile-audit | 1.1.1 | 2026-10-27 |
 | native-code-review | 1.0.1 | 2026-10-27 |
 | osint-recon | 1.0.2 | 2026-10-26 |
-| owasp-audit | 1.8.0 | 2026-11-18 |
-| patch-sweep | 1.5.0 | 2026-11-18 |
+| owasp-audit | 1.9.0 | 2026-11-18 |
+| patch-sweep | 1.6.0 | 2026-11-18 |
 | pci-audit | 1.1.1 | 2026-10-27 |
 | personal-opsec | 1.3.3 | 2026-11-18 |
 | privacy-engineering | 1.1.0 | 2026-10-27 |
@@ -48,6 +48,17 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.80.0 (2026-11-18)
+
+dependency-audit, owasp-audit, and patch-sweep: Better Auth Expo authorization-proxy account takeover (CVE-2026-121802 / GHSA-4wq4-2ppv-q3hg / GHSA-hv45-wgqh-c9j5). dependency-audit 1.6.0, owasp-audit 1.9.0, patch-sweep 1.6.0.
+
+**Added**
+- dependency-audit: version floors for `better-auth` and `@better-auth/expo` (1.7.16, or 1.8.0-beta.5 on the beta line), the `expo()` reachability check, and the rule that a below-floor lockfile still bumps both packages when the plugin is absent. After the bump, rotate the application secret. Facts re-checked 2026-11-15 against the vendor advisory; not on CISA KEV.
+- owasp-audit A07: flag custom auth that signs caller-supplied state with the application secret, or that uses one secret for email-verification links and the session cookie cache, with this advisory as the worked example.
+- patch-sweep: fleet bump of both packages. Apps that register `expo()` are urgent; the rest are same-week. A row stays open until the secret is rotated wherever the proxy was reachable.
+
+Proposed by @coreyhaines31 in #258.
 
 ### 1.79.0 (2026-11-18)
 
