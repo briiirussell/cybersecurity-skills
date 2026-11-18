@@ -6,7 +6,8 @@
     "look for lateral movement that no alert caught",
     "plan a hunt with the PEAK framework",
     "search our EDR for persistence",
-    "proactive hunt for persistence left by a tampered Homebrew installer on developer laptops"
+    "proactive hunt for persistence left by a tampered Homebrew installer on developer laptops",
+    "agent-parented hunt: the coding agent parent process dumped the login keychain"
   ],
   "near_miss": [
     {

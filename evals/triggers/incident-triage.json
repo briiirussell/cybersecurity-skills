@@ -9,7 +9,8 @@
     "incident triage: a developer ran a tampered installer, then a take-home repo from a fake interview. We've been compromised",
     "vendor breach: the SaaS we use was breached and told us to rotate keys, our own code looks fine, what do we do first?",
     "a vendor we use was breached, they told us to rotate keys, where do I start?",
-    "incident triage: the agent transcript has prompts the user did not type, and a package install ran while they were away from the keyboard. We've been compromised?"
+    "incident triage: the agent transcript has prompts the user did not type, and a package install ran while they were away from the keyboard. We've been compromised?",
+    "we've been breached — a coding agent ran it, don't close this because the parent is signed"
   ],
   "near_miss": [
     {

@@ -21,7 +21,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | fuzzing-harness | 1.0.1 | 2026-10-27 |
 | hipaa-audit | 1.1.1 | 2026-10-27 |
 | iam-audit | 1.2.0 | 2026-10-27 |
-| incident-triage | 1.5.0 | 2026-11-18 |
+| incident-triage | 1.6.0 | 2026-11-18 |
 | log-watch | 1.0.3 | 2026-11-18 |
 | malware-triage | 1.0.0 | 2026-10-27 |
 | mobile-audit | 1.1.1 | 2026-10-27 |
@@ -39,15 +39,26 @@ Current versions of all skills. Agents can compare against local versions to che
 | secrets-audit | 1.5.0 | 2026-11-18 |
 | security-comms | 1.0.3 | 2026-10-26 |
 | security-start | 1.0.0 | 2026-10-27 |
-| siem-detection | 1.0.5 | 2026-10-27 |
+| siem-detection | 1.1.0 | 2026-11-18 |
 | soc-operations | 1.0.4 | 2026-10-26 |
-| threat-hunting | 1.2.0 | 2026-11-18 |
+| threat-hunting | 1.3.0 | 2026-11-18 |
 | threat-modeling | 1.0.4 | 2026-10-26 |
 | variant-analysis | 1.0.0 | 2026-10-27 |
 | vuln-research | 1.0.4 | 2026-10-27 |
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.77.0 (2026-11-18)
+
+threat-hunting, incident-triage, and siem-detection: hunt high-severity outcomes whose parent is a coding agent (Elastic Threat Command, November 2026). threat-hunting 1.3.0, incident-triage 1.6.0, siem-detection 1.1.0.
+
+**Added**
+- threat-hunting: "Agent-parented high-severity outcomes" (AP1–AP5). Credential-store access, free reverse tunnels, persistence, quarantine stripping, and permission-bypass sessions, keyed on ancestry (`claude`, Cursor, Codex, ChatGPT). Claude Code reading its own `Claude Code-credentials` keychain item is allow-listed. A tunnel alone needs validation. Two readings stay written down.
+- incident-triage: do not close because the parent is vendor-signed. Read the session transcript (human prompt versus a file, hook, MCP result, or remote session — #234, #253, #254), rotate what the session could read, then reuse the dev-machine persistence checks from #223.
+- siem-detection: the same five outcomes as rule ideas. GenAI child-process volume alone is context, not a finding.
+
+Proposed by @coreyhaines31 in #255. This branch does not include the AWS burst hunt from #271; both edit `threat-hunting`.
 
 ### 1.76.0 (2026-11-18)
 

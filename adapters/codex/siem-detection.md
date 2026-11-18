@@ -1,6 +1,6 @@
 # siem-detection
 
-> Engineer and audit SIEM detection rules — log source coverage, Sigma / KQL / SPL / Elastic query authoring, MITRE ATT&CK mapping, false-positive tuning, and detection-as-code workflows. Use when the user mentions 'SIEM,' 'detection engineering,' 'detection rules,' 'Sigma,' 'KQL,' 'SPL,' 'Splunk,' 'Sentinel,' 'Elastic,' 'Wazuh,' 'Chronicle,' 'detection-as-code,' 'MITRE ATT&CK mapping,' 'log coverage,' 'alert tuning,' 'use case development,' or needs help building or improving security detections.
+> Engineer and audit SIEM detection rules — log source coverage, Sigma / KQL / SPL / Elastic query authoring, MITRE ATT&CK mapping, false-positive tuning, and detection-as-code workflows. Use when the user mentions 'SIEM,' 'detection engineering,' 'detection rules,' 'Sigma,' 'KQL,' 'SPL,' 'Splunk,' 'Sentinel,' 'Elastic,' 'Wazuh,' 'Chronicle,' 'detection-as-code,' 'MITRE ATT&CK mapping,' 'log coverage,' 'alert tuning,' 'use case development,' 'agent process ancestry,' or needs help building or improving security detections.
 
 # SIEM Detection — Detection Engineering
 
@@ -143,6 +143,20 @@ FROM logs-aws.cloudtrail-*
 
 (Use the LookML / KQL / SPL / ES|QL that matches your SIEM, but author the canonical version in Sigma.)
 
+#### Agent-parented outcomes (rule ideas)
+
+A coding agent's child-process volume is context, not a finding, until a secret, a tunnel, or persistence shows up. Key the rule on process ancestry (`claude`, `Cursor Helper`, `codex`, or the ChatGPT app) plus one outcome. Do not auto-close because the parent is vendor-signed. A developer exposing their own dashboard and an intrusion can look the same: keep the rule loud and name both in `falsepositives`. The hunt procedure, including the Claude Code keychain allow-list, is `threat-hunting` (AP1–AP5). Response is `incident-triage`.
+
+| ID | Fire when an agent is an ancestor and… | ATT&CK |
+|---|---|---|
+| AP1 | the child reads a credential store, other than the agent's own `Claude Code-credentials` keychain item, or reads browser `Login Data` / `Cookies` | T1555 |
+| AP2 | the child is `cloudflared` or `ngrok`, runs `ssh -R`, or connects to `*.trycloudflare.com`, `*.lhr.life`, or `*.ngrok-free.app` | T1572 |
+| AP3 | a LaunchAgent, `launchctl bootstrap` / `load`, a shell rc file, or `authorized_keys` is written | T1543.001, T1098.004 |
+| AP4 | quarantine is stripped (`xattr -d com.apple.quarantine`) or a new binary is ad-hoc signed (`codesign -s -`) | T1553.001 |
+| AP5 | the agent was launched with `--dangerously-skip-permissions` or `--allow-dangerously-skip-permissions` on a host that holds production credentials | Raises AP1–AP4. Medium alone |
+
+Windows shape from the same reporting: parent `claude.exe` with a PowerShell child, or `curl.exe --socks5-hostname` to port 1080. Linux: the same ancestry test against user systemd units, cron, and `authorized_keys`.
+
 ### Step 4: Map to MITRE ATT&CK
 
 Every rule should tag at least one ATT&CK technique. Coverage maps roll up to ATT&CK Navigator (`navigator.mitre-attack.org`):
@@ -239,3 +253,4 @@ Deployment: post-merge, push rules to the SIEM via API. Roll back via Git revert
 - "Detection Engineering Maturity Matrix" (Florian Roth)
 - "The Pyramid of Pain" (David Bianco) — IOC value hierarchy
 - NIST SP 800-92 (Computer Security Log Management)
+- [Elastic Security Labs, "Living off the coding agent"](https://www.elastic.co/security-labs/threat-command/coding-agent-launchagent-tunnel-detection) (2026-08-07) — ancestry rules, not child-process volume alone

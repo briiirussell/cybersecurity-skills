@@ -8,6 +8,10 @@ scheduled task named after a vendor, a hidden script in `~/.config`.
 The playbook comes first; this incident's IOCs follow. When a new incident lands, add a dated IOC section rather than
 editing the playbook.
 
+If the parent was a trusted coding agent (`claude`, Cursor, Codex, or the ChatGPT app) rather than a malicious
+extension, do not close on that parent. Follow "When a coding agent ran it" in `SKILL.md`, then use the persistence
+sweep below.
+
 ## 1. Is this machine in scope?
 
 1. **Was the bad component installed during the window?** For an extension: the version folders on disk and the

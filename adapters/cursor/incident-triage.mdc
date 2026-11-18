@@ -1,5 +1,5 @@
 ---
-description: "Guide rapid triage and initial response to a live security incident happening right now (ransomware hitting a file server, an attacker still in the network, a new admin user nobody created, a host compromised through a CVE, or a SaaS vendor you use saying it was breached) following NIST SP 800-61 Rev. 3 (CSF 2.0 Respond and Recover) — declare, validate and prioritize, contain, preserve evidence, scope, extract IOCs, start the notification clocks, and hand off to eradication, recovery and lessons learned. Use when the user mentions 'incident response,' 'security incident,' 'incident triage,' 'active incident,' 'we've been hacked,' 'we've been breached,' 'compromised,' 'ransomware,' 'contain the incident,' 'malware detected,' 'suspicious activity,' 'IOC,' 'indicators of compromise,' 'vendor breach,' 'told to rotate keys,' 'a vendor we use was breached,' or needs help handling a security event."
+description: "Guide rapid triage and initial response to a live security incident happening right now (ransomware hitting a file server, an attacker still in the network, a new admin user nobody created, a host compromised through a CVE, or a SaaS vendor you use saying it was breached) following NIST SP 800-61 Rev. 3 (CSF 2.0 Respond and Recover) — declare, validate and prioritize, contain, preserve evidence, scope, extract IOCs, start the notification clocks, and hand off to eradication, recovery and lessons learned. Use when the user mentions 'incident response,' 'security incident,' 'incident triage,' 'active incident,' 'we've been hacked,' 'we've been breached,' 'compromised,' 'ransomware,' 'contain the incident,' 'malware detected,' 'suspicious activity,' 'IOC,' 'indicators of compromise,' 'vendor breach,' 'told to rotate keys,' 'a vendor we use was breached,' 'coding agent ran it,' or needs help handling a security event."
 globs:
 alwaysApply: false
 ---
@@ -48,6 +48,14 @@ Determine incident type:
 - **Phishing / social engineering**
 - **Dev-tool compromise:** a malicious IDE extension, MCP server, npm `postinstall`, skill or plugin on a developer machine. It has its own playbook (scope, contain before cleaning, IOC sweep for SSH keys, reverse tunnels and vendor-named persistence, fleet scope) and a dated IOC list for the October 2026 malicious Claude Code extension in Cursor's marketplace: [references/dev-tool-compromise.md](references/dev-tool-compromise.md)
 - **Vendor breach:** a SaaS or platform you use says an attacker reached its systems. Your own code and machines may be fine. Inventory what you handed that vendor, rotate at the issuer, and check the issuer's logs: [references/vendor-breach-notice.md](references/vendor-breach-notice.md)
+
+**When a coding agent ran it.** If the parent is `claude`, `Cursor Helper`, `codex`, or the ChatGPT app, do not close the alert because that parent is vendor-signed. Judge the child. The hunts are `threat-hunting` AP1–AP5.
+
+- Pull the session transcript (`~/.claude/projects/*/`, Codex session logs, the Cursor transcript). Decide whether a human typed the prompt. It may instead have come from a planted instruction file or an untrusted launch directory (`agent-supply-chain-audit`, issue #234), a hook or MCP result a desktop app added (issue #253), or a remote-control or browser session (issue #254). `prompt-injection` is the audit for that class of input.
+- Rotate what the session could read: keychain items it touched, `.env` files in the project, OAuth tokens for MCP servers. Revoke sessions before issuing new keys.
+- Then run the persistence checks in [references/dev-tool-compromise.md](references/dev-tool-compromise.md) (issue #223): reverse tunnels, LaunchAgents, `authorized_keys`.
+
+Elastic is explicit that some of this has two readings (a developer exposing their own dashboard, or an intrusion). Keep the alert loud and write both readings down.
 
 Determine severity:
 - **Critical:** active data exfiltration, ransomware spreading, critical system compromise
@@ -238,6 +246,7 @@ Triage ends when the incident is contained and scoped. Record, for the next owne
 - NIST Cybersecurity Framework 2.0 (Respond and Recover Functions)
 - SANS Incident Handler's Handbook
 - MITRE ATT&CK Framework
+- [Elastic Security Labs, "Living off the coding agent"](https://www.elastic.co/security-labs/threat-command/coding-agent-launchagent-tunnel-detection) (2026-08-07) — do not close on a vendor-signed coding-agent parent
 
 ## Reference files
 

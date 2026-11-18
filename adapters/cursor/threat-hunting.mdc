@@ -1,5 +1,5 @@
 ---
-description: "Conduct proactive, hypothesis-driven threat hunts — search SIEM / EDR / logs for adversaries who haven't tripped an alert yet. ATT&CK-driven, hypothesis-based methodology. Use when the user mentions 'threat hunting,' 'proactive hunt,' 'TaHiTI,' 'PEAK framework,' 'MITRE ATT&CK hunt,' 'hypothesis-driven hunt,' 'hunt hypothesis,' 'living off the land,' 'LOLBins,' 'beaconing,' 'lateral movement detection,' 'data staging,' 'persistence hunting,' or wants to find threats that have evaded existing detections."
+description: "Conduct proactive, hypothesis-driven threat hunts — search SIEM / EDR / logs for adversaries who haven't tripped an alert yet. ATT&CK-driven, hypothesis-based methodology. Use when the user mentions 'threat hunting,' 'proactive hunt,' 'TaHiTI,' 'PEAK framework,' 'MITRE ATT&CK hunt,' 'hypothesis-driven hunt,' 'hunt hypothesis,' 'living off the land,' 'LOLBins,' 'beaconing,' 'lateral movement detection,' 'data staging,' 'persistence hunting,' 'agent-parented hunt,' 'coding agent parent process,' or wants to find threats that have evaded existing detections."
 globs:
 alwaysApply: false
 ---
@@ -124,6 +124,22 @@ The patterns malicious IDE extensions, MCP servers and packages use, so the hunt
 - **Tampered installer** — Homebrew's git remote is not the Homebrew/brew repository, a tap the developer does not recognize, or an agent CLI whose install URL came from a search result (`agent-supply-chain-audit` IN1–IN2)
 - **Interview homework on a work machine** — a repository from a recruiter or interviewer, cloned or unpacked in the last 90 days. Endpoint protection staying quiet is not a clean result (`incident-triage` dev-tool compromise)
 
+### Agent-parented high-severity outcomes
+
+The agent binary is vendor-signed, so a parent of `claude`, `Cursor Helper`, `codex`, or the ChatGPT app looks normal and alerts on its children get closed. Judge the agent by what it launches. Read-only. These IDs are ancestry hunts. They are not the checks for what was loaded into the agent (`agent-supply-chain-audit`). No CVE: once someone held a session, the agents did what they were built to do. Elastic Security Threat Command (November 2026) and the August 2026 Security Labs note are the sources. Some of this has two readings — a developer exposing their own local dashboard, or an intrusion. Keep the hit and write both readings down.
+
+| ID | Hunt | What to look for | Finding |
+|---|---|---|---|
+| AP1 | Credential store under an agent | Ancestry includes `claude`, `Cursor Helper`, `codex`, or `ChatGPT`, and the child runs `security dump-keychain`, `security find-generic-password -w` for any item other than the agent's own, or reads browser `Login Data` / `Cookies` | High. Allow-list exactly Claude Code's own `"Claude Code-credentials"` keychain item. That read is documented normal behavior |
+| AP2 | Free reverse tunnel under an agent | A child named `cloudflared` or `ngrok`, `ssh -R` toward localhost.run, or a connection to `*.trycloudflare.com`, `*.lhr.life`, or `*.ngrok-free.app` | High together with AP3 or with credentials on the command line. Otherwise needs validation (dual-use) |
+| AP3 | Persistence written under an agent | A new or modified file in `~/Library/LaunchAgents/`, `launchctl bootstrap` or `load`, a `PlistBuddy` edit, a write to `~/.zshenv` or `~/.zshrc`, or a new `authorized_keys` entry, with agent ancestry | High |
+| AP4 | Quarantine stripped, then ad-hoc signed | `xattr -d com.apple.quarantine`, or `codesign -s -` on a freshly downloaded binary, under agent ancestry | High |
+| AP5 | Permission-bypass session | The agent was started with `--dangerously-skip-permissions` or `--allow-dangerously-skip-permissions` (Claude Code), or another agent's full-auto mode, on a machine that holds production credentials | Medium alone. Raises a confirmed AP1–AP4 on that same session by one level |
+
+Search process telemetry for those commands. Do not run `security dump-keychain` to see what it returns.
+
+Without an EDR, on macOS: `log show --predicate 'process == "launchd"' --last 7d` and `ls -lt ~/Library/LaunchAgents`, then the agent's transcripts (`~/.claude/projects/*/`, Codex session logs) for which prompt produced the command. Linux: the same ancestry test against user systemd units, cron, and `authorized_keys`. Windows: `claude.exe` parenting PowerShell, or `curl.exe --socks5-hostname` to port 1080. Response is `incident-triage` (when a coding agent ran it). A rule that should keep firing belongs in `siem-detection`.
+
 ### Defense evasion
 
 - **PowerShell with `-EncodedCommand`** — base64-encoded scripts are evasion 80% of the time
@@ -241,3 +257,5 @@ The patterns malicious IDE extensions, MCP servers and packages use, so the hunt
 - David Bianco's "Pyramid of Pain" — IOC value hierarchy
 - SANS FOR508 / FOR578 course materials
 - Velociraptor community hunt content
+- [Elastic Security Labs, "Living off the coding agent"](https://www.elastic.co/security-labs/threat-command/coding-agent-launchagent-tunnel-detection) (2026-08-07) — tunnels, LaunchAgents, and the two-readings caveat
+- [Elastic Threat Command report, November 2026](https://www.elastic.co/pdf/elastic-threats-etc-elastic-security-threat-command-nov-2026.pdf) — Claude Code on Windows, ChatGPT desktop keychain dump, coding-agent cases on macOS
