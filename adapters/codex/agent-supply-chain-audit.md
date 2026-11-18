@@ -73,7 +73,7 @@ per category is below; the full set, with portable `grep` / `perl` equivalents, 
 | Instruction override / covert steering | P1, P4 | `rg -n -i '(ignore\|disregard) (all )?(previous\|prior\|above) instructions\|you are now\|(do not\|never) tell the user\|silently' $T` |
 | Anti-refusal | AR1–AR3 | `rg -n -i "(never\|do not) refuse\|without (any )?(warnings?\|disclaimers?)\|safety polic(y\|ies) (do(es)? not\|don'?t) apply" $T` |
 | Exfiltration wording and egress | P3, E1, E4 | `rg -n -i 'webhook\.site\|discord(app)?\.com/api/webhooks\|api\.telegram\.org/bot\|hooks\.slack\.com\|ngrok\|pipedream\.net\|requestbin\|oast\.' $T` |
-| Credential reads | E2, E3, PE3 | `rg -n -i '\.ssh/\|id_(rsa\|ed25519)\|\.aws/credentials\|\.netrc\|\.npmrc\|printenv\|process\.env\|os\.environ' $T` |
+| Credential reads | E2, E3, PE3 | `rg -n -i '\.ssh/\|id_(rsa\|ed25519)\|\.aws/credentials\|\.netrc\|\.npmrc\|printenv\|process\.env\|os\.environ\|SSH_AUTH_SOCK\|forwarded-ssh-agent\.sock' $T` |
 | Agent snooping | AS1, AS2, AS3 | `rg -n '\.claude/\|\.codex/\|\.gemini/\|\.cursor/\|mcp\.json\|claude_desktop_config\|SKILL\.md' $T` |
 | Remote script execution | SC2 | `rg -n -i '(curl\|wget)[^\|]*[\|]\s*(sudo\s+)?(ba\|z)?sh\b\|bash\s+<\((curl\|wget)' $T` |
 | Obfuscation, bytecode, disguised binaries | SC3, SC8, SC9 | `rg -n 'base64 (-d\|--decode)\|atob\(\|fromCharCode\|\beval\(' $T`; `rg --files -uu $T -g '*.pyc' -g '*.so' -g '*.exe'` |

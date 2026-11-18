@@ -1,6 +1,6 @@
 ---
 name: personal-opsec
-description: "Audit one person's own security setup — the founder or operator who holds the keys to the stack — and produce a prioritized gap report. Walks Karpathy's 15-control digital security checklist, adds account-recovery, SIM-swap, registrar, and hardware-key checks, and covers the AI-agent era: tokens your coding agents can read, MCP server trust, inbox-assistant prompt injection, clipboard exposure, take-home tests, and where tools are installed from. Use when the user mentions 'personal opsec,' 'personal security audit,' 'secure my own accounts,' 'founder security,' 'Karpathy security checklist,' 'am I secure,' 'hardware key,' 'YubiKey,' 'SIM swap,' 'port-out PIN,' 'FileVault,' 'BitLocker,' 'password manager,' 'recovery codes,' 'registrar lock,' 'what can my AI agent see,' 'API keys on my laptop,' 'MCP trust,' 'take-home test,' or wants to harden their own accounts and machine."
+description: "Audit one person's own security setup — the founder or operator who holds the keys to the stack — and produce a prioritized gap report. Walks Karpathy's 15-control digital security checklist, adds account-recovery, SIM-swap, registrar, and hardware-key checks, and covers the AI-agent era: tokens your coding agents can read, MCP server trust, SSH agent forwarding to agent hosts, inbox-assistant prompt injection, clipboard exposure, take-home tests, and where tools are installed from. Use when the user mentions 'personal opsec,' 'personal security audit,' 'secure my own accounts,' 'founder security,' 'Karpathy security checklist,' 'am I secure,' 'hardware key,' 'YubiKey,' 'SIM swap,' 'port-out PIN,' 'FileVault,' 'BitLocker,' 'password manager,' 'recovery codes,' 'registrar lock,' 'what can my AI agent see,' 'API keys on my laptop,' 'MCP trust,' 'take-home test,' 'SSH agent forwarding,' 'ForwardAgent,' or wants to harden their own accounts and machine."
 allowed-tools: Read, Grep, Glob, Bash(fdesetup status:*), Bash(/usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate:*), Bash(/usr/libexec/ApplicationFirewall/socketfilterfw --getstealthmode:*), Bash(scutil --dns:*), Bash(spctl --status:*), Bash(csrutil status:*), Bash(sw_vers:*), Bash(which:*), Bash(ls -l:*), Bash(gh auth status:*), Bash(whois:*), Bash(manage-bde -status:*), Bash(lsblk:*), Bash(resolvectl status:*), Bash(defaults read:*), Bash(pgrep -fl:*)
 ---
 
@@ -140,10 +140,29 @@ Binance's 2026-11-03 preliminary report (reported, not re-proven here) describes
 
 A take-home that already ran on the work machine → hand off to `incident-triage`. "No alert" is not a clean result.
 
+**C9 — Outbound SSH agent forwarding to agent hosts.** C8 is inbound. This is the outbound side that matters once a coding agent runs on a remote box: forwarding the local SSH agent means trusting every process on that host, including an agent that reads untrusted input. **Ask** which remote hosts they run coding agents on (Codex Remote SSH in the ChatGPT desktop app, Claude Code or Cursor on a VPS, dev containers). Then check what their SSH config forwards. Read-only. Print no key material.
+
+```bash
+# Hosts or wildcards that forward the agent
+rg -n -i '^\s*(Host|Match|ForwardAgent)\b' ~/.ssh/config ~/.ssh/config.d/* 2>/dev/null
+# Effective value per agent host (repeat per alias)
+ssh -G <alias> | grep -i '^forwardagent'
+# Keys loaded in the local agent (fingerprints only)
+ssh-add -l
+# On the agent host, if they share a shell there: is a forwarded socket parked for the agent?
+ls -la ~/.codex/app-server-control/forwarded-ssh-agent.sock 2>/dev/null
+```
+
+- `ForwardAgent yes` under `Host *` (or any wildcard that covers an agent host) → finding **medium**. **High** if the forwarded agent holds a key that can push to production repos or servers.
+- Forwarding to one agent host on purpose → hardening note. Prefer a per-host deploy key or a scoped GitHub token on that host, or confirmation per use (`ssh-add -c`, a hardware key, or a password manager's per-use prompts).
+- Fix: a host-specific `Host <alias>` block with `ForwardAgent no` **before** any broad `Host *` block (OpenSSH uses the first match), and drop `ForwardAgent yes` from `Host *` entirely.
+
+Worked case, checked 2026-11-09, no CVE and no patch. Teardowns of ChatGPT desktop build 26.1103.60933 (sysnote, Privacy Affairs) say the app does not turn forwarding on itself: no `-A`, no `ForwardAgent=yes`, and `ForwardAgent=no` for OpenAI's own cloud hosts. When the user's `~/.ssh/config` does forward the agent, the bootstrap quoted in [openai/codex#59694](https://github.com/openai/codex/issues/59694) links the socket to `~/.codex/app-server-control/forwarded-ssh-agent.sock` and starts the long-running app server with `SSH_AUTH_SOCK` pointed at it. Commands the agent runs there can then use keys loaded on the laptop for as long as the app is connected, and any process as that remote user can use the socket. The same issue reports a second desktop client replacing the shared link. PR [#28131](https://github.com/openai/codex/pull/28131) (an opt-in flag) was closed unmerged on 2026-06-29; do not describe a hidden forwarding flag. The same check applies to any agent host, not only Codex. An agent environment that inherits `SSH_AUTH_SOCK` is also a credential-read hit in `agent-supply-chain-audit`.
+
 ## Prioritization
 
 - **P0 — this week.** Any confirmed/needs_validation gap that gives account takeover of a crown-jewel account or prod access: SMS-only or SMS-recoverable primary email/GitHub/registrar, no carrier port-out PIN when the number is a recovery factor, no disk encryption on a laptop with prod keys, plaintext admin tokens readable by a no-prompt agent, inbox assistant that can send/share without confirmation, an agent browser below a sandbox-escape fix that's launched from an app holding Accessibility.
-- **P1 — this month.** Single hardware key with no spare, recovery codes only in the PM, broad long-lived tokens, MCP servers with network + private-data reach, Gatekeeper/SIP off, stale OS, any agent browser more than 2 majors behind stable.
+- **P1 — this month.** Single hardware key with no spare, recovery codes only in the PM, broad long-lived tokens, MCP servers with network + private-data reach, Gatekeeper/SIP off, stale OS, any agent browser more than 2 majors behind stable, SSH agent forwarded with `Host *` (or another wildcard) to a host that runs a coding agent (C9). A C9 hit that is high — the forwarded agent holds a key that can push to production — is P0.
 - **P2 — when convenient.** Remaining low findings.
 - **Hardening notes** — privacy preferences (K6–K14 mostly). Listed, never ranked against findings.
 
@@ -201,5 +220,6 @@ Dispositions use the shared vocabulary: `Fixed`, `Deferred`, `Accepted Risk`, `M
 - NIST SP 800-63B — Digital Identity Guidelines: Authentication (restrictions on SMS/PSTN authenticators)
 - FIDO Alliance — passkeys and security keys
 - FTC / FCC consumer guidance on SIM-swap and port-out fraud
+- C9 sources, checked 2026-11-09: [openai/codex#59694](https://github.com/openai/codex/issues/59694); teardowns of ChatGPT desktop 26.1103.60933 by [sysnote](https://sysnote.net/news/does-chatgpt-desktop-forward-your-ssh-agent-only-if-your-ssh-config-does-and-the) and [Privacy Affairs](https://www.privacyaffairs.com/chatgpt-desktop-ssh-agent-forwarding/). No vendor advisory. [openai/codex#28131](https://github.com/openai/codex/pull/28131) was closed unmerged and is not a hidden flag.
 - ICANN — EPP status codes (`clientTransferProhibited`, registry lock)
 - OWASP Top 10 for LLM Applications — LLM01 Prompt Injection, LLM06 Excessive Agency

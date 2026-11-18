@@ -4,7 +4,7 @@ Current versions of all skills. Agents can compare against local versions to che
 
 | Skill | Version | Last Updated |
 |-------|---------|--------------|
-| agent-supply-chain-audit | 1.7.0 | 2026-11-18 |
+| agent-supply-chain-audit | 1.7.1 | 2026-11-18 |
 | ai-risk-management | 1.1.3 | 2026-10-30 |
 | api-audit | 1.1.7 | 2026-10-27 |
 | breach-patterns | 1.1.0 | 2026-10-30 |
@@ -30,7 +30,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | owasp-audit | 1.9.0 | 2026-11-18 |
 | patch-sweep | 1.6.0 | 2026-11-18 |
 | pci-audit | 1.1.1 | 2026-10-27 |
-| personal-opsec | 1.3.4 | 2026-11-18 |
+| personal-opsec | 1.4.0 | 2026-11-18 |
 | privacy-engineering | 1.1.0 | 2026-10-27 |
 | prompt-injection | 1.2.1 | 2026-10-27 |
 | recon | 1.0.1 | 2026-10-26 |
@@ -48,6 +48,17 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.82.0 (2026-11-18)
+
+personal-opsec checks outbound SSH agent forwarding to hosts that run coding agents (#261). personal-opsec 1.4.0, agent-supply-chain-audit 1.7.1.
+
+**Added**
+- personal-opsec C9: read-only check of `ForwardAgent` under `Host *` and other wildcards, `ssh -G` per agent host, `ssh-add -l` fingerprints only, and the Codex forwarded-agent socket. Medium when a wildcard forwards the agent to an agent host; high when that agent holds a key that can push to production. The fix is a host-specific `ForwardAgent no` before any `Host *` block.
+- The worked case is ChatGPT desktop Codex Remote SSH, build 26.1103.60933, as reported on 2026-11-09. The app does not enable forwarding itself. A user's own `ForwardAgent yes` is what links `SSH_AUTH_SOCK` to `~/.codex/app-server-control/forwarded-ssh-agent.sock`. No CVE. The closed PR #28131 is not a hidden flag.
+- agent-supply-chain-audit credential-reads row now also matches `SSH_AUTH_SOCK` and `forwarded-ssh-agent.sock`.
+
+Proposed by @coreyhaines31 in #261.
 
 ### 1.81.0 (2026-11-18)
 

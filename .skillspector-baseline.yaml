@@ -259,6 +259,10 @@ rules:
     path: "personal-opsec/SKILL.md"
     message: "*.ssh/authorized_keys*"
     reason: "C8 inbound remote access (issue #223): Glob for the file's existence only; the skill never reads key material"
+  - id: "E3"
+    path: "personal-opsec/SKILL.md"
+    message: "*ls -la ~/*"
+    reason: "C9 outbound SSH agent forwarding (issue #261): list one known socket path on the user's own agent host to see if a forwarded agent is parked; the scanner only keeps the ls -la ~/ prefix. Read-only, no key material"
 
   # --- threat-modeling -----------------------------------------------------
   - id: "PE3"
