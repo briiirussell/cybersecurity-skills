@@ -1,6 +1,6 @@
 # cloud-audit
 
-> Audit cloud infrastructure (AWS, GCP, Azure) and PaaS deployment platforms (Vercel, Netlify, Heroku, Render, Railway, Fly) for misconfigurations, excessive permissions, stale or manual production deploys, and security gaps. Use when the user mentions 'cloud security,' 'cloud audit,' 'AWS security,' 'GCP security,' 'Azure security,' 'IAM audit,' 'S3 bucket,' 'cloud misconfiguration,' 'cloud hardening,' 'Vercel security,' 'Heroku audit,' 'Render audit,' 'PaaS security,' 'is production built from main,' 'old vercel.app still live,' 'preview deployments exposed,' 'Supabase RLS,' or needs to review cloud or deployment-platform security.
+> Audit cloud infrastructure (AWS, GCP, Azure) and PaaS deployment platforms (Vercel, Netlify, Heroku, Render, Railway, Fly) for misconfigurations, excessive permissions, stale or manual production deploys, and security gaps. Use when the user mentions 'cloud security,' 'cloud audit,' 'AWS security,' 'GCP security,' 'Azure security,' 'IAM audit,' 'S3 bucket,' 'cloud misconfiguration,' 'cloud hardening,' 'Vercel security,' 'Heroku audit,' 'Render audit,' 'PaaS security,' 'is production built from main,' 'old vercel.app still live,' 'preview deployments exposed,' 'Supabase RLS,' 'Postgres on 0.0.0.0,' 'Redis exposed on a VPS,' or needs to review cloud or deployment-platform security.
 
 # Cloud Audit — Cloud Infrastructure Security Review
 
@@ -93,6 +93,12 @@ Check for: public buckets, missing encryption, no versioning, no lifecycle polic
 - Hardcoded secrets in source code, environment variables, or IaC files
 - Secrets Manager / Key Vault usage for sensitive values
 - KMS key rotation configured
+
+### Self-hosted VPS (databases and caches)
+
+Security groups and public subnets are the cloud case, above. A VPS or a compose file can still publish Postgres, MySQL, MongoDB, or Redis on every interface, and Docker's published ports skip the host firewall. DB1–DB4 and DB6, the repo greps, and the host commands are in [references/self-hosted-vps.md](references/self-hosted-vps.md). Managed Postgres allowlists (DB5, Supabase and Neon) are in [references/paas.md](references/paas.md#managed-postgres-allowlists).
+
+Run those host commands only on a machine the owner authorized. Never print a database or cache URL. "ufw is on" does not show that a published container port is closed.
 
 ### PaaS (Vercel / Netlify / Heroku / Render / Railway / Fly)
 
@@ -278,7 +284,7 @@ Write `findings.json` first. The report is rendered from it and never changes a 
 ### Coverage
 | Category | Accounts / teams checked | Not checked (and why) |
 |---|---|---|
-| IAM / Network / Storage / Compute / Logging / Secrets / PaaS / Supabase / Repo defaults | | |
+| IAM / Network / Storage / Compute / Logging / Secrets / PaaS / Supabase / VPS databases / Repo defaults | | |
 
 ### PaaS deployment inventory
 | Team | Project / app | Repo + production branch | Source of live deploy (git / cli) | Deployed sha = branch HEAD? | Domains |
@@ -313,6 +319,7 @@ Write `findings.json` first. The report is rendered from it and never changes a 
 - [Supabase database advisors](https://supabase.com/docs/guides/database/database-advisors)
 - Shared references (copied into `references/` at build time): [findings-format.md](references/findings-format.md), [findings.schema.json](references/findings.schema.json), [validate-findings.mjs](references/validate-findings.mjs), [to-sarif.mjs](references/to-sarif.mjs), [severity-calibration.md](references/severity-calibration.md), [verification.md](references/verification.md)
 - Per-platform PaaS commands: [references/paas.md](references/paas.md)
+- Self-hosted VPS databases and caches: [references/self-hosted-vps.md](references/self-hosted-vps.md)
 
 ## Reference files
 
@@ -321,6 +328,7 @@ This skill links to supporting files under `references/`. They are not inlined i
 - [references/findings-format.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/cloud-audit/references/findings-format.md)
 - [references/findings.schema.json](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/cloud-audit/references/findings.schema.json)
 - [references/paas.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/cloud-audit/references/paas.md)
+- [references/self-hosted-vps.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/cloud-audit/references/self-hosted-vps.md)
 - [references/severity-calibration.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/cloud-audit/references/severity-calibration.md)
 - [references/to-sarif.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/cloud-audit/references/to-sarif.mjs)
 - [references/validate-findings.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/cloud-audit/references/validate-findings.mjs)

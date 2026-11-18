@@ -5,7 +5,8 @@
     "is production on Vercel actually built from main, or has someone been deploying by hand?",
     "old preview deployments are still live on vercel.app, is that a problem?",
     "check our GCP project for security misconfigurations",
-    "are the Supabase RLS policies on our tables actually enabled?"
+    "are the Supabase RLS policies on our tables actually enabled?",
+    "is Postgres or Redis listening on 0.0.0.0 on our VPS?"
   ],
   "near_miss": [
     {

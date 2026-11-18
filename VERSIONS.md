@@ -10,8 +10,8 @@ Current versions of all skills. Agents can compare against local versions to che
 | breach-patterns | 1.1.0 | 2026-10-30 |
 | business-logic-testing | 1.1.0 | 2026-10-30 |
 | cicd-security | 1.0.0 | 2026-10-27 |
-| cloud-audit | 1.2.0 | 2026-10-26 |
-| container-audit | 1.3.0 | 2026-10-30 |
+| cloud-audit | 1.3.0 | 2026-11-18 |
+| container-audit | 1.4.0 | 2026-11-18 |
 | control-audit | 1.2.1 | 2026-10-30 |
 | crypto-audit | 1.1.2 | 2026-10-27 |
 | csf-mapping | 1.0.3 | 2026-10-27 |
@@ -30,13 +30,13 @@ Current versions of all skills. Agents can compare against local versions to che
 | owasp-audit | 1.7.0 | 2026-10-30 |
 | patch-sweep | 1.3.0 | 2026-10-30 |
 | pci-audit | 1.1.1 | 2026-10-27 |
-| personal-opsec | 1.2.1 | 2026-10-30 |
+| personal-opsec | 1.2.2 | 2026-11-18 |
 | privacy-engineering | 1.1.0 | 2026-10-27 |
 | prompt-injection | 1.2.1 | 2026-10-27 |
 | recon | 1.0.1 | 2026-10-26 |
 | red-team-engagement | 1.0.1 | 2026-10-26 |
 | scanner-pipeline | 1.1.0 | 2026-10-30 |
-| secrets-audit | 1.3.1 | 2026-10-30 |
+| secrets-audit | 1.4.0 | 2026-11-18 |
 | security-comms | 1.0.3 | 2026-10-26 |
 | security-start | 1.0.0 | 2026-10-27 |
 | siem-detection | 1.0.5 | 2026-10-27 |
@@ -48,6 +48,20 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.71.0 (2026-11-18)
+
+secrets-audit, personal-opsec, cloud-audit, and container-audit: limit what a leaked key or database URL can do. secrets-audit 1.4.0, personal-opsec 1.2.2, cloud-audit 1.3.0, container-audit 1.4.0.
+
+**Added**
+- secrets-audit step 4 asks whether a pay-per-use key has a hard spend cap scoped to that key, project, or non-default workspace. `references/spend-caps.md` has the provider table (OpenRouter per-key `limit`, OpenAI and Anthropic monthly and not daily), SC1–SC3, and the OpenRouter check. Reading the cap asks first. Docs checked 2026-10-30. A daily cap on OpenAI or Anthropic is not what those docs say.
+- personal-opsec C5 points at the same table.
+- cloud-audit self-hosted VPS checks DB1–DB4 and DB6 (`references/self-hosted-vps.md`): public listeners, Docker published ports that skip ufw, Postgres `listen_addresses`, Redis bind / protected mode / auth. DB5 (Supabase and Neon allowlists) is in `references/paas.md`. Confirmed severities match the exposure. A compose file that is not shown to be deployed stays `needs_validation`.
+- container-audit: the compose published-port grep, and a checklist line that `"5432:5432"` binds every interface.
+
+Northflank's October 2026 status page is the reason the cap and the closed database matter. No CVE was assigned as of 2026-11-02.
+
+Proposed by @coreyhaines31 in #249.
 
 ### 1.70.1 (2026-11-18)
 

@@ -5,7 +5,8 @@
     "are any of our Kubernetes pods running privileged? check the manifests",
     "do we need network policies in our cluster?",
     "set up Kyverno to enforce pod security standards",
-    "should we switch our images to distroless?"
+    "should we switch our images to distroless?",
+    "our compose file publishes the database on every interface\n```yaml\nservices:\n  db:\n    image: postgres:16\n    ports:\n      - \"5432:5432\"\n```"
   ],
   "near_miss": [
     {
