@@ -1,5 +1,5 @@
 ---
-description: "Respond to a CVE wave across a whole portfolio of apps at once: inventory every repo and the platform project and domain it actually serves, find the real production branch, spot stale manual deploys, decide which apps are affected, mitigate, patch, ship, and confirm production. Use when the user mentions 'patch sweep,' 'patch all my apps,' 'fleet-wide CVE,' 'are any of my apps affected,' 'Next.js RCE across all projects,' 'Rails CVE on all our Heroku apps,' 'patch every repo,' 'CVE wave,' 'security release across the fleet,' 'which of our sites run the vulnerable version,' 'mass dependency update,' or has more than a handful of apps to patch against the same advisories."
+description: "Respond to a CVE wave across a whole portfolio of apps at once: inventory every repo and the platform project and domain it actually serves, find the real production branch, spot stale manual deploys, decide which apps are affected, mitigate, patch, ship, and confirm production. Use when the user mentions 'patch sweep,' 'patch all my apps,' 'fleet-wide CVE,' 'are any of my apps affected,' 'Next.js RCE across all projects,' 'Rails CVE on all our Heroku apps,' 'patch every repo,' 'CVE wave,' 'security release across the fleet,' 'which of our sites run the vulnerable version,' 'mass dependency update,' 'nginx CVE across all our servers and ingress,' or has more than a handful of apps to patch against the same advisories."
 globs:
 alwaysApply: false
 ---
@@ -140,6 +140,8 @@ An app is affected only if all three line up: **vulnerable runtime or dependency
 
 **Kernel advisories:** compare the host's running kernel package with the distro tracker, never `uname -r` with upstream version numbers; Ubuntu, RHEL and Amazon backport fixes under their own versions. Installed-but-not-rebooted is still affected ([references/linux-hosts.md](references/linux-hosts.md#step-4--is-each-host-affected)).
 
+**nginx and other front-proxy advisories** (nginx2root, 2026-11-18) hit host packages, container images and Kubernetes ingress controllers that bundle their own nginx. Trust the distro tracker over `nginx -v`, check the config precondition, and keep `host patched, image not rebuilt` separate from `patched (rebuilt image digest X)`. Inventory, per-CVE table, stopgaps and board: [references/web-servers.md](references/web-servers.md).
+
 **Chrome or Chromium advisories** also hit browsers that agents and test suites download: operator machines, repos that pin Playwright or Puppeteer, CI images, and production services that render HTML in a headless browser (the worst case: a renderer bug there is a server RCE). Inventory, affected test, patch table and a separate board are in [references/browser-runtimes.md](references/browser-runtimes.md). Flag `--no-sandbox` in launch args whatever the version.
 
 Mark each row `affected` / `not affected (reason)` / `unknown (what's needed)`. Unknown rows don't get skipped; they get an owner action.
@@ -155,6 +157,7 @@ Patching 40 apps takes days. A platform or env-level compensating control can ta
 - **WAF / firewall rule** at the platform or CDN that blocks the exploit's request shape (Vercel Firewall custom rule, Cloudflare WAF managed rule for the CVE).
 - **Turn off the vulnerable feature** behind a flag until the patch ships.
 - **Deployment protection** on legacy or preview URLs that would otherwise serve vulnerable code publicly.
+- **Front-proxy CVEs:** turn off the named protocol or feature (`http2 off;` for the nginx2root HTTP/2 bugs), reload, and confirm no old workers remain ([references/web-servers.md](references/web-servers.md#step-5--mitigate-while-the-patch-waits)).
 - **Kernel CVEs:** livepatch, a sysctl that turns the feature off, or a host-firewall rule for the trigger's packet shape. Each needs a verify line, a persist line and a removal date ([references/linux-hosts.md](references/linux-hosts.md#step-5--mitigate-while-the-distro-hasnt-shipped)).
 
 **A KEV-listed advisory with a slow patch path needs a mitigation entry before you move on.** A slow path is a major upgrade, a client approval, or a frozen release branch. The entry is either a control you applied or a written reason none exists. Don't leave it optional: that advisory is being exploited while the patch waits.
@@ -262,3 +265,4 @@ This skill links to supporting files under `references/`. They are not inlined i
 - [references/linux-hosts.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/patch-sweep/references/linux-hosts.md)
 - [references/undici-nov-2026.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/patch-sweep/references/undici-nov-2026.md)
 - [references/validate-findings.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/patch-sweep/references/validate-findings.mjs)
+- [references/web-servers.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/patch-sweep/references/web-servers.md)

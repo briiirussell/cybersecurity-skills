@@ -28,7 +28,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | native-code-review | 1.0.1 | 2026-10-27 |
 | osint-recon | 1.0.2 | 2026-10-26 |
 | owasp-audit | 1.9.0 | 2026-11-18 |
-| patch-sweep | 1.8.0 | 2026-11-18 |
+| patch-sweep | 1.9.0 | 2026-11-18 |
 | pci-audit | 1.2.0 | 2026-11-18 |
 | personal-opsec | 1.4.0 | 2026-11-18 |
 | privacy-engineering | 1.1.0 | 2026-10-27 |
@@ -48,6 +48,20 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.4.0 | 2026-11-18 |
 
 ## Recent Changes
+
+### 1.99.0 (2026-11-18)
+
+patch-sweep adds a web server / reverse-proxy track: host packages, container images and Kubernetes ingress controllers, with nginx2root (nginx 1.31.9 / 1.30.7) as the worked example. patch-sweep 1.9.0.
+
+**Added**
+- patch-sweep `references/web-servers.md`: where front proxies hide (distro packages, images by digest, ingress controllers that bundle nginx, managed platforms), the affected test (version in range plus the config precondition, read with `nginx -T`), the distro tracker rule from `linux-hosts.md` instead of `nginx -v`, stopgaps with verify / persist / removal date and the old-worker check, rebuild-and-redeploy with digests before and after, and a board that keeps `patched (rebuilt image digest X)` apart from `host patched, image not rebuilt`.
+- Worked example: the five nginx2root CVEs (CVE-2026-123007, -123633, -121810, -123634, -113425) with nginx.org ranges, config preconditions and stopgaps, plus the five other CVEs fixed in the same release. NGINX Plus fixed builds from F5's NVD records, Ubuntu and Debian status, ingress-nginx (archived, `controller-v1.15.1` bundles 1.27.1, `use-http2: "false"` meanwhile), and the kernel SCTP half of the chain (`install sctp /bin/false`, no kernel CVE ID yet). Checked 2026-11-18 against nginx.org, NVD, the fix commit, the Ubuntu and Debian trackers, Wiz, Aikido and Xint. Where Aikido's first-affected versions differ from nginx.org, nginx.org's are used. KEV and EPSS are `not checked`; nothing is taken from public exploit repos.
+- Description trigger phrase 'nginx CVE across all our servers and ingress' and one should-fire trigger prompt.
+
+**Changed**
+- patch-sweep Step 4 and Step 5: short pointers to the front-proxy track.
+
+Proposed by @coreyhaines31 in #301.
 
 ### 1.98.0 (2026-11-18)
 
