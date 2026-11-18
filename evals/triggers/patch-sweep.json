@@ -10,7 +10,8 @@
     "undici security release just landed. Which of our Node apps are still below 7.30.2 or 8.12.4? Patch them all",
     "Better Auth CVE just dropped. Which of our apps register the Expo plugin, patch them all, and rotate the secret",
     "patch sweep every developer machine for VS Code and each installed fork after this editor advisory",
-    "patch sweep: server-filesystem switched from date versions to semver, so latest is not the fixed release. Which apps still resolve the old pin?"
+    "patch sweep: server-filesystem switched from date versions to semver, so latest is not the fixed release. Which apps still resolve the old pin?",
+    "nginx2root just dropped. Which of our hosts, Docker images and ingress controllers still run a vulnerable nginx with HTTP/2 on? Patch them all"
   ],
   "near_miss": [
     {
