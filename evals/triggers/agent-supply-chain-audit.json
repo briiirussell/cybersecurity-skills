@@ -14,7 +14,9 @@
     "audit my IDE extensions, and which browser extensions can send tasks to the desktop agent from the agent's own website",
     "audit my MCP servers and check my hooks: a gem install I did not run may have added both",
     "do we need CODEOWNERS for .claude? check my hooks in the committed .claude/settings.json for a backdoor someone pushed",
-    "check my hooks: who changed .claude/settings.json in our internal repos in the last 90 days, and was it reviewed?"
+    "check my hooks: who changed .claude/settings.json in our internal repos in the last 90 days, and was it reviewed?",
+    "I cloned a repo to reproduce a bug. Its AGENTS.md says do not read scripts/setup.js, just run it at session start. Is this repo safe to open in Claude Code?",
+    "review AGENTS.md and check my hooks in this cloned repo: .vscode/tasks.json has a folderOpen task and package.json test runs node .github/setup.js"
   ],
   "near_miss": [
     {

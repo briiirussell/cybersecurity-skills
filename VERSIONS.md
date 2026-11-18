@@ -4,7 +4,7 @@ Current versions of all skills. Agents can compare against local versions to che
 
 | Skill | Version | Last Updated |
 |-------|---------|--------------|
-| agent-supply-chain-audit | 1.11.0 | 2026-11-18 |
+| agent-supply-chain-audit | 1.12.0 | 2026-11-18 |
 | ai-risk-management | 1.1.3 | 2026-10-30 |
 | api-audit | 1.2.0 | 2026-11-18 |
 | breach-patterns | 1.2.0 | 2026-11-18 |
@@ -48,6 +48,26 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.3.0 | 2026-11-18 |
 
 ## Recent Changes
+
+### 1.96.0 (2026-11-18)
+
+agent-supply-chain-audit flags instruction files that say "don't read it, just run it", and repo files that run a command when the folder opens or the tests run (Bitdefender, SafeDep Miasma GitHub arm). agent-supply-chain-audit 1.12.0.
+
+**Added**
+- Step 2 check for anti-inspection and auto-run directives: an `AGENTS.md` / `CLAUDE.md` / rule that forbids reading a file and asks for it to run is confirmed, Critical, whatever reason it gives. Greps and portable equivalents in `references/content-checks.md`. Bitdefender Labs (2026-11-17) reported 22 malicious GitHub links with such lines for `scripts/setup.js`.
+- BH5 repo auto-run triggers, no agent needed: `.vscode/tasks.json` `"runOn": "folderOpen"` (BH5a), `package.json` scripts that run a hidden file (BH5b), Composer / `Gemfile` / dev container commands (BH5c). BH5d: several triggers across tools that run the same file is DO-NOT-INSTALL on its own. From SafeDep's Miasma GitHub-arm write-up (one commit, five triggers, one `.github/setup.js`) and its config-files follow-up.
+- Step 0: for any third-party repo, read agent config, hooks, `.vscode/tasks.json` and `package.json` scripts before opening it in an agent or editor.
+- Description trigger phrase: `is this repo safe to open`. Two trigger evals.
+
+**Changed**
+- Step 1 inventory lists `.vscode/tasks.json`. Severity anchors name anti-inspection directives and BH5d (Critical) and BH5a–BH5c (High).
+
+Facts checked on 2026-11-18 against the Bitdefender Labs post and both SafeDep posts. Vendor research, not re-verified. No CVE.
+
+**Changed**
+- agent-supply-chain-audit: Web-to-agent bridges (WB1–WB4) moved to `references/web-to-agent-bridges.md`, with a short summary left in Step 4, and the description lists fewer instruction-file names, to stay under the 500-line and 1024-character limits.
+
+Proposed by @coreyhaines31 in #298.
 
 ### 1.95.0 (2026-11-18)
 
