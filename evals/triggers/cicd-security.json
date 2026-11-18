@@ -8,7 +8,8 @@
     "check this workflow:\n```yaml\non:\n  issues:\n    types: [opened]\njobs:\n  greet:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo \"Thanks for ${{ github.event.issue.title }}\"\n```",
     "our AWS role trusts GitHub OIDC with repo:acme/* as the sub, and we use a self-hosted runner on a public repo, how bad is that?",
     "review our GitLab CI pipeline for security problems",
-    "our issue-labeler runs codex in a read-only sandbox, but the release workflow restores the Actions cache. Does ACTIONS_RUNTIME_TOKEN make that critical?"
+    "our issue-labeler runs codex in a read-only sandbox, but the release workflow restores the Actions cache. Does ACTIONS_RUNTIME_TOKEN make that critical?",
+    "a bot account can bypass branch protection and a stolen write token can push to any branch; what secrets and id-token can that one push reach?"
   ],
   "near_miss": [
     {
@@ -34,6 +35,10 @@
     {
       "prompt": "design least-privilege IAM roles for our engineers with Okta SSO",
       "owner": "iam-audit"
+    },
+    {
+      "prompt": "we've been hacked, an attacker is still in the network, contain the incident and extract IOCs before we clean anything",
+      "owner": "incident-triage"
     }
   ]
 }

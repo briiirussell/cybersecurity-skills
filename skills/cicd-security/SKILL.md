@@ -1,6 +1,6 @@
 ---
 name: cicd-security
-description: "Audit CI/CD pipelines, GitHub Actions first and GitLab CI and CircleCI briefly, for the paths that give an outsider code execution, secrets or a write token: pull_request_target and workflow_run running untrusted code, expression injection into run steps, missing or broad workflow permissions, third-party actions not pinned to a commit SHA, OIDC trust policies with wildcard subjects, self-hosted runners on public repos, secrets reaching forks, cache and artifact trust between workflows, and AI agents in CI that read issue or PR text while holding a write token, sandbox or not. Runs zizmor and actionlint read-only and writes findings.json. Use when the user mentions 'pull_request_target,' 'pwn request,' 'workflow injection,' 'zizmor,' 'actionlint,' 'pin actions to SHA,' 'GITHUB_TOKEN permissions,' 'self-hosted runner,' 'ACTIONS_RUNTIME_TOKEN,' 'claude-code-action,' 'AI agent in CI,' 'GitLab CI security,' 'CircleCI security,' 'is this workflow safe,' or needs to secure a build pipeline."
+description: "Audit CI/CD pipelines, GitHub Actions first, GitLab CI and CircleCI briefly, for the paths that give an outsider code execution, secrets or a write token: pull_request_target and workflow_run running untrusted code, expression injection into run steps, missing or broad permissions, third-party actions not pinned to a SHA, OIDC trust policies with wildcard subjects, self-hosted runners on public repos, secrets reaching forks, cache and artifact trust between workflows, and AI agents in CI reading issue or PR text with a write token, sandbox or not. Runs zizmor and actionlint read-only, writes findings.json. Use when the user mentions 'pull_request_target,' 'pwn request,' 'workflow injection,' 'zizmor,' 'actionlint,' 'pin actions to SHA,' 'GITHUB_TOKEN permissions,' 'self-hosted runner,' 'ACTIONS_RUNTIME_TOKEN,' 'stolen write token,' 'bot bypasses branch protection,' 'claude-code-action,' 'AI agent in CI,' 'GitLab CI security,' 'CircleCI security,' 'is this workflow safe,' or needs to secure a build pipeline."
 allowed-tools: Read, Grep, Glob, WebSearch, Bash(zizmor --offline .), Bash(zizmor --offline --format=json .), Bash(zizmor --offline --format=sarif .), Bash(actionlint), Bash(actionlint -oneline), Bash(actionlint -format '{{json .}}'), Bash(gh workflow list:*), Bash(gh workflow view:*), Bash(gh run list:*)
 ---
 
@@ -9,7 +9,9 @@ allowed-tools: Read, Grep, Glob, WebSearch, Bash(zizmor --offline .), Bash(zizmo
 Review a repository's CI configuration the way you'd review authorization code. A workflow file decides who can run
 what, with which token, which secrets and which cloud role. The question for every job is the same: **can someone with
 less trust than the job (a fork PR author, any GitHub user who can comment, a third-party action maintainer) change
-what it runs or what it reads, and what does the job hold when they do?**
+what it runs or what it reads, and what does the job hold when they do?** The same question applies when the
+actor already holds a valid write token: a stolen maintainer or bot credential, or a GitHub App token acting as that
+user. The workflow files are fine until that token edits them.
 
 Cross-references: `dependency-audit` (packages, lockfiles, build context and release-artifact identity; this skill owns
 the workflow and runner side), `secrets-audit` (a secret that already reached a log, fork or artifact: rotation and
@@ -17,7 +19,7 @@ history), `agent-supply-chain-audit` (skills, hooks and MCP servers on developer
 running inside CI), `prompt-injection` (LLM features in the user's own application), `iam-audit` (what the cloud role
 behind an OIDC trust policy can do), `cloud-audit` (repo security defaults and branch protection as part of a platform
 sweep), `scanner-pipeline` (running zizmor on every PR and on a schedule), `finding-triage` (disposition of a single
-finding).
+finding), `incident-triage` (a stolen write token that already pushed: contain, rotate, and the dated CI-token sweep).
 
 ## When to use
 
@@ -27,11 +29,13 @@ finding).
 - GitLab CI (`.gitlab-ci.yml`) or CircleCI (`.circleci/config.yml`): the same classes, see
   [references/gitlab-circleci.md](references/gitlab-circleci.md)
 - zizmor or actionlint output that needs verdicts rather than a raw list
+- A stolen maintainer or bot token: what one push can reach, and whether bots can bypass branch protection
 
 **Not for:** vulnerable packages or a lockfile diff → `dependency-audit`; a leaked key that needs rotating →
 `secrets-audit`; a Claude skill or MCP server someone is about to install → `agent-supply-chain-audit`; prompt
 injection in the product's chatbot → `prompt-injection`; designing least-privilege cloud roles → `iam-audit`; setting
-up a weekly scanner workflow → `scanner-pipeline`.
+up a weekly scanner workflow → `scanner-pipeline`; a confirmed CI-token compromise that needs containment, rotation,
+and an IOC sweep → `incident-triage` (this skill rates what that token could reach).
 
 ## Authorization
 
@@ -100,7 +104,7 @@ Every finding needs a named lower-trust actor. Decide it per trigger before look
 | `pull_request_target` | Any GitHub user who opens a PR | Base repo token (write unless restricted) **and secrets** |
 | `issue_comment`, `issues`, `discussion*`, `pull_request_review*` | Any GitHub user who can comment or open an issue | Base repo token and secrets |
 | `workflow_run` | Whoever triggered the upstream run, often a fork PR | Base repo token and secrets |
-| `push`, `workflow_dispatch`, `schedule`, `release` | Users with write access | Full; usually not an outsider path |
+| `push`, `workflow_dispatch`, `schedule`, `release` | Users with write access, including a stolen token for one of them | Full; not an outsider path, and the whole path for a stolen writer |
 | `workflow_call` | Whatever triggered the caller | Inherits the caller's context |
 
 Since 8 December 2025, `pull_request_target` always runs the workflow file from the **default branch** and sets
@@ -174,6 +178,21 @@ Each class below has its grep, the attacker-controlled contexts, safe shapes and
     `id-token: write` and publish credentials in an environment with required reviewers. The greps are in
     [references/checks.md](references/checks.md#8-cache-poisoning) and
     [references/ai-agents-in-ci.md](references/ai-agents-in-ci.md).
+13. **Stolen write token (`compromised-writer`).** Assume one maintainer or bot with write access is stolen (a PAT,
+    or a GitHub App token acting as that user) and rate what a single push to the default branch, or to a throwaway
+    branch, can reach with no review. wfx (from 2026-11-10) is the precedent: valid write tokens, not a workflow bug,
+    and the workflow files were fine until the token edited them. **Critical** when that one push can reach publish
+    credentials, cloud OIDC (`id-token: write`), or org secrets with no human gate. Otherwise a hardening note, not
+    a record. From [references/checks.md](references/checks.md#13-compromised-writer):
+    - Secrets, and `id-token: write`, on a workflow that runs on `push` with no `environment:` required reviewers.
+    - Bot or automation accounts allowed to bypass branch protection or rulesets.
+    - `npm install` / `npm ci` without `--ignore-scripts`, so a `postinstall` hook added to `package.json` runs.
+    - Shell scripts CI already runs (`update.sh`, `tests/*.sh`): an edit there touches no workflow file.
+    - `on: push` with no `branches:` filter, so any branch the token can create runs the workflow.
+    Fix: secrets and `id-token: write` behind environments with required reviewers; a ruleset that requires pull
+    requests for `.github/workflows/**` and those CI scripts; no bypass for bots; `--ignore-scripts` on CI installs;
+    fine-grained, short-lived tokens for bots. A probe PR, the campaign's commit messages, or a missing run number
+    is a live incident: hand it to `incident-triage`.
 
 ## Step 5 — Platform facts
 
@@ -188,7 +207,15 @@ gh api repos/OWNER/REPO/actions/runners --jq '.runners[] | {name, labels: [.labe
 gh api repos/OWNER/REPO/actions/oidc/customization/sub        # custom sub claim template, if any
 gh api repos/OWNER/REPO/environments --jq '.environments[] | {name, protection_rules}'
 gh api repos/OWNER/REPO/rules/branches/BRANCH                 # rulesets on the branch a release runs from
+gh api repos/OWNER/REPO/rulesets --jq '.[] | {id, name, enforcement}'
+# bypass_actors is on each ruleset, not the list: gh api repos/OWNER/REPO/rulesets/ID --jq '{name, enforcement, bypass_actors}'
 ```
+
+No API read covers which GitHub Apps and OAuth apps can act as a maintainer. The owner checks Settings → Applications
+(and each maintainer's Authorized GitHub Apps / Authorized OAuth Apps) for apps with contents or actions write. In
+the wfx campaign, StepSecurity (2026-11-12) found the Fly.io GitHub App (`fly-io`, app id 34557) on 173 probe pull
+requests from 19 accounts. That is not evidence of a Fly.io infrastructure breach, and how the tokens were obtained
+is not stated by any source. Record the list; do not treat a connected app as proof of a vendor breach.
 
 Fork-PR approval and private-repo fork settings, org runner groups, and cloud-side trust policies that aren't in this
 repo's IaC are the other usual blockers. [references/checks.md](references/checks.md#platform-facts) lists the
@@ -224,6 +251,8 @@ workflow, a tag-pinned third-party action in a job with a read-only token and no
      production, or a token that can push to a protected release branch. Also critical: a lower-trust agent step
      whose runner can write a cache that a release, publish, `contents: write`, or `id-token: write` workflow
      restores, even when the agent job's own `permissions:` are read-only.
+     For `compromised-writer`, critical is the only finding severity: one stolen write token can reach publish
+     credentials, cloud OIDC, or org secrets with no human gate. Anything short of that stays a hardening note.
    - **High**: an outsider gets a repo write token or repository secrets.
    - **Medium**: an unpinned third-party action in a privileged job (likelihood depends on an upstream compromise), or
      a gate that only maintainers can reach.
@@ -246,7 +275,7 @@ cicd-security/script-injection/.gitlab-ci.yml/notify
 
 Classes: `pwn-request`, `script-injection`, `excessive-permissions`, `unpinned-action`, `oidc-trust`,
 `self-hosted-runner`, `fork-secrets`, `cache-poisoning`, `artifact-trust`, `comment-command`, `unprotected-publish`,
-`agent-prompt-injection`. Add one when none fits.
+`agent-prompt-injection`, `compromised-writer`. Add one when none fits.
 
 6. **`ext` keys** (flat, snake_case):
 
@@ -256,7 +285,7 @@ Classes: `pwn-request`, `script-injection`, `excessive-permissions`, `unpinned-a
 | `workflow` | Workflow file, or the IaC file for an OIDC policy |
 | `trigger` | Array of triggers that reach the sink: `["pull_request_target"]` |
 | `job` / `step` | Job id; step id or name when it matters |
-| `lower_trust_actor` | `any-github-user`, `fork-pr-author`, `issue-commenter`, `third-party-action-maintainer`, `org-member` |
+| `lower_trust_actor` | `any-github-user`, `fork-pr-author`, `issue-commenter`, `third-party-action-maintainer`, `org-member`, `stolen-write-token` |
 | `token_permissions` | Effective write scopes: `["contents:write", "id-token:write"]` |
 | `secrets_in_scope` | Secret **names** only: `["NPM_TOKEN"]` |
 | `agent` | `claude-code-action`, `codex-action`, `run-gemini-cli`, `ai-inference` |

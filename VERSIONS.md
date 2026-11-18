@@ -9,7 +9,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | api-audit | 1.2.0 | 2026-11-18 |
 | breach-patterns | 1.1.0 | 2026-10-30 |
 | business-logic-testing | 1.1.0 | 2026-10-30 |
-| cicd-security | 1.1.0 | 2026-11-18 |
+| cicd-security | 1.2.0 | 2026-11-18 |
 | cloud-audit | 1.4.0 | 2026-11-18 |
 | container-audit | 1.4.0 | 2026-11-18 |
 | control-audit | 1.2.1 | 2026-10-30 |
@@ -21,7 +21,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | fuzzing-harness | 1.0.1 | 2026-10-27 |
 | hipaa-audit | 1.1.1 | 2026-10-27 |
 | iam-audit | 1.2.0 | 2026-10-27 |
-| incident-triage | 1.8.0 | 2026-11-18 |
+| incident-triage | 1.9.0 | 2026-11-18 |
 | log-watch | 1.0.3 | 2026-11-18 |
 | malware-triage | 1.0.0 | 2026-10-27 |
 | mobile-audit | 1.1.1 | 2026-10-27 |
@@ -48,6 +48,17 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.3.0 | 2026-11-18 |
 
 ## Recent Changes
+
+### 1.89.0 (2026-11-18)
+
+cicd-security rates a stolen write token as its own check, and incident-triage gets a dated sweep for the wfx campaign (November 2026). cicd-security 1.2.0, incident-triage 1.9.0.
+
+**Added**
+- cicd-security check 13, `compromised-writer`. Assume one maintainer or bot credential is stolen and rate what one push can reach with no review: secrets and `id-token: write` without environment reviewers, bots that can bypass rulesets, `npm install` without `--ignore-scripts`, shell scripts CI already runs, and `on: push` with no branch filter. Critical only when that push reaches publish credentials, cloud OIDC, or org secrets with no human gate. Otherwise a hardening note.
+- Step 5 reads ruleset `bypass_actors` and records the manual Applications check. The wfx campaign's Fly.io GitHub App attribution is stated as StepSecurity reported it: no evidence of a Fly.io infrastructure breach, and how the tokens were obtained is unknown.
+- incident-triage `references/dev-tool-compromise.md`: a wfx section (2026-11-10 onward) with the probe pull request, commit messages, file and branch patterns, the run-number gap check, rotation and persistence removal, and the IOC table from StepSecurity (2026-11-12), including the switch to Telegram-only exfil. Aikido's 4,837 accounts / 61,764 repositories and the 1,806 and 1,835 run figures are both cited. No CVE.
+
+Facts checked against Aikido and StepSecurity on 2026-11-15. From #268.
 
 ### 1.88.0 (2026-11-18)
 

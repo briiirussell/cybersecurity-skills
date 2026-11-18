@@ -17,7 +17,7 @@ the sink holds.
 - [1. pwn-request](#1-pwn-request) · [2. script-injection](#2-script-injection) · [3. excessive-permissions](#3-excessive-permissions)
 - [4. unpinned-action](#4-unpinned-action) · [5. oidc-trust](#5-oidc-trust) · [6. self-hosted-runner](#6-self-hosted-runner)
 - [7. fork-secrets](#7-fork-secrets) · [8. cache-poisoning](#8-cache-poisoning) · [9. artifact-trust](#9-artifact-trust)
-- [10. comment-command](#10-comment-command) · [11. unprotected-publish](#11-unprotected-publish)
+- [10. comment-command](#10-comment-command) · [11. unprotected-publish](#11-unprotected-publish) · [13. compromised-writer](#13-compromised-writer)
 - [zizmor audit map](#zizmor-audit-map) · [Platform facts](#platform-facts) · [Safe shapes](#safe-shapes-do-not-raise)
 
 ## Attacker-controlled contexts
@@ -265,6 +265,51 @@ with required reviewers or a deployment-branch rule sits in front, and whether a
 trusted publishing (OIDC to npm, PyPI, RubyGems, crates.io) is available (zizmor `use-trusted-publishing`). Who can
 push tags is a ruleset fact.
 
+## 13. compromised-writer
+
+The actor is not an outsider. A stolen maintainer or bot credential (a PAT, or a GitHub App token
+that acts as that user) opens a pull request and pushes the way a maintainer would. wfx, from about 12:45 UTC on
+2026-11-10, is the precedent: Aikido and StepSecurity describe valid write tokens, not a GitHub Actions bug, and no
+CVE. How the tokens were obtained is unknown. None of checks 1–12 fire until the workflow file changes, and two of
+the placements never touch a workflow file.
+
+```bash
+rg -n '^\s+push:|branches:' $WF
+rg -n 'npm ci|npm install|pnpm install|yarn install' $WF
+rg -n 'ignore-scripts' $WF package.json
+rg -n '"postinstall"|"preinstall"' package.json
+rg -n '\.sh\b' $WF
+# platform reads, which prompt:
+gh api repos/OWNER/REPO/rulesets --jq '.[] | {id, name, enforcement}'
+gh api repos/OWNER/REPO/rulesets/ID --jq '{name, enforcement, bypass_actors}'
+gh api repos/OWNER/REPO/environments --jq '.environments[] | {name, protection_rules}'
+```
+
+Rate one push to the default branch, and one push to a branch the token can create:
+
+- Secrets available to a workflow that runs on `push` to any branch, with no `environment:` and required reviewers.
+  The same for `id-token: write`.
+- `on: push` with no `branches:` filter. Any branch the token creates runs that workflow.
+- A bot or automation account in `bypass_actors`, or otherwise allowed to bypass branch protection or rulesets.
+  In this campaign the drunomics and WebdriverIO pushes were made as the projects' own bot accounts (StepSecurity,
+  2026-11-12).
+- `npm install` / `npm ci` (or pnpm/yarn) without `--ignore-scripts`. A `postinstall` hook added in `package.json`
+  then runs in CI. One of the four placements was that hook plus a hidden `.ci-<6 alphanumerics>.sh`.
+- A shell script the workflow already runs (`update.sh`, `tests/*.sh`). An edit there is invisible to a review that
+  only diffs `.github/workflows/`.
+
+**Critical** when that single token can reach publish credentials, cloud OIDC, or org secrets with no human gate.
+Otherwise a hardening note: there is no traced path until the token is actually stolen. Do not open a pull request
+or push a commit to prove it.
+
+**Fix:** secrets and `id-token: write` behind environments with required reviewers; a ruleset that requires pull
+requests for `.github/workflows/**` and the CI scripts the workflows run; no bypass for bots; `--ignore-scripts` on
+CI installs; fine-grained, short-lived tokens for bots. Searching for the campaign's pull requests, commit
+messages, and missing run numbers is `incident-triage` (see `incident-triage/references/dev-tool-compromise.md`).
+
+GitLab: a Developer can push an unprotected branch, and variables that are not **Protected** are exposed to it.
+CircleCI: a context with no security-group restriction is available on any branch a member's token can push.
+
 ## zizmor audit map
 
 zizmor result → class here. Every result still needs the trace.
@@ -299,7 +344,8 @@ gh api repos/OWNER/REPO/actions/runners
 gh api orgs/ORG/actions/runner-groups --jq '.runner_groups[] | {name, visibility, allows_public_repositories}'
 gh api repos/OWNER/REPO/actions/oidc/customization/sub
 gh api repos/OWNER/REPO/environments
-gh api repos/OWNER/REPO/rulesets
+gh api repos/OWNER/REPO/rulesets --jq '.[] | {id, name, enforcement}'
+gh api repos/OWNER/REPO/rulesets/ID --jq '{name, enforcement, bypass_actors}'   # bots allowed to skip the ruleset
 # cloud side
 aws iam get-role --role-name ROLE --query Role.AssumeRolePolicyDocument
 gcloud iam workload-identity-pools providers describe PROVIDER --workload-identity-pool=POOL --location=global --format='value(attributeCondition)'
