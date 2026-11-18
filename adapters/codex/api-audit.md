@@ -1,6 +1,6 @@
 # api-audit
 
-> Audit REST, GraphQL, and RPC APIs against the OWASP API Security Top 10 (2023). Use when the user mentions 'API security,' 'API audit,' 'BOLA,' 'broken object level authorization,' 'BFLA,' 'function-level authorization,' 'mass assignment,' 'API rate limiting,' 'GraphQL security,' 'REST security,' 'API authentication,' 'API authorization,' 'excessive data exposure,' 'redact the API transcript,' or needs to review API endpoints for security weaknesses.
+> Audit REST, GraphQL, and RPC APIs against the OWASP API Security Top 10 (2023). Use when the user mentions 'API security,' 'API audit,' 'BOLA,' 'broken object level authorization,' 'BFLA,' 'function-level authorization,' 'mass assignment,' 'API rate limiting,' 'GraphQL security,' 'REST security,' 'API authentication,' 'API authorization,' 'excessive data exposure,' 'redact the API transcript,' 'structured identities for a BOLA test,' or needs to review API endpoints for security weaknesses.
 
 # API Audit — REST / GraphQL / RPC Security Review
 
@@ -197,6 +197,17 @@ curl -s -D- -o/dev/null https://TEST-HOST/api/orders/$A_ORDER -H "authorization:
 
 Capture both full exchanges (request headers minus secrets, body, status, response). Keep the method, path, query, body and all other headers identical between the two. For GraphQL, keep the operation string and variables byte-identical and change only the token (see [references/graphql.md](references/graphql.md)).
 
+### Supplying test credentials
+
+This is about how credentials reach the test, not whether the pair is needed. The paired-evidence rule above still applies. The same rule is in `web-pentest`.
+
+1. **Keep live secrets out of the model prompt.** Do not put a test-account password, session cookie, or API key in the prompt, a chat message, or an instruction file the agent or this skill reads. Instruction text becomes prompt text, and prompt text gets logged and quoted back.
+2. **Give the model structured identities.** It sees `identity-A` (owner) and `identity-B` (non-owner), each with its role and tenant, and markers like `<identity-A-cookie>`. Code or the operator's tooling logs each identity in and attaches its credential to the request, from an env var, a secret store, or a proxy session.
+3. **Keep secrets out of files the target can read.** A sandbox or workspace that runs target code can be read by that code. Do not stage credentials there.
+4. If a live credential reaches the prompt anyway, tell the operator and treat it as exposed. Rotate it after the test.
+
+The pitfall is from Strix's instructions docs ([usestrix/strix@1152d53](https://github.com/usestrix/strix/blob/1152d53579d5b3af37ada8c798f197ab093b99c6/docs/usage/instructions.mdx), Apache-2.0). They say instructions become part of the prompt, and warn not to place secrets in a workspace file because the sandbox runs untrusted target code. Checked 2026-11-18. HoneyWarden #82 (linked below) is the pattern to prefer, not a required runtime.
+
 ### Transcripts a model will read
 
 The paired owner-vs-non-owner rule above does not change. When a model will see the exchange — combined mode, a PoC writeup, or a review of a Burp, ZAP, or HAR export — the transcript itself is a secret until you redact it.
@@ -299,7 +310,7 @@ Dispositions on a confirmed finding (what happens to it): `Fixed` | `Deferred` |
 - OWASP API Security Top 10 (2023); OWASP Cheat Sheets: REST Security, GraphQL Security
 - CWE-639 (Authorization Bypass Through User-Controlled Key), CWE-915 (Improperly Controlled Modification of Dynamically-Determined Object Attributes)
 - Verdicts, coverage, severity and findings format: the shared references linked above (`verification.md`, `recon-and-coverage.md`, `diff-review.md`, `severity-calibration.md`, `findings-format.md`).
-- GraphQL and paired-evidence technique notes paraphrase **Strix** (Apache-2.0); diff-mode and combined-mode concepts likewise. Not copied verbatim. See [references/graphql.md](references/graphql.md) for per-technique citations.
+- GraphQL and paired-evidence technique notes paraphrase **Strix** (Apache-2.0); diff-mode and combined-mode concepts likewise, and the credentials-in-instructions pitfall behind "Supplying test credentials" (pin 1152d53). Not copied verbatim. See [references/graphql.md](references/graphql.md) for per-technique citations.
 
 ## Reference files
 

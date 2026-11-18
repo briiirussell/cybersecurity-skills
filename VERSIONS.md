@@ -6,7 +6,7 @@ Current versions of all skills. Agents can compare against local versions to che
 |-------|---------|--------------|
 | agent-supply-chain-audit | 1.12.0 | 2026-11-18 |
 | ai-risk-management | 1.1.3 | 2026-10-30 |
-| api-audit | 1.2.0 | 2026-11-18 |
+| api-audit | 1.3.0 | 2026-11-18 |
 | breach-patterns | 1.2.0 | 2026-11-18 |
 | business-logic-testing | 1.1.0 | 2026-10-30 |
 | cicd-security | 1.3.1 | 2026-11-18 |
@@ -45,9 +45,23 @@ Current versions of all skills. Agents can compare against local versions to che
 | threat-modeling | 1.0.4 | 2026-10-26 |
 | variant-analysis | 1.0.0 | 2026-10-27 |
 | vuln-research | 1.0.4 | 2026-10-27 |
-| web-pentest | 1.3.0 | 2026-11-18 |
+| web-pentest | 1.4.0 | 2026-11-18 |
 
 ## Recent Changes
+
+### 1.98.0 (2026-11-18)
+
+web-pentest and api-audit: keep test-account secrets out of the model prompt, and give the model structured identities instead. web-pentest 1.4.0, api-audit 1.3.0.
+
+**Added**
+- web-pentest and api-audit: "Supplying test credentials". Do not put a test-account password, session cookie, or API key in the model prompt, a chat message, or an instruction file the agent or skill reads. The model sees `identity-A` / `identity-B` with role, tenant, and markers; code or the operator's tooling logs in and attaches the credential. Do not stage secrets in a sandbox or workspace that runs target code. A credential that reaches the prompt is treated as exposed and rotated after the test.
+- Credit to usestrix/strix at commit 1152d53 (Apache-2.0). Its instructions docs say instructions become part of the prompt and warn against secrets in a workspace file; checked 2026-11-18. Strix's credential examples are not copied. HoneyWarden #82 is the pattern to prefer, not a required runtime.
+- Description trigger phrases: web-pentest 'test accounts without pasting passwords into the prompt', api-audit 'structured identities for a BOLA test'. One should-fire trigger prompt each; should-fire top-1 is 264/276.
+
+**Changed**
+- web-pentest prerequisites: credentials stay out of the model prompt. The #76 paired owner-vs-non-owner rule and the authorization gate are unchanged.
+
+Proposed by @coreyhaines31 in #300.
 
 ### 1.97.0 (2026-11-18)
 

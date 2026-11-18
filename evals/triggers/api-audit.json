@@ -6,7 +6,8 @@
     "check this for mass assignment\n```js\napp.patch('/api/users/:id', async (req, res) => {\n  await User.update(req.body, { where: { id: req.params.id } });\n  res.json({ ok: true });\n});\n```",
     "do we have rate limiting on the login and password reset API endpoints?",
     "audit our API against the OWASP API Security Top 10",
-    "redact the API transcript before a model compares these two owner requests for BOLA"
+    "redact the API transcript before a model compares these two owner requests for BOLA",
+    "API audit: run the BOLA owner vs non-owner test with structured identities so the API keys stay out of the agent prompt"
   ],
   "near_miss": [
     {
