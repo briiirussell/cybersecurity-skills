@@ -146,7 +146,7 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: ${{ env.NODE_VERSION }}
-      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
       - name: Install SkillSpector (pinned commit)
         run: uv tool install "git+https://github.com/NVIDIA/SkillSpector.git@${SKILLSPECTOR_REF}"
       - name: Scan each skill against the baseline
@@ -180,6 +180,6 @@ jobs:
           fi
       - name: Upload SARIF to code scanning
         if: always() && hashFiles('skillspector.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
-        uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
           sarif_file: skillspector.sarif
