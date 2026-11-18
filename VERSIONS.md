@@ -7,7 +7,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | agent-supply-chain-audit | 1.11.0 | 2026-11-18 |
 | ai-risk-management | 1.1.3 | 2026-10-30 |
 | api-audit | 1.2.0 | 2026-11-18 |
-| breach-patterns | 1.1.0 | 2026-10-30 |
+| breach-patterns | 1.2.0 | 2026-11-18 |
 | business-logic-testing | 1.1.0 | 2026-10-30 |
 | cicd-security | 1.3.1 | 2026-11-18 |
 | cloud-audit | 1.4.0 | 2026-11-18 |
@@ -21,7 +21,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | fuzzing-harness | 1.0.1 | 2026-10-27 |
 | hipaa-audit | 1.1.1 | 2026-10-27 |
 | iam-audit | 1.2.0 | 2026-10-27 |
-| incident-triage | 1.11.0 | 2026-11-18 |
+| incident-triage | 1.12.0 | 2026-11-18 |
 | log-watch | 1.1.0 | 2026-11-18 |
 | malware-triage | 1.0.0 | 2026-10-27 |
 | mobile-audit | 1.1.1 | 2026-10-27 |
@@ -29,7 +29,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | osint-recon | 1.0.2 | 2026-10-26 |
 | owasp-audit | 1.9.0 | 2026-11-18 |
 | patch-sweep | 1.8.0 | 2026-11-18 |
-| pci-audit | 1.1.1 | 2026-10-27 |
+| pci-audit | 1.2.0 | 2026-11-18 |
 | personal-opsec | 1.4.0 | 2026-11-18 |
 | privacy-engineering | 1.1.0 | 2026-10-27 |
 | prompt-injection | 1.2.1 | 2026-10-27 |
@@ -48,6 +48,24 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.3.0 | 2026-11-18 |
 
 ## Recent Changes
+
+### 1.95.0 (2026-11-18)
+
+breach-patterns, pci-audit and incident-triage: OPTIMJACK, attacker code in Optimizely Web Project JavaScript served to 178 organisations (2026-11-16), and who can publish code through a vendor dashboard. breach-patterns 1.2.0, pci-audit 1.2.0, incident-triage 1.12.0.
+
+**Added**
+- breach-patterns `references/third-party-scripts.md`: an OPTIMJACK incident section next to Polymarket. Checked 2026-11-18 against Report URI, StepSecurity, Hudson Rock's InfoStealers write-up and Optimizely's status page. No CVE. The IoC and wallet list is linked, not copied.
+- TP7, who can change what the vendor serves: edit and publish rights on tag manager and experimentation dashboards, SSO and MFA, write tokens, a reviewed audit log, and whether custom code is needed. Medium, high on logged-in or checkout pages. Pattern 11 points to it.
+- pci-audit: 6.4.3 under Req 6 and 11.6.1 under Req 11, a "vendor snippet on the checkout page" common finding, and the PCI SSC e-skimming information supplement in References. Description trigger phrases: `payment page scripts`, `PCI 6.4.3`, `PCI 11.6.1`.
+- incident-triage `references/vendor-breach-notice.md`: a script-vendor section. Assume you served malware for the window, read your own copy of the vendor code, audit write access, rotate non-`HttpOnly` cookie secrets, treat card data typed into your own forms as exposed, and decide on customer notice (Report URI's checklist). The SKILL.md vendor-breach line points to it. Description unchanged.
+
+**Changed**
+- TP5: allowlisting the vendor host did nothing. A restrictive `script-src` without `'strict-dynamic'` or `'unsafe-eval'` blocked the loader on 24 of the crawled organisations, and `connect-src` stopped the data theft on 17 more but not the in-page address swap. The published counts sum to 159 of 256 crawled hosts, and the page says so.
+- TP6: search a served snippet for `atob(`, `eval(` and runtime script tags as well as the IoC domain, and compare against an archived copy, since a clean fetch now says nothing about earlier. The TP1 grep adds `optimizely|kissmetrics|storifyme|minute-ly`.
+- breach-patterns description mentions OPTIMJACK and adds `Optimizely compromise` and `tag manager hacked`. Its opening line now says "turn it into a checklist". One trigger prompt each for breach-patterns and pci-audit (should-fire top-1 262/274 to 264/276). `e-skimming` was dropped as a pci-audit phrase because it pulled an `owasp-audit` prompt to pci-audit.
+- Corrections to the issue draft. Optimizely did publish a statement: its status page says a flaw in the Web Experimentation signup flow was exploited. It still hasn't said how that reached unrelated projects. StepSecurity cites Helme counting 26 payload builds on 16 November, not "at least four" edits. The archived-copy advice is ours, not StepSecurity's. Hudson Rock names the earlier-wave vendor minute-ly, not Minute Media. The PCI SSC standard PDF could not be read (403); the 6.4.3 and 11.6.1 lines are paraphrased from PCI SSC's own blog summaries and say so, with no quoted requirement text.
+
+Proposed by @coreyhaines31 in #297.
 
 ### 1.94.0 (2026-11-18)
 

@@ -1,6 +1,6 @@
 # pci-audit
 
-> Audit applications and infrastructure handling payment card data against PCI DSS v4.0.1. Heavy emphasis on scope determination (the single most-leveraged variable) plus the engineering-relevant requirements — Req 3 (storage of CHD), Req 4 (transmission), Req 6 (secure SDLC), Req 7-8 (access), Req 10 (logging), Req 11 (testing), Req 12 (program). Use when the user mentions 'PCI,' 'PCI DSS,' 'PCI DSS 4.0,' 'payment card,' 'cardholder data,' 'CHD,' 'PAN,' 'PCI scope,' 'PCI compliance,' 'SAQ,' 'AoC,' 'attestation of compliance,' 'tokenization,' 'P2PE,' 'network segmentation for PCI,' or audits any system that stores, processes, or transmits payment card data.
+> Audit applications and infrastructure handling payment card data against PCI DSS v4.0.1. Heavy emphasis on scope determination (the single most-leveraged variable) plus the engineering-relevant requirements — Req 3 (storage of CHD), Req 4 (transmission), Req 6 (secure SDLC), Req 7-8 (access), Req 10 (logging), Req 11 (testing), Req 12 (program). Use when the user mentions 'PCI,' 'PCI DSS,' 'PCI DSS 4.0,' 'payment card,' 'cardholder data,' 'CHD,' 'PAN,' 'PCI scope,' 'PCI compliance,' 'SAQ,' 'AoC,' 'attestation of compliance,' 'tokenization,' 'P2PE,' 'network segmentation for PCI,' 'payment page scripts,' 'PCI 6.4.3,' 'PCI 11.6.1,' or audits any system that stores, processes, or transmits payment card data.
 
 # PCI Audit — Payment Card Industry Data Security Standard
 
@@ -10,7 +10,7 @@ Version note: v4.0.1 (June 2024) is the only active version. v4.0 was retired on
 
 This skill emphasizes scope determination first, then the engineering-relevant requirements. Final compliance attestation (SAQ self-assessment or QSA audit producing an Attestation of Compliance) is a process this skill prepares for — it is not the attestation itself.
 
-Cross-references: `crypto-audit` for Req 3 / 4 cryptographic detail; `iam-audit` for Req 7-8; `siem-detection` for Req 10 logging; `dependency-audit` and `owasp-audit` for Req 6 (secure SDLC); `incident-triage` for Req 12.10 (incident response); `control-audit` for program-level control readiness (SOC 2 / ISO 27001) over the same systems.
+Cross-references: `crypto-audit` for Req 3 / 4 cryptographic detail; `iam-audit` for Req 7-8; `siem-detection` for Req 10 logging; `dependency-audit` and `owasp-audit` for Req 6 (secure SDLC); `incident-triage` for Req 12.10 (incident response); `breach-patterns` (`references/third-party-scripts.md`) for payment-page scripts under 6.4.3 / 11.6.1; `control-audit` for program-level control readiness (SOC 2 / ISO 27001) over the same systems.
 
 ## Authorization
 
@@ -94,6 +94,7 @@ This is where the security audit family meets PCI. Most of this requirement is s
 - **6.2** Custom software developed securely — see `owasp-audit`, `api-audit`
 - **6.3** Vulnerabilities identified and addressed — see `vuln-research`, `dependency-audit`, `finding-triage`
 - **6.4** Public-facing web applications protected from attacks — WAF or annual code review + post-release manual review
+- **6.4.3** Payment-page scripts that run in the customer's browser: an inventory with a justification for each, a way to confirm each is authorized, and a way to assure its integrity. Includes third- and fourth-party scripts (tag managers, A/B testing, analytics, chat). `breach-patterns` TP1, TP2 and TP7 in `references/third-party-scripts.md` are the engineering checks; who can publish code through a vendor dashboard is part of "authorized"
 - **6.5** Changes to all system components managed securely — change management, separation of duties between dev and prod, sanitization of pre-production data before lower-environment use
 
 **Audit grep patterns:**
@@ -132,6 +133,7 @@ See `siem-detection` for the engineering implementation; see `soc-operations` fo
 - **Penetration tests** — annual at minimum, after significant changes. Internal AND external. Network and application layer. Tested by qualified internal resource or third party
 - **Segmentation testing** (for environments relying on segmentation to reduce scope) — annual penetration testing specifically to validate segmentation
 - **File integrity monitoring** on critical files / configs
+- **11.6.1** Change and tamper detection on payment pages: alert on unauthorized changes to the scripts and security-impacting HTTP headers as the customer's browser receives them. Server-side file monitoring misses a vendor snippet that changes at the vendor's CDN. See `breach-patterns` TP6
 
 See `dependency-audit` (vulnerability scan), `web-pentest` (annual app pentest), `red-team-engagement` (annual offensive engagement for higher levels).
 
@@ -150,6 +152,7 @@ The program-level layer. Engineering inputs:
 - **Lower environments seeded from production** — staging database contains real PANs from a prod dump that was not sanitized
 - **Tokenization scope misunderstanding** — surrogate tokens stored in your DB that are reversible by your processor account are still in scope; only one-way tokens reduce scope
 - **Iframe vs proxy** — "hosted payment page" implemented as a proxy where your server briefly handles the PAN before forwarding (still in scope) vs a true iframe where your server never sees it (out of scope)
+- **Vendor snippet on the checkout page** — a tag manager or experimentation snippet that can change at the vendor with no review fails 6.4.3 integrity and needs 11.6.1 detection. In the OPTIMJACK incident (Optimizely, 2026-11-16) the skimmer read cards typed into sites' own form fields; cards in hosted payment iframes were out of its reach (Report URI, as reported). The iframe keeps the PAN off the page, but a merchant embedding one must still confirm its site isn't susceptible to attacks from scripts (SAQ A eligibility, per PCI SSC's FAQ blog post)
 - **Segmentation by firewall rule, not by architecture** — firewall rule "permits" only specific traffic but the systems share a VLAN; effective segmentation requires architectural separation
 - **MFA gaps** — v4.0 broadened MFA requirements (mandatory since 31 March 2025); older environments that met v3.2.1 may have gaps
 
@@ -289,6 +292,7 @@ The per-requirement table counts records from `findings.json` (by `ext.requireme
 - **PCI DSS v4.x Quick Reference Guide** — practitioner-focused summary
 - **SAQ Instructions and Guidelines** — for self-assessing merchants
 - **PCI SSC FAQ database** — official interpretive guidance
+- **Payment Page Security and Preventing E-Skimming** — PCI SSC information supplement for 6.4.3 and 11.6.1 (guidance, not requirements); [announcement](https://blog.pcisecuritystandards.org/new-information-supplement-payment-page-security-and-preventing-e-skimming). The 6.4.3 / 11.6.1 lines above are paraphrased from PCI SSC's own summaries; read the requirement text in the standard before citing it in a report
 - **QIR / QSA / PFI / ASV registries** — for approved assessor / vendor selection
 - **Visa Cardholder Information Security Program (CISP)** — Visa-specific layered requirements
 - **Mastercard Site Data Protection (SDP) Program** — Mastercard layer

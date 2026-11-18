@@ -105,6 +105,35 @@ Steps 1–7 and the AI subprocessor steps still apply. Add these.
 
 Not known, and not claimed: which Fireworks incident exposed the key, which SaaS tools were reached, or whether the "Black October" campaign Wiz describes includes Cursor. BleepingComputer reports that framing from Wiz and does not place Cursor in it.
 
+## A script vendor you load was breached (Optimizely, November 2026)
+
+Different from the rows above. The vendor didn't hold your secrets; it served code to your visitors from your pages.
+On 2026-11-16 attacker code was added to the Project JavaScript of Optimizely Web Experimentation customer projects
+and served from Optimizely's CDN for most of a day (OPTIMJACK). Checked 2026-11-18 against
+[Optimizely's status page](https://status.optimizely.com/incidents/ftw0fh9wx43z), which says a flaw in the account
+signup flow was exploited, the code was removed, and Web Experimentation customers were contacted directly, and
+against [Report URI's write-up](https://blog.report-uri.com/worlds-largest-brands-infected-with-malware-via-optimizely/)
+and its checklist. No CVE. Incident detail and the CSP results: `breach-patterns` `references/third-party-scripts.md`.
+
+Steps 1, 6 and 7 still apply. Add these.
+
+1. **Assume you served malware to your visitors for the window.** Record the window from the vendor's notice and the
+   researchers' timeline, not from a clean fetch today. The files were cleaned the same evening.
+2. **Read your own copy of the vendor code.** Every Project JavaScript field and experiment custom code (or custom HTML
+   tag in a tag manager). Look for the published domain, `atob(` calls and unfamiliar scripts. One variant hid the
+   domain in base64. Snippets served from your own domain count too.
+3. **Audit who and what can write to the vendor account, and rotate those credentials.** Users, API tokens,
+   integrations. See `breach-patterns` TP7.
+4. **Rotate secrets in non-`HttpOnly` cookies.** Page scripts could read them. Session tokens stored there are exposed.
+5. **Treat card data typed into your own forms that day as exposed.** Cards entered in a hosted payment iframe were
+   out of the skimmer's reach, as Report URI reported. If card data may be exposed, PCI breach response applies (`pci-audit`
+   Boundaries).
+6. **Decide on customer notice.** Report URI's checklist says to consider telling customers they were served malicious
+   code. Counsel decides whether a clock started. Draft with `security-comms`.
+
+Report URI also lists a restricted `connect-src`, no `'unsafe-eval'` where possible, and CSP reporting. That is
+hardening for afterwards (`breach-patterns` TP5), not containment.
+
 ## What not to do with these notices
 
 - Do not state that AI agents carried out the intrusion. That is the vendor's early assessment.
