@@ -178,6 +178,7 @@ The framework-specific patterns below cover *evergreen* anti-patterns (mass assi
 - CSRF token bypass in API-only mode
 
 **Express / Node.js:**
+- **undici cache + redirect batch (2026-11-05, fixed 7.30.2 / 8.12.4).** Lockfile or the Node runtime's vendored copy resolves `undici` below that floor: bump it. The high advisory (CVE-2026-116592) is 7.30.1 and 8.12.2–8.12.3, and it needs `redirect()` composed with a shared `cache()` on an originless Agent. Five medium advisories in the same tags cover broader 7.x and 8.x ranges (same-origin credentialed cache, cross-origin revalidation, tuple-header credential stripping, cache-replay denial of service, SRI whitespace), so stock `fetch()` still gets the bump. Re-check for a second copy after the override. Node 24.22.3 and 26.13.1 vendor the patched releases; Node 22's undici 6.x is outside this batch. Not on CISA KEV as of 2026-11-15. Detail: [references/undici-nov-2026.md](references/undici-nov-2026.md).
 - Prototype pollution through `Object.assign`, `lodash.merge`, `deep-extend`
 - ReDoS (Regular Expression Denial of Service) in validation patterns
 - Path traversal through `req.params` in file serving routes

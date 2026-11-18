@@ -6,7 +6,8 @@
     "patch every repo against these advisories and confirm production is fixed",
     "which of our sites run the vulnerable version?",
     "mass dependency update across the fleet for this security release",
-    "Rails security release across our Heroku apps: Active Storage and ImageMagick. Which ones are below 8.0.5.2, patch them, and rotate secrets where Disk storage was exposed"
+    "Rails security release across our Heroku apps: Active Storage and ImageMagick. Which ones are below 8.0.5.2, patch them, and rotate secrets where Disk storage was exposed",
+    "undici security release just landed. Which of our Node apps are still below 7.30.2 or 8.12.4? Patch them all"
   ],
   "near_miss": [
     {

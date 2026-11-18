@@ -15,7 +15,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | control-audit | 1.2.1 | 2026-10-30 |
 | crypto-audit | 1.1.2 | 2026-10-27 |
 | csf-mapping | 1.0.3 | 2026-10-27 |
-| dependency-audit | 1.4.0 | 2026-10-30 |
+| dependency-audit | 1.5.0 | 2026-11-18 |
 | disk-forensics | 1.0.2 | 2026-10-27 |
 | finding-triage | 1.3.1 | 2026-10-27 |
 | fuzzing-harness | 1.0.1 | 2026-10-27 |
@@ -28,7 +28,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | native-code-review | 1.0.1 | 2026-10-27 |
 | osint-recon | 1.0.2 | 2026-10-26 |
 | owasp-audit | 1.8.0 | 2026-11-18 |
-| patch-sweep | 1.4.0 | 2026-11-18 |
+| patch-sweep | 1.5.0 | 2026-11-18 |
 | pci-audit | 1.1.1 | 2026-10-27 |
 | personal-opsec | 1.3.2 | 2026-11-18 |
 | privacy-engineering | 1.1.0 | 2026-10-27 |
@@ -48,6 +48,16 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.78.0 (2026-11-18)
+
+dependency-audit and patch-sweep: undici cache and redirect batch, fixed in 7.30.2 and 8.12.4. dependency-audit 1.5.0, patch-sweep 1.5.0.
+
+**Added**
+- dependency-audit: the six 2026-11-05 advisories (CVE-2026-116592 high, plus five medium), lockfile and `redirect()`+`cache()` checks, and the Node releases that vendor the patched undici. Facts re-checked 2026-11-15. Not on CISA KEV. Node 22's undici 6.x is outside this batch; Node 24.22.3 and 26.13.1 are the patched vendor lines.
+- patch-sweep: bump or override anything below 7.30.2 / 8.12.4, including the copy Node vendors for `fetch`. Stock `fetch()` is lower priority for the high advisory and still gets the bump. Normal cadence unless one cache is shared across tenants.
+
+Proposed by @coreyhaines31 in #256.
 
 ### 1.77.0 (2026-11-18)
 

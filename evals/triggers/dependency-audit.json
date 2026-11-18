@@ -5,7 +5,8 @@
     "are any of these packages vulnerable?\n```json\n{\"dependencies\": {\"lodash\": \"4.17.15\", \"axios\": \"0.21.0\", \"next\": \"14.0.1\"}}\n```",
     "npm audit fix broke the build, help",
     "which of our outdated dependencies have known vulnerabilities we should upgrade first?",
-    "could we get hit by dependency confusion with our internal package names?"
+    "could we get hit by dependency confusion with our internal package names?",
+    "npm audit says undici 8.12.3 is in the lockfile. Does the cache and redirect CVE apply, and which package version fixes it?"
   ],
   "near_miss": [
     {
