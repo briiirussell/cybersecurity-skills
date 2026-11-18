@@ -5,7 +5,8 @@
     "Rails CVE and we have 12 Heroku apps, sweep them",
     "patch every repo against these advisories and confirm production is fixed",
     "which of our sites run the vulnerable version?",
-    "mass dependency update across the fleet for this security release"
+    "mass dependency update across the fleet for this security release",
+    "Rails security release across our Heroku apps: Active Storage and ImageMagick. Which ones are below 8.0.5.2, patch them, and rotate secrets where Disk storage was exposed"
   ],
   "near_miss": [
     {

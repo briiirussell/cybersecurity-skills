@@ -27,8 +27,8 @@ Current versions of all skills. Agents can compare against local versions to che
 | mobile-audit | 1.1.1 | 2026-10-27 |
 | native-code-review | 1.0.1 | 2026-10-27 |
 | osint-recon | 1.0.2 | 2026-10-26 |
-| owasp-audit | 1.7.0 | 2026-10-30 |
-| patch-sweep | 1.3.0 | 2026-10-30 |
+| owasp-audit | 1.8.0 | 2026-11-18 |
+| patch-sweep | 1.4.0 | 2026-11-18 |
 | pci-audit | 1.1.1 | 2026-10-27 |
 | personal-opsec | 1.3.0 | 2026-11-18 |
 | privacy-engineering | 1.1.0 | 2026-10-27 |
@@ -48,6 +48,16 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.74.0 (2026-11-18)
+
+owasp-audit and patch-sweep: Rails Active Storage ImageMagick and FFmpeg advisories (GHSA-f3w6-w445-fwh9 / CVE-2026-122006, GHSA-v924-7rp8-4mxh / CVE-2026-126186). owasp-audit 1.8.0, patch-sweep 1.4.0.
+
+**Added**
+- owasp-audit Rails playbook, check 6: `:mini_magick` plus untrusted uploads plus a host policy that does not deny the coders, the traps that keep the shipped policy from loading, the FFmpeg analyzer workaround, and when to rotate secrets. Facts re-checked 2026-11-15. Not on CISA KEV. Fixed gems are 8.0.5.2 and 8.1.4.1. Rails 8.0's security window ended 2026-11-07; 7.2's ended 2026-08-10.
+- patch-sweep: the same two advisories beside the libvips case. The bump is not done until ImageMagick loads the shipped policy. Disk-service apps that were reachable while vulnerable rotate `secret_key_base` and the other secrets the process can read before the row closes. Changing `secret_key_base` logs everyone out.
+
+Proposed by @coreyhaines31 in #252.
 
 ### 1.73.0 (2026-11-18)
 
