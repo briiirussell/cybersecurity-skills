@@ -4,7 +4,7 @@ Current versions of all skills. Agents can compare against local versions to che
 
 | Skill | Version | Last Updated |
 |-------|---------|--------------|
-| agent-supply-chain-audit | 1.7.1 | 2026-11-18 |
+| agent-supply-chain-audit | 1.8.0 | 2026-11-18 |
 | ai-risk-management | 1.1.3 | 2026-10-30 |
 | api-audit | 1.2.0 | 2026-11-18 |
 | breach-patterns | 1.1.0 | 2026-10-30 |
@@ -28,7 +28,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | native-code-review | 1.0.1 | 2026-10-27 |
 | osint-recon | 1.0.2 | 2026-10-26 |
 | owasp-audit | 1.9.0 | 2026-11-18 |
-| patch-sweep | 1.6.0 | 2026-11-18 |
+| patch-sweep | 1.7.0 | 2026-11-18 |
 | pci-audit | 1.1.1 | 2026-10-27 |
 | personal-opsec | 1.4.0 | 2026-11-18 |
 | privacy-engineering | 1.1.0 | 2026-10-27 |
@@ -48,6 +48,18 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.3.0 | 2026-11-18 |
 
 ## Recent Changes
+
+### 1.86.0 (2026-11-18)
+
+agent-supply-chain-audit checks the MCP client, not only the servers it loads, and patch-sweep includes editor forks (#265). agent-supply-chain-audit 1.8.0, patch-sweep 1.7.0.
+
+**Added**
+- agent-supply-chain-audit MC1: VS Code below 1.145.3 is high. The 10 November 2026 release fixes MCP elicitation command links (CVE-2026-120779, CNA CVSS 9.6, E:U), install-link RCE, legacy SSE RCE, a network workspace trust bypass, and a serve-web downgrade. None are reported exploited, and none are in CISA KEV. A fork (Cursor, Windsurf, VSCodium, others) is needs_validation until its release notes name the upstream build. Fork status was not confirmed on 2026-11-11.
+- MC2: flag `"type": "sse"` and `/sse` URLs. On an unpatched client that is part of the MC1 high. On a patched client it is a hardening note to move to Streamable HTTP.
+- MC3: approving a one-click MCP install link without reading the command and inputs, and opening an HTTP(S) workspace file from an untrusted source. Hardening notes.
+- patch-sweep Step 4: an editor/MCP-client advisory is swept on developer machines for the upstream product and every installed fork.
+
+Proposed by @coreyhaines31 in #265.
 
 ### 1.85.0 (2026-11-18)
 

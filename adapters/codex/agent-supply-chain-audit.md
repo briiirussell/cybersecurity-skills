@@ -186,6 +186,38 @@ reach. Remote `url` servers can't be pinned at all — the vendor can change too
 the diff process below. Secrets in `env` / `headers` blocks go to `secrets-audit`; config should hold `${VAR}`
 references only.
 
+### MCP client (MC1–MC3)
+
+The editor that talks to those servers is part of the same supply chain. VS Code 1.145.3 (10 November 2026) fixes a
+cluster where the editor trusted an MCP server, an install link, or a workspace file and ran a command with the
+user's permissions. None are reported exploited in the wild, and none are in CISA KEV. Forks (Cursor, Windsurf,
+VSCodium, and others) get the fixes only when they ship a rebased build. Which forks have done so was not confirmed
+on 2026-11-11; check each vendor's release notes.
+
+**MC1 — client version.** List each editor that loads MCP servers, and its version:
+
+```bash
+code --version 2>/dev/null | head -1
+cursor --version 2>/dev/null | head -1
+windsurf --version 2>/dev/null | head -1
+codium --version 2>/dev/null | head -1
+# macOS app bundles, when the CLIs are not on PATH
+defaults read "/Applications/Visual Studio Code.app/Contents/Info" CFBundleShortVersionString 2>/dev/null
+```
+
+- VS Code below 1.145.3 (affects 1.145.2 and older) → finding **high**. Patch. The highest is CVE-2026-120779 (CNA CVSS 9.6, E:U): MCP elicitation notification text could become a command link ([GHSA-66hq-jw93-462h](https://github.com/microsoft/vscode/security/advisories/GHSA-66hq-jw93-462h)). The same release also fixes CVE-2026-114171 (install-link RCE, CVSS 8.8), CVE-2026-119983 (legacy SSE RCE, CVSS 8.8), CVE-2026-119985 (network workspace trust bypass, CVSS 8.3), and CVE-2026-120780 (serve-web downgrade, CVSS 8.3).
+- A fork → **needs_validation** until that vendor's release notes name the upstream VS Code version or the fix it includes. Record the fork version and the upstream base it reports.
+
+**MC2 — legacy SSE transport.** CVE-2026-119983 is in the legacy SSE transport. Flag entries that use `"type": "sse"` or an `/sse` URL. Suggest Streamable HTTP, or turning the server off until the client is patched. On a client below 1.145.3 this is part of the MC1 high. On a patched client it is a hardening note.
+
+```bash
+rg -n '"type"\s*:\s*"sse"|/sse["/]' .vscode/mcp.json .cursor/mcp.json ~/.cursor/mcp.json "$HOME/Library/Application Support/Code/User/mcp.json" 2>/dev/null
+```
+
+**MC3 — install links and network workspaces.** Anti-patterns, recorded as hardening notes unless a link was already approved:
+- Approving a one-click MCP install link without reading the displayed command and inputs (CVE-2026-114171).
+- Opening an HTTP(S) workspace file from an untrusted source (CVE-2026-119985). Workspace settings can name MCP servers that start a process.
+
 ### Bundled browser runtimes (RT1)
 
 Browser servers and CLIs (Playwright MCP, Puppeteer servers, agent-browser) launch their own Chromium, which never
@@ -359,7 +391,7 @@ Anchors for this surface:
 | Severity | Typical shape |
 |---|---|
 | Critical | Active item sends credentials, transcripts, or source to an external host; concealed directive that runs commands or disables approvals; a known-bad or code-prepended IDE extension on disk (EX1, EX4); an agent installer whose source cannot be shown (IN1), or a Homebrew remote that is not Homebrew/brew (IN2); an install-time package that already rewrote agent config (strutil-core class) |
-| High | Hook or bundled script with undeclared egress; project settings that bypass permissions or reroute model traffic; persistence into instruction files, settings, or shell init; a deploy token on the laptop that can ship to production (IN3) |
+| High | Hook or bundled script with undeclared egress; project settings that bypass permissions or reroute model traffic; persistence into instruction files, settings, or shell init; a deploy token on the laptop that can ship to production (IN3); VS Code below 1.145.3, the MCP-client fixes (MC1) |
 | Medium | Unpinned MCP server or git-installed skill with broad tool access; an unreviewed agent extension on auto-update on a machine with production access (EX2); unscoped `Bash` + `WebFetch` pre-approval; tool description that steers the model toward another tool or extra data; an app-added session hook the user did not review (AP2, AP3). On a machine that holds production credentials or deploy keys, that medium escalates. Do not call the vendor malicious; a remote-control feature plus a browser extension that can run on the agent's site (WB1+WB2). When that machine holds production or deploy credentials, rate it high. Word it as an exposure: a hijacked extension could drive the agent |
 | Low | Unpinned item with narrow reach; over-broad trigger that shadows another skill |
 
@@ -455,6 +487,7 @@ Write the machine-readable findings first, validate them, then render the markdo
 - App-installed plugins (AP1–AP5), checked 2026-11-04: [postman-app-support#14370](https://github.com/postmanlabs/postman-app-support/issues/14370). One user's evidence, not reproduced on a clean Mac. No CVE. Do not call the vendor malicious.
 - Web-to-agent bridges (WB1–WB4), checked 2026-11-05: [Forever Security, ThisBash](https://forever.security/blog/thisbash-claude-dispatch-browser-extension-rce) (2026-11-04) and [The Register](https://www.theregister.com/research/2026/11/05/anthropic-wont-fix-a-claude-dispatch-flaw-that-could-let-attackers-execute-remote-commands-across-corporate-boundaries/5307684) (2026-11-05). No CVE. Remote Control and Cowork are vendor-unconfirmed.
 - Socket, "Shai-Hulud Descendant Surfaces in Malicious Ruby Gem" (2026-11-06) — [write-up](https://socket.dev/blog/shai-hulud-descendant-malicious-ruby-gem). `paleasbest.top` is an IOC for strutil-core 1.0.1 only, not a standing blocklist.
+- VS Code 1.145.3 MCP-client fixes (2026-11-10) — [security advisories](https://github.com/microsoft/vscode/security/advisories) (MC1–MC3). Fork status was not confirmed on 2026-11-11.
 - [references/locations.md](references/locations.md), [references/content-checks.md](references/content-checks.md),
   [references/findings-format.md](references/findings-format.md), [references/severity-calibration.md](references/severity-calibration.md)
 
