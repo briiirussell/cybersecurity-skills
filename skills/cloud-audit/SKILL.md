@@ -1,6 +1,6 @@
 ---
 name: cloud-audit
-description: "Audit cloud infrastructure (AWS, GCP, Azure) and PaaS deployment platforms (Vercel, Netlify, Heroku, Render, Railway, Fly) for misconfigurations, excessive permissions, stale or manual production deploys, and security gaps. Use when the user mentions 'cloud security,' 'cloud audit,' 'AWS security,' 'GCP security,' 'Azure security,' 'IAM audit,' 'S3 bucket,' 'cloud misconfiguration,' 'cloud hardening,' 'Vercel security,' 'Heroku audit,' 'Render audit,' 'PaaS security,' 'is production built from main,' 'old vercel.app still live,' 'preview deployments exposed,' 'Supabase RLS,' 'Postgres on 0.0.0.0,' 'Redis exposed on a VPS,' or needs to review cloud or deployment-platform security."
+description: "Audit cloud infrastructure (AWS, GCP, Azure) and PaaS deployment platforms (Vercel, Netlify, Heroku, Render, Railway, Fly) for misconfigurations, excessive permissions, stale or manual production deploys, and security gaps. Use when the user mentions 'cloud security,' 'cloud audit,' 'AWS security,' 'GCP security,' 'Azure security,' 'IAM audit,' 'S3 bucket,' 'cloud misconfiguration,' 'cloud hardening,' 'Vercel security,' 'Heroku audit,' 'Render audit,' 'PaaS security,' 'is production built from main,' 'old vercel.app still live,' 'preview deployments exposed,' 'Supabase RLS,' 'Postgres on 0.0.0.0,' 'Redis exposed on a VPS,' 'Tailscale ACL,' 'private overlay ACL,' or needs to review cloud or deployment-platform security."
 allowed-tools: Read, Grep, Glob, WebSearch, Bash(aws iam get-account-summary:*), Bash(aws iam list-users:*), Bash(aws iam get-credential-report:*), Bash(aws s3api list-buckets:*), Bash(aws s3api get-public-access-block:*), Bash(aws s3api get-bucket-policy:*), Bash(aws s3api get-bucket-encryption:*), Bash(gcloud projects get-iam-policy:*), Bash(gcloud iam service-accounts list:*), Bash(az role assignment list:*), Bash(az ad user list:*)
 ---
 
@@ -60,6 +60,27 @@ Check for:
 - VPC flow logs disabled
 - Databases in public subnets
 - Missing network segmentation between tiers
+
+### Databases
+
+**DB6 — How admins reach the port is the path, not the privilege model.** Do not open `5432`, `6379`, `3306`, or `27017` to the internet. Reach them over an SSH tunnel or a private network (a VPC, Tailscale, or WireGuard). A leaked `DATABASE_URL` or `REDIS_URL` still works from every node that can join a default-open overlay: a laptop, a CI runner, a teammate's phone. Public `0.0.0.0/0` on these ports is also caught under Network Security above. This check does not replace a public-ingress or spend-cap review.
+
+**DB7 — A private overlay is not least privilege.** If Postgres, Redis, or a similar store is reachable over Tailscale or another overlay or VPC, read the ACL or grants policy. For Tailscale that is the policy file or the admin ACL editor. For a VPC it is the security group or network policy. Default-deny, then allow only the service identity and named admin users or devices to that port. A source of `*` or `autogroup:member` to `tag:db:*` or `*://*:5432` is not least privilege.
+
+On a tailnet the owner authorized:
+
+```bash
+tailscale status
+# Policy lives in the admin console or a Git-synced policy file (ACLs / grants).
+# Look for overly broad destinations to :5432, :6379, :3306, :27017.
+```
+
+| Result | What to record |
+|---|---|
+| Overlay-reachable database, default-open or overly broad ACL | Finding. Medium. High if a leaked `DATABASE_URL` would work from any node on the overlay |
+| Policy allows only the service identity and named admins | A note, not a finding |
+
+Tailscale ACLs are deny-by-default once a policy is specified ([ACL docs](https://tailscale.com/kb/1018/acls)). Until a policy is set, the stock policy allows every member to reach every port. [Grants](https://tailscale.com/kb/1324/grants) are the identity-aware form of the same control: name who can talk to which port. Read the policy that is actually in force. Save the redacted policy next to the other evidence files, and fingerprint the finding as `broad-overlay-acl`.
 
 ### Storage
 
@@ -227,7 +248,7 @@ cloud-audit/manual-prod-deploy/vercel/acme-team/acme-web
 cloud-audit/iam-wildcard/infra/iam.tf/aws_iam_policy.deploy
 ```
 
-Classes in use: `public-bucket`, `open-ingress`, `public-database`, `iam-wildcard`, `root-no-mfa`, `stale-access-key`, `imdsv1`, `logging-disabled`, `manual-prod-deploy`, `git-deploy-broken`, `legacy-project`, `duplicate-project`, `preview-exposure`, `review-app-live-keys`, `rls-disabled`, `repo-security-defaults`. Add a new one when none fits.
+Classes in use: `public-bucket`, `open-ingress`, `public-database`, `broad-overlay-acl`, `iam-wildcard`, `root-no-mfa`, `stale-access-key`, `imdsv1`, `logging-disabled`, `manual-prod-deploy`, `git-deploy-broken`, `legacy-project`, `duplicate-project`, `preview-exposure`, `review-app-live-keys`, `rls-disabled`, `repo-security-defaults`. Add a new one when none fits.
 
 **6. Domain fields go under `ext`:**
 
@@ -319,6 +340,7 @@ Write `findings.json` first. The report is rendered from it and never changes a 
 - [Heroku CLI commands](https://devcenter.heroku.com/articles/heroku-cli-commands); [Render API](https://api-docs.render.com/)
 - [GitHub REST — vulnerability alerts](https://docs.github.com/en/rest/repos/repos#check-if-vulnerability-alerts-are-enabled-for-a-repository)
 - [Supabase database advisors](https://supabase.com/docs/guides/database/database-advisors)
+- [Tailscale ACLs](https://tailscale.com/kb/1018/acls) and [grants](https://tailscale.com/kb/1324/grants) — DB7. An overlay is the path; the ACL is the control
 - Shared references (copied into `references/` at build time): [findings-format.md](references/findings-format.md), [findings.schema.json](references/findings.schema.json), [validate-findings.mjs](references/validate-findings.mjs), [to-sarif.mjs](references/to-sarif.mjs), [severity-calibration.md](references/severity-calibration.md), [verification.md](references/verification.md)
 - Per-platform PaaS commands: [references/paas.md](references/paas.md)
 - Self-hosted VPS databases and caches: [references/self-hosted-vps.md](references/self-hosted-vps.md)

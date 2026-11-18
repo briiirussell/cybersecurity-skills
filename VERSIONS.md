@@ -10,7 +10,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | breach-patterns | 1.1.0 | 2026-10-30 |
 | business-logic-testing | 1.1.0 | 2026-10-30 |
 | cicd-security | 1.0.0 | 2026-10-27 |
-| cloud-audit | 1.3.0 | 2026-11-18 |
+| cloud-audit | 1.4.0 | 2026-11-18 |
 | container-audit | 1.4.0 | 2026-11-18 |
 | control-audit | 1.2.1 | 2026-10-30 |
 | crypto-audit | 1.1.2 | 2026-10-27 |
@@ -48,6 +48,16 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.84.0 (2026-11-18)
+
+cloud-audit: a private overlay is a path to Postgres or Redis, not least privilege. cloud-audit 1.4.0.
+
+**Added**
+- DB6 says SSH, a VPC, or Tailscale is how admins reach `5432` / `6379` / `3306` / `27017`, and that this is not the privilege model. A leaked database URL still works from every node on a default-open overlay.
+- DB7 reads the Tailscale ACL or grants policy (or the VPC security group) and flags a default-open or overly broad rule. Medium, or High when any node on the overlay could use a leaked URL. A tight policy is a note. Cites Tailscale's ACL and grants docs.
+
+Proposed by @coreyhaines31 in #263. `personal-opsec` does not recommend Tailscale, so it is unchanged.
 
 ### 1.83.0 (2026-11-18)
 
