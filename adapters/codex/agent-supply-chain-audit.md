@@ -312,6 +312,28 @@ jq -r '[.name, (.permissions // [] | join(",")), (.host_permissions // [] | join
 Hardening, no product required: turn off remote-control features that are unused. Keep the browser profile signed in
 to the agent site free of "read all sites" extensions. Do not sign a personal agent account in on a managed laptop.
 
+### Cross-ecosystem worms that poison agent config
+
+Install-time malware can reach a coding agent even when the package is not an npm skill or plugin. Worked incident,
+checked against Socket's write-up on 2026-11-06: **strutil-core 1.0.1** on RubyGems (account jamnajiea). A clean 1.0.0
+was followed in under two hours by a malicious 1.0.1, a new build of the testmetest / Miasma line descended from the
+public Shai-Hulud toolkit. Socket flagged it about 70 seconds after publish. RubyGems removed both versions about five
+hours later. Socket reported no public dependents and no confirmed victims. Treat that as "none confirmed." A PyPI
+sibling, **pystr-codec**, used the same collection endpoint. Do not reproduce the payload.
+
+1. **Trigger.** Any `gem install`, `bundle install`, or unexpected Ruby native-extension build on a machine that also runs Claude Code, Cursor, Codex, or a similar agent. Or new MCP server entries, session hooks, or agent-instruction files the operator did not approve.
+2. **What to look for.** Recent installs of unknown helpers (`strutil-core` and lookalikes, and `pystr-codec` on PyPI). A native `extconf.rb` that fetches a JS runtime and runs an adjacent script instead of compiling C. New or modified MCP server entries, session hooks, or `AGENTS.md` / `CLAUDE.md` / Codex instruction files outside an explicit user or agent action. Outbound to an unfamiliar host right after a package install. For this incident only, Socket names `paleasbest.top`, with GitHub and GitLab as fallbacks. That hostname is an IOC for this build, not a permanent blocklist.
+3. **Response.** If the gem ran, rebuild the host from clean media. Rotate cloud, CI, registry, SSH, GitHub, and AI-provider credentials. Remove unexpected MCP, hook, and instruction files. Uninstalling the gem is not cleanup. This build can also delete the home directory if a stolen GitHub token later returns 401 or 403, which is why a rebuild comes first. Hand a hit to `incident-triage`.
+4. **Scope.** No public dependents were found. Still teach the pattern: once the injector holds a registry token it can republish to RubyGems, npm, and PyPI.
+
+```bash
+gem list strutil-core 2>/dev/null
+rg -n 'strutil-core|paleasbest' Gemfile.lock ~/.gem 2>/dev/null | head
+rg -n 'mcpServers|session.*hook' ~/.claude ~/.codex ~/.cursor 2>/dev/null | head
+```
+
+Source: [Socket, 2026-11-06](https://socket.dev/blog/shai-hulud-descendant-malicious-ruby-gem).
+
 ## Step 5 — Optional automated pass: SkillSpector
 
 [NVIDIA SkillSpector](https://github.com/NVIDIA/SkillSpector) (Apache-2.0) runs ~70 static checks plus optional
@@ -336,7 +358,7 @@ Anchors for this surface:
 
 | Severity | Typical shape |
 |---|---|
-| Critical | Active item sends credentials, transcripts, or source to an external host; concealed directive that runs commands or disables approvals; a known-bad or code-prepended IDE extension on disk (EX1, EX4); an agent installer whose source cannot be shown (IN1), or a Homebrew remote that is not Homebrew/brew (IN2) |
+| Critical | Active item sends credentials, transcripts, or source to an external host; concealed directive that runs commands or disables approvals; a known-bad or code-prepended IDE extension on disk (EX1, EX4); an agent installer whose source cannot be shown (IN1), or a Homebrew remote that is not Homebrew/brew (IN2); an install-time package that already rewrote agent config (strutil-core class) |
 | High | Hook or bundled script with undeclared egress; project settings that bypass permissions or reroute model traffic; persistence into instruction files, settings, or shell init; a deploy token on the laptop that can ship to production (IN3) |
 | Medium | Unpinned MCP server or git-installed skill with broad tool access; an unreviewed agent extension on auto-update on a machine with production access (EX2); unscoped `Bash` + `WebFetch` pre-approval; tool description that steers the model toward another tool or extra data; an app-added session hook the user did not review (AP2, AP3). On a machine that holds production credentials or deploy keys, that medium escalates. Do not call the vendor malicious; a remote-control feature plus a browser extension that can run on the agent's site (WB1+WB2). When that machine holds production or deploy credentials, rate it high. Word it as an exposure: a hijacked extension could drive the agent |
 | Low | Unpinned item with narrow reach; over-broad trigger that shadows another skill |
@@ -432,6 +454,7 @@ Write the machine-readable findings first, validate them, then render the markdo
 - Installers and interview-homework entry points (IN1–IN4). Binance's 2026-11-03 preliminary report, as carried by [PANews](https://www.panews.io/articles/01a1a1f3-f83c-72b0-9ff3-f09835ad5432) (a translation), [CoinDesk](https://www.coindesk.com/business/2026/11/03/binance-s-usd6-3-billion-hack-began-with-a-fake-job-interview-exchange-says), and [The Block](https://www.theblock.co/news/business/2026-11-03-binance-hack-incident-report-north-korea-fake-job-interview-ai-tool-432406). Reported, not re-verified against Binance's own copy of that report. Do not fill in the four items the report leaves out.
 - App-installed plugins (AP1–AP5), checked 2026-11-04: [postman-app-support#14370](https://github.com/postmanlabs/postman-app-support/issues/14370). One user's evidence, not reproduced on a clean Mac. No CVE. Do not call the vendor malicious.
 - Web-to-agent bridges (WB1–WB4), checked 2026-11-05: [Forever Security, ThisBash](https://forever.security/blog/thisbash-claude-dispatch-browser-extension-rce) (2026-11-04) and [The Register](https://www.theregister.com/research/2026/11/05/anthropic-wont-fix-a-claude-dispatch-flaw-that-could-let-attackers-execute-remote-commands-across-corporate-boundaries/5307684) (2026-11-05). No CVE. Remote Control and Cowork are vendor-unconfirmed.
+- Socket, "Shai-Hulud Descendant Surfaces in Malicious Ruby Gem" (2026-11-06) — [write-up](https://socket.dev/blog/shai-hulud-descendant-malicious-ruby-gem). `paleasbest.top` is an IOC for strutil-core 1.0.1 only, not a standing blocklist.
 - [references/locations.md](references/locations.md), [references/content-checks.md](references/content-checks.md),
   [references/findings-format.md](references/findings-format.md), [references/severity-calibration.md](references/severity-calibration.md)
 

@@ -100,6 +100,8 @@ These are the account-takeover paths that actually hit founders. Keep them in ev
 
 Coding agents, MCP servers, and inbox assistants run with the operator's file access and credentials. Karpathy's list predates this; for an operator it's now one of the largest exposures.
 
+After any unexpected language-ecosystem install (RubyGems, PyPI, npm) on a machine that runs coding agents, re-diff the agent config directories and rotate tokens if the install was not intentional. The worked example (strutil-core, 2026-11-06) is in `agent-supply-chain-audit`. Do not repeat that playbook here.
+
 **C1 — Tokens and keys an agent can read.** Anything in the home directory is readable by any agent you run there. Check existence and permissions only — **never Read these files**:
 
 - Glob for: `~/.aws/credentials`, `~/.config/gh/hosts.yml`, `~/.npmrc`, `~/.netrc`, `~/.docker/config.json`, `~/.pypirc`, `~/.kube/config`, `~/.config/gcloud/application_default_credentials.json`, `~/.ssh/id_*`, `**/.env*` under the user's projects directory

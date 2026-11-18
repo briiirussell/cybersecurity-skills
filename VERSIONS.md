@@ -4,7 +4,7 @@ Current versions of all skills. Agents can compare against local versions to che
 
 | Skill | Version | Last Updated |
 |-------|---------|--------------|
-| agent-supply-chain-audit | 1.6.0 | 2026-11-18 |
+| agent-supply-chain-audit | 1.7.0 | 2026-11-18 |
 | ai-risk-management | 1.1.3 | 2026-10-30 |
 | api-audit | 1.1.7 | 2026-10-27 |
 | breach-patterns | 1.1.0 | 2026-10-30 |
@@ -30,7 +30,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | owasp-audit | 1.8.0 | 2026-11-18 |
 | patch-sweep | 1.5.0 | 2026-11-18 |
 | pci-audit | 1.1.1 | 2026-10-27 |
-| personal-opsec | 1.3.2 | 2026-11-18 |
+| personal-opsec | 1.3.3 | 2026-11-18 |
 | privacy-engineering | 1.1.0 | 2026-10-27 |
 | prompt-injection | 1.2.1 | 2026-10-27 |
 | recon | 1.0.1 | 2026-10-26 |
@@ -48,6 +48,16 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.79.0 (2026-11-18)
+
+agent-supply-chain-audit adds a worked incident for an install-time worm that poisons coding-agent config, and personal-opsec points at it (#257). agent-supply-chain-audit 1.7.0, personal-opsec 1.3.3.
+
+**Added**
+- agent-supply-chain-audit: strutil-core 1.0.1 (RubyGems, 2026-11-06, Socket). A testmetest / Miasma / Shai-Hulud descendant. It runs at `gem install`, can poison MCP servers, session hooks, and instruction files, and can republish to RubyGems, npm, and PyPI. No public dependents and no confirmed victims. PyPI sibling pystr-codec. `paleasbest.top` is an IOC for this incident only, not a standing blocklist. Do not reproduce the payload. If it ran, rebuild the host and rotate credentials. Uninstalling the gem is not cleanup.
+- personal-opsec Part C: after an unexpected RubyGems, PyPI, or npm install on a machine that runs coding agents, re-diff agent config and rotate tokens. The playbook stays in agent-supply-chain-audit.
+
+Proposed by @coreyhaines31 in #257.
 
 ### 1.78.0 (2026-11-18)
 
