@@ -21,7 +21,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | fuzzing-harness | 1.0.1 | 2026-10-27 |
 | hipaa-audit | 1.1.1 | 2026-10-27 |
 | iam-audit | 1.2.0 | 2026-10-27 |
-| incident-triage | 1.7.0 | 2026-11-18 |
+| incident-triage | 1.8.0 | 2026-11-18 |
 | log-watch | 1.0.3 | 2026-11-18 |
 | malware-triage | 1.0.0 | 2026-10-27 |
 | mobile-audit | 1.1.1 | 2026-10-27 |
@@ -36,7 +36,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | recon | 1.0.1 | 2026-10-26 |
 | red-team-engagement | 1.0.1 | 2026-10-26 |
 | scanner-pipeline | 1.1.0 | 2026-10-30 |
-| secrets-audit | 1.7.0 | 2026-11-18 |
+| secrets-audit | 1.8.0 | 2026-11-18 |
 | security-comms | 1.0.3 | 2026-10-26 |
 | security-start | 1.0.0 | 2026-10-27 |
 | siem-detection | 1.1.0 | 2026-11-18 |
@@ -48,6 +48,18 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.3.0 | 2026-11-18 |
 
 ## Recent Changes
+
+### 1.88.0 (2026-11-18)
+
+incident-triage and secrets-audit: Notion / Fireworks transcript exposure on the vendor-breach playbook. incident-triage 1.8.0, secrets-audit 1.8.0.
+
+**Added**
+- Fireworks and Notion rows. Notion was not the breached party: Fireworks, its classification vendor, was. Checked 2026-11-11 against Notion's advisory and help center and both Fireworks bulletins. No CVE.
+- Notion's "unattributable" definition, quoted: unlabeled chats, not non-identifying text. Enterprise zero-data-retention covers the API requests that generate Notion AI responses, not stored chat history or Insights. A contractual commitment from Fireworks did not prevent retention on the Insights endpoints.
+- Five steps: inventory AI subprocessors and secondary copies; record what a zero-data-retention claim does and does not cover; do not treat unlabeled transcripts as harmless; the first "no customer data" bulletin can expand; no notice means follow the vendor's current guidance and keep watching.
+- secrets-audit vendor-held inventory has a second table for the subprocessor, the feature that re-sends stored chats, and both sides of the retention claim.
+
+Proposed by @coreyhaines31 in #267. Based on the vendor-breach playbook in #251, after the Railway row in #262.
 
 ### 1.87.0 (2026-11-18)
 

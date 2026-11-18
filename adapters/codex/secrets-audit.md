@@ -1,6 +1,6 @@
 # secrets-audit
 
-> Find leaked secrets in source code, Git history, build artifacts, and infrastructure — and audit the secrets-management posture preventing future leaks. Use when the user mentions 'secrets audit,' 'secret scanning,' 'leaked credentials,' 'API key in code,' 'gitleaks,' 'trufflehog,' 'betterleaks,' 'git history scan,' 'secrets management,' 'vault audit,' 'rotation policy,' 'AWS Secrets Manager,' 'HashiCorp Vault,' 'Doppler,' '1Password Secrets Automation,' 'sealed-secrets,' 'External Secrets Operator,' 'secrets in MCP config,' 'API key in Claude transcript,' 'is this key public,' 'hard spend cap,' 'OpenRouter key limit,' 'vendor-held secrets,' 'secrets a vendor stores,' 'which secrets did we give that vendor,' 'allow rule,' 'settings.local.json,' or needs to find or prevent credential exposure.
+> Find leaked secrets in source code, Git history, build artifacts, and infrastructure — and audit the secrets-management posture preventing future leaks. Use when the user mentions 'secrets audit,' 'secret scanning,' 'leaked credentials,' 'API key in code,' 'gitleaks,' 'trufflehog,' 'betterleaks,' 'git history scan,' 'secrets management,' 'vault audit,' 'rotation policy,' 'AWS Secrets Manager,' 'HashiCorp Vault,' 'Doppler,' '1Password Secrets Automation,' 'sealed-secrets,' 'External Secrets Operator,' 'secrets in MCP config,' 'API key in Claude transcript,' 'is this key public,' 'hard spend cap,' 'OpenRouter key limit,' 'vendor-held secrets,' 'secrets a vendor stores,' 'which secrets did we give that vendor,' 'allow rule,' 'settings.local.json,' 'AI subprocessor,' 'what zero-data-retention does not cover,' or needs to find or prevent credential exposure.
 
 # Secrets Audit — Credential Exposure and Secrets-Management Review
 
@@ -270,6 +270,12 @@ When you find a leaked secret:
 A leak is not only a secret in git. A vendor may hold env vars, Git Sync and VCS tokens, integration and OAuth tokens, API keys, cloud roles you trusted to it, MCP servers connected to it, and anything pasted into its chat or agent. When that vendor reports a breach, `incident-triage` runs [the vendor-breach playbook](../incident-triage/references/vendor-breach-notice.md). Fill this table before that happens, so the playbook's inventory step is a lookup. One row per vendor. Names and owners only. Never paste a secret value into the inventory or the report.
 
 | Vendor | Classes held | Who rotates it (the issuer, not the vendor's UI) | Rotation tested? | Last tested |
+|---|---|---|---|---|
+| | | | | |
+
+For any vendor that sends chats or agent transcripts to another company, fill this as well. "ZDR" is not one yes or no. Point each claim at the [AI subprocessor steps](../incident-triage/references/vendor-breach-notice.md#ai-subprocessors-and-zero-data-retention-claims) in the vendor-breach playbook.
+
+| Vendor | AI subprocessor | Feature that re-sends stored chats | Zero-data-retention covers | Zero-data-retention does not cover |
 |---|---|---|---|---|
 | | | | | |
 
