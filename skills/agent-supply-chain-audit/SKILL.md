@@ -190,35 +190,28 @@ references only.
 
 ### MCP client (MC1–MC3)
 
-The editor that talks to those servers is part of the same supply chain. VS Code 1.145.3 (10 November 2026) fixes a
-cluster where the editor trusted an MCP server, an install link, or a workspace file and ran a command with the
-user's permissions. None are reported exploited in the wild, and none are in CISA KEV. Forks (Cursor, Windsurf,
-VSCodium, and others) get the fixes only when they ship a rebased build. Which forks have done so was not confirmed
-on 2026-11-11; check each vendor's release notes.
+The editor that talks to those servers is part of the same supply chain. MC1: each editor that loads MCP servers and
+its version. VS Code below 1.145.3 is **high**; a fork (Cursor, Windsurf, VSCodium) is `needs_validation` until its
+release notes name the upstream build. MC2: legacy SSE transport entries. MC3: install links and network workspaces,
+hardening notes unless one was already approved. Commands and CVEs: [references/mcp-client.md](references/mcp-client.md).
 
-**MC1 — client version.** List each editor that loads MCP servers, and its version:
+### Reference servers (MS1, MS2)
 
-```bash
-code --version 2>/dev/null | head -1
-cursor --version 2>/dev/null | head -1
-windsurf --version 2>/dev/null | head -1
-codium --version 2>/dev/null | head -1
-# macOS app bundles, when the CLIs are not on PATH
-defaults read "/Applications/Visual Studio Code.app/Contents/Info" CFBundleShortVersionString 2>/dev/null
-```
-
-- VS Code below 1.145.3 (affects 1.145.2 and older) → finding **high**. Patch. The highest is CVE-2026-120779 (CNA CVSS 9.6, E:U): MCP elicitation notification text could become a command link ([GHSA-66hq-jw93-462h](https://github.com/microsoft/vscode/security/advisories/GHSA-66hq-jw93-462h)). The same release also fixes CVE-2026-114171 (install-link RCE, CVSS 8.8), CVE-2026-119983 (legacy SSE RCE, CVSS 8.8), CVE-2026-119985 (network workspace trust bypass, CVSS 8.3), and CVE-2026-120780 (serve-web downgrade, CVSS 8.3).
-- A fork → **needs_validation** until that vendor's release notes name the upstream VS Code version or the fix it includes. Record the fork version and the upstream base it reports.
-
-**MC2 — legacy SSE transport.** CVE-2026-119983 is in the legacy SSE transport. Flag entries that use `"type": "sse"` or an `/sse` URL. Suggest Streamable HTTP, or turning the server off until the client is patched. On a client below 1.145.3 this is part of the MC1 high. On a patched client it is a hardening note.
+The MCP project's own reference servers shipped six fixes in release v2.4.0 on 2026-11-11 (no CVE ids, none reported
+exploited in the wild as of 2026-11-12). For each MCP config (`.vscode/mcp.json`, `.cursor/mcp.json`,
+`~/.cursor/mcp.json`, `~/.claude.json`, `claude_desktop_config.json`), list entries that launch `mcp-server-git`,
+`mcp-server-fetch` or `@modelcontextprotocol/server-filesystem` and record the pinned version, or "unpinned":
 
 ```bash
-rg -n '"type"\s*:\s*"sse"|/sse["/]' .vscode/mcp.json .cursor/mcp.json ~/.cursor/mcp.json "$HOME/Library/Application Support/Code/User/mcp.json" 2>/dev/null
+rg -n 'mcp-server-git|mcp-server-fetch|server-filesystem' .vscode/mcp.json .cursor/mcp.json ~/.cursor/mcp.json ~/.claude.json \
+  "$HOME/Library/Application Support/Claude/claude_desktop_config.json" 2>/dev/null
 ```
 
-**MC3 — install links and network workspaces.** Anti-patterns, recorded as hardening notes unless a link was already approved:
-- Approving a one-click MCP install link without reading the displayed command and inputs (CVE-2026-114171).
-- Opening an HTTP(S) workspace file from an untrusted source (CVE-2026-119985). Workspace settings can name MCP servers that start a process.
+- **MS1.** `mcp-server-git` below 2026.11.11 → finding **high**. [GHSA-6hqx-gqrx-c5r2](https://github.com/modelcontextprotocol/servers/security/advisories/GHSA-6hqx-gqrx-c5r2) (CVSS 3.1 7.8): a read-only `git_status` on an untrusted repository ran a program named in that repo's `.git/config` (`core.fsmonitor`, `diff.external`, hooks, filter and merge drivers, signing) with the server's privileges. The repository the agent was asked to look at was the payload. Fixed in 2026.11.11. The same release covers [GHSA-q74p-4wrc-q7w6](https://github.com/modelcontextprotocol/servers/security/advisories/GHSA-q74p-4wrc-q7w6) (medium): `--repository` confinement bypass via alternates, linked worktrees and symlinks. Windows junctions are not covered yet.
+- `mcp-server-fetch` below 2026.11.11 → finding **low**. `fec0::/10` was treated as public, and a robots.txt `//private` form bypassed the guard ([GHSA-3rxj-6jhw-qfv7](https://github.com/modelcontextprotocol/servers/security/advisories/GHSA-3rxj-6jhw-qfv7), [GHSA-f9hh-cmx9-2f23](https://github.com/modelcontextprotocol/servers/security/advisories/GHSA-f9hh-cmx9-2f23)).
+- `@modelcontextprotocol/server-filesystem` on any date version from 2025.1.14 through 2026.8.31, or any semver below 2.3.0 → finding **medium**. A symlink swap after validation lets reads leave the allowed directories, and a swapped `move_file` source brings an outside file in ([GHSA-p9cv-8g75-4xcg](https://github.com/modelcontextprotocol/servers/security/advisories/GHSA-p9cv-8g75-4xcg), [GHSA-7m4x-rv66-mxhh](https://github.com/modelcontextprotocol/servers/security/advisories/GHSA-7m4x-rv66-mxhh)). Fixed in 2.3.0. Windows is only narrowed.
+- Unpinned `npx -y` / `uvx` → **needs_validation**. The TypeScript servers moved from date versions (2025.x / 2026.x) to semver, so a package manager ranks fixed `server-filesystem` 2.3.0 below the old date versions and will not offer the fix. `npx -y @modelcontextprotocol/server-filesystem` may still resolve to a vulnerable date version. Pin `@2.3.0` (or newer) explicitly. Say so in the finding. Source: [release v2.4.0](https://github.com/modelcontextprotocol/servers/releases/tag/v2.4.0).
+- **MS2.** Any agent tool (MCP server, skill or script) that shells out to `git` on a repository it did not set up should clear repo-defined config the way that fix does: `GIT_CONFIG_COUNT` overrides for `core.fsmonitor`, `core.hooksPath`, signing and pager; `--no-ext-diff --no-textconv`; refuse Git older than 2.31. Running `git status` on a freshly cloned untrusted repo is not a read.
 
 ### Bundled browser runtimes (RT1)
 
@@ -393,9 +386,9 @@ Anchors for this surface:
 | Severity | Typical shape |
 |---|---|
 | Critical | Active item sends credentials, transcripts, or source to an external host; concealed directive that runs commands or disables approvals; a known-bad or code-prepended IDE extension on disk (EX1, EX4); an agent installer whose source cannot be shown (IN1), or a Homebrew remote that is not Homebrew/brew (IN2); an install-time package that already rewrote agent config (strutil-core class) |
-| High | Hook or bundled script with undeclared egress; project settings that bypass permissions or reroute model traffic; persistence into instruction files, settings, or shell init; a deploy token on the laptop that can ship to production (IN3); VS Code below 1.145.3, the MCP-client fixes (MC1) |
-| Medium | Unpinned MCP server or git-installed skill with broad tool access; an unreviewed agent extension on auto-update on a machine with production access (EX2); unscoped `Bash` + `WebFetch` pre-approval; tool description that steers the model toward another tool or extra data; an app-added session hook the user did not review (AP2, AP3). On a machine that holds production credentials or deploy keys, that medium escalates. Do not call the vendor malicious; a remote-control feature plus a browser extension that can run on the agent's site (WB1+WB2). When that machine holds production or deploy credentials, rate it high. Word it as an exposure: a hijacked extension could drive the agent |
-| Low | Unpinned item with narrow reach; over-broad trigger that shadows another skill |
+| High | Hook or bundled script with undeclared egress; project settings that bypass permissions or reroute model traffic; persistence into instruction files, settings, or shell init; a deploy token on the laptop that can ship to production (IN3); VS Code below 1.145.3, the MCP-client fixes (MC1); `mcp-server-git` below 2026.11.11 (MS1) |
+| Medium | Unpinned MCP server or git-installed skill with broad tool access; an unreviewed agent extension on auto-update on a machine with production access (EX2); unscoped `Bash` + `WebFetch` pre-approval; tool description that steers the model toward another tool or extra data; an app-added session hook the user did not review (AP2, AP3), without calling the vendor malicious; a remote-control feature plus a browser extension that can run on the agent's site (WB1+WB2), worded as an exposure: a hijacked extension could drive the agent; `server-filesystem` on a date version or below 2.3.0 (MS1). AP2, AP3 and WB1+WB2 rate high on a machine that holds production or deploy credentials |
+| Low | Unpinned item with narrow reach; over-broad trigger that shadows another skill; `mcp-server-fetch` below 2026.11.11 (MS1) |
 
 Not findings — **hardening notes**: no tool-definition snapshot, missing `permissions.deny` rules, a pinned tag rather
 than a SHA, no review process for marketplace updates. Report them separately and never give them a severity.
@@ -490,5 +483,6 @@ Write the machine-readable findings first, validate them, then render the markdo
 - Web-to-agent bridges (WB1–WB4), checked 2026-11-05: [Forever Security, ThisBash](https://forever.security/blog/thisbash-claude-dispatch-browser-extension-rce) (2026-11-04) and [The Register](https://www.theregister.com/research/2026/11/05/anthropic-wont-fix-a-claude-dispatch-flaw-that-could-let-attackers-execute-remote-commands-across-corporate-boundaries/5307684) (2026-11-05). No CVE. Remote Control and Cowork are vendor-unconfirmed.
 - Socket, "Shai-Hulud Descendant Surfaces in Malicious Ruby Gem" (2026-11-06) — [write-up](https://socket.dev/blog/shai-hulud-descendant-malicious-ruby-gem). `paleasbest.top` is an IOC for strutil-core 1.0.1 only, not a standing blocklist.
 - VS Code 1.145.3 MCP-client fixes (2026-11-10) — [security advisories](https://github.com/microsoft/vscode/security/advisories) (MC1–MC3). Fork status was not confirmed on 2026-11-11.
+- MCP reference servers v2.4.0 (2026-11-11) — [release](https://github.com/modelcontextprotocol/servers/releases/tag/v2.4.0), [advisories](https://github.com/modelcontextprotocol/servers/security/advisories) (MS1, MS2)
 - [references/locations.md](references/locations.md), [references/content-checks.md](references/content-checks.md),
   [references/findings-format.md](references/findings-format.md), [references/severity-calibration.md](references/severity-calibration.md)

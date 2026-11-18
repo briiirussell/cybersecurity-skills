@@ -4,7 +4,7 @@ Current versions of all skills. Agents can compare against local versions to che
 
 | Skill | Version | Last Updated |
 |-------|---------|--------------|
-| agent-supply-chain-audit | 1.8.0 | 2026-11-18 |
+| agent-supply-chain-audit | 1.9.0 | 2026-11-18 |
 | ai-risk-management | 1.1.3 | 2026-10-30 |
 | api-audit | 1.2.0 | 2026-11-18 |
 | breach-patterns | 1.1.0 | 2026-10-30 |
@@ -28,7 +28,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | native-code-review | 1.0.1 | 2026-10-27 |
 | osint-recon | 1.0.2 | 2026-10-26 |
 | owasp-audit | 1.9.0 | 2026-11-18 |
-| patch-sweep | 1.7.0 | 2026-11-18 |
+| patch-sweep | 1.8.0 | 2026-11-18 |
 | pci-audit | 1.1.1 | 2026-10-27 |
 | personal-opsec | 1.4.0 | 2026-11-18 |
 | privacy-engineering | 1.1.0 | 2026-10-27 |
@@ -48,6 +48,20 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.3.0 | 2026-11-18 |
 
 ## Recent Changes
+
+### 1.90.0 (2026-11-18)
+
+agent-supply-chain-audit checks MCP reference server versions, and patch-sweep treats a date-to-semver switch as an explicit pin (#269). agent-supply-chain-audit 1.9.0, patch-sweep 1.8.0.
+
+**Added**
+- agent-supply-chain-audit MS1: `mcp-server-git` or `mcp-server-fetch` below 2026.11.11, and `@modelcontextprotocol/server-filesystem` on a date version (2025.1.14 through 2026.8.31) or below semver 2.3.0. Git is high (repo `.git/config` runs a program during a read-only tool, GHSA-6hqx-gqrx-c5r2). Fetch is low. Filesystem is medium. Unpinned `npx -y` / `uvx` is needs_validation, because 2.3.0 ranks below the old date versions. Pin `@2.3.0` explicitly. No CVE ids, none reported exploited, as of 2026-11-12.
+- MS2: a tool that runs `git` on a repository it did not set up should clear repo-defined config (`GIT_CONFIG_COUNT` overrides, `--no-ext-diff --no-textconv`, refuse Git older than 2.31). `git status` on a freshly cloned untrusted repo is not a read.
+- patch-sweep Step 4: after a package moves from date versions to semver, "latest" is not the fixed release. Check the installed version and pin it.
+
+**Changed**
+- agent-supply-chain-audit: the MCP client checks (MC1–MC3) moved to `references/mcp-client.md`, with a short summary left in Step 4, to keep SKILL.md under 500 lines. The Medium anchor row now reads as one list: AP2/AP3 and WB1+WB2 rate high on a machine with production or deploy credentials.
+
+Proposed by @coreyhaines31 in #269.
 
 ### 1.89.0 (2026-11-18)
 
