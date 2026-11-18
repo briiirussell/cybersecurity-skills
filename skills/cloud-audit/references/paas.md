@@ -60,6 +60,16 @@ railway variables     # prints VALUES — use the dashboard to list names instea
 - The service's Settings → Source shows repo, branch, and "Wait for CI"; Deployments shows each deploy's trigger and commit. Railway's public API is GraphQL (`https://backboard.railway.com/graphql/v2`) if you need to script it.
 - Check 3: services with only a `*.up.railway.app` domain.
 
+## Managed Postgres allowlists
+
+DB5 from the self-hosted VPS checks. A leaked `DATABASE_URL` is useless from the internet only when the database refuses that connection. Do not print the URL. Ask before running the CLI. It uses the owner's Supabase login.
+
+**Supabase.** `supabase network-restrictions get --project-ref <ref> --experimental`. The docs: an empty allowlist means every IP can connect to Postgres and the pooler. The restrictions do not cover the HTTPS APIs. "Restrictions applied successfully: false", or an empty list, on a production database is Medium: a leaked `DATABASE_URL` works from anywhere. Checked 2026-10-30 against [Supabase network restrictions](https://supabase.com/docs/guides/platform/network-restrictions).
+
+**Neon.** IP Allow is in project Settings, on the Scale plan, and can apply to protected branches only. There is no read-only CLI in this check. Ask the owner to read that setting. Checked 2026-10-30 against [Neon IP Allow](https://neon.com/docs/introduction/ip-allow).
+
+Serverless hosts often have no fixed egress IP, so an allowlist may be a hardening note rather than a change you can make this week. Say which.
+
 ## Repo defaults (all platforms)
 
 Same as check 8 in the main section: `gh api repos/<o>/<r>/vulnerability-alerts`, `gh api repos/<o>/<r> --jq .security_and_analysis`, branch protection or rulesets on the production branch.

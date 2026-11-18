@@ -17,6 +17,7 @@ where the agent walks up the tree, every parent and nested directory too.
 | User | `~/.claude/CLAUDE.md`, `~/.claude/settings.json` | User-wide instructions and settings | **Yes** (hooks) |
 | User | `~/.claude/skills/`, `~/.claude/commands/`, `~/.claude/agents/` | User-level extensions, active in every project | Via scripts / tools |
 | User | `~/.claude/plugins/` (installed plugins, `marketplaces/`, marketplace and install registries) | Installed plugins and the marketplaces they came from | **Yes** |
+| User | `~/.claude/settings.json` key `enabledPlugins`; `~/.claude/plugins/installed_plugins.json` (`version`, `installedAt`, `scope`) | Which plugins are turned on, and when. A plugin's own `hooks/hooks.json` is not in `settings.json` (AP1) | **Yes** (hooks) |
 | User | `~/.claude.json` | User and per-project `mcpServers`, approval state | **Yes** |
 | User | `~/.claude/projects/*/memory/` (where present) | Persistent memory files reloaded into later sessions | No, but a persistence target (MP1) |
 | Managed | macOS `/Library/Application Support/ClaudeCode/`, Linux `/etc/claude-code/` (`managed-settings.json`, `managed-mcp.json`) | Org-enforced settings; override user and project | **Yes** |
@@ -47,6 +48,7 @@ where the agent walks up the tree, every parent and nested directory too.
 |---|---|---|
 | Project / user | `AGENTS.md`, `AGENTS.override.md`, `~/.codex/AGENTS.md` | No — instructions |
 | User | `~/.codex/config.toml` — `[mcp_servers.<name>]` (`command`, `args`, `env`), `approval_policy`, `sandbox_mode`, `[shell_environment_policy]`; project `.codex/config.toml` where supported | **Yes** |
+| User | `~/.codex/config.toml` — `[marketplaces.*]`, `[plugins.*]`, `[hooks.state."<plugin>:…session_start…"]` with `trusted_hash` | Who added a Codex plugin, and whether a session-start hook was marked trusted (AP1–AP3). The trust record is a config file | **Yes** |
 | User | `~/.codex/prompts/*.md`, `~/.codex/skills/` (recent versions) | Via the tools they invoke |
 
 ## Gemini CLI
@@ -66,7 +68,26 @@ where the agent walks up the tree, every parent and nested directory too.
 | Project | `.github/prompts/*.prompt.md`, `.github/chatmodes/*.chatmode.md`, `.github/agents/*.agent.md` | Via the tools they list |
 | Project | `.vscode/mcp.json` | **Yes** |
 | User | VS Code user `settings.json` — `mcp` servers, tool auto-approve settings | **Yes** |
+| User | Copilot CLI: `~/.copilot/settings.json` (`extraKnownMarketplaces`, `enabledPlugins`) and `~/.copilot/installed-plugins` | **Yes** |
 | Repo settings | Coding-agent MCP config (repo Settings UI) and `.github/workflows/copilot-setup-steps.yml` | **Yes**, in CI |
+
+## Browser extensions (WB2)
+
+Chromium extension manifests, per profile. The version directory changes on every update, so glob `*/*`. A name that
+starts with `__MSG_` is a locale key; read `_locales/<lang>/messages.json` in that same version directory. Record the
+extension id (the directory name), the publisher if the manifest has one, and the host permissions.
+
+| Browser | macOS | Linux | Windows |
+|---|---|---|---|
+| Chrome | `~/Library/Application Support/Google/Chrome/<Profile>/Extensions/<id>/<version>/manifest.json` | `~/.config/google-chrome/<Profile>/Extensions/<id>/<version>/manifest.json` | `%LOCALAPPDATA%\Google\Chrome\User Data\<Profile>\Extensions\<id>\<version>\manifest.json` |
+| Chromium | `~/Library/Application Support/Chromium/<Profile>/Extensions/…` | `~/.config/chromium/<Profile>/Extensions/…` | `%LOCALAPPDATA%\Chromium\User Data\<Profile>\Extensions\…` |
+| Edge | `~/Library/Application Support/Microsoft Edge/<Profile>/Extensions/…` | `~/.config/microsoft-edge/<Profile>/Extensions/…` | `%LOCALAPPDATA%\Microsoft\Edge\User Data\<Profile>\Extensions\…` |
+| Brave | `~/Library/Application Support/BraveSoftware/Brave-Browser/<Profile>/Extensions/…` | `~/.config/BraveSoftware/Brave-Browser/<Profile>/Extensions/…` | `%LOCALAPPDATA%\BraveSoftware\Brave-Browser\User Data\<Profile>\Extensions\…` |
+
+`<Profile>` is `Default` or `Profile N`. Firefox stores extensions differently (a profile `extensions.json`, not this
+tree); list it separately if that profile is signed in to the agent site. VS Code's user MCP file, used by the same
+audit's client checks, is `~/Library/Application Support/Code/User/mcp.json` on macOS, `~/.config/Code/User/mcp.json`
+on Linux, and `%APPDATA%\Code\User\mcp.json` on Windows.
 
 ## Others worth a glob
 

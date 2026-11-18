@@ -6,7 +6,7 @@ from the places code opts out: `permit!`, `Model.find(params[:id])` without a sc
 `html_safe`, and controllers that skip the authorization callback.
 
 The main checklist already covers Rails admin-engine mounts (A02), ERB sinks and JSON-LD (A05), and Devise
-`:validatable` (A07). This playbook adds the controller and model checks.
+`:validatable` (A07). This playbook adds the controller and model checks, and upload processing (check 6).
 
 Findings use the normal OWASP Top 10:2025 categories, verdicts, and `findings.json` format. Fingerprints name the
 controller action or model: `owasp-audit/CWE-639/app/controllers/invoices_controller.rb/show`.
@@ -19,6 +19,7 @@ controller action or model: `owasp-audit/CWE-639/app/controllers/invoices_contro
 | Each `*_params` method and every other use of `params` in a write | `app/controllers/**` |
 | Authorization layer: Pundit, CanCanCan, Action Policy, or hand-rolled `before_action` | `app/policies/**`, `app/models/ability.rb`, `ApplicationController` |
 | API-only controllers (`ActionController::API`), GraphQL mutations, Action Cable channels, jobs that take ids | `app/controllers/api/**`, `app/graphql/**`, `app/channels/**`, `app/jobs/**` |
+| Active Storage upload processing: variant processor, analyzers, previewers, host ImageMagick policy | `config/application.rb`, `config/environments/*.rb`, `config/initializers`, host `policy.xml` |
 
 ```bash
 rg -n "^\s*(get|post|put|patch|delete|resources?|member|collection|mount|namespace)\b" config/routes.rb
@@ -144,6 +145,98 @@ rg -n "secret_key_base\s*[:=]\s*['\"]" config/
 rg -n "consider_all_requests_local\s*=\s*true|force_ssl\s*=\s*false" config/environments/production.rb
 ```
 
+### 6. Upload processing: ImageMagick and FFmpeg policy (A02, A05)
+
+Active Storage on ImageMagick can be talked into writing files, and with the Disk service into reading any file the
+app can read (including `secret_key_base`), by attaching a crafted upload. No variant, preview, or `analyze` call is
+required. Facts re-checked 2026-11-15 against the Rails advisories. Neither CVE was on the CISA KEV catalog that day
+(cve.now: `kev` false, `exploits` 0, `epssReached` false for both).
+
+**ImageMagick (GHSA-f3w6-w445-fwh9 / CVE-2026-122006, CVSS 3.0 9.8).** Affected only when all three are true:
+
+1. Active Storage uses ImageMagick: `config.active_storage.variant_processor = :mini_magick`. That is the default for
+   `load_defaults 6.1` or earlier, and `:vips` from 7.0 on. The same setting decides which library analyzes an upload
+   on attach.
+2. The host ImageMagick policy does not already deny the coders involved. Rails says the Debian and Ubuntu policies
+   do not.
+3. The app accepts uploads from untrusted users.
+
+Vulnerable `activestorage`: `< 8.0.5.2`, and `>= 8.1, < 8.1.4.1`. Fixed in **8.0.5.2** and **8.1.4.1** (2026-11-04).
+The patched gem ships a policy and prepends its directory to `MAGICK_CONFIGURE_PATH` through `MiniMagick.cli_env`.
+The policy denies the `MSL` coder, the Ghostscript coders, and the `gs` delegate (among other file-reading and
+remote coders). It adds to the host policy; it does not replace it.
+
+**Find candidates:**
+
+```bash
+rg -n "variant_processor|load_defaults" config/
+bundle exec rails runner 'puts ActiveStorage.variant_processor.inspect' 2>/dev/null
+convert -list policy 2>/dev/null || magick -list policy
+rg -n 'pattern="(MSL|PS|PDF|EPS|XPS|\*)"' /etc/ImageMagick-*/policy.xml
+rg -n "MiniMagick\.(cli_env|cli_prefix|shell)|MAGICK_CONFIGURE_PATH" app config lib
+# portable
+grep -rnE "variant_processor|load_defaults" config
+```
+
+**Verify:** confirmed when all three conditions hold and `activestorage` is below the floor
+(`bundle exec gem list activestorage`). Category A02 for the unsafe default processor and policy, A05 where the
+upload reaches ImageMagick's coder. Rejected when the processor is `:vips` and nothing else invokes MiniMagick, or
+the host policy already denies `MSL`, the Ghostscript coders, and `gs`; name the line or the policy file. The host
+policy is `needs_validation` until someone runs the `convert` / `magick` check on the host that serves uploads.
+
+After upgrading, confirm the shipped policy actually loads:
+
+```bash
+bin/rails runner 'puts MiniMagick.identify { |i| i.list "policy" }'
+```
+
+| Trap | Why it matters |
+|---|---|
+| `mini_magick` older than 5.1 | A fixed Rails raises at boot on a `:mini_magick` app. The policy needs 5.1 or newer |
+| The app replaces `MiniMagick.cli_env`, clears the environment with `cli_prefix`, or installs its own `MiniMagick::Shell` | The shipped policy never reaches ImageMagick. Put the same denies in the system `policy.xml` |
+| GraphicsMagick | It does not read ImageMagick policies |
+| A host rule that allows a coder, including `pattern="*"` | That is how a host re-enables a coder the shipped policy denies. An allow for `MSL`, a Ghostscript coder, or `gs` undoes the fix for that coder |
+| The app renders PDF or PostScript through ImageMagick | Re-allow the `gs` delegate and the coders it uses in the host policy, on purpose, and record that as accepted risk for those coders only |
+| Rails older than 8.0 | No gem fix shipped. 7.2.0 was released 2024-08-10, so its two-year security window ended 2026-08-10, and there is no 7.2 release for this advisory. Copy the denies into the system policy (below) |
+| Rails 8.0 | 8.0.0 shipped 2024-11-07. Rails gives a series security fixes for two years, so that window ended 2026-11-07. 8.0.5.2 (2026-11-04) is the fix and it shipped inside the window. As of 2026-11-15, do not expect another 8.0 security release; take 8.0.5.2 if it is not there, and plan the move to 8.1 |
+
+For an app that cannot upgrade, copy the shipped denies into the system policy (for example
+`/etc/ImageMagick-7/policy.xml`). Minimum, from the advisory:
+
+```xml
+<policy domain="coder" rights="none" pattern="MSL"/>
+<policy domain="delegate" rights="none" pattern="gs"/>
+<policy domain="coder" rights="none" pattern="{PS,PS2,PS3,EPS,EPS2,EPS3,EPI,EPSF,EPSI,EPT,EPT2,EPT3,PDF,AI,EPDF,PDFA,POCKETMOD,XPS,PCL}"/>
+```
+
+**FFmpeg, same section (GHSA-v924-7rp8-4mxh / CVE-2026-126186, CVSS 3.1 8.8).** `Blob#open` names the tempfile with
+the uploaded extension and hands it to `ffprobe` (`VideoAnalyzer`, `AudioAnalyzer`), `ffmpeg` (`VideoPreviewer`),
+and ImageMagick. Those tools pick a decoder from the extension when the content does not identify itself. Video and
+audio analysis runs on attach by default. The AviSynth file-read chain needs an FFmpeg built with `--enable-avisynth`
+plus AviSynthPlus on the host. Upstream FFmpeg, distro packages, and Homebrew do not enable it. The GPL builds from
+ffmpeg.org do. Other extension-selected decoders can still apply without AviSynth.
+
+```bash
+rg -n "previewers|analyzers|variant_processor" config/
+rg -n "enable-avisynth|ffmpeg|ffprobe" config/ Dockerfile* 2>/dev/null
+```
+
+Workaround without upgrading: remove `ActiveStorage::Previewer::VideoPreviewer` from
+`config.active_storage.previewers`, and `ActiveStorage::Analyzer::VideoAnalyzer` and
+`ActiveStorage::Analyzer::AudioAnalyzer` from `config.active_storage.analyzers`. An FFmpeg built without AviSynth
+closes the AviSynth chain only, not ImageMagick's extension-selected coders.
+
+**Secrets, when a read was possible.** Upgrading closes the hole and does not undo a read that already happened.
+
+- ImageMagick advisory, Disk service, and the app was reachable while all three conditions held: rotate
+  `secret_key_base`, the master key, every value in the encrypted Rails credentials file, storage and database credentials,
+  and third-party tokens. Do not keep the old secret as a fallback.
+- FFmpeg advisory: rotate that same set when FFmpeg was built with `--enable-avisynth`. A Disk-backed app that never
+  met that build flag does not get this rotation from the FFmpeg advisory alone.
+- Changing `secret_key_base` expires sessions and invalidates signed and encrypted cookies, signed global IDs, and
+  Active Storage URLs. Say that before rotating. The fleet rule, including "do not close the row until the secrets
+  moved", is `patch-sweep`.
+
 ## Worked examples
 
 **Confirmed (A01).** `app/controllers/invoices_controller.rb`: `before_action :set_invoice` with
@@ -191,3 +284,8 @@ Paraphrased, not copied:
   (the "can user A reach user B's record" trace, applied here to Active Record)
 - [Brakeman warning types](https://brakemanscanner.org/docs/warning_types/) (which sinks a Rails static scanner treats as
   candidates)
+- Rails advisories, read 2026-11-15: [GHSA-f3w6-w445-fwh9](https://github.com/rails/rails/security/advisories/GHSA-f3w6-w445-fwh9)
+  (CVE-2026-122006) and [GHSA-v924-7rp8-4mxh](https://github.com/rails/rails/security/advisories/GHSA-v924-7rp8-4mxh)
+  (CVE-2026-126186). The policy snippet in check 6 is the advisory's published workaround. Rails' two-year security
+  window is the [maintenance policy](https://guides.rubyonrails.org/maintenance_policy.html); 8.0.0 was released
+  2024-11-07 and 7.2.0 on 2024-08-10

@@ -1,6 +1,6 @@
 # finding-triage
 
-> Triage a single security finding — from a scanner, audit, advisory, report, or a findings.json record — to a defensible disposition with calibrated severity, a mitigation plan, false-positive justification, or accepted-risk writeup. Use when the user mentions 'triage this finding,' 'is this a real vulnerability,' 'mitigation plan,' 'false positive,' 'accept this risk,' 'compensating controls,' 'risk justification,' 'security ticket,' 'CVSS this,' 'what severity is this,' 'is this really high,' 'severity calibration,' 'needs validation,' 'hardening note,' 'findings.json,' 'should we fix this,' 'disposition,' 'sign off on,' or has a single security finding and needs to decide what to do.
+> Triage a single security finding — from a scanner, audit, advisory, report, or a findings.json record — to a defensible disposition with calibrated severity, a mitigation plan, false-positive justification, or accepted-risk writeup. Use when the user mentions 'triage this finding,' 'is this a real vulnerability,' 'mitigation plan,' 'false positive,' 'accept this risk,' 'compensating controls,' 'risk justification,' 'security ticket,' 'CVSS this,' 'what severity is this,' 'is this really high,' 'severity calibration,' 'needs validation,' 'hardening note,' 'findings.json,' 'should we fix this,' 'disposition,' 'sign off on,' 'agent-generated report,' 'source class,' or has a single security finding and needs to decide what to do.
 
 # Finding Triage — Single-Finding Disposition with Defensible Justification
 
@@ -64,6 +64,8 @@ A good restatement names:
 
 If you can't restate it clearly, you don't understand it yet. Ask the user for context.
 
+**Source class.** Name where the finding came from: scanner, manual audit, production/operator report, or agent-generated (a researcher running agents). Record that class on the writeup. How many agents agreed, and how many findings arrived together, are not evidence. They do not raise severity, and they do not skip the six-element gate in Step 2.
+
 ### Step 2 — Is this actually true?
 
 Half of automated-scanner findings are false positives by volume. The triage:
@@ -103,7 +105,7 @@ Missing one? Then it isn't a finding yet:
 
 **Document a false-positive determination as carefully as a real finding.** If a future scanner or auditor flags the same thing, the prior false-positive note saves them the work.
 
-**Get an independent read.** Before confirming at High or Critical, moving a verdict up, or writing a scanner finding off as a false positive, have something other than the finder try to refute it. Scanner batches go through the fixed exclusion rules first (test, generated, vendored, docs). In Claude Code with this plugin, hand the finding to the `finding-verifier` subagent: one finding per call, the record and the code only, never your notes. In Cursor, Codex and other tools, run the same pass inline as a separate step from [references/verification.md](references/verification.md), and check your reasoning against its "Rationalizations to reject" table. When to run it, turning a scanner finding into a candidate, and merging the result: [references/independent-verification.md](references/independent-verification.md).
+**Get an independent read.** Before confirming at High or Critical, moving a verdict up, or writing a scanner finding off as a false positive, have something other than the finder try to refute it. Scanner batches go through the fixed exclusion rules first (test, generated, vendored, docs). In Claude Code with this plugin, hand the finding to the `finding-verifier` subagent: one finding per call, the record and the code only, never your notes. In Cursor, Codex and other tools, run the same pass inline as a separate step from [references/verification.md](references/verification.md), and check your reasoning against its "Rationalizations to reject" table. When to run it, turning a scanner finding into a candidate, and merging the result: [references/independent-verification.md](references/independent-verification.md). On an agent-written report, run it before High or Critical even when the writeup already looks complete.
 
 ### Step 3 — Contextual severity
 
@@ -125,6 +127,12 @@ The scanner's CVSS or severity rating is a starting point, not the answer. Rate 
 - Exploit requires preconditions that don't exist in your environment (specific OS version, specific config)
 - Authentication preconditions are hard in your app (closed signup, MFA, employee-only)
 - Component is dev-only or build-only, not runtime-reachable
+
+**Where the report came from changes priority, not the gate.** Agent-generated volume does not raise severity. A finding that is technically valid, and inside the project's security model, stays Low or becomes a hardening note when it only holds on a deployment the customer does not run, or when nobody has shown it is reachable in production. That is not a false positive. Do not label it one so it disappears. If impact is traced on the deployment they actually run, it stays a finding (see Boundaries).
+
+Production or operator evidence ("it happened to us") is a stronger importance signal than a novel or agentic discovery. Step 2 already lets "confirmed in the wild" raise severity. Missing production evidence usually lowers priority, and it must not be turned into a false positive.
+
+One maintainer described agent-swarm reports as valid and still edge-casey (Nate Berkopec, on Puma's incoming reports, 2026-11-10). That is an anecdote. Do not treat "extremely effective" or a "10x" quality gap as a measured constant. No true-positive counts and no CVE were published with it.
 
 **Severity anchors:**
 
@@ -202,7 +210,7 @@ Produce a ticket-ready writeup. Use one of these templates depending on disposit
 
 ```markdown
 ## Finding: [Title]
-**Source:** [scanner / audit / advisory]  **Fingerprint:** [if from findings.json]
+**Source:** [scanner / manual audit / production/operator / agent-generated / advisory]  **Fingerprint:** [if from findings.json]
 **Severity:** [contextual] (Scanner reported: [original])  **SLA:** [date]
 **Likelihood / Impact:** [score — reason] / [score — reason]
 **CWE / CVE:** [if applicable]
@@ -395,7 +403,8 @@ The primary output is the disposition writeup itself (templates above). For a tr
 
 ```markdown
 # Finding Triage Session
-## Source: [scanner / audit / report / findings.json path]
+## Source: [scanner / manual audit / production report / agent-generated / findings.json path]
+## Source class: [scanner | manual audit | production/operator | agent-generated]
 ## Date: [date]
 ## Triaged by: [name]
 
@@ -428,7 +437,8 @@ Things you noticed while triaging: the same pattern on a sibling route, a second
 - This skill operates on findings the user has authority to triage and dispose of
 - Severity decisions and Accept Risk dispositions affect organizational risk posture — for High+ findings, ensure the listed approver actually approves; don't fabricate sign-offs
 - False-positive determinations should be evidence-based, not "we don't want to fix it" rebranded — push back if the user wants to FP a real finding
-- Don't relabel a real finding as a hardening note to make it disappear: it's a hardening note only if no impact can be traced
+- Don't relabel a real finding as a hardening note to make it disappear: it's a hardening note only if no impact can be traced on the deployment the customer runs. A valid finding whose only traced impact needs a deployment they do not run can be Low or a hardening note. That is not a false positive
+- Agent-generated volume, or several agents agreeing, does not raise severity and does not skip the six-element gate
 - Refuse to help downgrade severities to avoid disclosure or audit obligations
 - Reproductions stay non-destructive and in scope — no exploitation of production data, no testing systems the user doesn't own
 - If a finding surfaces an active incident, hand off to `incident-triage` — disposition triage is for steady-state findings, not fires
@@ -445,6 +455,7 @@ Things you noticed while triaging: the same pattern on a sibling route, a second
 - Trail of Bits [post-patch-validation](https://github.com/trailofbits/skills/tree/main/plugins/post-patch-validation) and [regression-hunt](https://github.com/trailofbits/skills/tree/main/plugins/regression-hunt) (CC BY-SA 4.0), Strix [fix_verification.md](https://github.com/usestrix/strix/blob/main/strix/skills/analysis/fix_verification.md) (Apache-2.0) — fix verification and regression hunting (paraphrased)
 - Strix [severity calibration](https://github.com/usestrix/strix/blob/main/strix/skills/analysis/severity_calibration.md) (Apache-2.0) — over-rating list and High/Critical acceptance checks (paraphrased)
 - CVSS v4.0 specification — `first.org/cvss`
+- Nate Berkopec, 2026-11-10, on agent-written reports versus reports from people running the software in production. Anecdote only; no hit rate and no CVE: [the thread](https://x.com/nateberkopec/status/2120102258528731567)
 - EPSS — Exploit Prediction Scoring System (FIRST.org)
 - NIST SP 800-30 (Guide for Conducting Risk Assessments)
 - "FAIR" (Factor Analysis of Information Risk) — quantitative risk framework if you need dollar-denominated decisions

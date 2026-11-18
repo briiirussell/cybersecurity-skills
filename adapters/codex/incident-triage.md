@@ -1,6 +1,6 @@
 # incident-triage
 
-> Guide rapid triage and initial response to a live security incident happening right now (ransomware hitting a file server, an attacker still in the network, a new admin user nobody created, a host compromised through a CVE) following NIST SP 800-61 Rev. 3 (CSF 2.0 Respond and Recover) — declare, validate and prioritize, contain, preserve evidence, scope, extract IOCs, start the notification clocks, and hand off to eradication, recovery and lessons learned. Use when the user mentions 'incident response,' 'security incident,' 'incident triage,' 'active incident,' 'we've been hacked,' 'we've been breached,' 'compromised,' 'ransomware,' 'contain the incident,' 'malware detected,' 'suspicious activity,' 'IOC,' 'indicators of compromise,' or needs help handling a security event.
+> Guide rapid triage and initial response to a live security incident happening right now (ransomware hitting a file server, an attacker still in the network, a new admin user nobody created, a host compromised through a CVE, or a SaaS vendor you use that was breached) following NIST SP 800-61 Rev. 3 (CSF 2.0 Respond and Recover) — declare, validate and prioritize, contain, preserve evidence, scope, extract IOCs, start the notification clocks, and hand off to eradication, recovery and lessons learned. Use when the user mentions 'incident response,' 'security incident,' 'incident triage,' 'active incident,' 'we've been hacked,' 'we've been breached,' 'compromised,' 'ransomware,' 'contain the incident,' 'malware detected,' 'suspicious activity,' 'IOC,' 'indicators of compromise,' 'vendor breach,' 'told to rotate keys,' 'coding agent ran it,' 'Railway RCA,' 'vendor build history,' 'vendor AI breach,' 'zero data retention,' 'Notion Insights,' 'Fireworks breach,' or needs help handling a security event.
 
 # Incident Triage — Security Incident Response
 
@@ -10,7 +10,7 @@ happens before an incident; Detect, Respond and Recover are the response. This s
 through the start of Respond — and hands off the rest. Each step names the CSF 2.0 outcomes it produces, so the report
 maps straight onto the organization's CSF profile (see `csf-mapping`).
 
-Cross-references: `siem-detection` for the rules that produced the alert this triage is responding to, `disk-forensics` for deeper disk and memory analysis once a host is contained, `breach-patterns` for the post-incident pattern extraction that hardens against recurrence, `soc-operations` for the operational layer above this skill (runbooks, escalation, handoff), `security-comms` for the stakeholder / customer notifications the response generates, `privacy-engineering` / `hipaa-audit` / `pci-audit` for the regulatory-clock determination when personal data, PHI, or cardholder data is involved, `ai-risk-management` for AI-specific incident classes (model failure, fairness drift, jailbreak exploitation in production), `agent-supply-chain-audit` when the suspected entry point is an AI coding-agent extension (a skill, plugin, hook or MCP server), `log-watch` for the scheduled log review that often raises the first alert on small teams, `secrets-audit` for its exfiltration-collector domain list (webhook.site, requestbin, ngrok, Discord / Telegram / Slack webhooks) to check egress logs against when credential theft is suspected, `malware-triage` for static triage of a recovered sample (verdict, defanged indicators, a tested YARA rule).
+Cross-references: `siem-detection` for the rules that produced the alert this triage is responding to, `disk-forensics` for deeper disk and memory analysis once a host is contained, `breach-patterns` for the post-incident pattern extraction that hardens against recurrence, `soc-operations` for the operational layer above this skill (runbooks, escalation, handoff), `security-comms` for the stakeholder / customer notifications the response generates, `privacy-engineering` / `hipaa-audit` / `pci-audit` for the regulatory-clock determination when personal data, PHI, or cardholder data is involved, `ai-risk-management` for AI-specific incident classes (model failure, fairness drift, jailbreak exploitation in production), `agent-supply-chain-audit` when the suspected entry point is an AI coding-agent extension (a skill, plugin, hook or MCP server), `log-watch` for the scheduled log review that often raises the first alert on small teams, `secrets-audit` for its exfiltration-collector domain list (webhook.site, requestbin, ngrok, Discord / Telegram / Slack webhooks) to check egress logs against when credential theft is suspected, and for the vendor-held secrets inventory when a platform you use reports a breach, `malware-triage` for static triage of a recovered sample (verdict, defanged indicators, a tested YARA rule), and `cicd-security` for what a stolen GitHub credential could reach in CI.
 
 ## Authorization
 
@@ -44,7 +44,16 @@ Determine incident type:
 - **Denial of service**
 - **Web compromise:** defacement, skimming, backdoor
 - **Phishing / social engineering**
-- **Dev-tool compromise:** a malicious IDE extension, MCP server, npm `postinstall`, skill or plugin on a developer machine. It has its own playbook (scope, contain before cleaning, IOC sweep for SSH keys, reverse tunnels and vendor-named persistence, fleet scope) and a dated IOC list for the October 2026 malicious Claude Code extension in Cursor's marketplace: [references/dev-tool-compromise.md](references/dev-tool-compromise.md)
+- **Dev-tool compromise:** a malicious IDE extension, MCP server, npm `postinstall`, skill or plugin on a developer machine, or a stolen GitHub credential used to push a CI secret stealer. It has its own playbook (scope, contain before cleaning, IOC sweep for SSH keys, reverse tunnels and vendor-named persistence, fleet scope, and committed agent config plus AI-named tokens in every repo the identity could push to) and dated IOC lists for the October 2026 malicious Claude Code extension in Cursor's marketplace and for the November 2026 wfx CI-token campaign: [references/dev-tool-compromise.md](references/dev-tool-compromise.md). What that token could have reached in CI, before you rotate, is `cicd-security` (`compromised-writer`). After a developer machine or token is compromised, check those repos for new agent config before anyone reopens them in an agent.
+- **Vendor breach:** a SaaS or platform you use says an attacker reached its systems. Your own code and machines may be fine. Inventory what you handed that vendor, rotate at the issuer, and check the issuer's logs: [references/vendor-breach-notice.md](references/vendor-breach-notice.md). If the vendor's script runs on your pages (tag manager, A/B testing, analytics), you also served its code to your visitors: see that file's script-vendor section
+
+**When a coding agent ran it.** If the parent is `claude`, `Cursor Helper`, `codex`, or the ChatGPT app, do not close the alert because that parent is vendor-signed. Judge the child. The hunts are `threat-hunting` AP1–AP5.
+
+- Pull the session transcript (`~/.claude/projects/*/`, Codex session logs, the Cursor transcript). Decide whether a human typed the prompt. It may instead have come from a planted instruction file or an untrusted launch directory (`agent-supply-chain-audit`, issue #234), a hook or MCP result a desktop app added (issue #253), or a remote-control or browser session (issue #254). `prompt-injection` is the audit for that class of input.
+- Rotate what the session could read: keychain items it touched, `.env` files in the project, OAuth tokens for MCP servers. Revoke sessions before issuing new keys.
+- Then run the persistence checks in [references/dev-tool-compromise.md](references/dev-tool-compromise.md) (issue #223): reverse tunnels, LaunchAgents, `authorized_keys`.
+
+Elastic is explicit that some of this has two readings (a developer exposing their own dashboard, or an intrusion). Keep the alert loud and write both readings down.
 
 Determine severity:
 - **Critical:** active data exfiltration, ransomware spreading, critical system compromise
@@ -231,12 +240,15 @@ Triage ends when the incident is contained and scoped. Record, for the next owne
 ## References
 
 - [NIST SP 800-61 Rev. 3](https://csrc.nist.gov/pubs/sp/800/61/r3/final) (April 2025): Incident Response Recommendations and Considerations for Cybersecurity Risk Management — a CSF 2.0 Community Profile; supersedes Rev. 2 (2012)
+- Vendor-breach notice (a SaaS you use was breached): [references/vendor-breach-notice.md](references/vendor-breach-notice.md)
 - NIST Cybersecurity Framework 2.0 (Respond and Recover Functions)
 - SANS Incident Handler's Handbook
 - MITRE ATT&CK Framework
+- [Elastic Security Labs, "Living off the coding agent"](https://www.elastic.co/security-labs/threat-command/coding-agent-launchagent-tunnel-detection) (2026-08-07) — do not close on a vendor-signed coding-agent parent
 
 ## Reference files
 
 This skill links to supporting files under `references/`. They are not inlined in this adapter; open them on GitHub (or in `skills/incident-triage/references/` if you have the repo checked out):
 
 - [references/dev-tool-compromise.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/incident-triage/references/dev-tool-compromise.md)
+- [references/vendor-breach-notice.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/incident-triage/references/vendor-breach-notice.md)

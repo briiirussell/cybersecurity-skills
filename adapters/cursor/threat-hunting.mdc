@@ -1,5 +1,5 @@
 ---
-description: "Conduct proactive, hypothesis-driven threat hunts — search SIEM / EDR / logs for adversaries who haven't tripped an alert yet. ATT&CK-driven, hypothesis-based methodology. Use when the user mentions 'threat hunting,' 'proactive hunt,' 'TaHiTI,' 'PEAK framework,' 'MITRE ATT&CK hunt,' 'hypothesis-driven hunt,' 'hunt hypothesis,' 'living off the land,' 'LOLBins,' 'beaconing,' 'lateral movement detection,' 'data staging,' 'persistence hunting,' or wants to find threats that have evaded existing detections."
+description: "Conduct proactive, hypothesis-driven threat hunts — search SIEM / EDR / logs for adversaries who haven't tripped an alert yet. ATT&CK-driven, hypothesis-based methodology. Use when the user mentions 'threat hunting,' 'proactive hunt,' 'TaHiTI,' 'PEAK framework,' 'MITRE ATT&CK hunt,' 'hypothesis-driven hunt,' 'hunt hypothesis,' 'living off the land,' 'LOLBins,' 'beaconing,' 'lateral movement detection,' 'data staging,' 'persistence hunting,' 'agent-parented hunt,' 'coding agent parent process,' 'AccessDenied burst,' 'agent-speed cloud hunt,' or wants to find threats that have evaded existing detections."
 globs:
 alwaysApply: false
 ---
@@ -121,6 +121,24 @@ The patterns malicious IDE extensions, MCP servers and packages use, so the hunt
 - **Reverse tunnels** — `ssh -R` or `autossh` processes; `StrictHostKeyChecking=no` with `UserKnownHostsFile=/dev/null` in any command line
 - **Remote Login / OpenSSH Server turned on** without a ticket — macOS `systemsetup -getremotelogin`, Windows `OpenSSH.Server` capability
 - **Recently changed `extension.js`** in IDE extension folders whose first bytes aren't the bundler's banner
+- **Tampered installer** — Homebrew's git remote is not the Homebrew/brew repository, a tap the developer does not recognize, or an agent CLI whose install URL came from a search result (`agent-supply-chain-audit` IN1–IN2)
+- **Interview homework on a work machine** — a repository from a recruiter or interviewer, cloned or unpacked in the last 90 days. Endpoint protection staying quiet is not a clean result (`incident-triage` dev-tool compromise)
+
+### Agent-parented high-severity outcomes
+
+The agent binary is vendor-signed, so a parent of `claude`, `Cursor Helper`, `codex`, or the ChatGPT app looks normal and alerts on its children get closed. Judge the agent by what it launches. Read-only. These IDs are ancestry hunts. They are not the checks for what was loaded into the agent (`agent-supply-chain-audit`). No CVE: once someone held a session, the agents did what they were built to do. Elastic Security Threat Command (November 2026) and the August 2026 Security Labs note are the sources. Some of this has two readings — a developer exposing their own local dashboard, or an intrusion. Keep the hit and write both readings down.
+
+| ID | Hunt | What to look for | Finding |
+|---|---|---|---|
+| AP1 | Credential store under an agent | Ancestry includes `claude`, `Cursor Helper`, `codex`, or `ChatGPT`, and the child runs `security dump-keychain`, `security find-generic-password -w` for any item other than the agent's own, or reads browser `Login Data` / `Cookies` | High. Allow-list exactly Claude Code's own `"Claude Code-credentials"` keychain item. That read is documented normal behavior |
+| AP2 | Free reverse tunnel under an agent | A child named `cloudflared` or `ngrok`, `ssh -R` toward localhost.run, or a connection to `*.trycloudflare.com`, `*.lhr.life`, or `*.ngrok-free.app` | High together with AP3 or with credentials on the command line. Otherwise needs validation (dual-use) |
+| AP3 | Persistence written under an agent | A new or modified file in `~/Library/LaunchAgents/`, `launchctl bootstrap` or `load`, a `PlistBuddy` edit, a write to `~/.zshenv` or `~/.zshrc`, or a new `authorized_keys` entry, with agent ancestry | High |
+| AP4 | Quarantine stripped, then ad-hoc signed | `xattr -d com.apple.quarantine`, or `codesign -s -` on a freshly downloaded binary, under agent ancestry | High |
+| AP5 | Permission-bypass session | The agent was started with `--dangerously-skip-permissions` or `--allow-dangerously-skip-permissions` (Claude Code), or another agent's full-auto mode, on a machine that holds production credentials | Medium alone. Raises a confirmed AP1–AP4 on that same session by one level |
+
+Search process telemetry for those commands. Do not run `security dump-keychain` to see what it returns.
+
+Without an EDR, on macOS: `log show --predicate 'process == "launchd"' --last 7d` and `ls -lt ~/Library/LaunchAgents`, then the agent's transcripts (`~/.claude/projects/*/`, Codex session logs) for which prompt produced the command. Linux: the same ancestry test against user systemd units, cron, and `authorized_keys`. Windows: `claude.exe` parenting PowerShell, or `curl.exe --socks5-hostname` to port 1080. Response is `incident-triage` (when a coding agent ran it). A rule that should keep firing belongs in `siem-detection`.
 
 ### Defense evasion
 
@@ -143,7 +161,7 @@ The patterns malicious IDE extensions, MCP servers and packages use, so the hunt
 - **`net group "Domain Admins"`** or equivalent enumeration commands
 - **AD service ticket requests for high-value SPNs** (Kerberoasting prep) — EventCode 4769 with RC4 encryption
 - **`whoami /all`, `quser`, `nltest /domain_trusts`** — situational awareness commands run by service accounts (humans rarely run these)
-- **Cloud API listing — `ListBuckets`, `ListUsers`, `DescribeInstances` from unusual principals**
+- **Cloud API listing — `ListBuckets`, `ListUsers`, `DescribeInstances` from unusual principals.** A single odd call is the weak form of this. Hunt the burst in [Agent-speed cloud intrusions](#agent-speed-cloud-intrusions-aws)
 
 ### Lateral movement
 
@@ -167,6 +185,24 @@ The patterns malicious IDE extensions, MCP servers and packages use, so the hunt
 - **IMDS access from unusual processes / containers** — anything reaching `169.254.169.254` that isn't the cloud SDK
 - **CloudTrail / Audit Log tampering attempts** — `StopLogging`, `DeleteTrail`, log-bucket access from non-logging principals
 - **Cross-region resource creation by single principal in short window** — pivot or coin-mining setup
+
+### Agent-speed cloud intrusions (AWS)
+
+Hunt the burst as one unit. A valid identity that issues hundreds of `List` / `Get` / `Describe` calls across unrelated services in about half an hour, mostly `AccessDenied` or `UnauthorizedOperation`, is the shape Arctic Wolf (AntiFox) and Datadog (ARTEX) published in November 2026. There is no CVE: the calls used stolen credentials, and AWS said its services operated as designed. Do not close the hunt because most requests were denied. List only the successful calls in that window. Those are the findings.
+
+- **Denial burst with embedded successes.** One identity or source IP, many `AccessDenied` / `UnauthorizedOperation` results across 5 or more unrelated services in under an hour. Then list only the successes in that window.
+- **One source, many identities.** One source IP using several access keys, IAM users, or assumed roles in a short window (a harvested set under test).
+- **Secret pairs.** `ListSecrets` then `GetSecretValue`, and `DescribeParameters` then `GetParameter` / `GetParameters` with decryption, from an identity or ASN not seen before for that principal.
+- **Storage pairs.** `GetCallerIdentity` then `ListBuckets` then `ListObjects` / `ListObjectVersions` then `HeadObject` / `GetObject`, then `CopyObject` / `DeleteObject`. Object reads need S3 data events on the sensitive buckets. Most small accounts do not have those on. If the trail cannot show object reads, say so; do not report "no storage access."
+- **Instance-role credentials used off-AWS.** An EC2 role session whose name is `i-*`, calling APIs from a non-AWS source IP.
+- **Log mining for secrets.** A burst of CloudWatch `FilterLogEvents`. Datadog saw a constant `limit` of 1000 and search terms such as `AKIA`, `password`, `mongo`, `s3://`, and `presigned`.
+- **Anonymous S3 probing first.** Reads whose `userIdentity.accountId` is `anonymous`, including a request for a placeholder object (`zzz_nonexistent_abc.txt`, `Notexist-xyz`) immediately before a burst of guesses.
+- **Public Cognito pools.** A burst of `SignUp` / `PreSignUp` trigger failures, then `CognitoIdentityCredentials` sessions trying `ListBuckets`, `ListSecrets`, `ListFunctions`, `DescribeLogGroups`.
+- **Scripting SDK from a new hosting ASN.** A Boto3/Botocore or curl user agent from a hosting provider never seen for that identity raises confidence. User agents are trivial to change. Never use one alone.
+
+**Web foothold to cloud.** When you find a web shell or an app compromise, pull the app's credentials (config files, env vars, SDK profiles, Secrets Manager references) and hunt each one in CloudTrail from the compromise time forward. Arctic Wolf saw cloud activity begin soon after config discovery.
+
+Dated indicators, and the remediation that already lives in `cloud-audit`, `iam-audit`, and `incident-triage`: [references/agent-speed-aws.md](references/agent-speed-aws.md). A small team without a SIEM pages a narrower form of the denial burst and the secret read with `log-watch` (D11).
 
 ### Identity-provider-specific
 
@@ -239,3 +275,13 @@ The patterns malicious IDE extensions, MCP servers and packages use, so the hunt
 - David Bianco's "Pyramid of Pain" — IOC value hierarchy
 - SANS FOR508 / FOR578 course materials
 - Velociraptor community hunt content
+- [Elastic Security Labs, "Living off the coding agent"](https://www.elastic.co/security-labs/threat-command/coding-agent-launchagent-tunnel-detection) (2026-08-07) — tunnels, LaunchAgents, and the two-readings caveat
+- [Elastic Threat Command report, November 2026](https://www.elastic.co/pdf/elastic-threats-etc-elastic-security-threat-command-nov-2026.pdf) — Claude Code on Windows, ChatGPT desktop keychain dump, coding-agent cases on macOS
+- [Arctic Wolf Labs, AntiFox alert pack](https://github.com/rtkwlf/wolf-tools/tree/main/pack_alerts/202611-antifox-alibaba-hosted-platforms-facilitate-web-cloud-intrusions) (2026-11-10) — burst shape and embedded successes
+- [Datadog Security Labs, "On the hunt for ARTEX"](https://securitylabs.datadoghq.com/articles/artex-agentic-attacks-aws-environments/) (2026-11-09) — anonymous S3 reads, `FilterLogEvents`, Cognito, perishable IOCs in [references/agent-speed-aws.md](references/agent-speed-aws.md)
+
+## Reference files
+
+This skill links to supporting files under `references/`. They are not inlined in this adapter; open them on GitHub (or in `skills/threat-hunting/references/` if you have the repo checked out):
+
+- [references/agent-speed-aws.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/threat-hunting/references/agent-speed-aws.md)

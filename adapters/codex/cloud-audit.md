@@ -1,6 +1,6 @@
 # cloud-audit
 
-> Audit cloud infrastructure (AWS, GCP, Azure) and PaaS deployment platforms (Vercel, Netlify, Heroku, Render, Railway, Fly) for misconfigurations, excessive permissions, stale or manual production deploys, and security gaps. Use when the user mentions 'cloud security,' 'cloud audit,' 'AWS security,' 'GCP security,' 'Azure security,' 'IAM audit,' 'S3 bucket,' 'cloud misconfiguration,' 'cloud hardening,' 'Vercel security,' 'Heroku audit,' 'Render audit,' 'PaaS security,' 'is production built from main,' 'old vercel.app still live,' 'preview deployments exposed,' 'Supabase RLS,' or needs to review cloud or deployment-platform security.
+> Audit cloud infrastructure (AWS, GCP, Azure) and PaaS deployment platforms (Vercel, Netlify, Heroku, Render, Railway, Fly) for misconfigurations, excessive permissions, stale or manual production deploys, and security gaps. Use when the user mentions 'cloud security,' 'cloud audit,' 'AWS security,' 'GCP security,' 'Azure security,' 'IAM audit,' 'S3 bucket,' 'cloud misconfiguration,' 'cloud hardening,' 'Vercel security,' 'Heroku audit,' 'Render audit,' 'PaaS security,' 'is production built from main,' 'old vercel.app still live,' 'preview deployments exposed,' 'Supabase RLS,' 'Postgres on 0.0.0.0,' 'Redis exposed on a VPS,' 'Tailscale ACL,' 'private overlay ACL,' or needs to review cloud or deployment-platform security.
 
 # Cloud Audit — Cloud Infrastructure Security Review
 
@@ -59,6 +59,27 @@ Check for:
 - Databases in public subnets
 - Missing network segmentation between tiers
 
+### Databases
+
+**DB6 — How admins reach the port is the path, not the privilege model.** Do not open `5432`, `6379`, `3306`, or `27017` to the internet. Reach them over an SSH tunnel or a private network (a VPC, Tailscale, or WireGuard). A leaked `DATABASE_URL` or `REDIS_URL` still works from every node that can join a default-open overlay: a laptop, a CI runner, a teammate's phone. Public `0.0.0.0/0` on these ports is also caught under Network Security above. This check does not replace a public-ingress or spend-cap review.
+
+**DB7 — A private overlay is not least privilege.** If Postgres, Redis, or a similar store is reachable over Tailscale or another overlay or VPC, read the ACL or grants policy. For Tailscale that is the policy file or the admin ACL editor. For a VPC it is the security group or network policy. Default-deny, then allow only the service identity and named admin users or devices to that port. A source of `*` or `autogroup:member` to `tag:db:*` or `*://*:5432` is not least privilege.
+
+On a tailnet the owner authorized:
+
+```bash
+tailscale status
+# Policy lives in the admin console or a Git-synced policy file (ACLs / grants).
+# Look for overly broad destinations to :5432, :6379, :3306, :27017.
+```
+
+| Result | What to record |
+|---|---|
+| Overlay-reachable database, default-open or overly broad ACL | Finding. Medium. High if a leaked `DATABASE_URL` would work from any node on the overlay |
+| Policy allows only the service identity and named admins | A note, not a finding |
+
+Tailscale ACLs are deny-by-default once a policy is specified ([ACL docs](https://tailscale.com/kb/1018/acls)). Until a policy is set, the stock policy allows every member to reach every port. [Grants](https://tailscale.com/kb/1324/grants) are the identity-aware form of the same control: name who can talk to which port. Read the policy that is actually in force. Save the redacted policy next to the other evidence files, and fingerprint the finding as `broad-overlay-acl`.
+
 ### Storage
 
 **AWS S3:**
@@ -93,6 +114,12 @@ Check for: public buckets, missing encryption, no versioning, no lifecycle polic
 - Hardcoded secrets in source code, environment variables, or IaC files
 - Secrets Manager / Key Vault usage for sensitive values
 - KMS key rotation configured
+
+### Self-hosted VPS (databases and caches)
+
+Security groups and public subnets are the cloud case, above. A VPS or a compose file can still publish Postgres, MySQL, MongoDB, or Redis on every interface, and Docker's published ports skip the host firewall. DB1–DB4 and DB6, the repo greps, and the host commands are in [references/self-hosted-vps.md](references/self-hosted-vps.md). Managed Postgres allowlists (DB5, Supabase and Neon) are in [references/paas.md](references/paas.md#managed-postgres-allowlists).
+
+Run those host commands only on a machine the owner authorized. Never print a database or cache URL. "ufw is on" does not show that a published container port is closed.
 
 ### PaaS (Vercel / Netlify / Heroku / Render / Railway / Fly)
 
@@ -219,7 +246,7 @@ cloud-audit/manual-prod-deploy/vercel/acme-team/acme-web
 cloud-audit/iam-wildcard/infra/iam.tf/aws_iam_policy.deploy
 ```
 
-Classes in use: `public-bucket`, `open-ingress`, `public-database`, `iam-wildcard`, `root-no-mfa`, `stale-access-key`, `imdsv1`, `logging-disabled`, `manual-prod-deploy`, `git-deploy-broken`, `legacy-project`, `duplicate-project`, `preview-exposure`, `review-app-live-keys`, `rls-disabled`, `repo-security-defaults`. Add a new one when none fits.
+Classes in use: `public-bucket`, `open-ingress`, `public-database`, `broad-overlay-acl`, `iam-wildcard`, `root-no-mfa`, `stale-access-key`, `imdsv1`, `logging-disabled`, `manual-prod-deploy`, `git-deploy-broken`, `legacy-project`, `duplicate-project`, `preview-exposure`, `review-app-live-keys`, `rls-disabled`, `repo-security-defaults`. Add a new one when none fits.
 
 **6. Domain fields go under `ext`:**
 
@@ -278,7 +305,7 @@ Write `findings.json` first. The report is rendered from it and never changes a 
 ### Coverage
 | Category | Accounts / teams checked | Not checked (and why) |
 |---|---|---|
-| IAM / Network / Storage / Compute / Logging / Secrets / PaaS / Supabase / Repo defaults | | |
+| IAM / Network / Storage / Compute / Logging / Secrets / PaaS / Supabase / VPS databases / Repo defaults | | |
 
 ### PaaS deployment inventory
 | Team | Project / app | Repo + production branch | Source of live deploy (git / cli) | Deployed sha = branch HEAD? | Domains |
@@ -311,8 +338,10 @@ Write `findings.json` first. The report is rendered from it and never changes a 
 - [Heroku CLI commands](https://devcenter.heroku.com/articles/heroku-cli-commands); [Render API](https://api-docs.render.com/)
 - [GitHub REST — vulnerability alerts](https://docs.github.com/en/rest/repos/repos#check-if-vulnerability-alerts-are-enabled-for-a-repository)
 - [Supabase database advisors](https://supabase.com/docs/guides/database/database-advisors)
+- [Tailscale ACLs](https://tailscale.com/kb/1018/acls) and [grants](https://tailscale.com/kb/1324/grants) — DB7. An overlay is the path; the ACL is the control
 - Shared references (copied into `references/` at build time): [findings-format.md](references/findings-format.md), [findings.schema.json](references/findings.schema.json), [validate-findings.mjs](references/validate-findings.mjs), [to-sarif.mjs](references/to-sarif.mjs), [severity-calibration.md](references/severity-calibration.md), [verification.md](references/verification.md)
 - Per-platform PaaS commands: [references/paas.md](references/paas.md)
+- Self-hosted VPS databases and caches: [references/self-hosted-vps.md](references/self-hosted-vps.md)
 
 ## Reference files
 
@@ -321,6 +350,7 @@ This skill links to supporting files under `references/`. They are not inlined i
 - [references/findings-format.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/cloud-audit/references/findings-format.md)
 - [references/findings.schema.json](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/cloud-audit/references/findings.schema.json)
 - [references/paas.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/cloud-audit/references/paas.md)
+- [references/self-hosted-vps.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/cloud-audit/references/self-hosted-vps.md)
 - [references/severity-calibration.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/cloud-audit/references/severity-calibration.md)
 - [references/to-sarif.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/cloud-audit/references/to-sarif.mjs)
 - [references/validate-findings.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/cloud-audit/references/validate-findings.mjs)

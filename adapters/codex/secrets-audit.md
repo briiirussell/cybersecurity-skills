@@ -1,6 +1,6 @@
 # secrets-audit
 
-> Find leaked secrets in source code, Git history, build artifacts, and infrastructure — and audit the secrets-management posture preventing future leaks. Use when the user mentions 'secrets audit,' 'secret scanning,' 'leaked credentials,' 'API key in code,' 'gitleaks,' 'trufflehog,' 'betterleaks,' 'git history scan,' 'secrets management,' 'vault audit,' 'rotation policy,' 'AWS Secrets Manager,' 'HashiCorp Vault,' 'Doppler,' '1Password Secrets Automation,' 'sealed-secrets,' 'External Secrets Operator,' 'secrets in MCP config,' 'API key in Claude transcript,' 'is this key public,' or needs to find or prevent credential exposure.
+> Find leaked secrets in source code, Git history, build artifacts, and infrastructure — and audit the secrets-management posture preventing future leaks. Use when the user mentions 'secrets audit,' 'secret scanning,' 'leaked credentials,' 'API key in code,' 'gitleaks,' 'trufflehog,' 'betterleaks,' 'git history scan,' 'secrets management,' 'vault audit,' 'rotation policy,' 'AWS Secrets Manager,' 'HashiCorp Vault,' 'Doppler,' '1Password Secrets Automation,' 'sealed-secrets,' 'External Secrets Operator,' 'secrets in MCP config,' 'API key in Claude transcript,' 'is this key public,' 'hard spend cap,' 'OpenRouter key limit,' 'vendor-held secrets,' 'secrets a vendor stores,' 'which secrets did we give that vendor,' 'allow rule,' 'settings.local.json,' 'AI subprocessor,' 'agent traces,' 'credentials sent to support,' 'what zero-data-retention does not cover,' or needs to find or prevent credential exposure.
 
 # Secrets Audit — Credential Exposure and Secrets-Management Review
 
@@ -8,7 +8,7 @@ Two halves: (1) find secrets that have already leaked into source, history, or a
 
 Most secret leaks aren't "we forgot to redact" — they're "we never had a system, so every developer made up their own approach." This skill covers both the cleanup and the prevention.
 
-Cross-references: `dependency-audit` (CI-related secrets risk in build-time exposure), `iam-audit` (workload identity federation as the alternative to long-lived keys), `owasp-audit` A04:2025 Cryptographic Failures (hard-coded secrets found during an app review), `agent-supply-chain-audit` (the skills, hooks, and MCP servers that sit next to these agent configs and can read them), `incident-triage` and `threat-hunting` (the exfiltration-collector domains below as egress indicators), `scanner-pipeline` (gitleaks / trufflehog across full history and a whole fleet of repos, on a schedule), `personal-opsec` (the operator's own machine, where agent tokens and pasted secrets actually live), `cicd-security` (which workflows and forks can reach CI secrets).
+Cross-references: `dependency-audit` (CI-related secrets risk in build-time exposure), `iam-audit` (workload identity federation as the alternative to long-lived keys), `owasp-audit` A04:2025 Cryptographic Failures (hard-coded secrets found during an app review), `agent-supply-chain-audit` (the skills, hooks, and MCP servers that sit next to these agent configs and can read them), `incident-triage` (its vendor-breach playbook, and the exfiltration-collector domains below as egress indicators) and `threat-hunting` (sweep for those domains), `scanner-pipeline` (gitleaks / trufflehog across full history and a whole fleet of repos, on a schedule), `personal-opsec` (the operator's own machine, where agent tokens and pasted secrets actually live), `cicd-security` (which workflows and forks can reach CI secrets).
 
 ## Authorization
 
@@ -152,7 +152,7 @@ up in plaintext files that are rarely gitignored deliberately and are often sync
 | `.mcp.json`, `~/.claude.json` (user and per-project `mcpServers`) | `env` and `headers` blocks with literal tokens |
 | `.cursor/mcp.json`, `~/.cursor/mcp.json`, `.vscode/mcp.json` | Same, for Cursor and VS Code / Copilot |
 | `~/Library/Application Support/Claude/claude_desktop_config.json` (Windows `%APPDATA%\Claude\`) | Claude Desktop MCP `env` blocks |
-| `.claude/settings.json`, `.claude/settings.local.json`, `~/.claude/settings.json` | `env` blocks; `apiKeyHelper` / `awsCredentialExport` commands that print a credential (and run a shell command — see `agent-supply-chain-audit`) |
+| `.claude/settings.json`, `.claude/settings.local.json`, `~/.claude/settings.json` | `env` blocks; `apiKeyHelper` / `awsCredentialExport` commands that print a credential (and run a shell command — see `agent-supply-chain-audit`); `permissions.allow` rules saved when someone picks "Yes, and don't ask again" |
 | `~/.codex/config.toml`, `~/.codex/auth.json` | `[mcp_servers.<name>.env]` tables; the Codex login / API key |
 | `~/.gemini/settings.json`, `.gemini/settings.json`, `.gemini/.env`, `~/.gemini/.env` | `mcpServers` `env`; Gemini API keys |
 | `~/.claude/projects/**/*.jsonl` (plus `~/.claude/history.jsonl`, shell snapshots, file history where present) | Session transcripts: every pasted key, every `cat .env`, every secret a tool printed |
@@ -169,6 +169,14 @@ rg -n '\[mcp_servers\.[^]]+\.env\]|^\s*env\s*=\s*\{' ~/.codex/config.toml   # th
 # Agent settings: env blocks and credential helpers
 rg -n '"(env|apiKeyHelper|awsCredentialExport|awsAuthRefresh|otelHeadersHelper)"\s*:' \
   .claude/settings.json .claude/settings.local.json ~/.claude/settings.json
+# Allow rules that carry an inline credential. Counts only — a match line would copy the secret into this session.
+rg -c -e 'Bash\([^)]*(://[^:/@ ]+:[^@ ]+@|Bearer |sk_live_|rk_live_|sk-ant-|ghp_|github_pat_|AKIA[A-Z0-9]{16}|PGPASSWORD=|--password[= ]|-p[^ ]{6,})' \
+  .claude/settings.local.json .claude/settings.json ~/.claude/settings.json 2>/dev/null
+# Tracked in this repo, or only ignored on this machine?
+git ls-files --error-unmatch .claude/settings.local.json 2>/dev/null && echo "TRACKED"
+git check-ignore -v .claude/settings.local.json
+grep -n 'settings.local.json' .gitignore || echo "not in project .gitignore"
+git log --all --oneline -- .claude/settings.local.json | head
 # Transcripts and logs: counts per file only — printing a match copies it into this session's transcript
 rg -c -e 'sk-ant-' -e 'sk_live_' -e 'rk_live_' -e 'ghp_' -e 'github_pat_' -e 'AKIA[A-Z0-9]{16}' -e 'xox[baprs]-' \
   -e 'AIza[A-Za-z0-9_-]{35}' -e '-----BEGIN [A-Z ]*PRIVATE KEY' -e 'service_role' \
@@ -181,6 +189,10 @@ git ls-files | rg '(^|/)(\.mcp\.json|mcp\.json|mcp_config\.json|settings\.local\
 
 For a key found in a transcript: rotate it (the transcript is a copy you can't recall from backups), then delete or scrub
 the session file. Shorten retention where the agent supports it (Claude Code `cleanupPeriodDays`).
+
+**Allow rules.** Claude Code writes the exact command into `.claude/settings.local.json` when someone picks "Yes, and don't ask again" ([permissions](https://code.claude.com/docs/en/permissions)). A password, token, or connection string typed in that command is then stored in `permissions.allow`. The file is not reliably ignored: Claude Code adds it to the user's global git excludes on one machine, not to the project's `.gitignore`, and a copy that is already tracked stays tracked. A teammate, a fresh clone, or a dotfiles sync can commit it. Generic scanners miss values that are database passwords inside connection strings or command arguments rather than well-known key prefixes. Apiiro reported on 2026-11-05 ([blog](https://apiiro.com/blog/coding-agents-leaking-secrets-github-dont-ask-again), via [The Hacker News](https://thehackernews.com/2026/11/claude-codes-dont-ask-again-file.html)) 104,185 public copies, 1,122 holding at least one secret, and, via [iTWire](https://itwire.com/business-it-news/security/claude-code-approval-files-found-exposing-company-secrets-on-github-says-apirro-researchers), that gitleaks and TruffleHog together missed 215 of those files. Those counts are Apiiro's, not re-counted here. Claude Code issues [#13106](https://github.com/anthropics/claude-code/issues/13106) and [#5544](https://github.com/anthropics/claude-code/issues/5544) were closed without a fix. There is no CVE and no patch, so this is a file to inventory, not a version to bump.
+
+Rate a live credential in a tracked or historically committed `settings.local.json` like any other committed secret ([references/severity-calibration.md](references/severity-calibration.md) section 6). A secret in an untracked copy covered only by a global exclude (`~/.config/git/ignore` or `core.excludesFile`, which `git check-ignore -v` names) is `needs_validation`: whether another clone or sync has the file is the blocker, and the check the owner runs is adding the path to the project `.gitignore`. If a real credential was saved in the file, rotate it, then remove it from the file and from history. The count from the command above is enough. Do not print the matching line into this session.
 
 ### Exfiltration collectors — egress indicators
 
@@ -211,7 +223,7 @@ When you find a leaked secret:
 1. **Identify the key type** — publishable, restricted, or secret, and what it can reach (see "Confirm the key type before rating it")
 2. **Verify it's live** — ask first. If the rule can validate (`betterleaks config show ids --validation`), re-scan the file that holds it with `-v` ([references/betterleaks.md](references/betterleaks.md#commands)). Otherwise use the provider's read-only identity call (`aws sts get-caller-identity`, `stripe balance retrieve`, `curl -H "Authorization: Bearer $TOKEN" ...`). Don't assume; some leaked keys are already revoked or were sandbox-only. `unknown` is not `invalid`: record it as `needs_validation`
 3. **Determine exposure window** — first commit it appeared in, when the repo went public, when CI logs were retained from
-4. **Determine blast radius** — what does this key access? What can be done with it? For rules that support analysis (`config show ids --analysis`), the same re-scan with `-a` returns the identity, account and permissions; copy them into the evidence, redacted. Otherwise check by hand: IAM permissions, Stripe live vs test, GitHub `repo` vs `admin:org`
+4. **Determine blast radius** — what does this key access? What can be done with it? For rules that support analysis (`config show ids --analysis`), the same re-scan with `-a` returns the identity, account and permissions; copy them into the evidence, redacted. Otherwise check by hand: IAM permissions, Stripe live vs test, GitHub `repo` vs `admin:org`. For a pay-per-use API key, also ask whether a hard cap bounds what it can spend, and whether that cap is on this key, project, or non-default workspace rather than the whole organization. The provider table, SC1–SC3, and the OpenRouter check are in [references/spend-caps.md](references/spend-caps.md). Reading a cap uses the key or the owner's dashboard, so ask first, the same rule as step 2
 5. **Rotate immediately** — generate a new key, deploy it, then revoke the old one (revoke-first breaks prod). Then confirm the old key is dead: re-run the `-v` scan where it was found and expect `invalid`. Never use a scanner's `revoke` command; revocation is the owner's step
 6. **Audit for use** — provider audit logs (CloudTrail, GitHub audit log, Stripe events) for any activity from the leaked credential
 7. **Then clean** — remove from current code, then optionally history-rewrite (low priority once rotated). Issues, CI logs, artifacts, gists and image layers are cleaned differently, and some can't be purged ([references/beyond-the-repo.md](references/beyond-the-repo.md#cleaning-up-surfaces-that-arent-git))
@@ -242,7 +254,7 @@ When you find a leaked secret:
 
 - **No secrets in Git history** (run gitleaks --all)
 - **No `.env` committed** — `.gitignore` covers `.env*` (with care for `.env.example`)
-- **Agent configs in `.gitignore`, or `${ENV}` references only** — `.mcp.json`, `.cursor/mcp.json`, `.vscode/mcp.json`, `.claude/settings.local.json`, `.gemini/.env` are either untracked (`git check-ignore -v <file>`) or hold only variable references (`${VAR}` in Claude Code `.mcp.json`, `${env:VAR}` in Cursor, `${input:…}` prompts in VS Code); agent transcript retention is set and transcripts aren't in dotfile repos or unencrypted backups
+- **Agent configs in the project `.gitignore`, or `${ENV}` references only** — `.mcp.json`, `.cursor/mcp.json`, `.vscode/mcp.json`, `.claude/settings.local.json`, `.gemini/.env` are either untracked (`git check-ignore -v <file>`) or hold only variable references (`${VAR}` in Claude Code `.mcp.json`, `${env:VAR}` in Cursor, `${input:…}` prompts in VS Code). `.claude/settings.local.json` has to be in the **project** `.gitignore`. A hit only from `~/.config/git/ignore` or `core.excludesFile` does not protect other clones, and a file that is already tracked is not fixed by adding the ignore. Allow rules are patterns (`Bash(psql:*)`) with the credential in an env var or a secrets manager, never a literal value. If a secret was saved in an allow rule, rotate it, then remove it from the file and from history. Agent transcript retention is set, and transcripts are not in dotfile repos or unencrypted backups
 - **Secrets fetched at runtime, not embedded at build** — image rebuild is not required to rotate
 - **IAM scoped to the secret** — service A can read secret A, not secret B
 - **Rotation cadence** — defined per secret class (admin: 30d, service: 90d, customer-shared: per breach response)
@@ -251,6 +263,41 @@ When you find a leaked secret:
 - **No long-lived cloud keys for workloads** — workload identity federation everywhere it's supported (see `iam-audit`)
 - **Break-glass procedure** — when the secrets manager is down, how do critical services come up? (Usually: cached on disk encrypted, with strict re-fetch on restart)
 - **Cross-environment isolation** — staging cannot read prod secrets, ever (different KMS keys, different IAM)
+- **Vendor-held secrets inventoried** — for each SaaS or platform that stores or proxies a secret, the table in [Vendor-held secrets](#vendor-held-secrets) names the class, the issuer who can rotate it, and whether rotation has been tested
+
+### Vendor-held secrets
+
+A leak is not only a secret in git. A vendor may hold env vars, Git Sync and VCS tokens, integration and OAuth tokens, API keys, cloud roles you trusted to it, MCP servers connected to it, and anything pasted into its chat or agent. When that vendor reports a breach, `incident-triage` runs [the vendor-breach playbook](../incident-triage/references/vendor-breach-notice.md). Fill this table before that happens, so the playbook's inventory step is a lookup. One row per vendor. Names and owners only. Never paste a secret value into the inventory or the report.
+
+| Vendor | Classes held | Who rotates it (the issuer, not the vendor's UI) | Rotation tested? | Last tested |
+|---|---|---|---|---|
+| | | | | |
+
+For any vendor that sends chats or agent transcripts to another company, fill this as well. "ZDR" is not one yes or no. Point each claim at the [AI subprocessor steps](../incident-triage/references/vendor-breach-notice.md#ai-subprocessors-and-zero-data-retention-claims) in the vendor-breach playbook.
+
+| Vendor | AI subprocessor | Feature that re-sends stored chats | Zero-data-retention covers | Zero-data-retention does not cover |
+|---|---|---|---|---|
+| | | | | |
+
+Mark each class yes or no. A blank is not a no.
+
+- Env vars and secrets stored at the vendor
+- Git Sync and VCS tokens
+- Integration and OAuth tokens
+- API keys the vendor stores or proxies
+- Cloud IAM roles or service accounts the vendor can use
+- MCP servers or agents connected to it
+- Anything pasted into its chat or agent features
+- CI and build or task histories, and cached snapshots
+- GitHub App, OAuth, and BYOK tokens, and agent keys
+- AI coding-agent sessions and traces the tool vendor or its subprocessors keep when privacy or zero-retention mode is off. A trace holds whatever the agent read or printed: a `cat .env`, shell output, a pasted token
+- Credentials anyone sent to the vendor's support team, in a ticket or support email
+
+**Rotation tested?** is yes only after that class was rotated and production survived. "No" on a production class is the existing "Rotation never tested" finding. Start the vendor list from the bill, the SSO app list, and MCP configs (server names only). `.env.example` key names show which integrations exist. Do not read `.env` into the session.
+
+Traces and support threads count as vendor-held even when nobody meant to store a key there. In the [Cursor incident](../incident-triage/references/vendor-breach-notice.md#cursor-october-2026-two-hops-from-an-ai-subprocessor), unredacted credentials in agent traces shared with an AI subprocessor, and credentials users had sent to support, were both in scope. Ask each tool which subprocessors receive its traces, not only whether you use those subprocessors directly.
+
+Dashboard env vars are not the whole copy. A build history, a cached snapshot, or a BYOK token can hold the same secret after the variable is gone from the UI. Do not treat renaming a variable as a control: the [Railway RCA](../incident-triage/references/vendor-breach-notice.md#railway-october-2026) matched conventional names such as `OPENAI_API_KEY`. Scope, a short lifetime, a spend cap, and revocation at the issuer are the controls.
 
 ### Common findings
 
@@ -353,6 +400,7 @@ This skill links to supporting files under `references/`. They are not inlined i
 - [references/findings-format.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/secrets-audit/references/findings-format.md)
 - [references/findings.schema.json](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/secrets-audit/references/findings.schema.json)
 - [references/severity-calibration.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/secrets-audit/references/severity-calibration.md)
+- [references/spend-caps.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/secrets-audit/references/spend-caps.md)
 - [references/to-sarif.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/secrets-audit/references/to-sarif.mjs)
 - [references/validate-findings.mjs](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/secrets-audit/references/validate-findings.mjs)
 - [references/verification.md](https://github.com/briiirussell/cybersecurity-skills/blob/main/skills/secrets-audit/references/verification.md)

@@ -1,6 +1,6 @@
 ---
 name: dependency-audit
-description: "Audit project dependencies, frameworks, languages, and dev tools for known vulnerabilities, CVEs, and security anti-patterns. Use when the user mentions 'dependency audit,' 'npm audit,' 'CVE,' 'vulnerable packages,' 'supply chain security,' 'outdated dependencies,' 'known vulnerabilities,' 'security advisory,' 'package security,' 'framework vulnerability,' 'is this package safe,' 'pnpm audit,' 'yarn audit,' 'bundle audit,' 'patch this CVE,' 'audit fix broke,' 'lockfile diff,' 'dependency confusion,' 'registry redirection,' 'MCP server pinning,' 'release pipeline,' or needs to check whether their stack, CI, or release pipeline has known security issues."
+description: "Audit project dependencies, frameworks, languages, and dev tools for known vulnerabilities, CVEs, and security anti-patterns. Use when the user mentions 'dependency audit,' 'npm audit,' 'CVE,' 'vulnerable packages,' 'supply chain security,' 'outdated dependencies,' 'known vulnerabilities,' 'security advisory,' 'package security,' 'framework vulnerability,' 'is this package safe,' 'pnpm audit,' 'yarn audit,' 'bundle audit,' 'patch this CVE,' 'audit fix broke,' 'lockfile diff,' 'dependency confusion,' 'registry redirection,' 'MCP server pinning,' 'lookalike Claude Code package,' 'release pipeline,' or needs to check whether their stack, CI, or release pipeline has known security issues."
 allowed-tools: Read, Grep, Glob, WebSearch, WebFetch, Bash(npm audit), Bash(npm audit --json), Bash(npm audit --omit=dev), Bash(npm audit --omit=dev --json), Bash(npm ls:*), Bash(npm view:*), Bash(npm outdated:*), Bash(pnpm audit --prod), Bash(pnpm audit --prod --json), Bash(pnpm why:*), Bash(yarn audit --groups dependencies --json), Bash(yarn npm audit:*), Bash(yarn why:*), Bash(osv-scanner scan:*), Bash(govulncheck:*), Bash(bundle audit:*), Bash(composer audit:*), Bash(dotnet list package:*), Bash(trivy fs:*), Bash(trivy image:*)
 ---
 
@@ -178,6 +178,8 @@ The framework-specific patterns below cover *evergreen* anti-patterns (mass assi
 - CSRF token bypass in API-only mode
 
 **Express / Node.js:**
+- **undici cache + redirect batch (2026-11-05, fixed 7.30.2 / 8.12.4).** Lockfile or the Node runtime's vendored copy resolves `undici` below that floor: bump it. The high advisory (CVE-2026-116592) is 7.30.1 and 8.12.2–8.12.3, and it needs `redirect()` composed with a shared `cache()` on an originless Agent. Five medium advisories in the same tags cover broader 7.x and 8.x ranges (same-origin credentialed cache, cross-origin revalidation, tuple-header credential stripping, cache-replay denial of service, SRI whitespace), so stock `fetch()` still gets the bump. Re-check for a second copy after the override. Node 24.22.3 and 26.13.1 vendor the patched releases; Node 22's undici 6.x is outside this batch. Not on CISA KEV as of 2026-11-15. Detail: [references/undici-nov-2026.md](references/undici-nov-2026.md).
+- **Better Auth `expo()` proxy (CVE-2026-121802).** Lockfile contains `better-auth` or `@better-auth/expo`: compare it to 1.7.16 (or 1.8.0-beta.5 on the 1.8 beta line) and check whether the server registers `expo()`. Below the floor with `expo()` registered is a critical unauthenticated account takeover (the public proxy signed caller-supplied `state` with the application secret). Below the floor without `expo()` still gets both packages bumped. After the bump, rotate that secret — pre-fix signatures stay valid — and re-check wildcard `trustedOrigins`. Commands and the finding rule: [references/better-auth-expo.md](references/better-auth-expo.md). Not on CISA KEV as of 2026-11-15.
 - Prototype pollution through `Object.assign`, `lodash.merge`, `deep-extend`
 - ReDoS (Regular Expression Denial of Service) in validation patterns
 - Path traversal through `req.params` in file serving routes
@@ -247,12 +249,14 @@ grep -nE '"(-y|--yes)",\s*"(@[a-z0-9._-]+/)?[a-z0-9._-]+(@latest)?"' .mcp.json .
 grep -nE '"(uvx|pipx)"' -A3 .mcp.json .cursor/mcp.json 2>/dev/null | grep -vE '==[0-9]'
 grep -nE '"docker"' -A8 .mcp.json .cursor/mcp.json 2>/dev/null | grep -vE ':[0-9][^"]*"|@sha256:'
 ```
-Pinned looks like `some-mcp-server@1.4.2`, `tool==0.9.1`, `image@sha256:...`. Hand each unpinned or unreviewed extension to `agent-supply-chain-audit` for content review.
+Pinned: `some-mcp-server@1.4.2`, `tool==0.9.1`, `image@sha256:...`. Hand each unpinned or unreviewed extension to `agent-supply-chain-audit`.
 
 **Shipped bytecode:** `.pyc` files tracked in git or packaged without a matching `.py` can run code nobody reviewed. `git ls-files | grep -E '\.py[co]$|__pycache__/'`, plus the no-matching-source check in [references/source-redirection.md](references/source-redirection.md) §3.
 
+**Python startup hooks and release shape:** see [references/python-startup-hooks.md](references/python-startup-hooks.md) (`.pth`, `sitecustomize.py`, wheel-only or untagged bumps, floor-only ranges, and what to rotate after a bad install).
+
 **Typosquatting:**
-- Package names that are close misspellings of popular packages
+- Close misspellings or lookalike scopes (agent CLIs: source-redirection.md §2)
 - Recently published packages with very few downloads
 - Packages that changed ownership recently
 

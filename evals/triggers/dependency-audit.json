@@ -5,7 +5,12 @@
     "are any of these packages vulnerable?\n```json\n{\"dependencies\": {\"lodash\": \"4.17.15\", \"axios\": \"0.21.0\", \"next\": \"14.0.1\"}}\n```",
     "npm audit fix broke the build, help",
     "which of our outdated dependencies have known vulnerabilities we should upgrade first?",
-    "could we get hit by dependency confusion with our internal package names?"
+    "could we get hit by dependency confusion with our internal package names?",
+    "npm audit says undici 8.12.3 is in the lockfile. Does the cache and redirect CVE apply, and which package version fixes it?",
+    "npm audit shows better-auth and @better-auth/expo under 1.7.16. Is that Expo CVE actually reachable in this lockfile, and which version do we upgrade to?",
+    "is @claudecode/cli the real Claude Code? check package.json for a lookalike Claude Code package",
+    "we had agent-framework>=1.26 in requirements.txt. Did our CI pick up the bad 1.26.1 or 1.26.2 release, and how do I check the venv for a dropped .pth file?",
+    "a dependency bump added a new .pth file to site-packages and the release is wheel-only with no git tag. Is that a supply chain red flag?"
   ],
   "near_miss": [
     {

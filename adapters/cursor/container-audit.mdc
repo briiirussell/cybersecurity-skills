@@ -1,5 +1,5 @@
 ---
-description: "Audit container images, Dockerfiles, and Kubernetes manifests for misconfigurations, excessive privileges, exposed secrets, and runtime risks. Use when the user mentions 'container security,' 'Docker security,' 'Dockerfile audit,' 'Kubernetes security,' 'K8s security,' 'pod security,' 'container hardening,' 'kubectl audit,' 'image scanning,' 'distroless,' 'rootless containers,' 'pod security policy,' 'pod security standards,' 'PSS,' 'network policy,' 'OPA Gatekeeper,' 'Kyverno,' 'runtime security,' or needs to review container or orchestration security."
+description: "Audit container images, Dockerfiles, and Kubernetes manifests for misconfigurations, excessive privileges, exposed secrets, and runtime risks. Use when the user mentions 'container security,' 'Docker security,' 'Dockerfile audit,' 'Kubernetes security,' 'K8s security,' 'pod security,' 'container hardening,' 'kubectl audit,' 'image scanning,' 'distroless,' 'rootless containers,' 'pod security policy,' 'pod security standards,' 'PSS,' 'network policy,' 'OPA Gatekeeper,' 'Kyverno,' 'runtime security,' 'compose publishes 5432,' or needs to review container or orchestration security."
 globs:
 alwaysApply: false
 ---
@@ -105,6 +105,7 @@ Audit only images, registries and clusters the user owns or is authorized to rev
 - Runtime detection — Falco / Tracee / Tetragon catches "shell spawned in a pod that has never opened a shell" patterns
 - Audit logs enabled — kube-apiserver audit log captures `exec`, `attach`, `port-forward` events for incident response
 - `kubectl exec` access tracked — not free for any cluster-admin to silently shell into prod
+- **Compose published ports.** `"5432:5432"` (and the same for `6379`, `3306`, `27017`) publishes that port on every host interface, and Docker's published ports skip the host firewall. Prefer `"127.0.0.1:5432:5432"` or no `ports:` entry. The grep is in Useful one-liners. Listeners on the host are `cloud-audit`
 - **Kernel CVEs are fixed on the host, not in the image.** Every container shares the node's kernel, so rebuilding images doesn't help; hand the host to `patch-sweep` (Linux hosts track) and record the image as "not the fix location". When the bug needs a socket feature, check it per workload: `net.mptcp.enabled` is per network namespace and every new one starts at `1`, so turning it off on the host doesn't reach containers. Per-pod settings, `hostNetwork`, and the Go binary check (Go ≥ 1.24 listens with MPTCP) are in [references/runtime-exposure.md](references/runtime-exposure.md)
 
 ## Useful one-liners
@@ -133,6 +134,9 @@ trivy config --severity HIGH,CRITICAL .
 
 # Cluster posture (kube-bench, run inside the cluster)
 kube-bench run --targets master,node,policies
+
+# Compose files publishing a database or cache port on every interface
+rg -n --glob '*compose*.y*ml' -e '^\s*-\s*"?(0\.0\.0\.0:)?(5432|6379|3306|27017):' .
 ```
 
 ## Verify, then record

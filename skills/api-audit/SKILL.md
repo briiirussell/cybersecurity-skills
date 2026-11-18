@@ -1,6 +1,6 @@
 ---
 name: api-audit
-description: "Audit REST, GraphQL, and RPC APIs against the OWASP API Security Top 10 (2023). Use when the user mentions 'API security,' 'API audit,' 'BOLA,' 'broken object level authorization,' 'BFLA,' 'function-level authorization,' 'mass assignment,' 'API rate limiting,' 'GraphQL security,' 'REST security,' 'API authentication,' 'API authorization,' 'excessive data exposure,' or needs to review API endpoints for security weaknesses."
+description: "Audit REST, GraphQL, and RPC APIs against the OWASP API Security Top 10 (2023). Use when the user mentions 'API security,' 'API audit,' 'BOLA,' 'broken object level authorization,' 'BFLA,' 'function-level authorization,' 'mass assignment,' 'API rate limiting,' 'GraphQL security,' 'REST security,' 'API authentication,' 'API authorization,' 'excessive data exposure,' 'redact the API transcript,' 'structured identities for a BOLA test,' or needs to review API endpoints for security weaknesses."
 allowed-tools: Read, Grep, Glob
 ---
 
@@ -199,6 +199,27 @@ curl -s -D- -o/dev/null https://TEST-HOST/api/orders/$A_ORDER -H "authorization:
 
 Capture both full exchanges (request headers minus secrets, body, status, response). Keep the method, path, query, body and all other headers identical between the two. For GraphQL, keep the operation string and variables byte-identical and change only the token (see [references/graphql.md](references/graphql.md)).
 
+### Supplying test credentials
+
+This is about how credentials reach the test, not whether the pair is needed. The paired-evidence rule above still applies. The same rule is in `web-pentest`.
+
+1. **Keep live secrets out of the model prompt.** Do not put a test-account password, session cookie, or API key in the prompt, a chat message, or an instruction file the agent or this skill reads. Instruction text becomes prompt text, and prompt text gets logged and quoted back.
+2. **Give the model structured identities.** It sees `identity-A` (owner) and `identity-B` (non-owner), each with its role and tenant, and markers like `<identity-A-cookie>`. Code or the operator's tooling logs each identity in and attaches its credential to the request, from an env var, a secret store, or a proxy session.
+3. **Keep secrets out of files the target can read.** A sandbox or workspace that runs target code can be read by that code. Do not stage credentials there.
+4. If a live credential reaches the prompt anyway, tell the operator and treat it as exposed. Rotate it after the test.
+
+The pitfall is from Strix's instructions docs ([usestrix/strix@1152d53](https://github.com/usestrix/strix/blob/1152d53579d5b3af37ada8c798f197ab093b99c6/docs/usage/instructions.mdx), Apache-2.0). They say instructions become part of the prompt, and warn not to place secrets in a workspace file because the sandbox runs untrusted target code. Checked 2026-11-18. HoneyWarden #82 (linked below) is the pattern to prefer, not a required runtime.
+
+### Transcripts a model will read
+
+The paired owner-vs-non-owner rule above does not change. When a model will see the exchange — combined mode, a PoC writeup, or a review of a Burp, ZAP, or HAR export — the transcript itself is a secret until you redact it.
+
+1. **Redact before the model sees it.** Replace `Cookie`, `Authorization`, `Set-Cookie`, JWTs, and common secret fields in bodies and query strings. A shortened live value is still a secret. Use a marker, not a prefix or a last-4 of a JWT.
+2. **Keep stable identity markers**, such as `<identity-A-cookie>` and `<identity-B-cookie>` (and the same pair for bearer tokens). The model can still tell which principal a request used, and can still require the pair above, without seeing the secret.
+3. **Swap identities outside the model.** The model may name which captured request to replay as the other user. Replacing the stored A credential with the stored B credential is a deterministic step for the human or the tooling. The model does not invent a third cookie and does not paste a live JWT.
+
+HoneyWarden tracks the product-side version of this as [honeywarden#82](https://github.com/coreyhaines31/honeywarden/issues/82). That issue is an analogue, not a dependency. Do not copy unlicensed tooling, and do not treat any product's hit rate as measured here.
+
 ## Verify Every Finding (refutation pass — before the report)
 
 Every candidate goes through a per-finding refutation pass before it can be reported. Run it as a subagent where the platform supports it; otherwise run it as a separate step that does **not** look at the original discovery reasoning. The verifier is told: *you did not write this — try to refute it.* It re-reads every cited `file:line`, names the strongest control that actually runs on the path, and returns one verdict. Full procedure and the verifier prompt: [references/verification.md](references/verification.md). Apply its fixed exclusion rules (test, generated, vendored, docs) first; in Claude Code, dispatch the plugin's read-only `finding-verifier` subagent once per candidate.
@@ -291,4 +312,4 @@ Dispositions on a confirmed finding (what happens to it): `Fixed` | `Deferred` |
 - OWASP API Security Top 10 (2023); OWASP Cheat Sheets: REST Security, GraphQL Security
 - CWE-639 (Authorization Bypass Through User-Controlled Key), CWE-915 (Improperly Controlled Modification of Dynamically-Determined Object Attributes)
 - Verdicts, coverage, severity and findings format: the shared references linked above (`verification.md`, `recon-and-coverage.md`, `diff-review.md`, `severity-calibration.md`, `findings-format.md`).
-- GraphQL and paired-evidence technique notes paraphrase **Strix** (Apache-2.0); diff-mode and combined-mode concepts likewise. Not copied verbatim. See [references/graphql.md](references/graphql.md) for per-technique citations.
+- GraphQL and paired-evidence technique notes paraphrase **Strix** (Apache-2.0); diff-mode and combined-mode concepts likewise, and the credentials-in-instructions pitfall behind "Supplying test credentials" (pin 1152d53). Not copied verbatim. See [references/graphql.md](references/graphql.md) for per-technique citations.

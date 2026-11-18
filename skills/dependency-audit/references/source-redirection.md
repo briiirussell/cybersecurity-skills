@@ -87,6 +87,16 @@ grep -nE '"(url|serverUrl)"\s*:' .mcp.json .cursor/mcp.json 2>/dev/null
 
 Pinned looks like `npx -y some-mcp-server@1.4.2`, `uvx some-tool==0.9.1`, `docker run ...image@sha256:<digest>`. Skills and plugins installed from a marketplace should be pinned to a commit or release where the tool allows it.
 
+**Lookalike agent CLI packages.** An agent CLI is a dependency too, in `package.json`, as a global install, or in the install line of a README. Its package name and scope must match the vendor's install docs. `@claudecode/cli` on npm is malware that impersonates Claude Code: every version is affected, there is no fixed version, and the advisory says any computer that installed or ran it should be considered fully compromised ([GHSA-vp2q-gp5r-xh5j](https://github.com/advisories/GHSA-vp2q-gp5r-xh5j), published 2026-11-13; OSV [MAL-2026-19243](https://osv.dev/vulnerability/MAL-2026-19243); no CVE; checked 2026-11-18). The official package is `@anthropic-ai/claude-code`.
+
+```bash
+rg -n '"@claudecode/cli"' package.json package-lock.json pnpm-lock.yaml yarn.lock 2>/dev/null
+npm ls -g --depth=0 2>/dev/null   # compare each agent CLI's scope with the vendor docs
+rg -n 'npm (i|install).*(claude|codex|gemini|copilot)' README* docs/ CONTRIBUTING* 2>/dev/null
+```
+
+A hit on `@claudecode/cli` in a lockfile or global install is a confirmed critical: hand the machine to `incident-triage` and rotate from a clean machine. A lookalike in install docs that nobody has run yet is still a finding: fix the docs. `agent-supply-chain-audit` IN5 runs the same check on developer machines.
+
 **Scope boundary:** this skill inventories extensions and checks pinning and provenance. Reviewing what an extension's instructions or tool descriptions tell the agent to do (hidden instructions, overbroad permissions, exfiltration) is `agent-supply-chain-audit`. Hand off each extension that is unpinned or from an unreviewed source.
 
 ## 3. Shipped `.pyc` without matching source

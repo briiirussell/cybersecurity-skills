@@ -53,6 +53,17 @@ doesn't close it. Plain visible text is enough.
   with no branch protection it can push to the default branch. `pull-requests: write` plus the repo setting that lets
   Actions approve PRs lets it approve. `actions: write` lets it change workflows or caches. Prefer the short-lived
   workflow token or the GitHub App token over a long-lived user token, which outlives the run.
+- **Runner credentials outlive the sandbox.** Assume a prompt-injected agent can escape a `read-only` or
+  `workspace-write` sandbox on a hosted runner. It then holds `ACTIONS_RUNTIME_TOKEN` (cache and artifact access)
+  and the job's `GITHUB_TOKEN`, whatever the agent's tool allowlist says. Rate the step by the runner, not by the
+  sandbox. The public report is the openai/codex issue-labeler chain (Depi Research Team, Bugcrowd disclosure,
+  November 2026): issue text led to command execution inside the Codex sandbox, a sandbox escape leaked those two
+  credentials, and they were used to poison a cache that the more privileged `rust-ci.yml` workflow (`contents:
+  write`) restored, then to plant a workflow with `id-token: write`. The stated impact was the ability to publish
+  a malicious `@openai/codex` npm release. OpenAI fixed it. The Defiant's coverage says the disclosure does not
+  report a malicious release reaching users. No CVE is named in that disclosure or that article (read 2026-11-15).
+  The researcher's download figures are not repeated here; they were not verified. Do not describe or attempt the
+  escape. The audit question is which other workflow restores a cache this job can write.
 - **Secrets in the environment.** Anything in the job's `env:` is readable by any shell tool the agent has. API keys
   for the model itself count.
 - **Tools.** `--allowedTools "Bash(*)"`, `Bash` unscoped, `--dangerously-skip-permissions`, codex
@@ -70,14 +81,22 @@ doesn't close it. Plain visible text is enough.
 
 | Verdict | Shape |
 |---|---|
-| `confirmed` | An outsider can trigger the step or put text in its context, **and** the job holds a write scope, a secret, or unrestricted shell. E.g. `issues: opened` → claude-code-action with `allowed_non_write_users: "*"`, `contents: write`, `--allowedTools "Bash(*)"`. Or `pull_request_target` checks out the PR head to the workspace root and then runs the agent with `ANTHROPIC_API_KEY` and `pull-requests: write`. Static: confidence `medium` |
+| `confirmed` | An outsider can trigger the step or put text in its context, **and** the job holds a write scope, a secret, or unrestricted shell. E.g. `issues: opened` → claude-code-action with `allowed_non_write_users: "*"`, `contents: write`, `--allowedTools "Bash(*)"`. Or `pull_request_target` checks out the PR head to the workspace root and then runs the agent with `ANTHROPIC_API_KEY` and `pull-requests: write`. Or the same outsider can trigger the agent and a release, publish, `contents: write`, or `id-token: write` workflow restores an Actions cache: the runner's `ACTIONS_RUNTIME_TOKEN` is the write, even when `permissions:` are read-only. Static: confidence `medium` |
 | `needs_validation` | One deciding fact is outside the YAML: the agent reads outsider comments on an issue but the gate is a GitHub App installation whose permissions aren't visible; the job relies on the repo default token permissions; a reusable workflow at an unpinned ref holds the agent step |
 | `rejected` | The default write-access gate is in place, the PR head isn't checked out at the root, and the agent reads nothing an outsider wrote (for example it runs on `push` to main to update docs). Name the gate and the line |
 | Hardening note | Agent gated to collaborators with a broad tool list and a narrow token; an unpinned agent action in a job with no secrets beyond the model key |
 
 Severity follows what the job holds (SKILL.md Step 6). An outsider steering an agent that holds `contents: write` on
 a repo without branch protection is High at least; Critical when the job also holds publish credentials or a
-production cloud role.
+production cloud role. Also critical, even when this job's `permissions:` are read-only: the agent is reachable
+from an issue, pull request, or comment, and any release, publish, `contents: write`, or `id-token: write`
+workflow restores an Actions cache. That is one cross-workflow finding, propagation carrier `actions-cache`.
+
+```bash
+# Agent steps reachable from issues, PRs, or comments
+rg -n -l 'openai/codex-action|anthropics/claude-code(-base)?-action|google-github-actions/run-gemini-cli|actions/ai-inference' .github/workflows \
+  | xargs rg -n '^\s+(issues|issue_comment|pull_request_target|pull_request_review_comment|discussion)\b'
+```
 
 ## Fixes, in order of effect
 
@@ -90,9 +109,13 @@ production cloud role.
 4. Never check out PR code at the workspace root before the agent; use a subdirectory and `--add-dir`.
 5. Treat the agent's output as data in later steps: pass it through `env:` and quote it, never evaluate it.
 6. Pin the agent action to a commit SHA like any other third-party action.
+7. Run an agent that reads issues, pull requests, or comments in a separate repository, or with no cache steps at
+   all. Do not restore caches in release or publish jobs, or key them so the untrusted job cannot write the key a
+   privileged job restores. Keep `id-token: write` and publish credentials in an environment with required reviewers.
 
 ## Sources
 
 - [anthropics/claude-code-action security guide](https://github.com/anthropics/claude-code-action/blob/main/docs/security.md): inputs, default gate, base-branch config restore, logging.
 - Trail of Bits [agentic-actions-auditor](https://github.com/trailofbits/skills/tree/main/plugins/agentic-actions-auditor) (CC BY-SA 4.0): the per-action input list and the env-var-intermediary, wildcard-allowlist and evaluated-output vectors. Paraphrased.
 - Sentry [gha-security-review](https://github.com/getsentry/skills/tree/main/skills/gha-security-review), `references/ai-prompt-injection-via-ci.md` (Apache-2.0): agent config files from fork checkouts. Paraphrased.
+- openai/codex issue-labeler chain, November 2026, as reported: [Bugcrowd disclosure](https://bugcrowd.com/disclosures/3c0e5972-74ad-46a3-ab56-169db3d4c66f/backdooring-the-next-release-of-codex-through-github-action-pipeline-exploit-chaining) (Depi Research Team) and [The Defiant](https://thedefiant.io/frontier/ai/researchers-say-codex-flaw-put-npm-releases-at-risk). Read 2026-11-15. The chain is summarized above; the escape method is not reproduced.

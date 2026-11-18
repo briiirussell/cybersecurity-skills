@@ -5,7 +5,8 @@
     "which SAQ do we need to fill out?",
     "we found card numbers in a logs table, is that a PCI problem?",
     "help us prepare for a PCI DSS 4.0 assessment",
-    "does tokenization shrink our cardholder data environment?"
+    "does tokenization shrink our cardholder data environment?",
+    "do the third-party scripts on our checkout page meet PCI DSS 6.4.3 and 11.6.1?"
   ],
   "near_miss": [
     {

@@ -5,7 +5,10 @@
     "hypothesis-driven hunt for living-off-the-land binaries",
     "look for lateral movement that no alert caught",
     "plan a hunt with the PEAK framework",
-    "search our EDR for persistence"
+    "search our EDR for persistence",
+    "proactive hunt for persistence left by a tampered Homebrew installer on developer laptops",
+    "agent-parented hunt: the coding agent parent process dumped the login keychain",
+    "run an agent-speed cloud hunt for an AccessDenied burst in the last hour"
   ],
   "near_miss": [
     {

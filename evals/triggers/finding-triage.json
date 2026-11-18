@@ -5,7 +5,8 @@
     "is this a false positive, or should we fix it?",
     "write an accepted-risk justification for this finding",
     "the scanner says critical. what severity is this, really?",
-    "we can't fix this soon, help me with a mitigation plan and compensating controls"
+    "we can't fix this soon, help me with a mitigation plan and compensating controls",
+    "this agent-generated report looks valid but edge-casey — what source class and severity should it get?"
   ],
   "near_miss": [
     {

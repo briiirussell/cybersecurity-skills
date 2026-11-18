@@ -4,50 +4,423 @@ Current versions of all skills. Agents can compare against local versions to che
 
 | Skill | Version | Last Updated |
 |-------|---------|--------------|
-| agent-supply-chain-audit | 1.3.0 | 2026-10-30 |
+| agent-supply-chain-audit | 1.12.0 | 2026-11-18 |
 | ai-risk-management | 1.1.3 | 2026-10-30 |
-| api-audit | 1.1.7 | 2026-10-27 |
-| breach-patterns | 1.1.0 | 2026-10-30 |
+| api-audit | 1.3.0 | 2026-11-18 |
+| breach-patterns | 1.2.0 | 2026-11-18 |
 | business-logic-testing | 1.1.0 | 2026-10-30 |
-| cicd-security | 1.0.0 | 2026-10-27 |
-| cloud-audit | 1.2.0 | 2026-10-26 |
-| container-audit | 1.3.0 | 2026-10-30 |
+| cicd-security | 1.3.1 | 2026-11-18 |
+| cloud-audit | 1.4.0 | 2026-11-18 |
+| container-audit | 1.4.0 | 2026-11-18 |
 | control-audit | 1.2.1 | 2026-10-30 |
 | crypto-audit | 1.1.2 | 2026-10-27 |
 | csf-mapping | 1.0.3 | 2026-10-27 |
-| dependency-audit | 1.4.0 | 2026-10-30 |
+| dependency-audit | 1.8.0 | 2026-11-18 |
 | disk-forensics | 1.0.2 | 2026-10-27 |
-| finding-triage | 1.3.1 | 2026-10-27 |
+| finding-triage | 1.4.0 | 2026-11-18 |
 | fuzzing-harness | 1.0.1 | 2026-10-27 |
 | hipaa-audit | 1.1.1 | 2026-10-27 |
 | iam-audit | 1.2.0 | 2026-10-27 |
-| incident-triage | 1.2.0 | 2026-10-30 |
-| log-watch | 1.0.2 | 2026-10-30 |
+| incident-triage | 1.12.0 | 2026-11-18 |
+| log-watch | 1.1.0 | 2026-11-18 |
 | malware-triage | 1.0.0 | 2026-10-27 |
 | mobile-audit | 1.1.1 | 2026-10-27 |
 | native-code-review | 1.0.1 | 2026-10-27 |
 | osint-recon | 1.0.2 | 2026-10-26 |
-| owasp-audit | 1.7.0 | 2026-10-30 |
-| patch-sweep | 1.3.0 | 2026-10-30 |
-| pci-audit | 1.1.1 | 2026-10-27 |
-| personal-opsec | 1.2.1 | 2026-10-30 |
+| owasp-audit | 1.9.0 | 2026-11-18 |
+| patch-sweep | 1.8.0 | 2026-11-18 |
+| pci-audit | 1.2.0 | 2026-11-18 |
+| personal-opsec | 1.4.0 | 2026-11-18 |
 | privacy-engineering | 1.1.0 | 2026-10-27 |
 | prompt-injection | 1.2.1 | 2026-10-27 |
 | recon | 1.0.1 | 2026-10-26 |
 | red-team-engagement | 1.0.1 | 2026-10-26 |
 | scanner-pipeline | 1.1.0 | 2026-10-30 |
-| secrets-audit | 1.3.1 | 2026-10-30 |
+| secrets-audit | 1.9.0 | 2026-11-18 |
 | security-comms | 1.0.3 | 2026-10-26 |
 | security-start | 1.0.0 | 2026-10-27 |
-| siem-detection | 1.0.5 | 2026-10-27 |
+| siem-detection | 1.1.0 | 2026-11-18 |
 | soc-operations | 1.0.4 | 2026-10-26 |
-| threat-hunting | 1.1.0 | 2026-10-30 |
+| threat-hunting | 1.4.0 | 2026-11-18 |
 | threat-modeling | 1.0.4 | 2026-10-26 |
 | variant-analysis | 1.0.0 | 2026-10-27 |
 | vuln-research | 1.0.4 | 2026-10-27 |
-| web-pentest | 1.2.1 | 2026-10-27 |
+| web-pentest | 1.4.0 | 2026-11-18 |
 
 ## Recent Changes
+
+### 1.98.0 (2026-11-18)
+
+web-pentest and api-audit: keep test-account secrets out of the model prompt, and give the model structured identities instead. web-pentest 1.4.0, api-audit 1.3.0.
+
+**Added**
+- web-pentest and api-audit: "Supplying test credentials". Do not put a test-account password, session cookie, or API key in the model prompt, a chat message, or an instruction file the agent or skill reads. The model sees `identity-A` / `identity-B` with role, tenant, and markers; code or the operator's tooling logs in and attaches the credential. Do not stage secrets in a sandbox or workspace that runs target code. A credential that reaches the prompt is treated as exposed and rotated after the test.
+- Credit to usestrix/strix at commit 1152d53 (Apache-2.0). Its instructions docs say instructions become part of the prompt and warn against secrets in a workspace file; checked 2026-11-18. Strix's credential examples are not copied. HoneyWarden #82 is the pattern to prefer, not a required runtime.
+- Description trigger phrases: web-pentest 'test accounts without pasting passwords into the prompt', api-audit 'structured identities for a BOLA test'. One should-fire trigger prompt each; should-fire top-1 is 264/276.
+
+**Changed**
+- web-pentest prerequisites: credentials stay out of the model prompt. The #76 paired owner-vs-non-owner rule and the authorization gate are unchanged.
+
+Proposed by @coreyhaines31 in #300.
+
+### 1.97.0 (2026-11-18)
+
+dependency-audit checks Python startup hooks and the shape of a release before a bump ships (Microsoft `agent-framework` PyPI compromise, 2026-11-17). dependency-audit 1.8.0.
+
+**Added**
+- dependency-audit `references/python-startup-hooks.md`, with a one-line pointer in Step 4. It finds `.pth` import lines, `sitecustomize.py` and `usercustomize.py` with `find`, not by starting the interpreter, since starting it runs the hooks. It lists the normal importers (editable installs, `distutils-precedence.pth`, coverage, a distro `sitecustomize.py`) and how to diff a bumped wheel's top-level entries. The grep matches what `site` actually executes: lines that start with `import` and a space or tab. Tested locally with python3 3.13 in a venv.
+- Release-shape checks for a Python bump, marked needs_validation: wheel-only when earlier releases shipped an sdist too, no matching upstream tag or release, new top-level `.pth` or `.py` files, and a meta-package out of step with its `-core` sibling.
+- Exposure window: floor-only ranges for packages that run code at install or start are noted, with hash-pinned lockfiles and a cooldown as the fix. A confirmed bad install means remove the hook and module, rebuild, pin, and rotate every credential that user, runner or container could read, not just upgrade.
+- Worked example: `agent-framework` 1.26.1 (20:35 UTC) and 1.26.2 (21:08 UTC), last safe 1.26.0, with the two `.pth` names, what was collected, and 1.26.2's GitHub Actions OIDC addition. Checked 2026-11-18 against Wiz, Socket, Aikido and the PyPI JSON API. Removal time is given as each vendor reported it (21:20 vs 21:30 UTC). Root cause is not confirmed. No CVE. Hashes and the webhook URL are left in the sources.
+- Two dependency-audit trigger prompts.
+
+Proposed by @coreyhaines31 in #299.
+
+### 1.96.0 (2026-11-18)
+
+agent-supply-chain-audit flags instruction files that say "don't read it, just run it", and repo files that run a command when the folder opens or the tests run (Bitdefender, SafeDep Miasma GitHub arm). agent-supply-chain-audit 1.12.0.
+
+**Added**
+- Step 2 check for anti-inspection and auto-run directives: an `AGENTS.md` / `CLAUDE.md` / rule that forbids reading a file and asks for it to run is confirmed, Critical, whatever reason it gives. Greps and portable equivalents in `references/content-checks.md`. Bitdefender Labs (2026-11-17) reported 22 malicious GitHub links with such lines for `scripts/setup.js`.
+- BH5 repo auto-run triggers, no agent needed: `.vscode/tasks.json` `"runOn": "folderOpen"` (BH5a), `package.json` scripts that run a hidden file (BH5b), Composer / `Gemfile` / dev container commands (BH5c). BH5d: several triggers across tools that run the same file is DO-NOT-INSTALL on its own. From SafeDep's Miasma GitHub-arm write-up (one commit, five triggers, one `.github/setup.js`) and its config-files follow-up.
+- Step 0: for any third-party repo, read agent config, hooks, `.vscode/tasks.json` and `package.json` scripts before opening it in an agent or editor.
+- Description trigger phrase: `is this repo safe to open`. Two trigger evals.
+
+**Changed**
+- Step 1 inventory lists `.vscode/tasks.json`. Severity anchors name anti-inspection directives and BH5d (Critical) and BH5a–BH5c (High).
+
+Facts checked on 2026-11-18 against the Bitdefender Labs post and both SafeDep posts. Vendor research, not re-verified. No CVE.
+
+**Changed**
+- agent-supply-chain-audit: Web-to-agent bridges (WB1–WB4) moved to `references/web-to-agent-bridges.md`, with a short summary left in Step 4, and the description lists fewer instruction-file names, to stay under the 500-line and 1024-character limits.
+
+Proposed by @coreyhaines31 in #298.
+
+### 1.95.0 (2026-11-18)
+
+breach-patterns, pci-audit and incident-triage: OPTIMJACK, attacker code in Optimizely Web Project JavaScript served to 178 organisations (2026-11-16), and who can publish code through a vendor dashboard. breach-patterns 1.2.0, pci-audit 1.2.0, incident-triage 1.12.0.
+
+**Added**
+- breach-patterns `references/third-party-scripts.md`: an OPTIMJACK incident section next to Polymarket. Checked 2026-11-18 against Report URI, StepSecurity, Hudson Rock's InfoStealers write-up and Optimizely's status page. No CVE. The IoC and wallet list is linked, not copied.
+- TP7, who can change what the vendor serves: edit and publish rights on tag manager and experimentation dashboards, SSO and MFA, write tokens, a reviewed audit log, and whether custom code is needed. Medium, high on logged-in or checkout pages. Pattern 11 points to it.
+- pci-audit: 6.4.3 under Req 6 and 11.6.1 under Req 11, a "vendor snippet on the checkout page" common finding, and the PCI SSC e-skimming information supplement in References. Description trigger phrases: `payment page scripts`, `PCI 6.4.3`, `PCI 11.6.1`.
+- incident-triage `references/vendor-breach-notice.md`: a script-vendor section. Assume you served malware for the window, read your own copy of the vendor code, audit write access, rotate non-`HttpOnly` cookie secrets, treat card data typed into your own forms as exposed, and decide on customer notice (Report URI's checklist). The SKILL.md vendor-breach line points to it. Description unchanged.
+
+**Changed**
+- TP5: allowlisting the vendor host did nothing. A restrictive `script-src` without `'strict-dynamic'` or `'unsafe-eval'` blocked the loader on 24 of the crawled organisations, and `connect-src` stopped the data theft on 17 more but not the in-page address swap. The published counts sum to 159 of 256 crawled hosts, and the page says so.
+- TP6: search a served snippet for `atob(`, `eval(` and runtime script tags as well as the IoC domain, and compare against an archived copy, since a clean fetch now says nothing about earlier. The TP1 grep adds `optimizely|kissmetrics|storifyme|minute-ly`.
+- breach-patterns description mentions OPTIMJACK and adds `Optimizely compromise` and `tag manager hacked`. Its opening line now says "turn it into a checklist". One trigger prompt each for breach-patterns and pci-audit (should-fire top-1 262/274 to 264/276). `e-skimming` was dropped as a pci-audit phrase because it pulled an `owasp-audit` prompt to pci-audit.
+- Corrections to the issue draft. Optimizely did publish a statement: its status page says a flaw in the Web Experimentation signup flow was exploited. It still hasn't said how that reached unrelated projects. StepSecurity cites Helme counting 26 payload builds on 16 November, not "at least four" edits. The archived-copy advice is ours, not StepSecurity's. Hudson Rock names the earlier-wave vendor minute-ly, not Minute Media. The PCI SSC standard PDF could not be read (403); the 6.4.3 and 11.6.1 lines are paraphrased from PCI SSC's own blog summaries and say so, with no quoted requirement text.
+
+Proposed by @coreyhaines31 in #297.
+
+### 1.94.0 (2026-11-18)
+
+Change control for committed agent config, an incident-triage step for it after a developer compromise, and a lookalike agent CLI check (GTIG AI Threat Tracker, November 2026; GHSA-vp2q-gp5r-xh5j). agent-supply-chain-audit 1.11.0, incident-triage 1.11.0, dependency-audit 1.7.0, cicd-security 1.3.1.
+
+**Added**
+- agent-supply-chain-audit `references/change-control.md`, CC1–CC3, with a short pointer in Step 3:
+  - CC1: committed agent config (`.claude/`, `.mcp.json`, `CLAUDE.md`, `AGENTS.md`, `.cursor/`, `.gemini/settings.json`, `.github/copilot-instructions.md`, `.vscode/mcp.json`) under CODEOWNERS with required code-owner review. No owner on a branch that takes direct pushes is medium, high where developers hold production or deploy credentials. Last match wins in CODEOWNERS, so read the whole file.
+  - CC2: read-only `git log` over the last 90 days for added hook commands, `apiKeyHelper`, `statusLine`, and `env` overrides. A change nobody accounts for is needs_validation. A disowned change, or one that downloads and runs something, is critical and goes to `incident-triage`.
+  - CC3 (optional): a required `pull_request` check that flags hook-key changes. No guard is a hardening note.
+- agent-supply-chain-audit IN5: an agent CLI under a lookalike scope. `@claudecode/cli` is malware (all versions, no fix). The official package is `@anthropic-ai/claude-code`. Critical if installed.
+- incident-triage `references/dev-tool-compromise.md` section 4: after a developer machine or token is compromised, check every repo that identity could push to for new agent config since the first suspicious activity, and review new PATs, OAuth apps, GitHub Apps and keys, including ones named after AI tools. Rotate before anyone reopens those repos in an agent.
+- dependency-audit Step 4 and `references/source-redirection.md` §2: the same lookalike agent CLI check for `package.json`, lockfiles, global installs and install docs.
+- Description trigger phrases: `CODEOWNERS for .claude` (agent-supply-chain-audit), `lookalike Claude Code package` (dependency-audit). Three should-fire trigger prompts.
+
+**Changed**
+- cicd-security: the inventory row for agent config and `references/checks.md` point to CC1–CC3. Cross-reference only.
+
+Facts checked 2026-11-18 against GTIG's AI Threat Tracker (2026-11-16, MIDNIGHT NEPTUNE paragraph), GHSA-vp2q-gp5r-xh5j and OSV MAL-2026-19243. GTIG's account is vendor research, not re-verified. GTIG names no hook event or file contents, and none are added. No CVE. No SOMBERMEME IOCs.
+
+Proposed by @coreyhaines31 in #296.
+
+### 1.93.0 (2026-11-18)
+
+incident-triage and secrets-audit: Cursor's November 2026 incident report on the vendor-breach playbook, with agent traces and support tickets as secrets locations. incident-triage 1.10.0, secrets-audit 1.9.0, agent-supply-chain-audit 1.10.0.
+
+**Added**
+- incident-triage `references/vendor-breach-notice.md`: a Cursor row. A key Cursor issued to Fireworks was exposed there; a shared bucket of non-Privacy-Mode agent traces was copied; unredacted credentials in traces reached Cursor SaaS tools, support data, and a credential that wrote the trojanized Claude Code extension to the cache serving Cursor's marketplace (Open VSX was never affected). Cursor's forensics, as reported, not re-verified. No CVE.
+- A "Cursor, October 2026" section with six steps: agent traces are a secrets location; support tickets are a secrets location; ask about your vendor's vendors (two hops); confirm listed keys are revoked at the issuer; read "not notified" for exactly what it covers (agent traces only); a clean upstream registry does not clear a cache or mirror.
+- secrets-audit vendor-held inventory: two classes, agent sessions and traces kept by the vendor or its subprocessors when privacy or zero-retention mode is off, and credentials sent to support. Description trigger phrases `agent traces` and `credentials sent to support`.
+- agent-supply-chain-audit `references/ide-extensions.md`: the malicious builds were written to Cursor's marketplace cache, not Open VSX. EX3 now asks whether an extension comes through a cache, mirror, or proxy, and says to check publisher and version against upstream. Two-line pointer in SKILL.md.
+- One trigger prompt each for incident-triage and secrets-audit (should-fire top-1 264/276).
+
+**Not claimed**
+- Which Fireworks incident exposed the key (Cursor does not say), which SaaS tools were reached, or that Cursor belongs to Wiz's "Black October" campaign. BleepingComputer reports that framing from Wiz and does not place Cursor in it.
+
+Facts checked 2026-11-18 against Cursor's incident report (2026-11-13) and Oct 30 notice, BleepingComputer, and The Hacker News. The @cursor_ai post on X was not read.
+
+Proposed by @coreyhaines31 in #295.
+
+### 1.92.0 (2026-11-18)
+
+threat-hunting and log-watch: hunt agent-speed AWS intrusions as a burst, not as single calls (AntiFox / ARTEX, November 2026). threat-hunting 1.4.0, log-watch 1.1.0.
+
+**Added**
+- threat-hunting: catalog section "Agent-speed cloud intrusions (AWS)". Denial bursts with the successes listed separately, one source using many identities, secret and storage pairs, EC2 role sessions used off-AWS, `FilterLogEvents` secret mining, anonymous S3 probing, public Cognito pools, and a scripting user agent from a new hosting ASN (never alone). A web-shell lead pulls the app's credentials and hunts them forward from the compromise time.
+- threat-hunting: perishable IOC appendix in `references/agent-speed-aws.md` (Arctic Wolf and Datadog, November 2026), marked as leads. Remediation points at `cloud-audit`, `iam-audit`, and `incident-triage` instead of copying their checks.
+- log-watch D11, opt-in: a principal's denial burst, or `GetSecretValue` / a decrypting `GetParameter` from a source IP or ASN not in that principal's baseline. The plan says to confirm `lookup-events` actually returns those reads (management events only, 90 days) before enabling it, and that S3 object reads will not be in that API.
+
+Proposed by @coreyhaines31 in #271.
+
+### 1.91.0 (2026-11-18)
+
+cicd-security treats a valid GitHub Actions workflow lockfile as a pin for the step-level `uses:` it covers, and states what a lockfile does not cover. cicd-security 1.3.0.
+
+**Added**
+- `unpinned-action`: a readable, well-formed `.github/workflows/actions.lock` entry that records a commit pins that step-level `uses:`. A missing, unreadable, renamed, symlinked, or malformed lockfile counts as no coverage. The inventory column omits lockfile-pinned refs.
+- Gaps that stay uncovered: job-level reusable workflow calls, mutable tools installed in a `run:` step (including `gh-actions-lock` itself), `docker://` tags, and `uses: ./…`. A lockfile is not a verdict that the locked commit is safe. `impostor-commit` is still not a pin.
+- `sha_pinning_required` and the Require lockfile policy are separate checks. A lockfile satisfies SHA pinning for onboarded workflows. Bare `gh actions-lock` is not an audit command; it writes the file. `gh actions-lock --verify` is the read.
+- zizmor v1.32.0 (2026-11-02) is the first release with experimental lockfile support. Older runs still flag locked tags. Record the version used.
+- Description trigger phrases: `actions.lock`, `workflow lockfile`.
+
+Facts checked against GitHub's changelog (2026-10-28) and lockfile docs on 2026-11-15, and against zizmor's v1.32.0 release notes.
+
+Proposed by @coreyhaines31 in #270.
+
+### 1.90.0 (2026-11-18)
+
+agent-supply-chain-audit checks MCP reference server versions, and patch-sweep treats a date-to-semver switch as an explicit pin (#269). agent-supply-chain-audit 1.9.0, patch-sweep 1.8.0.
+
+**Added**
+- agent-supply-chain-audit MS1: `mcp-server-git` or `mcp-server-fetch` below 2026.11.11, and `@modelcontextprotocol/server-filesystem` on a date version (2025.1.14 through 2026.8.31) or below semver 2.3.0. Git is high (repo `.git/config` runs a program during a read-only tool, GHSA-6hqx-gqrx-c5r2). Fetch is low. Filesystem is medium. Unpinned `npx -y` / `uvx` is needs_validation, because 2.3.0 ranks below the old date versions. Pin `@2.3.0` explicitly. No CVE ids, none reported exploited, as of 2026-11-12.
+- MS2: a tool that runs `git` on a repository it did not set up should clear repo-defined config (`GIT_CONFIG_COUNT` overrides, `--no-ext-diff --no-textconv`, refuse Git older than 2.31). `git status` on a freshly cloned untrusted repo is not a read.
+- patch-sweep Step 4: after a package moves from date versions to semver, "latest" is not the fixed release. Check the installed version and pin it.
+
+**Changed**
+- agent-supply-chain-audit: the MCP client checks (MC1–MC3) moved to `references/mcp-client.md`, with a short summary left in Step 4, to keep SKILL.md under 500 lines. The Medium anchor row now reads as one list: AP2/AP3 and WB1+WB2 rate high on a machine with production or deploy credentials.
+
+Proposed by @coreyhaines31 in #269.
+
+### 1.89.0 (2026-11-18)
+
+cicd-security rates a stolen write token as its own check, and incident-triage gets a dated sweep for the wfx campaign (November 2026). cicd-security 1.2.0, incident-triage 1.9.0.
+
+**Added**
+- cicd-security check 13, `compromised-writer`. Assume one maintainer or bot credential is stolen and rate what one push can reach with no review: secrets and `id-token: write` without environment reviewers, bots that can bypass rulesets, `npm install` without `--ignore-scripts`, shell scripts CI already runs, and `on: push` with no branch filter. Critical only when that push reaches publish credentials, cloud OIDC, or org secrets with no human gate. Otherwise a hardening note.
+- Step 5 reads ruleset `bypass_actors` and records the manual Applications check. The wfx campaign's Fly.io GitHub App attribution is stated as StepSecurity reported it: no evidence of a Fly.io infrastructure breach, and how the tokens were obtained is unknown.
+- incident-triage `references/dev-tool-compromise.md`: a wfx section (2026-11-10 onward) with the probe pull request, commit messages, file and branch patterns, the run-number gap check, rotation and persistence removal, and the IOC table from StepSecurity (2026-11-12), including the switch to Telegram-only exfil. Aikido's 4,837 accounts / 61,764 repositories and the 1,806 and 1,835 run figures are both cited. No CVE.
+
+Facts checked against Aikido and StepSecurity on 2026-11-15.
+
+Proposed by @coreyhaines31 in #268.
+
+### 1.88.0 (2026-11-18)
+
+incident-triage and secrets-audit: Notion / Fireworks transcript exposure on the vendor-breach playbook. incident-triage 1.8.0, secrets-audit 1.8.0.
+
+**Added**
+- Fireworks and Notion rows. Notion was not the breached party: Fireworks, its classification vendor, was. Checked 2026-11-11 against Notion's advisory and help center and both Fireworks bulletins. No CVE.
+- Notion's "unattributable" definition, quoted: unlabeled chats, not non-identifying text. Enterprise zero-data-retention covers the API requests that generate Notion AI responses, not stored chat history or Insights. A contractual commitment from Fireworks did not prevent retention on the Insights endpoints.
+- Five steps: inventory AI subprocessors and secondary copies; record what a zero-data-retention claim does and does not cover; do not treat unlabeled transcripts as harmless; the first "no customer data" bulletin can expand; no notice means follow the vendor's current guidance and keep watching.
+- secrets-audit vendor-held inventory has a second table for the subprocessor, the feature that re-sends stored chats, and both sides of the retention claim.
+
+Proposed by @coreyhaines31 in #267. Based on the vendor-breach playbook in #251, after the Railway row in #262.
+
+### 1.87.0 (2026-11-18)
+
+cicd-security rates an agent step by the credentials on the runner, not by the sandbox. cicd-security 1.1.0.
+
+**Added**
+- `agent-prompt-injection` is critical when a lower-trust actor can trigger the agent and any release, publish, `contents: write`, or `id-token: write` workflow restores an Actions cache. Record it once, with propagation carrier `actions-cache`. A read-only `permissions:` block does not clear it: the runner still holds `ACTIONS_RUNTIME_TOKEN`.
+- `cache-poisoning` lists an AI agent job triggered by issues, pull requests, or comments as an untrusted cache writer, next to `pull_request_target`.
+- A named incident, openai/codex issue-labeler (November 2026), in `references/worked-examples.md` and `references/ai-agents-in-ci.md`. Facts are as reported by Depi Research Team's Bugcrowd disclosure and The Defiant, read 2026-11-15. OpenAI fixed it. No malicious release is reported to have reached users. No CVE is named. The escape method is not reproduced, and the researcher's download figures are omitted.
+
+Proposed by @coreyhaines31 in #266.
+
+### 1.86.0 (2026-11-18)
+
+agent-supply-chain-audit checks the MCP client, not only the servers it loads, and patch-sweep includes editor forks (#265). agent-supply-chain-audit 1.8.0, patch-sweep 1.7.0.
+
+**Added**
+- agent-supply-chain-audit MC1: VS Code below 1.145.3 is high. The 10 November 2026 release fixes MCP elicitation command links (CVE-2026-120779, CNA CVSS 9.6, E:U), install-link RCE, legacy SSE RCE, a network workspace trust bypass, and a serve-web downgrade. None are reported exploited, and none are in CISA KEV. A fork (Cursor, Windsurf, VSCodium, others) is needs_validation until its release notes name the upstream build. Fork status was not confirmed on 2026-11-11.
+- MC2: flag `"type": "sse"` and `/sse` URLs. On an unpatched client that is part of the MC1 high. On a patched client it is a hardening note to move to Streamable HTTP.
+- MC3: approving a one-click MCP install link without reading the command and inputs, and opening an HTTP(S) workspace file from an untrusted source. Hardening notes.
+- patch-sweep Step 4: an editor/MCP-client advisory is swept on developer machines for the upstream product and every installed fork.
+
+Proposed by @coreyhaines31 in #265.
+
+### 1.85.0 (2026-11-18)
+
+finding-triage, api-audit, and web-pentest: agent-report source class, and redacting HTTP transcripts before a model reads them. finding-triage 1.4.0, api-audit 1.2.0, web-pentest 1.3.0.
+
+**Added**
+- finding-triage: record a source class (scanner, manual audit, production/operator, agent-generated). Volume and multi-agent agreement do not raise severity and do not skip the six-element gate. A valid finding that only holds on a deployment the customer does not run stays Low or becomes a hardening note, and is not relabeled a false positive. Production evidence outweighs novel or agentic discovery for priority. The Puma-maintainer note is kept as an anecdote, with no hit-rate claim. The independent read still runs before High or Critical on an agent-written report.
+- api-audit and web-pentest: before a model sees a Burp, ZAP, HAR, or curl transcript, replace cookies, `Authorization`, `Set-Cookie`, JWTs, and secret fields with stable identity markers so owner-vs-non-owner evidence still works. The credential swap stays outside the model. HoneyWarden #82 is named as the product analogue, not a dependency.
+
+Proposed by @coreyhaines31 in #264.
+
+### 1.84.0 (2026-11-18)
+
+cloud-audit: a private overlay is a path to Postgres or Redis, not least privilege. cloud-audit 1.4.0.
+
+**Added**
+- DB6 says SSH, a VPC, or Tailscale is how admins reach `5432` / `6379` / `3306` / `27017`, and that this is not the privilege model. A leaked database URL still works from every node on a default-open overlay.
+- DB7 reads the Tailscale ACL or grants policy (or the VPC security group) and flags a default-open or overly broad rule. Medium, or High when any node on the overlay could use a leaked URL. A tight policy is a note. Cites Tailscale's ACL and grants docs.
+
+Proposed by @coreyhaines31 in #263. `personal-opsec` does not recommend Tailscale, so it is unchanged.
+
+### 1.83.0 (2026-11-18)
+
+incident-triage and secrets-audit: Railway's October 2026 final RCA, added to the vendor-breach playbook. incident-triage 1.7.0, secrets-audit 1.7.0.
+
+**Added**
+- A Railway row on the vendor-breach table, citing the final RCA (2026-11-10) and the Oct 22 preliminary note. Marked as Railway's forensics, not re-verified. No CVE. The "at most 1.85%" figure is an upper bound, not a victim count. "Abliterated models" / ARTEX-like language is Railway citing Wiz.
+- Five tightenings: the issuer may act before you are told; inventory CI, build history, caches, GitHub App / OAuth / BYOK tokens, and agent keys; rotate at the issuer; do not treat env-var renaming as a control; keep upper bounds honest.
+- secrets-audit vendor-held inventory lists those extra classes, and says renaming a variable is not a control.
+
+Proposed by @coreyhaines31 in #262. Based on the vendor-breach playbook in #251.
+
+### 1.82.0 (2026-11-18)
+
+personal-opsec checks outbound SSH agent forwarding to hosts that run coding agents (#261). personal-opsec 1.4.0, agent-supply-chain-audit 1.7.1.
+
+**Added**
+- personal-opsec C9: read-only check of `ForwardAgent` under `Host *` and other wildcards, `ssh -G` per agent host, `ssh-add -l` fingerprints only, and the Codex forwarded-agent socket. Medium when a wildcard forwards the agent to an agent host; high when that agent holds a key that can push to production. The fix is a host-specific `ForwardAgent no` before any `Host *` block.
+- The worked case is ChatGPT desktop Codex Remote SSH, build 26.1103.60933, as reported on 2026-11-09. The app does not enable forwarding itself. A user's own `ForwardAgent yes` is what links `SSH_AUTH_SOCK` to `~/.codex/app-server-control/forwarded-ssh-agent.sock`. No CVE. The closed PR #28131 is not a hidden flag.
+- agent-supply-chain-audit credential-reads row now also matches `SSH_AUTH_SOCK` and `forwarded-ssh-agent.sock`.
+
+Proposed by @coreyhaines31 in #261.
+
+### 1.81.0 (2026-11-18)
+
+secrets-audit and personal-opsec: Claude Code "don't ask again" allow rules can store a secret in `.claude/settings.local.json`. secrets-audit 1.6.0, personal-opsec 1.3.4.
+
+**Added**
+- secrets-audit counts inline credentials in `permissions.allow` (connection strings, bearer tokens, known key prefixes, `PGPASSWORD`, `--password`) and checks whether `.claude/settings.local.json` is tracked, only covered by a global git exclude, or named in the project `.gitignore`. Counts only. Do not print the matching line.
+- A tracked or historically committed secret is rated like any other committed secret. An untracked copy covered only by global excludes is `needs_validation`, fixed by adding the path to the project `.gitignore`. If a real credential was saved there, rotate it, then remove it from the file and from history. Allow rules should be patterns such as `Bash(psql:*)`, with the secret in an env var or a secrets manager.
+- Apiiro's 2026-11-05 counts (104,185 public copies, 1,122 with a secret, 215 missed by gitleaks and TruffleHog together) are cited as reported, not re-counted. Claude Code issues #13106 and #5544 were closed without a fix. No CVE.
+- personal-opsec C3 asks whether Claude Code is current. v2.1.317 asks before putting the signed-in account email in the User-Agent. A fuller removal from model context was announced and was not verified shipped as of 2026-11-09.
+
+Proposed by @coreyhaines31 in #260.
+
+### 1.80.0 (2026-11-18)
+
+dependency-audit, owasp-audit, and patch-sweep: Better Auth Expo authorization-proxy account takeover (CVE-2026-121802 / GHSA-4wq4-2ppv-q3hg / GHSA-hv45-wgqh-c9j5). dependency-audit 1.6.0, owasp-audit 1.9.0, patch-sweep 1.6.0.
+
+**Added**
+- dependency-audit: version floors for `better-auth` and `@better-auth/expo` (1.7.16, or 1.8.0-beta.5 on the beta line), the `expo()` reachability check, and the rule that a below-floor lockfile still bumps both packages when the plugin is absent. After the bump, rotate the application secret. Facts re-checked 2026-11-15 against the vendor advisory; not on CISA KEV.
+- owasp-audit A07: flag custom auth that signs caller-supplied state with the application secret, or that uses one secret for email-verification links and the session cookie cache, with this advisory as the worked example.
+- patch-sweep: fleet bump of both packages. Apps that register `expo()` are urgent; the rest are same-week. A row stays open until the secret is rotated wherever the proxy was reachable.
+
+Proposed by @coreyhaines31 in #258.
+
+### 1.79.0 (2026-11-18)
+
+agent-supply-chain-audit adds a worked incident for an install-time worm that poisons coding-agent config, and personal-opsec points at it (#257). agent-supply-chain-audit 1.7.0, personal-opsec 1.3.3.
+
+**Added**
+- agent-supply-chain-audit: strutil-core 1.0.1 (RubyGems, 2026-11-06, Socket). A testmetest / Miasma / Shai-Hulud descendant. It runs at `gem install`, can poison MCP servers, session hooks, and instruction files, and can republish to RubyGems, npm, and PyPI. No public dependents and no confirmed victims. PyPI sibling pystr-codec. `paleasbest.top` is an IOC for this incident only, not a standing blocklist. Do not reproduce the payload. If it ran, rebuild the host and rotate credentials. Uninstalling the gem is not cleanup.
+- personal-opsec Part C: after an unexpected RubyGems, PyPI, or npm install on a machine that runs coding agents, re-diff agent config and rotate tokens. The playbook stays in agent-supply-chain-audit.
+
+Proposed by @coreyhaines31 in #257.
+
+### 1.78.0 (2026-11-18)
+
+dependency-audit and patch-sweep: undici cache and redirect batch, fixed in 7.30.2 and 8.12.4. dependency-audit 1.5.0, patch-sweep 1.5.0.
+
+**Added**
+- dependency-audit: the six 2026-11-05 advisories (CVE-2026-116592 high, plus five medium), lockfile and `redirect()`+`cache()` checks, and the Node releases that vendor the patched undici. Facts re-checked 2026-11-15. Not on CISA KEV. Node 22's undici 6.x is outside this batch; Node 24.22.3 and 26.13.1 are the patched vendor lines.
+- patch-sweep: bump or override anything below 7.30.2 / 8.12.4, including the copy Node vendors for `fetch`. Stock `fetch()` is lower priority for the high advisory and still gets the bump. Normal cadence unless one cache is shared across tenants.
+
+Proposed by @coreyhaines31 in #256.
+
+### 1.77.0 (2026-11-18)
+
+threat-hunting, incident-triage, and siem-detection: hunt high-severity outcomes whose parent is a coding agent (Elastic Threat Command, November 2026). threat-hunting 1.3.0, incident-triage 1.6.0, siem-detection 1.1.0.
+
+**Added**
+- threat-hunting: "Agent-parented high-severity outcomes" (AP1–AP5). Credential-store access, free reverse tunnels, persistence, quarantine stripping, and permission-bypass sessions, keyed on ancestry (`claude`, Cursor, Codex, ChatGPT). Claude Code reading its own `Claude Code-credentials` keychain item is allow-listed. A tunnel alone needs validation. Two readings stay written down.
+- incident-triage: do not close because the parent is vendor-signed. Read the session transcript (human prompt versus a file, hook, MCP result, or remote session — #234, #253, #254), rotate what the session could read, then reuse the dev-machine persistence checks from #223.
+- siem-detection: the same five outcomes as rule ideas. GenAI child-process volume alone is context, not a finding.
+
+Proposed by @coreyhaines31 in #255.
+
+### 1.76.0 (2026-11-18)
+
+agent-supply-chain-audit inventories web-to-agent bridges, and the response skills know what to look for afterward (#254). agent-supply-chain-audit 1.6.0, incident-triage 1.5.0, personal-opsec 1.3.2, log-watch 1.0.3.
+
+**Added**
+- agent-supply-chain-audit WB1–WB4. A remote-control or web-session feature, a browser extension that can run on the agent's site, one account on both a personal browser and a work machine, and an approval rendered in a page a script can operate. WB1 and WB2 together are medium, and high when the machine holds production or deploy credentials. Word it as an exposure. The ThisBash report (Forever Security, 2026-11-04; The Register, 2026-11-05) has no CVE and no reported exploitation. Remote Control and Cowork are vendor-unconfirmed. Chromium extension manifest paths are in `references/locations.md`.
+- personal-opsec K8 and C2 point at WB1–WB4.
+- incident-triage dev-tool playbook: prompts the user did not type, a global package install, a new LaunchAgent, and a new `authorized_keys` entry lined up with a session nobody was present for. No exact-prompt IOCs.
+- log-watch hands that shape to incident-triage. It is not a starter detection.
+
+Proposed by @coreyhaines31 in #254.
+
+### 1.75.0 (2026-11-18)
+
+agent-supply-chain-audit records who installed each plugin, hook, and MCP server (#253). agent-supply-chain-audit 1.5.0, personal-opsec 1.3.1.
+
+**Added**
+- Inventory column **Installed by** (`user`, `vendor app`, `repo`, or `unknown`) plus install time. Read-only commands for Codex `[marketplaces]` / `[plugins]` / `[hooks.state]`, Claude Code `enabledPlugins` and `installed_plugins.json`, and Copilot CLI settings. Paths are in `references/locations.md`.
+- AP1–AP5. An app-added plugin or marketplace, a self-approved `trusted_hash`, a session-start instruction that steers broad work, a remote MCP server added with the plugin, and leftovers after removal. Medium until the user confirms. Escalates on a machine that holds production credentials or deploy keys. The trust record shows an approval was stored, not who stored it. Do not call the vendor malicious.
+- Worked report: Postman desktop auto-install, checked 2026-11-04. One user's evidence (12.33.4, then 12.35.1), not reproduced on a clean Mac. No fix and no CVE as of that date. Nothing in the reporting says data left the machine.
+- personal-opsec C2 asks which desktop apps may change agent config. LD3 points at AP1 and AP4.
+
+Proposed by @coreyhaines31 in #253.
+
+### 1.74.0 (2026-11-18)
+
+owasp-audit and patch-sweep: Rails Active Storage ImageMagick and FFmpeg advisories (GHSA-f3w6-w445-fwh9 / CVE-2026-122006, GHSA-v924-7rp8-4mxh / CVE-2026-126186). owasp-audit 1.8.0, patch-sweep 1.4.0.
+
+**Added**
+- owasp-audit Rails playbook, check 6: `:mini_magick` plus untrusted uploads plus a host policy that does not deny the coders, the traps that keep the shipped policy from loading, the FFmpeg analyzer workaround, and when to rotate secrets. Facts re-checked 2026-11-15. Not on CISA KEV. Fixed gems are 8.0.5.2 and 8.1.4.1. Rails 8.0's security window ended 2026-11-07; 7.2's ended 2026-08-10.
+- patch-sweep: the same two advisories beside the libvips case. The bump is not done until ImageMagick loads the shipped policy. Disk-service apps that were reachable while vulnerable rotate `secret_key_base` and the other secrets the process can read before the row closes. Changing `secret_key_base` logs everyone out.
+
+Proposed by @coreyhaines31 in #252.
+
+### 1.73.0 (2026-11-18)
+
+incident-triage and secrets-audit: a playbook for when a vendor you use was breached. incident-triage 1.4.0, secrets-audit 1.5.0.
+
+**Added**
+- incident-triage `references/vendor-breach-notice.md`, linked from Step 1. For a SaaS or platform that says an attacker reached its systems, while your own code and machines may be fine. Inventory what you handed the vendor, rotate the highest-value keys at the issuer (new, then revoke old), check the issuer's logs, rotate on the first notice of unauthorized access to credentials, treat "revoked for you" as partial, verify any "rotate now" email against the vendor's status page, and log the clock for Step 6.
+- Dated rows for GitBook (2026-11-02), Northflank (2026-10-30), Bubble (2026-10-26), Allium (2026-10-25) and Warp (2026-10-23, disclosed 2026-10-26), each with what that vendor told customers. The "AI agents" attribution is marked vendor-reported, not confirmed. Warp's "rotate anything pasted into an agent session" advice is marked as coming from write-ups, not from Warp. No CVE is claimed.
+- secrets-audit: a vendor-held secrets inventory (class, issuer, rotation tested?) so that inventory step is a lookup. "Rotation tested?" ties to the existing "rotation never tested" finding.
+
+**Not in this change**
+- breach-patterns Pattern 12 (a developer platform's control plane holds your secrets) was left out. The issue marked it optional.
+
+Proposed by @coreyhaines31 in #251.
+
+### 1.72.0 (2026-11-18)
+
+Installer and interview-homework entry points from Binance's 2026-11-03 preliminary report (#250). agent-supply-chain-audit 1.4.0, incident-triage 1.3.0, threat-hunting 1.2.0, personal-opsec 1.3.0.
+
+**Added**
+- agent-supply-chain-audit IN1–IN4. An agent or CLI installed from a search result (critical when the source cannot be shown), Homebrew's git remote and `which brew` (critical when the remote is not Homebrew/brew), long-lived deploy tokens on a laptop (high when they can ship to production; existence only, no values), and agent tools that can act on another person's machine without a per-call approval (medium to high, a design check).
+- The report is cited as reported. The sequence is a translation plus CoinDesk and The Block, not Binance's own copy of the 2026-11-03 report. Left unfilled, because the report does not say: the tool's name, how the installer was tampered with, the malicious component's name, and how the internal AI tools were abused.
+- incident-triage dev-tool playbook: tampered installer, and an interview homework repo. "No alert" is not a clean result.
+- threat-hunting developer-workstation catalog: the same two patterns.
+- personal-opsec: open a take-home only in a throwaway VM, read install scripts and instruction files first, take installers from the vendor's own page, and keep deploy tokens off the interview machine.
+
+Proposed by @coreyhaines31 in #250.
+
+### 1.71.0 (2026-11-18)
+
+secrets-audit, personal-opsec, cloud-audit, and container-audit: limit what a leaked key or database URL can do. secrets-audit 1.4.0, personal-opsec 1.2.2, cloud-audit 1.3.0, container-audit 1.4.0.
+
+**Added**
+- secrets-audit step 4 asks whether a pay-per-use key has a hard spend cap scoped to that key, project, or non-default workspace. `references/spend-caps.md` has the provider table (OpenRouter per-key `limit`, OpenAI and Anthropic monthly and not daily), SC1–SC3, and the OpenRouter check. Reading the cap asks first. Docs checked 2026-10-30. A daily cap on OpenAI or Anthropic is not what those docs say.
+- personal-opsec C5 points at the same table.
+- cloud-audit self-hosted VPS checks DB1–DB4 and DB6 (`references/self-hosted-vps.md`): public listeners, Docker published ports that skip ufw, Postgres `listen_addresses`, Redis bind / protected mode / auth. DB5 (Supabase and Neon allowlists) is in `references/paas.md`. Confirmed severities match the exposure. A compose file that is not shown to be deployed stays `needs_validation`.
+- container-audit: the compose published-port grep, and a checklist line that `"5432:5432"` binds every interface.
+
+Northflank's October 2026 status page is the reason the cap and the closed database matter. No CVE was assigned as of 2026-11-02.
+
+Proposed by @coreyhaines31 in #249.
+
+### 1.70.1 (2026-11-18)
+
+README: install steps for OpenCode and oh-my-pi (`omp`). No skill changes.
+
+**Added**
+- Option 1 says which agents read `SKILL.md` natively through `npx skills`, with an OpenCode example (`-g -a opencode`).
+- Option 7: oh-my-pi. `omp` isn't an `npx skills` target; it loads project `.agents/skills/` and `.claude/skills/`, plus `~/.omp/agent/skills/` and `.omp/skills/`. The git submodule option is now Option 8.
+
+Contributed by @Robinbinu in #247.
 
 ### 1.70.0 (2026-10-30)
 

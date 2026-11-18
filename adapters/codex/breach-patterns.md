@@ -1,6 +1,6 @@
 # breach-patterns
 
-> Learn from public breach disclosures — extract the audit question each one implies and check your own stack. Capital One IMDS abuse, LastPass vault exfiltration, Okta Lapsus$, Snowflake credential reuse, MOVEit, SolarWinds, Equifax, Target POS, Codecov, Uber, Twilio, Polymarket's compromised DebugBear script — what would you check now if your boss said 'could that happen to us?' Use when the user mentions 'breach analysis,' 'lessons learned,' 'security postmortem,' 'breach patterns,' 'breach lessons,' 'has this happened to us,' 'apply breach lessons,' 'preempt breaches,' 'security retrospective,' 'real-world security incidents,' or wants to harden against known attacker playbooks.
+> Learn from public breach disclosures — extract the audit question each one implies and turn it into a checklist for your own stack. Capital One IMDS abuse, LastPass vault exfiltration, Okta Lapsus$, Snowflake credential reuse, MOVEit, SolarWinds, Equifax, Target POS, Codecov, Uber, Twilio, Polymarket's compromised DebugBear script, the OPTIMJACK Optimizely snippet injection — what would you check now if your boss said 'could that happen to us?' Use when the user mentions 'breach analysis,' 'lessons learned,' 'security postmortem,' 'breach patterns,' 'breach lessons,' 'has this happened to us,' 'apply breach lessons,' 'preempt breaches,' 'security retrospective,' 'real-world security incidents,' 'Optimizely compromise,' 'tag manager hacked,' or wants to harden against known attacker playbooks.
 
 # Breach Patterns — Preemptive Hardening from Public Breach Disclosures
 
@@ -173,14 +173,17 @@ The output is a "breach-pattern coverage" document — not a fixed report, an ev
 
 **What happened:** Polymarket loaded DebugBear's real-user-monitoring script on its app. On 2026-10-29 the file served from DebugBear's CDN was a wallet drainer for about an hour. It read the session from localStorage, borrowed the page's own trading client, and moved positions out of 33 accounts through Polymarket's relayer, with roughly $2.2–2.7M lost by various estimates. No password or key was sent anywhere; the script used the authority the logged-in page already had. Polymarket's CSP was in place, and the exfil host was the allowed vendor domain. How the file was replaced isn't public yet.
 
+On 2026-11-16 (OPTIMJACK) an attacker wrote code into the Project JavaScript of Optimizely Web customer projects through a flaw in Optimizely's signup flow. Optimizely's CDN served it to 178 organisations' pages for most of a day: a wallet-address swapper, a card skimmer, cookie theft and an iOS exploit loader. Allowlisting the vendor host didn't help; a restrictive `script-src` did.
+
 **Audit question:** If any third-party script on our logged-in or money-moving pages were swapped tonight, could it move money, change account details or read session tokens without the user approving?
 
-**Check** (TP1–TP6, greps and sources in [references/third-party-scripts.md](references/third-party-scripts.md)):
+**Check** (TP1–TP7, greps and sources in [references/third-party-scripts.md](references/third-party-scripts.md)):
 - Inventory third-party scripts by page type (logged-in, checkout, payout, admin)
 - Vendor scripts that change by design can't take SRI: self-host a reviewed copy, keep them off authenticated pages, or remove them. Versioned files get SRI — see `owasp-audit` A03
 - Withdrawals, payouts, email or password changes and API key creation need a step-up page JavaScript can't complete — see `business-logic-testing` Step 5
 - No long-lived session or API credentials in web storage — see `owasp-audit` A04 and A07
-- CSP allowlists aren't a fence for vendor domains; monitor the hash or size of each vendor script that stays
+- CSP allowlists aren't a fence for vendor domains. Avoid `'strict-dynamic'` and `'unsafe-eval'` on pages that load vendor snippets, and restrict `connect-src`. Monitor the hash or size of each vendor script that stays, and search it for `atob(` / `eval(`, not just the IoC domain
+- Who can publish code through the tag manager or experimentation dashboard (TP7): edit rights, SSO and MFA, write tokens, audit log. On payment pages this is also PCI DSS 6.4.3 / 11.6.1 — see `pci-audit`
 
 These defenses are our recommendations, not claims the sources make.
 

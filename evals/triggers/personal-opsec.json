@@ -5,7 +5,9 @@
     "should I get a YubiKey, and which accounts first?",
     "protect me from SIM swap, how do I set a port-out PIN?",
     "go through Karpathy's security checklist with me",
-    "which API keys on my laptop can my AI agents read?"
+    "which API keys on my laptop can my AI agents read?",
+    "personal opsec: a recruiter sent a take-home test. Can I open that repo on my work laptop?",
+    "personal opsec: my SSH config has ForwardAgent yes under Host *, and Codex runs on that VPS. Is my agent forwarded?"
   ],
   "near_miss": [
     {

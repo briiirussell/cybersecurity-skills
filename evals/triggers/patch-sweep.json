@@ -5,7 +5,12 @@
     "Rails CVE and we have 12 Heroku apps, sweep them",
     "patch every repo against these advisories and confirm production is fixed",
     "which of our sites run the vulnerable version?",
-    "mass dependency update across the fleet for this security release"
+    "mass dependency update across the fleet for this security release",
+    "Rails security release across our Heroku apps: Active Storage and ImageMagick. Which ones are below 8.0.5.2, patch them, and rotate secrets where Disk storage was exposed",
+    "undici security release just landed. Which of our Node apps are still below 7.30.2 or 8.12.4? Patch them all",
+    "Better Auth CVE just dropped. Which of our apps register the Expo plugin, patch them all, and rotate the secret",
+    "patch sweep every developer machine for VS Code and each installed fork after this editor advisory",
+    "patch sweep: server-filesystem switched from date versions to semver, so latest is not the fixed release. Which apps still resolve the old pin?"
   ],
   "near_miss": [
     {
