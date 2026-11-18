@@ -52,9 +52,10 @@ agent loads, at every scope. The per-agent path tables and a one-shot discovery 
 | IDE extensions | — | `~/.cursor/extensions`, `~/.vscode/extensions`, `~/.windsurf/extensions`, `~/.vscode-oss/extensions`, remote `~/.*-server/extensions`, JetBrains `plugins/` | Every extension: the extension host runs it with the user's full access |
 
 For each item record: **type**, **agent**, **scope**, **source** (marketplace, git URL, npm/PyPI package, docker image,
-remote URL, hand-written), **pin** (commit SHA, exact version, digest — or "unpinned"), **what it can run**
+remote URL, hand-written), **installed by** (`user`, `vendor app`, `repo`, or `unknown`) and the install time,
+**pin** (commit SHA, exact version, digest — or "unpinned"), **what it can run**
 (nothing / pre-approved tools / hooks / a server process), and **what runtime it launches** (`chromium <version>`,
-`system Chrome`, `node`, …; browser servers and CLIs are listed in [references/browser-runtimes.md](references/browser-runtimes.md)). An item with no identifiable source is itself worth a note.
+`system Chrome`, `node`, …; browser servers and CLIs are listed in [references/browser-runtimes.md](references/browser-runtimes.md)). An item with no identifiable source, or an unknown installer, is itself worth a note. Who added a plugin is AP1–AP5, below.
 
 ## Step 2 — Content checks
 
@@ -134,6 +135,34 @@ Equivalents elsewhere: Codex `approval_policy = "never"` with `sandbox_mode = "d
 server or auto-accept / YOLO settings (`rg -n '"(trust|autoAccept|approvalMode)"' .gemini/settings.json ~/.gemini/settings.json`);
 VS Code / Copilot tool auto-approve settings; Cursor auto-run and allowlists (in the app UI — ask the user).
 
+### Plugins a desktop app added (AP1–AP5)
+
+A normal desktop app can add plugins, a startup hook, and a remote MCP server to Claude Code, Codex, and Cursor when
+it is merely opened, and the Codex installer can store its own hook-trust record. Record **installed by** for every
+plugin, marketplace, hook, and MCP server. Paths are in [references/locations.md](references/locations.md). Read-only,
+relative to `$HOME`:
+
+```bash
+rg -n -A3 '^\[(marketplaces|plugins|hooks\.state)' .codex/config.toml 2>/dev/null
+jq '.enabledPlugins, .extraKnownMarketplaces' .claude/settings.json .copilot/settings.json 2>/dev/null
+jq -r '.plugins | to_entries[] | [.key, (.value[0].version // "-"), (.value[0].installedAt // "-"), (.value[0].scope // "-")] | @tsv' .claude/plugins/installed_plugins.json 2>/dev/null
+ls .copilot/installed-plugins 2>/dev/null
+```
+
+A Claude Code plugin's own `hooks/hooks.json` is not in `settings.json`. Also run `claude plugin list` and `codex plugin list` (the user runs these; they are not pre-approved here). Cross-check install times against app logs. For Postman, search `auto-existing-upgrade` in `~/Library/Application Support/Postman/logs/main.log`.
+
+| ID | Check | Finding |
+|---|---|---|
+| **AP1** | An enabled plugin or marketplace the user did not install, whose install time matches an app launch or update | needs_validation, medium. Confirm with the user, then remove it or keep it on purpose |
+| **AP2** | A `[hooks.state."<plugin>:...session_start..."]` `trusted_hash` for a hook the user never reviewed in Codex's hook review | medium. Re-read the hook text, then remove the record or approve it knowingly. The record is a config file: it shows an approval was stored, not who stored it |
+| **AP3** | SessionStart hook text that sets a default workflow for broad work ("before responding to any … task, load … skill") | medium. A vendor instruction injected into every session is a prompt-injection surface that vendor controls. Postman's own text says `AGENTS.md`, `CLAUDE.md`, and direct user requests take precedence |
+| **AP4** | A remote MCP server added with the plugin (`mcp.*.json` inside it, or a new `[mcp_servers.*]` entry) | needs_validation. Record the URL and whether it is authenticated |
+| **AP5** | After removal, leftover marketplace entries, `hooks.state` records, plugin caches, or CLI binaries | low. Remove leftovers by hand |
+
+Worked report, checked 2026-11-04, still one user's evidence and not reproduced on a clean Mac. Postman desktop (first report on 12.33.4, a second on 12.35.1) logged `source: auto-existing-upgrade` and installed plugins for Claude Code and Codex, enabled `postman@claude-plugins-official`, and wired `https://mcp.postman.com/mcp`. The plugin README says the Codex install approves Postman's session-start hook with no separate prompt. A maintainer replied on 2026-11-03 that opt-in would be made clearer and that the hook approval was under review. No fix and no CVE as of 2026-11-04. Nothing in the reporting says data left the machine, and nothing says the plugin is malicious. Cite the report. Do not call the vendor malicious. An AP2 or AP3 hit on a machine that holds production credentials or deploy keys is where the medium escalates. After any vendor app update, re-run this inventory.
+
+Sources: [postmanlabs/postman-app-support#14370](https://github.com/postmanlabs/postman-app-support/issues/14370), [postman-plugin README](https://github.com/postmanlabs/postman-plugin#install).
+
 ## Step 4 — MCP servers: pinning, tool definitions, rug pulls
 
 ### Pinning (RP1, RP3)
@@ -173,7 +202,7 @@ is `personal-opsec` C7.
 Ask where agents get started, and inventory instruction files and settings in catch-all folders the browser writes to.
 In October 2026 a planted `AGENTS.md` in a customer's `~/Downloads` told Codex to add a server to the machine-wide
 `~/.codex/config.toml` and install a malicious npm package. Checks: a trusted catch-all folder (LD1), an instruction
-file nobody wrote (LD2), a machine-wide server or base URL the user doesn't recognize (LD3), a package from a known
+file nobody wrote (LD2), a machine-wide server or base URL the user doesn't recognize (LD3, including a plugin or MCP server a desktop app added — AP1, AP4), a package from a known
 campaign (LD4). LD2–LD4 are Critical. Codex trust is per exact path, so an `untrusted` entry for `~/Downloads`
 doesn't cover folders inside it. Details: [references/launch-directories.md](references/launch-directories.md).
 
@@ -275,7 +304,7 @@ Anchors for this surface:
 |---|---|
 | Critical | Active item sends credentials, transcripts, or source to an external host; concealed directive that runs commands or disables approvals; a known-bad or code-prepended IDE extension on disk (EX1, EX4); an agent installer whose source cannot be shown (IN1), or a Homebrew remote that is not Homebrew/brew (IN2) |
 | High | Hook or bundled script with undeclared egress; project settings that bypass permissions or reroute model traffic; persistence into instruction files, settings, or shell init; a deploy token on the laptop that can ship to production (IN3) |
-| Medium | Unpinned MCP server or git-installed skill with broad tool access; an unreviewed agent extension on auto-update on a machine with production access (EX2); unscoped `Bash` + `WebFetch` pre-approval; tool description that steers the model toward another tool or extra data |
+| Medium | Unpinned MCP server or git-installed skill with broad tool access; an unreviewed agent extension on auto-update on a machine with production access (EX2); unscoped `Bash` + `WebFetch` pre-approval; tool description that steers the model toward another tool or extra data; an app-added session hook the user did not review (AP2, AP3). On a machine that holds production credentials or deploy keys, that medium escalates. Do not call the vendor malicious |
 | Low | Unpinned item with narrow reach; over-broad trigger that shadows another skill |
 
 Not findings — **hardening notes**: no tool-definition snapshot, missing `permissions.deny` rules, a pinned tag rather
@@ -320,10 +349,10 @@ Write the machine-readable findings first, validate them, then render the markdo
 ## Date: [date] — SkillSpector: [version, --no-llm | not run]
 
 ### Inventory
-| # | Item | Type | Agent | Scope | Source | Pin | Runs | Runtime | Verdict |
-|---|------|------|-------|-------|--------|-----|------|---------|---------|
-| 1 | .claude/skills/pdf-helper | skill | Claude Code | project | github.com/x/y | unpinned (main) | Bash (unscoped) | — | DO-NOT-INSTALL |
-| 2 | playwright (MCP) | MCP server | Claude Code | user | npm @playwright/mcp | 0.0.41 (pinned 2026-06-02) | server process | chromium 149.0.7827.55 ⚠️ | CAUTION |
+| # | Item | Type | Agent | Scope | Source | Installed by | Pin | Runs | Runtime | Verdict |
+|---|------|------|-------|-------|--------|--------------|-----|------|---------|---------|
+| 1 | .claude/skills/pdf-helper | skill | Claude Code | project | github.com/x/y | user | unpinned (main) | Bash (unscoped) | — | DO-NOT-INSTALL |
+| 2 | playwright (MCP) | MCP server | Claude Code | user | npm @playwright/mcp | unknown | 0.0.41 (pinned 2026-06-02) | server process | chromium 149.0.7827.55 ⚠️ | CAUTION |
 
 ### Findings
 #### [SEVERITY] [RULE-ID] [Title]
@@ -367,6 +396,7 @@ Write the machine-readable findings first, validate them, then render the markdo
 - Invariant Labs, "MCP Security Notification: Tool Poisoning Attacks" (2025)
 - Claude Code documentation — settings, hooks, permissions, MCP, plugins
 - Installers and interview-homework entry points (IN1–IN4). Binance's 2026-11-03 preliminary report, as carried by [PANews](https://www.panews.io/articles/01a1a1f3-f83c-72b0-9ff3-f09835ad5432) (a translation), [CoinDesk](https://www.coindesk.com/business/2026/11/03/binance-s-usd6-3-billion-hack-began-with-a-fake-job-interview-exchange-says), and [The Block](https://www.theblock.co/news/business/2026-11-03-binance-hack-incident-report-north-korea-fake-job-interview-ai-tool-432406). Reported, not re-verified against Binance's own copy of that report. Do not fill in the four items the report leaves out.
+- App-installed plugins (AP1–AP5), checked 2026-11-04: [postman-app-support#14370](https://github.com/postmanlabs/postman-app-support/issues/14370). One user's evidence, not reproduced on a clean Mac. No CVE. Do not call the vendor malicious.
 - [references/locations.md](references/locations.md), [references/content-checks.md](references/content-checks.md),
   [references/findings-format.md](references/findings-format.md), [references/severity-calibration.md](references/severity-calibration.md)
 

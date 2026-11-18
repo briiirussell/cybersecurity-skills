@@ -4,7 +4,7 @@ Current versions of all skills. Agents can compare against local versions to che
 
 | Skill | Version | Last Updated |
 |-------|---------|--------------|
-| agent-supply-chain-audit | 1.4.0 | 2026-11-18 |
+| agent-supply-chain-audit | 1.5.0 | 2026-11-18 |
 | ai-risk-management | 1.1.3 | 2026-10-30 |
 | api-audit | 1.1.7 | 2026-10-27 |
 | breach-patterns | 1.1.0 | 2026-10-30 |
@@ -30,7 +30,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | owasp-audit | 1.8.0 | 2026-11-18 |
 | patch-sweep | 1.4.0 | 2026-11-18 |
 | pci-audit | 1.1.1 | 2026-10-27 |
-| personal-opsec | 1.3.0 | 2026-11-18 |
+| personal-opsec | 1.3.1 | 2026-11-18 |
 | privacy-engineering | 1.1.0 | 2026-10-27 |
 | prompt-injection | 1.2.1 | 2026-10-27 |
 | recon | 1.0.1 | 2026-10-26 |
@@ -48,6 +48,18 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.75.0 (2026-11-18)
+
+agent-supply-chain-audit records who installed each plugin, hook, and MCP server (#253). agent-supply-chain-audit 1.5.0, personal-opsec 1.3.1.
+
+**Added**
+- Inventory column **Installed by** (`user`, `vendor app`, `repo`, or `unknown`) plus install time. Read-only commands for Codex `[marketplaces]` / `[plugins]` / `[hooks.state]`, Claude Code `enabledPlugins` and `installed_plugins.json`, and Copilot CLI settings. Paths are in `references/locations.md`.
+- AP1–AP5. An app-added plugin or marketplace, a self-approved `trusted_hash`, a session-start instruction that steers broad work, a remote MCP server added with the plugin, and leftovers after removal. Medium until the user confirms. Escalates on a machine that holds production credentials or deploy keys. The trust record shows an approval was stored, not who stored it. Do not call the vendor malicious.
+- Worked report: Postman desktop auto-install, checked 2026-11-04. One user's evidence (12.33.4, then 12.35.1), not reproduced on a clean Mac. No fix and no CVE as of that date. Nothing in the reporting says data left the machine.
+- personal-opsec C2 asks which desktop apps may change agent config. LD3 points at AP1 and AP4.
+
+Proposed by @coreyhaines31 in #253.
 
 ### 1.74.0 (2026-11-18)
 
