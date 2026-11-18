@@ -6,7 +6,7 @@ Current versions of all skills. Agents can compare against local versions to che
 |-------|---------|--------------|
 | agent-supply-chain-audit | 1.7.1 | 2026-11-18 |
 | ai-risk-management | 1.1.3 | 2026-10-30 |
-| api-audit | 1.1.7 | 2026-10-27 |
+| api-audit | 1.2.0 | 2026-11-18 |
 | breach-patterns | 1.1.0 | 2026-10-30 |
 | business-logic-testing | 1.1.0 | 2026-10-30 |
 | cicd-security | 1.0.0 | 2026-10-27 |
@@ -17,7 +17,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | csf-mapping | 1.0.3 | 2026-10-27 |
 | dependency-audit | 1.6.0 | 2026-11-18 |
 | disk-forensics | 1.0.2 | 2026-10-27 |
-| finding-triage | 1.3.1 | 2026-10-27 |
+| finding-triage | 1.4.0 | 2026-11-18 |
 | fuzzing-harness | 1.0.1 | 2026-10-27 |
 | hipaa-audit | 1.1.1 | 2026-10-27 |
 | iam-audit | 1.2.0 | 2026-10-27 |
@@ -45,9 +45,19 @@ Current versions of all skills. Agents can compare against local versions to che
 | threat-modeling | 1.0.4 | 2026-10-26 |
 | variant-analysis | 1.0.0 | 2026-10-27 |
 | vuln-research | 1.0.4 | 2026-10-27 |
-| web-pentest | 1.2.1 | 2026-10-27 |
+| web-pentest | 1.3.0 | 2026-11-18 |
 
 ## Recent Changes
+
+### 1.85.0 (2026-11-18)
+
+finding-triage, api-audit, and web-pentest: agent-report source class, and redacting HTTP transcripts before a model reads them. finding-triage 1.4.0, api-audit 1.2.0, web-pentest 1.3.0.
+
+**Added**
+- finding-triage: record a source class (scanner, manual audit, production/operator, agent-generated). Volume and multi-agent agreement do not raise severity and do not skip the six-element gate. A valid finding that only holds on a deployment the customer does not run stays Low or becomes a hardening note, and is not relabeled a false positive. Production evidence outweighs novel or agentic discovery for priority. The Puma-maintainer note is kept as an anecdote, with no hit-rate claim. The independent read still runs before High or Critical on an agent-written report.
+- api-audit and web-pentest: before a model sees a Burp, ZAP, HAR, or curl transcript, replace cookies, `Authorization`, `Set-Cookie`, JWTs, and secret fields with stable identity markers so owner-vs-non-owner evidence still works. The credential swap stays outside the model. HoneyWarden #82 is named as the product analogue, not a dependency.
+
+Proposed by @coreyhaines31 in #264.
 
 ### 1.84.0 (2026-11-18)
 

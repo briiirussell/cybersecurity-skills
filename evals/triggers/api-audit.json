@@ -5,7 +5,8 @@
     "is our GraphQL API open to introspection abuse and deeply nested queries?",
     "check this for mass assignment\n```js\napp.patch('/api/users/:id', async (req, res) => {\n  await User.update(req.body, { where: { id: req.params.id } });\n  res.json({ ok: true });\n});\n```",
     "do we have rate limiting on the login and password reset API endpoints?",
-    "audit our API against the OWASP API Security Top 10"
+    "audit our API against the OWASP API Security Top 10",
+    "redact the API transcript before a model compares these two owner requests for BOLA"
   ],
   "near_miss": [
     {

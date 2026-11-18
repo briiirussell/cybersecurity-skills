@@ -1,6 +1,6 @@
 ---
 name: api-audit
-description: "Audit REST, GraphQL, and RPC APIs against the OWASP API Security Top 10 (2023). Use when the user mentions 'API security,' 'API audit,' 'BOLA,' 'broken object level authorization,' 'BFLA,' 'function-level authorization,' 'mass assignment,' 'API rate limiting,' 'GraphQL security,' 'REST security,' 'API authentication,' 'API authorization,' 'excessive data exposure,' or needs to review API endpoints for security weaknesses."
+description: "Audit REST, GraphQL, and RPC APIs against the OWASP API Security Top 10 (2023). Use when the user mentions 'API security,' 'API audit,' 'BOLA,' 'broken object level authorization,' 'BFLA,' 'function-level authorization,' 'mass assignment,' 'API rate limiting,' 'GraphQL security,' 'REST security,' 'API authentication,' 'API authorization,' 'excessive data exposure,' 'redact the API transcript,' or needs to review API endpoints for security weaknesses."
 allowed-tools: Read, Grep, Glob
 ---
 
@@ -198,6 +198,16 @@ curl -s -D- -o/dev/null https://TEST-HOST/api/orders/$A_ORDER -H "authorization:
 ```
 
 Capture both full exchanges (request headers minus secrets, body, status, response). Keep the method, path, query, body and all other headers identical between the two. For GraphQL, keep the operation string and variables byte-identical and change only the token (see [references/graphql.md](references/graphql.md)).
+
+### Transcripts a model will read
+
+The paired owner-vs-non-owner rule above does not change. When a model will see the exchange — combined mode, a PoC writeup, or a review of a Burp, ZAP, or HAR export — the transcript itself is a secret until you redact it.
+
+1. **Redact before the model sees it.** Replace `Cookie`, `Authorization`, `Set-Cookie`, JWTs, and common secret fields in bodies and query strings. A shortened live value is still a secret. Use a marker, not a prefix or a last-4 of a JWT.
+2. **Keep stable identity markers**, such as `<identity-A-cookie>` and `<identity-B-cookie>` (and the same pair for bearer tokens). The model can still tell which principal a request used, and can still require the pair above, without seeing the secret.
+3. **Swap identities outside the model.** The model may name which captured request to replay as the other user. Replacing the stored A credential with the stored B credential is a deterministic step for the human or the tooling. The model does not invent a third cookie and does not paste a live JWT.
+
+HoneyWarden tracks the product-side version of this as [honeywarden#82](https://github.com/coreyhaines31/honeywarden/issues/82). That issue is an analogue, not a dependency. Do not copy unlicensed tooling, and do not treat any product's hit rate as measured here.
 
 ## Verify Every Finding (refutation pass — before the report)
 
