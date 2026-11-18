@@ -282,8 +282,12 @@ Mark each class yes or no. A blank is not a no.
 - Cloud IAM roles or service accounts the vendor can use
 - MCP servers or agents connected to it
 - Anything pasted into its chat or agent features
+- CI and build or task histories, and cached snapshots
+- GitHub App, OAuth, and BYOK tokens, and agent keys
 
 **Rotation tested?** is yes only after that class was rotated and production survived. "No" on a production class is the existing "Rotation never tested" finding. Start the vendor list from the bill, the SSO app list, and MCP configs (server names only). `.env.example` key names show which integrations exist. Do not read `.env` into the session.
+
+Dashboard env vars are not the whole copy. A build history, a cached snapshot, or a BYOK token can hold the same secret after the variable is gone from the UI. Do not treat renaming a variable as a control: the [Railway RCA](../incident-triage/references/vendor-breach-notice.md#railway-october-2026) matched conventional names such as `OPENAI_API_KEY`. Scope, a short lifetime, a spend cap, and revocation at the issuer are the controls.
 
 ### Common findings
 

@@ -17,6 +17,7 @@ GitBook, Northflank, and Warp each describe an AI-agent or "agent swarm" attack,
 | **Bubble** ([status incident](https://status.bubble.io/incidents/01M5WJ5HV7RWPN15GFDHZMCSSS), 2026-10-26) | Unauthorized access. The attacker reached plugin metadata, including private keys stored in plugins, and downloaded data from apps whose editor was set to publicly viewable. Later probing of individual apps for common misconfigurations. Read from the incident page and the Bubble forum Q&A, not fetched in full on 2026-11-03. | Check third-party account activity, rotate possibly exposed credentials, run the security dashboard, mark credentials "Private", and set apps to "Private app". Official messages come only from Bubble's own domain and status page. Bubble does not ask for passwords by email. |
 | **Allium** ([status page](https://status.allium.so/), detected 2026-10-25) | Unauthorized access. The app was offline for days. Read from a status-page excerpt on 2026-11-03: API keys revoked Oct 28. | Existing API keys were revoked and must be recreated. Set a new password and turn on MFA. |
 | **Warp** (CEO statement, via [BleepingComputer](https://www.bleepingcomputer.com/news/security/warp-discloses-breach-exposing-ai-agent-logs-user-telemetry-data/), incident 2026-10-23, disclosed 2026-10-26) | An unnamed vendor in Warp's infrastructure was exploited. Attackers reached "a limited amount of agent trace and telemetry data", upper bound roughly 1% of users. Warp has not said whether code, prompts, or credentials were in that data. The vendor, the vulnerability, and the exposed fields are not disclosed. | Follow Warp's notice. Third-party write-ups suggest rotating anything pasted or printed in an agent session. That advice is from the write-ups, not from Warp. |
+| **Railway** ([final RCA](https://blog.railway.com/p/incident-report-october-security-incident), published 2026-11-10; incident Oct 20–21; [preliminary guidance](https://blog.railway.com/p/preliminary-report-october-security-incident) Oct 22) | Multi-tenant build-sandbox escape (Oct 20 07:28 UTC) led to an over-trusted build credential being accepted by Temporal. That exposed 353 build histories (secrets, a GitHub App token) and a Railway monorepo cache. Re-entry used misconfigured OIDC, then SSH/VPC access and a decrypt credential on an orchestration box. Queries prioritized AI provider keys by variable-name regex (names like `OPENAI_API_KEY`) and also matched cloud, database, and payment names. Railway's forensics, read 2026-11-10, not re-verified here. No CVE. "Abliterated models" and ARTEX-like harness language is Railway citing Wiz, not independently verified. | Follow Railway's notice. Rotate at the issuing provider, not only in the Railway UI. Inventory more than the dashboard env vars (below). Treat "at most 1.85%" (~100k workspaces) as Railway's ceiling on workspaces that *could* have had variables decrypted, not a confirmed victim count. 1,852 BYOK / GitHub OAuth tokens were reset. About $740k unauthorized key spend was reported. |
 
 ## Playbook
 
@@ -40,6 +41,22 @@ GitBook, Northflank, and Warp each describe an AI-agent or "agent swarm" attack,
 | We were told | | the notice you actually received |
 | Declared (Step 1) | | incident lead |
 | Each secret rotated | | issuer audit log |
+
+## Railway, October 2026
+
+The row above is the first full root-cause writeup in this set. Steps 1–7 still apply. Add these, from what the RCA actually says.
+
+1. **Provider notification may precede the customer notice.** Railway notified GitHub, GitLab, Anthropic, OpenAI, OpenRouter, SpaceXSI, Google, and Stripe first. A key may already be revoked or flagged when you first hear. Record what the issuer already did, then rotate whatever is still yours.
+
+2. **Inventory more than dashboard env vars.** Include CI and build or task histories, cached snapshots, GitHub App / OAuth / BYOK tokens, and agent keys. The same classes belong on the `secrets-audit` vendor-held inventory, not only the variables visible in the project UI.
+
+3. **Rotate at the issuer.** Same rule as step 2. Railway reported about $740k of unauthorized key spend. A hard spend cap on the leaked key limits that bill. Caps, scope, and short-lived credentials are the controls. Renaming is not.
+
+4. **Do not treat env-var renaming as a primary control.** The queries matched conventional names (`OPENAI_API_KEY` and similar). Renaming is evasion at best.
+
+5. **Keep upper bounds honest.** "At most 1.85%" is a ceiling, not a count of affected workspaces. Unknown stays unknown.
+
+Do not copy Railway's indicators into a hunt as if they were independently verified, and do not claim any attacker tooling worked. A Railway project inventory stays in `cloud-audit` (`references/paas.md`). This section is the incident response, not a second PaaS checklist.
 
 ## What not to do with these notices
 

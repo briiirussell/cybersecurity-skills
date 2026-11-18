@@ -21,7 +21,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | fuzzing-harness | 1.0.1 | 2026-10-27 |
 | hipaa-audit | 1.1.1 | 2026-10-27 |
 | iam-audit | 1.2.0 | 2026-10-27 |
-| incident-triage | 1.6.0 | 2026-11-18 |
+| incident-triage | 1.7.0 | 2026-11-18 |
 | log-watch | 1.0.3 | 2026-11-18 |
 | malware-triage | 1.0.0 | 2026-10-27 |
 | mobile-audit | 1.1.1 | 2026-10-27 |
@@ -36,7 +36,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | recon | 1.0.1 | 2026-10-26 |
 | red-team-engagement | 1.0.1 | 2026-10-26 |
 | scanner-pipeline | 1.1.0 | 2026-10-30 |
-| secrets-audit | 1.6.0 | 2026-11-18 |
+| secrets-audit | 1.7.0 | 2026-11-18 |
 | security-comms | 1.0.3 | 2026-10-26 |
 | security-start | 1.0.0 | 2026-10-27 |
 | siem-detection | 1.1.0 | 2026-11-18 |
@@ -48,6 +48,17 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.83.0 (2026-11-18)
+
+incident-triage and secrets-audit: Railway's October 2026 final RCA, added to the vendor-breach playbook. incident-triage 1.7.0, secrets-audit 1.7.0.
+
+**Added**
+- A Railway row on the vendor-breach table, citing the final RCA (2026-11-10) and the Oct 22 preliminary note. Marked as Railway's forensics, not re-verified. No CVE. The "at most 1.85%" figure is an upper bound, not a victim count. "Abliterated models" / ARTEX-like language is Railway citing Wiz.
+- Five tightenings: the issuer may act before you are told; inventory CI, build history, caches, GitHub App / OAuth / BYOK tokens, and agent keys; rotate at the issuer; do not treat env-var renaming as a control; keep upper bounds honest.
+- secrets-audit vendor-held inventory lists those extra classes, and says renaming a variable is not a control.
+
+Proposed by @coreyhaines31 in #262. Based on the vendor-breach playbook in #251.
 
 ### 1.82.0 (2026-11-18)
 
