@@ -5,7 +5,8 @@
     "ransomware just hit our file server",
     "suspicious activity on a production box: someone created a new admin user at 3am",
     "help me contain this incident and preserve evidence",
-    "extract IOCs from these alerts and tell me which notification clocks have started"
+    "extract IOCs from these alerts and tell me which notification clocks have started",
+    "incident triage: a developer ran a tampered installer, then a take-home repo from a fake interview. We've been compromised"
   ],
   "near_miss": [
     {

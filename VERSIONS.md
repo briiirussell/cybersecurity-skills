@@ -4,7 +4,7 @@ Current versions of all skills. Agents can compare against local versions to che
 
 | Skill | Version | Last Updated |
 |-------|---------|--------------|
-| agent-supply-chain-audit | 1.3.0 | 2026-10-30 |
+| agent-supply-chain-audit | 1.4.0 | 2026-11-18 |
 | ai-risk-management | 1.1.3 | 2026-10-30 |
 | api-audit | 1.1.7 | 2026-10-27 |
 | breach-patterns | 1.1.0 | 2026-10-30 |
@@ -21,7 +21,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | fuzzing-harness | 1.0.1 | 2026-10-27 |
 | hipaa-audit | 1.1.1 | 2026-10-27 |
 | iam-audit | 1.2.0 | 2026-10-27 |
-| incident-triage | 1.2.0 | 2026-10-30 |
+| incident-triage | 1.3.0 | 2026-11-18 |
 | log-watch | 1.0.2 | 2026-10-30 |
 | malware-triage | 1.0.0 | 2026-10-27 |
 | mobile-audit | 1.1.1 | 2026-10-27 |
@@ -30,7 +30,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | owasp-audit | 1.7.0 | 2026-10-30 |
 | patch-sweep | 1.3.0 | 2026-10-30 |
 | pci-audit | 1.1.1 | 2026-10-27 |
-| personal-opsec | 1.2.2 | 2026-11-18 |
+| personal-opsec | 1.3.0 | 2026-11-18 |
 | privacy-engineering | 1.1.0 | 2026-10-27 |
 | prompt-injection | 1.2.1 | 2026-10-27 |
 | recon | 1.0.1 | 2026-10-26 |
@@ -41,13 +41,26 @@ Current versions of all skills. Agents can compare against local versions to che
 | security-start | 1.0.0 | 2026-10-27 |
 | siem-detection | 1.0.5 | 2026-10-27 |
 | soc-operations | 1.0.4 | 2026-10-26 |
-| threat-hunting | 1.1.0 | 2026-10-30 |
+| threat-hunting | 1.2.0 | 2026-11-18 |
 | threat-modeling | 1.0.4 | 2026-10-26 |
 | variant-analysis | 1.0.0 | 2026-10-27 |
 | vuln-research | 1.0.4 | 2026-10-27 |
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.72.0 (2026-11-18)
+
+Installer and interview-homework entry points from Binance's 2026-11-03 preliminary report (#250). agent-supply-chain-audit 1.4.0, incident-triage 1.3.0, threat-hunting 1.2.0, personal-opsec 1.3.0.
+
+**Added**
+- agent-supply-chain-audit IN1–IN4. An agent or CLI installed from a search result (critical when the source cannot be shown), Homebrew's git remote and `which brew` (critical when the remote is not Homebrew/brew), long-lived deploy tokens on a laptop (high when they can ship to production; existence only, no values), and agent tools that can act on another person's machine without a per-call approval (medium to high, a design check).
+- The report is cited as reported. The sequence is a translation plus CoinDesk and The Block, not Binance's own copy of the 2026-11-03 report. Left unfilled, because the report does not say: the tool's name, how the installer was tampered with, the malicious component's name, and how the internal AI tools were abused.
+- incident-triage dev-tool playbook: tampered installer, and an interview homework repo. "No alert" is not a clean result.
+- threat-hunting developer-workstation catalog: the same two patterns.
+- personal-opsec: open a take-home only in a throwaway VM, read install scripts and instruction files first, take installers from the vendor's own page, and keep deploy tokens off the interview machine.
+
+Proposed by @coreyhaines31 in #250.
 
 ### 1.71.0 (2026-11-18)
 

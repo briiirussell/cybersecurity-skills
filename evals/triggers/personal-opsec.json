@@ -5,7 +5,8 @@
     "should I get a YubiKey, and which accounts first?",
     "protect me from SIM swap, how do I set a port-out PIN?",
     "go through Karpathy's security checklist with me",
-    "which API keys on my laptop can my AI agents read?"
+    "which API keys on my laptop can my AI agents read?",
+    "personal opsec: a recruiter sent a take-home test. Can I open that repo on my work laptop?"
   ],
   "near_miss": [
     {

@@ -17,6 +17,17 @@ editing the playbook.
 3. **Do any IOCs match?** Check the vendor's indicators (section 5). Cursor's rule for its incident: if the attacker
    key is present, the machine is affected.
 
+Two more ways onto the same machine, from Binance's 2026-11-03 preliminary report (reported, not re-proven here;
+the four items that report leaves out stay left out — see `agent-supply-chain-audit` IN1–IN4):
+
+1. **Tampered installer.** Ask which installer was run around the first suspicious activity. Check `brew tap` and the
+   Homebrew remote (IN2), and review `~/Library/LaunchAgents` as section 3 already does. An agent or CLI whose
+   install source cannot be shown is critical.
+2. **Interview "homework" repo.** Ask whether the user cloned or unzipped a repository from a recruiter or
+   interviewer in the last 90 days. If they did, on the work machine, treat the machine as compromised and rotate
+   everything reachable from it. Binance's report says its endpoint protection missed the malware, so "no alert" is
+   not a clean result.
+
 ## 2. Contain, before cleaning
 
 Each step changes the machine: name it, and get the incident lead's or owner's go-ahead.

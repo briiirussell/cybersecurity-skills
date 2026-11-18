@@ -121,6 +121,8 @@ The patterns malicious IDE extensions, MCP servers and packages use, so the hunt
 - **Reverse tunnels** — `ssh -R` or `autossh` processes; `StrictHostKeyChecking=no` with `UserKnownHostsFile=/dev/null` in any command line
 - **Remote Login / OpenSSH Server turned on** without a ticket — macOS `systemsetup -getremotelogin`, Windows `OpenSSH.Server` capability
 - **Recently changed `extension.js`** in IDE extension folders whose first bytes aren't the bundler's banner
+- **Tampered installer** — Homebrew's git remote is not the Homebrew/brew repository, a tap the developer does not recognize, or an agent CLI whose install URL came from a search result (`agent-supply-chain-audit` IN1–IN2)
+- **Interview homework on a work machine** — a repository from a recruiter or interviewer, cloned or unpacked in the last 90 days. Endpoint protection staying quiet is not a clean result (`incident-triage` dev-tool compromise)
 
 ### Defense evasion
 

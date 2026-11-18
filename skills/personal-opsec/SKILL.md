@@ -1,6 +1,6 @@
 ---
 name: personal-opsec
-description: "Audit one person's own security setup — the founder or operator who holds the keys to the stack — and produce a prioritized gap report. Walks Karpathy's 15-control digital security checklist, adds account-recovery, SIM-swap, registrar, and hardware-key checks, and covers the AI-agent era: tokens your coding agents can read, MCP server trust, inbox-assistant prompt injection, clipboard exposure. Use when the user mentions 'personal opsec,' 'personal security audit,' 'secure my own accounts,' 'founder security,' 'Karpathy security checklist,' 'am I secure,' 'hardware key,' 'YubiKey,' 'SIM swap,' 'port-out PIN,' 'FileVault,' 'BitLocker,' 'password manager,' 'recovery codes,' 'registrar lock,' 'what can my AI agent see,' 'API keys on my laptop,' 'MCP trust,' or wants to harden their own accounts and machine."
+description: "Audit one person's own security setup — the founder or operator who holds the keys to the stack — and produce a prioritized gap report. Walks Karpathy's 15-control digital security checklist, adds account-recovery, SIM-swap, registrar, and hardware-key checks, and covers the AI-agent era: tokens your coding agents can read, MCP server trust, inbox-assistant prompt injection, clipboard exposure, take-home tests, and where tools are installed from. Use when the user mentions 'personal opsec,' 'personal security audit,' 'secure my own accounts,' 'founder security,' 'Karpathy security checklist,' 'am I secure,' 'hardware key,' 'YubiKey,' 'SIM swap,' 'port-out PIN,' 'FileVault,' 'BitLocker,' 'password manager,' 'recovery codes,' 'registrar lock,' 'what can my AI agent see,' 'API keys on my laptop,' 'MCP trust,' 'take-home test,' or wants to harden their own accounts and machine."
 allowed-tools: Read, Grep, Glob, Bash(fdesetup status:*), Bash(/usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate:*), Bash(/usr/libexec/ApplicationFirewall/socketfilterfw --getstealthmode:*), Bash(scutil --dns:*), Bash(spctl --status:*), Bash(csrutil status:*), Bash(sw_vers:*), Bash(which:*), Bash(ls -l:*), Bash(gh auth status:*), Bash(whois:*), Bash(manage-bde -status:*), Bash(lsblk:*), Bash(resolvectl status:*), Bash(defaults read:*), Bash(pgrep -fl:*)
 ---
 
@@ -126,6 +126,17 @@ Coding agents, MCP servers, and inbox assistants run with the operator's file ac
 Example of the bug class: CVE-2026-106378 ([pwn.ai write-up](https://pwn.ai/blog/chrome-escape), fixed in Chrome 155 per the write-up). Code running in the macOS GPU process could post keystrokes through WindowServer using the launching app's permissions. It's a sandbox escape, so it needs a renderer or GPU bug first. An old cached build is missing those fixes too. On 2026-10-30 it wasn't in CISA KEV (EPSS 0.003).
 
 **C8 — Inbound remote access.** A laptop rarely needs to accept SSH. Check Remote Login / OpenSSH Server is off unless the user needs it (macOS **ask** them to look in System Settings → General → Sharing; `systemsetup -getremotelogin` needs admin), and Glob for `~/.ssh/authorized_keys`: absent is the right default for a laptop, present means review every key. Remote access on with an unreviewed key → finding medium; an unknown key → hand off to `incident-triage` (dev-tool compromise). Recommend an alert on any change to `authorized_keys` (a periodic hash check is enough).
+
+## Job offers, take-home tests, and where tools come from
+
+Binance's 2026-11-03 preliminary report (reported, not re-proven here) describes a tampered Homebrew installer found via search, and a fake interview that ended with a homework repository run on the work computer. Endpoint protection did not alert. The same gaps apply to any operator. The installer and token checks are `agent-supply-chain-audit` IN1–IN4. Do not invent the tool name, the tamper method, the component name, or how an internal AI tool was abused: the report does not say.
+
+- Open a take-home repository only in a throwaway VM or container, never on the work machine. Before running anything, read `package.json` scripts (`preinstall`, `postinstall`, `prepare`), `.vscode/tasks.json` (any task with `runOn: folderOpen`), and any `AGENTS.md` / `CLAUDE.md` (`agent-supply-chain-audit` launch-directory checks).
+- Be wary of a recruiter who shares personal social accounts and moves from a job platform to a chat app. The report says that approach is cheap to fake.
+- Take the Homebrew install command from `brew.sh`, and agent installers from the vendor's own docs, typed or bookmarked. Not from a search result.
+- Keep deploy tokens off the machine used for interviews.
+
+A take-home that already ran on the work machine → hand off to `incident-triage`. "No alert" is not a clean result.
 
 ## Prioritization
 

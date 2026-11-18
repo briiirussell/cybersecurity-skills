@@ -220,6 +220,37 @@ overnight. The control is a snapshot at approval and a diff on every upgrade:
   tool annotations (read-only → destructive). An approved server with no snapshot and no diff process is a hardening
   note.
 
+### Installers and reach (IN1–IN4)
+
+Ask where each agent tool was installed from, then check the installer itself. Read-only. Do not print credential
+values. The prompting report is Binance's account of its 2026-10-29 theft (about $6.3 billion), published as a
+preliminary report on 2026-11-03. The dated steps below are from a full-text translation (PANews) plus CoinDesk and
+The Block. The issue author did not reach Binance's own copy of that preliminary report, so treat the sequence as
+reported, not as something this repo re-verified against Binance's page. The initial announcement (2026-10-30) said a
+compromised DevOps laptop gave access to a service container. CoinDesk attributes the theft to North Korea, citing
+the FBI via Binance's CSO.
+
+Reported sequence, and only this sequence: in June 2026 a wallet DevOps engineer searched for a popular AI coding
+tool, downloaded a tampered Homebrew installer, and tried to install the tool with it. In September a fake interview
+ended with a "homework" repository whose code ran on install, on the work computer, and endpoint protection did not
+detect it. On 20 October the attackers used Binance's internal AI tools to take over other engineers' machines and
+found a container-deployment token on a laptop. On 29 October that token deployed a container against the wallet
+signing service. Not in the report, so do not fill them in: the name of the AI coding tool, how the installer was
+tampered with, the name of the malicious component, and how the internal AI tools were abused.
+
+| ID | Check | Finding |
+|---|---|---|
+| **IN1** | Where each agent tool (Claude Code, Codex, Cursor, MCP servers) was installed from, compared with the vendor's docs. Flag an installer, a `.pkg`, or a pipe-to-shell URL that came from a search ad or a third-party blog | needs_validation. If the source cannot be shown, confirmed critical, and hand off to `incident-triage` (dev-tool compromise) |
+| **IN2** | Homebrew is the real one. `git -C "$(brew --repository)" remote -v` should be the Homebrew/brew repository (`https://github.com/Homebrew/brew` or `git@github.com:Homebrew/brew.git`). `which brew` should be `/opt/homebrew/bin/brew` or `/usr/local/bin/brew`. `brew tap`: flag any tap the user did not add | Confirmed critical if the brew remote is anything else. An unrecognized tap is needs_validation |
+| **IN3** | Long-lived deploy tokens on the laptop. Existence and permissions only, never contents: `~/.docker/config.json`, `~/.kube/config`, shell history, and agent env files. Recommend short-lived or per-job credentials. Rotation is `secrets-audit` | High if a token there can ship to production |
+| **IN4** | For each MCP server or internal agent tool, whether it can run commands, read files, or call APIs on another person's device without a per-call approval | Medium to high. A design check. The report names internal AI tools as the pivot and gives no mechanism, so do not claim this is how Binance was hit |
+
+```bash
+git -C "$(brew --repository)" remote -v
+brew tap
+which brew
+```
+
 ## Step 5 — Optional automated pass: SkillSpector
 
 [NVIDIA SkillSpector](https://github.com/NVIDIA/SkillSpector) (Apache-2.0) runs ~70 static checks plus optional
@@ -244,8 +275,8 @@ Anchors for this surface:
 
 | Severity | Typical shape |
 |---|---|
-| Critical | Active item sends credentials, transcripts, or source to an external host; concealed directive that runs commands or disables approvals; a known-bad or code-prepended IDE extension on disk (EX1, EX4) |
-| High | Hook or bundled script with undeclared egress; project settings that bypass permissions or reroute model traffic; persistence into instruction files, settings, or shell init |
+| Critical | Active item sends credentials, transcripts, or source to an external host; concealed directive that runs commands or disables approvals; a known-bad or code-prepended IDE extension on disk (EX1, EX4); an agent installer whose source cannot be shown (IN1), or a Homebrew remote that is not Homebrew/brew (IN2) |
+| High | Hook or bundled script with undeclared egress; project settings that bypass permissions or reroute model traffic; persistence into instruction files, settings, or shell init; a deploy token on the laptop that can ship to production (IN3) |
 | Medium | Unpinned MCP server or git-installed skill with broad tool access; an unreviewed agent extension on auto-update on a machine with production access (EX2); unscoped `Bash` + `WebFetch` pre-approval; tool description that steers the model toward another tool or extra data |
 | Low | Unpinned item with narrow reach; over-broad trigger that shadows another skill |
 
@@ -337,5 +368,6 @@ Write the machine-readable findings first, validate them, then render the markdo
 - Model Context Protocol specification — security best practices
 - Invariant Labs, "MCP Security Notification: Tool Poisoning Attacks" (2025)
 - Claude Code documentation — settings, hooks, permissions, MCP, plugins
+- Installers and interview-homework entry points (IN1–IN4). Binance's 2026-11-03 preliminary report, as carried by [PANews](https://www.panews.io/articles/01a1a1f3-f83c-72b0-9ff3-f09835ad5432) (a translation), [CoinDesk](https://www.coindesk.com/business/2026/11/03/binance-s-usd6-3-billion-hack-began-with-a-fake-job-interview-exchange-says), and [The Block](https://www.theblock.co/news/business/2026-11-03-binance-hack-incident-report-north-korea-fake-job-interview-ai-tool-432406). Reported, not re-verified against Binance's own copy of that report. Do not fill in the four items the report leaves out.
 - [references/locations.md](references/locations.md), [references/content-checks.md](references/content-checks.md),
   [references/findings-format.md](references/findings-format.md), [references/severity-calibration.md](references/severity-calibration.md)
