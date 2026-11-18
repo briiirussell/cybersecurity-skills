@@ -14,7 +14,8 @@
     "read the Railway RCA: their build sandbox was escaped and we were told to rotate keys",
     "Railway RCA says to check vendor build history, not just dashboard env vars, and rotate keys",
     "vendor AI breach: zero data retention didn't cover our Notion Insights transcripts",
-    "we got a Fireworks notice about stored chats sent for classification, what do we rotate?"
+    "we got a Fireworks notice about stored chats sent for classification, what do we rotate?",
+    "vendor breach: Cursor's incident report told us to rotate keys after its AI provider was hacked, what do we do first?"
   ],
   "near_miss": [
     {

@@ -16,6 +16,15 @@ IOCs and the response playbook are in `incident-triage` (dev-tool compromise).
 The lesson for this audit: **the same "official" extension id can be a different build in a different marketplace.**
 Pinning by name isn't enough.
 
+**How it got there (Cursor's incident report, 2026-11-13):** the attacker used a stolen credential to write the
+malicious copies directly to the **cache that serves Cursor's extension marketplace**. Open VSX, the marketplace source,
+never had the malware. So a clean upstream registry does not clear a cache or mirror in front of it. For any extension
+your IDE pulls through a cache, mirror, or proxy marketplace, check the publisher and version against the upstream
+registry (EX3), and compare the `extension.js` hash with a published IOC where one exists (EX1). The chain that led to
+the cache credential is in `incident-triage` (`references/vendor-breach-notice.md`, Cursor row). Source:
+[Cursor's incident report](https://cursor.com/blog/security-incident-update), read 2026-11-18; Cursor's forensics,
+not re-verified here.
+
 ## Inventory
 
 | IDE | Extensions folder | Marketplace it pulls from |
@@ -55,7 +64,7 @@ run" is the user's full access.
 |---|---|---|---|
 | **EX1** | Known-bad version on disk | Match id and version, across every version folder, against vendor notices. Start with `anthropic.claude-code` 2.1.312 and 2.1.313 (Cursor). Compare the `extension.js` hash with the published IOC | `confirmed`, **Critical**. Hand off to `incident-triage` now, before cleaning anything |
 | **EX2** | Auto-update on for high-privilege extensions | `extensions.autoUpdate` and `extensions.autoCheckUpdates` in the IDE's user `settings.json` (`~/Library/Application Support/<Code\|Cursor>/User/settings.json` on macOS). Unset means on | Hardening note for low-reach extensions. **Medium** for agent or AI extensions on a machine that holds production credentials. Turning updates off without someone reviewing them just leaves old versions, so pair it with a review cadence |
-| **EX3** | Marketplace divergence | Is the extension installed from a different marketplace than the publisher's main one (Cursor or Open VSX vs the Visual Studio Marketplace)? | Note. Get first-party agent integrations from the vendor's own channel. For Claude Code, that's the CLI from npm or the native installer, which installs its IDE integration |
+| **EX3** | Marketplace divergence | Is the extension installed from a different marketplace than the publisher's main one (Cursor or Open VSX vs the Visual Studio Marketplace)? Is it served through a cache, mirror, or proxy? A clean upstream does not clear the copy in front of it | Note. Get first-party agent integrations from the vendor's own channel. For Claude Code, that's the CLI from npm or the native installer, which installs its IDE integration |
 | **EX4** | Prepended or obfuscated activation code | Read the start of `dist/extension.js` or `out/extension.js` (the first few KB). Look for code before the bundler banner, `child_process`, `authorized_keys`, `launchctl`, `schtasks`, `ssh -R`, `/beacon`, long base64 blobs. The patterns in [content-checks.md](content-checks.md) apply | `confirmed` if present. Size it as EX1 |
 | **EX5** | Unverified publisher or typosquat | Publisher id isn't the vendor's, a near-miss name, few installs, published recently | `needs_validation` |
 | **EX6** | No extension policy | Is there a reviewed allowlist (VS Code `extensions.allowed`, managed settings or MDM) and a recommended list in `.vscode/extensions.json`? | Hardening note, feeding the team's policy |
@@ -74,6 +83,7 @@ An unreviewed high-privilege extension on auto-update, on a machine with product
 
 - [Cursor security notice](https://cursor.com/blog/claude-code-extension-security-notice) (affected versions, window,
   IOCs, remediation scripts)
+- [Cursor incident report](https://cursor.com/blog/security-incident-update), 2026-11-13 (root cause, marketplace cache)
 - [Threat Landscape analysis](https://threatlandscape.io/blog/trojanized-claude-code-extension-2-1-313-ssh-backdoor);
   [BleepingComputer](https://www.bleepingcomputer.com/news/security/malicious-claude-code-extension-on-cursor-planted-ssh-backdoors/)
 - VS Code docs: extension auto-update settings and `extensions.allowed`

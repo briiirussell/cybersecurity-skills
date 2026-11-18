@@ -4,7 +4,7 @@ Current versions of all skills. Agents can compare against local versions to che
 
 | Skill | Version | Last Updated |
 |-------|---------|--------------|
-| agent-supply-chain-audit | 1.9.0 | 2026-11-18 |
+| agent-supply-chain-audit | 1.10.0 | 2026-11-18 |
 | ai-risk-management | 1.1.3 | 2026-10-30 |
 | api-audit | 1.2.0 | 2026-11-18 |
 | breach-patterns | 1.1.0 | 2026-10-30 |
@@ -21,7 +21,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | fuzzing-harness | 1.0.1 | 2026-10-27 |
 | hipaa-audit | 1.1.1 | 2026-10-27 |
 | iam-audit | 1.2.0 | 2026-10-27 |
-| incident-triage | 1.9.0 | 2026-11-18 |
+| incident-triage | 1.10.0 | 2026-11-18 |
 | log-watch | 1.1.0 | 2026-11-18 |
 | malware-triage | 1.0.0 | 2026-10-27 |
 | mobile-audit | 1.1.1 | 2026-10-27 |
@@ -36,7 +36,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | recon | 1.0.1 | 2026-10-26 |
 | red-team-engagement | 1.0.1 | 2026-10-26 |
 | scanner-pipeline | 1.1.0 | 2026-10-30 |
-| secrets-audit | 1.8.0 | 2026-11-18 |
+| secrets-audit | 1.9.0 | 2026-11-18 |
 | security-comms | 1.0.3 | 2026-10-26 |
 | security-start | 1.0.0 | 2026-10-27 |
 | siem-detection | 1.1.0 | 2026-11-18 |
@@ -48,6 +48,24 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.3.0 | 2026-11-18 |
 
 ## Recent Changes
+
+### 1.93.0 (2026-11-18)
+
+incident-triage and secrets-audit: Cursor's November 2026 incident report on the vendor-breach playbook, with agent traces and support tickets as secrets locations. incident-triage 1.10.0, secrets-audit 1.9.0, agent-supply-chain-audit 1.10.0.
+
+**Added**
+- incident-triage `references/vendor-breach-notice.md`: a Cursor row. A key Cursor issued to Fireworks was exposed there; a shared bucket of non-Privacy-Mode agent traces was copied; unredacted credentials in traces reached Cursor SaaS tools, support data, and a credential that wrote the trojanized Claude Code extension to the cache serving Cursor's marketplace (Open VSX was never affected). Cursor's forensics, as reported, not re-verified. No CVE.
+- A "Cursor, October 2026" section with six steps: agent traces are a secrets location; support tickets are a secrets location; ask about your vendor's vendors (two hops); confirm listed keys are revoked at the issuer; read "not notified" for exactly what it covers (agent traces only); a clean upstream registry does not clear a cache or mirror.
+- secrets-audit vendor-held inventory: two classes, agent sessions and traces kept by the vendor or its subprocessors when privacy or zero-retention mode is off, and credentials sent to support. Description trigger phrases `agent traces` and `credentials sent to support`.
+- agent-supply-chain-audit `references/ide-extensions.md`: the malicious builds were written to Cursor's marketplace cache, not Open VSX. EX3 now asks whether an extension comes through a cache, mirror, or proxy, and says to check publisher and version against upstream. Two-line pointer in SKILL.md.
+- One trigger prompt each for incident-triage and secrets-audit (should-fire top-1 264/276).
+
+**Not claimed**
+- Which Fireworks incident exposed the key (Cursor does not say), which SaaS tools were reached, or that Cursor belongs to Wiz's "Black October" campaign. BleepingComputer reports that framing from Wiz and does not place Cursor in it.
+
+Facts checked 2026-11-18 against Cursor's incident report (2026-11-13) and Oct 30 notice, BleepingComputer, and The Hacker News. The @cursor_ai post on X was not read.
+
+Proposed by @coreyhaines31 in #295.
 
 ### 1.92.0 (2026-11-18)
 
@@ -69,9 +87,11 @@ cicd-security treats a valid GitHub Actions workflow lockfile as a pin for the s
 - Gaps that stay uncovered: job-level reusable workflow calls, mutable tools installed in a `run:` step (including `gh-actions-lock` itself), `docker://` tags, and `uses: ./…`. A lockfile is not a verdict that the locked commit is safe. `impostor-commit` is still not a pin.
 - `sha_pinning_required` and the Require lockfile policy are separate checks. A lockfile satisfies SHA pinning for onboarded workflows. Bare `gh actions-lock` is not an audit command; it writes the file. `gh actions-lock --verify` is the read.
 - zizmor v1.32.0 (2026-11-02) is the first release with experimental lockfile support. Older runs still flag locked tags. Record the version used.
-- Description trigger phrases: `actions.lock`, `workflow lockfile`, `gh actions-lock`.
+- Description trigger phrases: `actions.lock`, `workflow lockfile`.
 
-Facts checked against GitHub's changelog (2026-10-28) and lockfile docs on 2026-11-15, and against zizmor's v1.32.0 release notes. From #270.
+Facts checked against GitHub's changelog (2026-10-28) and lockfile docs on 2026-11-15, and against zizmor's v1.32.0 release notes.
+
+Proposed by @coreyhaines31 in #270.
 
 ### 1.90.0 (2026-11-18)
 
@@ -96,7 +116,9 @@ cicd-security rates a stolen write token as its own check, and incident-triage g
 - Step 5 reads ruleset `bypass_actors` and records the manual Applications check. The wfx campaign's Fly.io GitHub App attribution is stated as StepSecurity reported it: no evidence of a Fly.io infrastructure breach, and how the tokens were obtained is unknown.
 - incident-triage `references/dev-tool-compromise.md`: a wfx section (2026-11-10 onward) with the probe pull request, commit messages, file and branch patterns, the run-number gap check, rotation and persistence removal, and the IOC table from StepSecurity (2026-11-12), including the switch to Telegram-only exfil. Aikido's 4,837 accounts / 61,764 repositories and the 1,806 and 1,835 run figures are both cited. No CVE.
 
-Facts checked against Aikido and StepSecurity on 2026-11-15. From #268.
+Facts checked against Aikido and StepSecurity on 2026-11-15.
+
+Proposed by @coreyhaines31 in #268.
 
 ### 1.88.0 (2026-11-18)
 
@@ -227,7 +249,7 @@ threat-hunting, incident-triage, and siem-detection: hunt high-severity outcomes
 - incident-triage: do not close because the parent is vendor-signed. Read the session transcript (human prompt versus a file, hook, MCP result, or remote session — #234, #253, #254), rotate what the session could read, then reuse the dev-machine persistence checks from #223.
 - siem-detection: the same five outcomes as rule ideas. GenAI child-process volume alone is context, not a finding.
 
-Proposed by @coreyhaines31 in #255. This branch does not include the AWS burst hunt from #271; both edit `threat-hunting`.
+Proposed by @coreyhaines31 in #255.
 
 ### 1.76.0 (2026-11-18)
 

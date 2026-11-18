@@ -240,8 +240,9 @@ so a malicious build can outlive the update. Checks: known-bad version (EX1), au
 extensions (EX2), same id from a different marketplace (EX3), code prepended to `extension.js` (EX4), unverified
 publisher or typosquat (EX5), no extension policy (EX6). An EX1 or EX4 hit is Critical and goes to `incident-triage`
 before anything is cleaned up. The prompting case is the malicious `Anthropic.claude-code` 2.1.312 and 2.1.313 builds
-in Cursor's marketplace on 2026-10-29. Inventory command, check details and severity are in
-[references/ide-extensions.md](references/ide-extensions.md).
+in Cursor's marketplace on 2026-10-29, written to the cache that serves it while Open VSX stayed clean. A clean
+upstream registry does not clear a cache or mirror: check publisher and version against upstream. Inventory command,
+check details and severity are in [references/ide-extensions.md](references/ide-extensions.md).
 
 ### Tool definitions (TP1–TP4, LP1–LP4)
 
