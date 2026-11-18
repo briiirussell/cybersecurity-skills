@@ -101,6 +101,23 @@ Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match '-R .*local
   session on it as exposed, and check the git history of repos pushed from it after the install time.
 - **Downstream:** did anyone push code, publish a package or deploy from the machine after the install? Hand that to
   `cicd-security` and `patch-sweep`.
+- **Committed agent config.** List every repo the compromised identity (the person, their SSH keys, their tokens)
+  could push to. In each, look for new or changed agent config since the first suspicious activity: `.claude/`,
+  `.mcp.json`, `CLAUDE.md`, `AGENTS.md`, `.cursor/`, `.gemini/settings.json`, `.github/copilot-instructions.md`. A
+  hook or command that downloads and runs something runs on every developer who opens the repo in an agent. The
+  read-only history commands are `agent-supply-chain-audit` CC2 (its `references/change-control.md`). Tell
+  developers not to open those repos in an agent until they are checked. Revert the change through a reviewed pull
+  request, and treat any machine that opened the repo since the change as in scope (section 1).
+- **AI-named tokens and apps.** Review PATs, OAuth apps, GitHub Apps and SSH or deploy keys created
+  since the first suspicious activity. Weigh names that look like an AI tool (Copilot, Claude, Codex, Cursor) the same
+  as any other new token: a familiar name is camouflage, not a reason to skip it. Revoke what nobody can account for,
+  from a clean machine (`secrets-audit`; `log-watch` for the org audit log). Rotate before anyone reopens those repos
+  in an agent.
+- Prompting report: GTIG's AI Threat Tracker (2026-11-16) describes a suspected DPRK cluster, MIDNIGHT NEPTUNE, that
+  pivoted into internal repos, modified `.claude/settings.json` so starting Claude Code downloaded the SOMBERMEME
+  backdoor, and hid its lateral movement with GitHub PATs named after Microsoft Copilot. Vendor
+  research, not re-verified. GTIG gives no hook contents. Checked 2026-11-18 against
+  [GTIG](https://cloud.google.com/blog/topics/threat-intelligence/agentic-threat-activity-crosses-a-significant-threshold/).
 
 ## 5. Eradicate and recover (hand-off notes)
 

@@ -4,24 +4,24 @@ Current versions of all skills. Agents can compare against local versions to che
 
 | Skill | Version | Last Updated |
 |-------|---------|--------------|
-| agent-supply-chain-audit | 1.10.0 | 2026-11-18 |
+| agent-supply-chain-audit | 1.11.0 | 2026-11-18 |
 | ai-risk-management | 1.1.3 | 2026-10-30 |
 | api-audit | 1.2.0 | 2026-11-18 |
 | breach-patterns | 1.1.0 | 2026-10-30 |
 | business-logic-testing | 1.1.0 | 2026-10-30 |
-| cicd-security | 1.3.0 | 2026-11-18 |
+| cicd-security | 1.3.1 | 2026-11-18 |
 | cloud-audit | 1.4.0 | 2026-11-18 |
 | container-audit | 1.4.0 | 2026-11-18 |
 | control-audit | 1.2.1 | 2026-10-30 |
 | crypto-audit | 1.1.2 | 2026-10-27 |
 | csf-mapping | 1.0.3 | 2026-10-27 |
-| dependency-audit | 1.6.0 | 2026-11-18 |
+| dependency-audit | 1.7.0 | 2026-11-18 |
 | disk-forensics | 1.0.2 | 2026-10-27 |
 | finding-triage | 1.4.0 | 2026-11-18 |
 | fuzzing-harness | 1.0.1 | 2026-10-27 |
 | hipaa-audit | 1.1.1 | 2026-10-27 |
 | iam-audit | 1.2.0 | 2026-10-27 |
-| incident-triage | 1.10.0 | 2026-11-18 |
+| incident-triage | 1.11.0 | 2026-11-18 |
 | log-watch | 1.1.0 | 2026-11-18 |
 | malware-triage | 1.0.0 | 2026-10-27 |
 | mobile-audit | 1.1.1 | 2026-10-27 |
@@ -48,6 +48,27 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.3.0 | 2026-11-18 |
 
 ## Recent Changes
+
+### 1.94.0 (2026-11-18)
+
+Change control for committed agent config, an incident-triage step for it after a developer compromise, and a lookalike agent CLI check (GTIG AI Threat Tracker, November 2026; GHSA-vp2q-gp5r-xh5j). agent-supply-chain-audit 1.11.0, incident-triage 1.11.0, dependency-audit 1.7.0, cicd-security 1.3.1.
+
+**Added**
+- agent-supply-chain-audit `references/change-control.md`, CC1–CC3, with a short pointer in Step 3:
+  - CC1: committed agent config (`.claude/`, `.mcp.json`, `CLAUDE.md`, `AGENTS.md`, `.cursor/`, `.gemini/settings.json`, `.github/copilot-instructions.md`, `.vscode/mcp.json`) under CODEOWNERS with required code-owner review. No owner on a branch that takes direct pushes is medium, high where developers hold production or deploy credentials. Last match wins in CODEOWNERS, so read the whole file.
+  - CC2: read-only `git log` over the last 90 days for added hook commands, `apiKeyHelper`, `statusLine`, and `env` overrides. A change nobody accounts for is needs_validation. A disowned change, or one that downloads and runs something, is critical and goes to `incident-triage`.
+  - CC3 (optional): a required `pull_request` check that flags hook-key changes. No guard is a hardening note.
+- agent-supply-chain-audit IN5: an agent CLI under a lookalike scope. `@claudecode/cli` is malware (all versions, no fix). The official package is `@anthropic-ai/claude-code`. Critical if installed.
+- incident-triage `references/dev-tool-compromise.md` section 4: after a developer machine or token is compromised, check every repo that identity could push to for new agent config since the first suspicious activity, and review new PATs, OAuth apps, GitHub Apps and keys, including ones named after AI tools. Rotate before anyone reopens those repos in an agent.
+- dependency-audit Step 4 and `references/source-redirection.md` §2: the same lookalike agent CLI check for `package.json`, lockfiles, global installs and install docs.
+- Description trigger phrases: `CODEOWNERS for .claude` (agent-supply-chain-audit), `lookalike Claude Code package` (dependency-audit). Three should-fire trigger prompts.
+
+**Changed**
+- cicd-security: the inventory row for agent config and `references/checks.md` point to CC1–CC3. Cross-reference only.
+
+Facts checked 2026-11-18 against GTIG's AI Threat Tracker (2026-11-16, MIDNIGHT NEPTUNE paragraph), GHSA-vp2q-gp5r-xh5j and OSV MAL-2026-19243. GTIG's account is vendor research, not re-verified. GTIG names no hook event or file contents, and none are added. No CVE. No SOMBERMEME IOCs.
+
+Proposed by @coreyhaines31 in #296.
 
 ### 1.93.0 (2026-11-18)
 

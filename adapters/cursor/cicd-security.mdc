@@ -60,7 +60,7 @@ Read every file that defines or feeds a pipeline, not just `.github/workflows/`:
 | Workflows | `.github/workflows/*.yml`, `*.yaml` |
 | Local actions and reusable workflows | `.github/actions/**/action.y*ml`, `action.y*ml` at the root, any `uses: ./…` path |
 | Remote reusable workflows | job-level `uses: org/repo/.github/workflows/x.yml@ref`: read them too, one level deep |
-| Config the jobs execute or the agent loads | `Makefile`, `package.json` scripts, scripts under `.github/`, `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.mcp.json` |
+| Config the jobs execute or the agent loads | `Makefile`, `package.json` scripts, scripts under `.github/`, `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.mcp.json`. Who may change them: `agent-supply-chain-audit` CC1–CC3 |
 | Other CI | `.gitlab-ci.yml` and its `include:` files, `.circleci/config.yml`, `dependabot.yml` |
 | Workflow lockfile | `.github/workflows/actions.lock` only. A different name, a copy, or a symlink is not coverage |
 

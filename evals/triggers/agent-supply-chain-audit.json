@@ -12,7 +12,9 @@
     "check my hooks: a desktop app may have added a plugin and approved its own session-start hook",
     "there was a fake Claude Code extension in the Cursor marketplace, can you audit my installed VS Code and Cursor extensions?",
     "audit my IDE extensions, and which browser extensions can send tasks to the desktop agent from the agent's own website",
-    "audit my MCP servers and check my hooks: a gem install I did not run may have added both"
+    "audit my MCP servers and check my hooks: a gem install I did not run may have added both",
+    "do we need CODEOWNERS for .claude? check my hooks in the committed .claude/settings.json for a backdoor someone pushed",
+    "check my hooks: who changed .claude/settings.json in our internal repos in the last 90 days, and was it reviewed?"
   ],
   "near_miss": [
     {

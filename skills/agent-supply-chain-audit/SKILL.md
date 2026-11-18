@@ -1,6 +1,6 @@
 ---
 name: agent-supply-chain-audit
-description: "Audit the extensions AI coding agents load and trust (skills, plugins, marketplaces, hooks, settings, MCP servers, and instruction files like CLAUDE.md, AGENTS.md, GEMINI.md, .cursor/rules and copilot-instructions.md) across Claude Code, Cursor, Codex, Gemini CLI and GitHub Copilot. Read-only: inventories each item with its source and pin, greps for hidden instructions, exfiltration, credential reads, persistence, curl|bash and over-broad tool grants, reviews hooks and MCP pinning and tool poisoning, and gives each item a SAFE / CAUTION / DO-NOT-INSTALL verdict. Use when the user mentions 'audit my skills,' 'is this skill malicious,' 'is this skill safe,' 'is this MCP server safe,' 'review CLAUDE.md,' 'review AGENTS.md,' 'plugin security,' 'check my hooks,' 'audit my MCP servers,' 'agent supply chain,' 'SkillSpector,' 'tool poisoning,' 'rug pull,' 'audit my IDE extensions,' 'is this VS Code extension safe,' or is about to install a skill, plugin, MCP server, or IDE extension."
+description: "Audit the extensions AI coding agents load and trust (skills, plugins, marketplaces, hooks, settings, MCP servers, and instruction files like CLAUDE.md, AGENTS.md, GEMINI.md, .cursor/rules and copilot-instructions.md) across Claude Code, Cursor, Codex, Gemini CLI and GitHub Copilot. Read-only: inventories each item with its source and pin, greps for hidden instructions, exfiltration, credential reads, persistence, curl|bash and over-broad tool grants, reviews hooks and MCP pinning and tool poisoning, and gives each item a SAFE / CAUTION / DO-NOT-INSTALL verdict. Use when the user mentions 'audit my skills,' 'is this skill malicious,' 'is this skill safe,' 'is this MCP server safe,' 'review CLAUDE.md,' 'review AGENTS.md,' 'plugin security,' 'check my hooks,' 'CODEOWNERS for .claude,' 'audit my MCP servers,' 'agent supply chain,' 'SkillSpector,' 'tool poisoning,' 'rug pull,' 'audit my IDE extensions,' 'is this VS Code extension safe,' or is about to install a skill, plugin, MCP server, or IDE extension."
 allowed-tools: Read, Grep, Glob, Bash(skillspector scan --no-llm:*)
 ---
 
@@ -136,6 +136,11 @@ Equivalents elsewhere: Codex `approval_policy = "never"` with `sandbox_mode = "d
 (`rg -n 'approval_policy|sandbox_mode|\[mcp_servers' ~/.codex/config.toml`); Gemini CLI `"trust": true` on an MCP
 server or auto-accept / YOLO settings (`rg -n '"(trust|autoAccept|approvalMode)"' .gemini/settings.json ~/.gemini/settings.json`);
 VS Code / Copilot tool auto-approve settings; Cursor auto-run and allowlists (in the app UI — ask the user).
+
+**Change control (CC1–CC3).** GTIG (2026-11-16) reports a DPRK cluster that edited `.claude/settings.json` in victims'
+internal repos so Claude Code startup fetched a backdoor. Check who can change committed agent config (CODEOWNERS and
+required review, CC1), what changed in the last 90 days (CC2), and whether CI flags hook changes (CC3, optional):
+[references/change-control.md](references/change-control.md).
 
 ### Plugins a desktop app added (AP1–AP5)
 
@@ -275,7 +280,7 @@ overnight. The control is a snapshot at approval and a diff on every upgrade:
   tool annotations (read-only → destructive). An approved server with no snapshot and no diff process is a hardening
   note.
 
-### Installers and reach (IN1–IN4)
+### Installers and reach (IN1–IN5)
 
 Ask where each agent tool was installed from, then check the installer itself. Read-only. Do not print credential
 values. The prompting report is Binance's account of its 2026-10-29 theft (about $6.3 billion), published as a
@@ -299,6 +304,7 @@ tampered with, the name of the malicious component, and how the internal AI tool
 | **IN2** | Homebrew is the real one. `git -C "$(brew --repository)" remote -v` should be the Homebrew/brew repository (`https://github.com/Homebrew/brew` or `git@github.com:Homebrew/brew.git`). `which brew` should be `/opt/homebrew/bin/brew` or `/usr/local/bin/brew`. `brew tap`: flag any tap the user did not add | Confirmed critical if the brew remote is anything else. An unrecognized tap is needs_validation |
 | **IN3** | Long-lived deploy tokens on the laptop. Existence and permissions only, never contents: `~/.docker/config.json`, `~/.kube/config`, shell history, and agent env files. Recommend short-lived or per-job credentials. Rotation is `secrets-audit` | High if a token there can ship to production |
 | **IN4** | For each MCP server or internal agent tool, whether it can run commands, read files, or call APIs on another person's device without a per-call approval | Medium to high. A design check. The report names internal AI tools as the pivot and gives no mechanism, so do not claim this is how Binance was hit |
+| **IN5** | An agent CLI under a lookalike name or scope (`@claudecode/cli` is malware, GHSA-vp2q-gp5r-xh5j; the real one is `@anthropic-ai/claude-code`). Check `package.json`, `npm ls -g --depth=0`, and install docs ([references/change-control.md](references/change-control.md)) | Critical if installed. Hand off to `incident-triage` |
 
 ```bash
 git -C "$(brew --repository)" remote -v
@@ -386,9 +392,9 @@ Anchors for this surface:
 
 | Severity | Typical shape |
 |---|---|
-| Critical | Active item sends credentials, transcripts, or source to an external host; concealed directive that runs commands or disables approvals; a known-bad or code-prepended IDE extension on disk (EX1, EX4); an agent installer whose source cannot be shown (IN1), or a Homebrew remote that is not Homebrew/brew (IN2); an install-time package that already rewrote agent config (strutil-core class) |
+| Critical | Active item sends credentials, transcripts, or source to an external host; concealed directive that runs commands or disables approvals; a known-bad or code-prepended IDE extension on disk (EX1, EX4); an agent installer whose source cannot be shown (IN1), or a Homebrew remote that is not Homebrew/brew (IN2); an install-time package that already rewrote agent config (strutil-core class); a lookalike agent CLI installed (IN5); a committed hook nobody accounts for (CC2) |
 | High | Hook or bundled script with undeclared egress; project settings that bypass permissions or reroute model traffic; persistence into instruction files, settings, or shell init; a deploy token on the laptop that can ship to production (IN3); VS Code below 1.145.3, the MCP-client fixes (MC1); `mcp-server-git` below 2026.11.11 (MS1) |
-| Medium | Unpinned MCP server or git-installed skill with broad tool access; an unreviewed agent extension on auto-update on a machine with production access (EX2); unscoped `Bash` + `WebFetch` pre-approval; tool description that steers the model toward another tool or extra data; an app-added session hook the user did not review (AP2, AP3), without calling the vendor malicious; a remote-control feature plus a browser extension that can run on the agent's site (WB1+WB2), worded as an exposure: a hijacked extension could drive the agent; `server-filesystem` on a date version or below 2.3.0 (MS1). AP2, AP3 and WB1+WB2 rate high on a machine that holds production or deploy credentials |
+| Medium | Unpinned MCP server or git-installed skill with broad tool access; an unreviewed agent extension on auto-update on a machine with production access (EX2); unscoped `Bash` + `WebFetch` pre-approval; tool description that steers the model toward another tool or extra data; an app-added session hook the user did not review (AP2, AP3), without calling the vendor malicious; a remote-control feature plus a browser extension that can run on the agent's site (WB1+WB2), worded as an exposure: a hijacked extension could drive the agent; `server-filesystem` on a date version or below 2.3.0 (MS1); committed agent config with no code owner on a branch that takes direct pushes (CC1). AP2, AP3 and WB1+WB2 rate high on a machine that holds production or deploy credentials |
 | Low | Unpinned item with narrow reach; over-broad trigger that shadows another skill; `mcp-server-fetch` below 2026.11.11 (MS1) |
 
 Not findings — **hardening notes**: no tool-definition snapshot, missing `permissions.deny` rules, a pinned tag rather
@@ -485,5 +491,6 @@ Write the machine-readable findings first, validate them, then render the markdo
 - Socket, "Shai-Hulud Descendant Surfaces in Malicious Ruby Gem" (2026-11-06) — [write-up](https://socket.dev/blog/shai-hulud-descendant-malicious-ruby-gem). `paleasbest.top` is an IOC for strutil-core 1.0.1 only, not a standing blocklist.
 - VS Code 1.145.3 MCP-client fixes (2026-11-10) — [security advisories](https://github.com/microsoft/vscode/security/advisories) (MC1–MC3). Fork status was not confirmed on 2026-11-11.
 - MCP reference servers v2.4.0 (2026-11-11) — [release](https://github.com/modelcontextprotocol/servers/releases/tag/v2.4.0), [advisories](https://github.com/modelcontextprotocol/servers/security/advisories) (MS1, MS2)
+- Committed agent config change control (CC1–CC3) and lookalike agent CLIs (IN5), checked 2026-11-18: [GTIG AI Threat Tracker](https://cloud.google.com/blog/topics/threat-intelligence/agentic-threat-activity-crosses-a-significant-threshold/) (2026-11-16, vendor research, no CVE), [GHSA-vp2q-gp5r-xh5j](https://github.com/advisories/GHSA-vp2q-gp5r-xh5j) / [MAL-2026-19243](https://osv.dev/vulnerability/MAL-2026-19243)
 - [references/locations.md](references/locations.md), [references/content-checks.md](references/content-checks.md),
   [references/findings-format.md](references/findings-format.md), [references/severity-calibration.md](references/severity-calibration.md)

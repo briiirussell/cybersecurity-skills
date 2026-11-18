@@ -1,6 +1,6 @@
 ---
 name: dependency-audit
-description: "Audit project dependencies, frameworks, languages, and dev tools for known vulnerabilities, CVEs, and security anti-patterns. Use when the user mentions 'dependency audit,' 'npm audit,' 'CVE,' 'vulnerable packages,' 'supply chain security,' 'outdated dependencies,' 'known vulnerabilities,' 'security advisory,' 'package security,' 'framework vulnerability,' 'is this package safe,' 'pnpm audit,' 'yarn audit,' 'bundle audit,' 'patch this CVE,' 'audit fix broke,' 'lockfile diff,' 'dependency confusion,' 'registry redirection,' 'MCP server pinning,' 'release pipeline,' or needs to check whether their stack, CI, or release pipeline has known security issues."
+description: "Audit project dependencies, frameworks, languages, and dev tools for known vulnerabilities, CVEs, and security anti-patterns. Use when the user mentions 'dependency audit,' 'npm audit,' 'CVE,' 'vulnerable packages,' 'supply chain security,' 'outdated dependencies,' 'known vulnerabilities,' 'security advisory,' 'package security,' 'framework vulnerability,' 'is this package safe,' 'pnpm audit,' 'yarn audit,' 'bundle audit,' 'patch this CVE,' 'audit fix broke,' 'lockfile diff,' 'dependency confusion,' 'registry redirection,' 'MCP server pinning,' 'lookalike Claude Code package,' 'release pipeline,' or needs to check whether their stack, CI, or release pipeline has known security issues."
 allowed-tools: Read, Grep, Glob, WebSearch, WebFetch, Bash(npm audit), Bash(npm audit --json), Bash(npm audit --omit=dev), Bash(npm audit --omit=dev --json), Bash(npm ls:*), Bash(npm view:*), Bash(npm outdated:*), Bash(pnpm audit --prod), Bash(pnpm audit --prod --json), Bash(pnpm why:*), Bash(yarn audit --groups dependencies --json), Bash(yarn npm audit:*), Bash(yarn why:*), Bash(osv-scanner scan:*), Bash(govulncheck:*), Bash(bundle audit:*), Bash(composer audit:*), Bash(dotnet list package:*), Bash(trivy fs:*), Bash(trivy image:*)
 ---
 
@@ -249,12 +249,12 @@ grep -nE '"(-y|--yes)",\s*"(@[a-z0-9._-]+/)?[a-z0-9._-]+(@latest)?"' .mcp.json .
 grep -nE '"(uvx|pipx)"' -A3 .mcp.json .cursor/mcp.json 2>/dev/null | grep -vE '==[0-9]'
 grep -nE '"docker"' -A8 .mcp.json .cursor/mcp.json 2>/dev/null | grep -vE ':[0-9][^"]*"|@sha256:'
 ```
-Pinned looks like `some-mcp-server@1.4.2`, `tool==0.9.1`, `image@sha256:...`. Hand each unpinned or unreviewed extension to `agent-supply-chain-audit` for content review.
+Pinned: `some-mcp-server@1.4.2`, `tool==0.9.1`, `image@sha256:...`. Hand each unpinned or unreviewed extension to `agent-supply-chain-audit`.
 
 **Shipped bytecode:** `.pyc` files tracked in git or packaged without a matching `.py` can run code nobody reviewed. `git ls-files | grep -E '\.py[co]$|__pycache__/'`, plus the no-matching-source check in [references/source-redirection.md](references/source-redirection.md) §3.
 
 **Typosquatting:**
-- Package names that are close misspellings of popular packages
+- Close misspellings or lookalike scopes (agent CLIs: source-redirection.md §2)
 - Recently published packages with very few downloads
 - Packages that changed ownership recently
 

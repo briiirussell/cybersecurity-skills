@@ -210,6 +210,13 @@ judgment that the locked code is safe.
 `.github/workflows/actions.lock` in CODEOWNERS so a changed `commit`, `owner_id`, or `repo_id` gets a review. Pin
 the extension install itself. Review dependencies before locking them.
 
+**Committed agent config gets the same treatment.** `.claude/`, `.mcp.json`, `CLAUDE.md`, `AGENTS.md` and the other
+agent config paths run on every developer who opens the repo in an agent. GTIG (2026-11-16) reports an intruder who
+edited `.claude/settings.json` in internal repos so Claude Code startup fetched a backdoor. Put those paths in
+CODEOWNERS with required review, and, if wanted, a required check on `pull_request` that flags changed hook keys.
+The checks and severities are `agent-supply-chain-audit` CC1–CC3 (its `references/change-control.md`). Review that
+check's workflow here like any other.
+
 ## 5. oidc-trust
 
 ```bash
