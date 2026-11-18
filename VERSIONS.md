@@ -4,7 +4,7 @@ Current versions of all skills. Agents can compare against local versions to che
 
 | Skill | Version | Last Updated |
 |-------|---------|--------------|
-| agent-supply-chain-audit | 1.5.0 | 2026-11-18 |
+| agent-supply-chain-audit | 1.6.0 | 2026-11-18 |
 | ai-risk-management | 1.1.3 | 2026-10-30 |
 | api-audit | 1.1.7 | 2026-10-27 |
 | breach-patterns | 1.1.0 | 2026-10-30 |
@@ -21,8 +21,8 @@ Current versions of all skills. Agents can compare against local versions to che
 | fuzzing-harness | 1.0.1 | 2026-10-27 |
 | hipaa-audit | 1.1.1 | 2026-10-27 |
 | iam-audit | 1.2.0 | 2026-10-27 |
-| incident-triage | 1.4.0 | 2026-11-18 |
-| log-watch | 1.0.2 | 2026-10-30 |
+| incident-triage | 1.5.0 | 2026-11-18 |
+| log-watch | 1.0.3 | 2026-11-18 |
 | malware-triage | 1.0.0 | 2026-10-27 |
 | mobile-audit | 1.1.1 | 2026-10-27 |
 | native-code-review | 1.0.1 | 2026-10-27 |
@@ -30,7 +30,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | owasp-audit | 1.8.0 | 2026-11-18 |
 | patch-sweep | 1.4.0 | 2026-11-18 |
 | pci-audit | 1.1.1 | 2026-10-27 |
-| personal-opsec | 1.3.1 | 2026-11-18 |
+| personal-opsec | 1.3.2 | 2026-11-18 |
 | privacy-engineering | 1.1.0 | 2026-10-27 |
 | prompt-injection | 1.2.1 | 2026-10-27 |
 | recon | 1.0.1 | 2026-10-26 |
@@ -48,6 +48,18 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.76.0 (2026-11-18)
+
+agent-supply-chain-audit inventories web-to-agent bridges, and the response skills know what to look for afterward (#254). agent-supply-chain-audit 1.6.0, incident-triage 1.5.0, personal-opsec 1.3.2, log-watch 1.0.3.
+
+**Added**
+- agent-supply-chain-audit WB1–WB4. A remote-control or web-session feature, a browser extension that can run on the agent's site, one account on both a personal browser and a work machine, and an approval rendered in a page a script can operate. WB1 and WB2 together are medium, and high when the machine holds production or deploy credentials. Word it as an exposure. The ThisBash report (Forever Security, 2026-11-04; The Register, 2026-11-05) has no CVE and no reported exploitation. Remote Control and Cowork are vendor-unconfirmed. Chromium extension manifest paths are in `references/locations.md`.
+- personal-opsec K8 and C2 point at WB1–WB4.
+- incident-triage dev-tool playbook: prompts the user did not type, a global package install, a new LaunchAgent, and a new `authorized_keys` entry lined up with a session nobody was present for. No exact-prompt IOCs.
+- log-watch hands that shape to incident-triage. It is not a starter detection.
+
+Proposed by @coreyhaines31 in #254.
 
 ### 1.75.0 (2026-11-18)
 

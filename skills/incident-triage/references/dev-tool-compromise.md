@@ -28,6 +28,16 @@ the four items that report leaves out stay left out — see `agent-supply-chain-
    everything reachable from it. Binance's report says its endpoint protection missed the malware, so "no alert" is
    not a clean result.
 
+**Web-to-agent session (exposure, not an IOC list).** In agent session transcripts, look for prompts the user did
+not type, especially ones that say they are away from the keyboard and ask to install or run something. Do not grep
+for the wording of any one report. Also look for a global package install, a new LaunchAgent or scheduled task, and
+a new `authorized_keys` entry that line up with a session the user was not at the keyboard for. Reuse the checks in
+sections 3 and 5. The prompting report is ThisBash (Forever Security, 2026-11-04; The Register, 2026-11-05): an
+extension that can run on the agent's web origin could drive a remote-control feature such as Claude Dispatch. No
+CVE and no reported exploitation. The claim that Claude Code Remote Control and Cowork web sessions share the design
+is vendor-unconfirmed. Inventory and reduce it with `agent-supply-chain-audit` WB1–WB4. Re-check that claim when
+Forever Security publishes its follow-up.
+
 ## 2. Contain, before cleaning
 
 Each step changes the machine: name it, and get the incident lead's or owner's go-ahead.

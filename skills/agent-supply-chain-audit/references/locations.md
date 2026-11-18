@@ -71,6 +71,24 @@ where the agent walks up the tree, every parent and nested directory too.
 | User | Copilot CLI: `~/.copilot/settings.json` (`extraKnownMarketplaces`, `enabledPlugins`) and `~/.copilot/installed-plugins` | **Yes** |
 | Repo settings | Coding-agent MCP config (repo Settings UI) and `.github/workflows/copilot-setup-steps.yml` | **Yes**, in CI |
 
+## Browser extensions (WB2)
+
+Chromium extension manifests, per profile. The version directory changes on every update, so glob `*/*`. A name that
+starts with `__MSG_` is a locale key; read `_locales/<lang>/messages.json` in that same version directory. Record the
+extension id (the directory name), the publisher if the manifest has one, and the host permissions.
+
+| Browser | macOS | Linux | Windows |
+|---|---|---|---|
+| Chrome | `~/Library/Application Support/Google/Chrome/<Profile>/Extensions/<id>/<version>/manifest.json` | `~/.config/google-chrome/<Profile>/Extensions/<id>/<version>/manifest.json` | `%LOCALAPPDATA%\Google\Chrome\User Data\<Profile>\Extensions\<id>\<version>\manifest.json` |
+| Chromium | `~/Library/Application Support/Chromium/<Profile>/Extensions/…` | `~/.config/chromium/<Profile>/Extensions/…` | `%LOCALAPPDATA%\Chromium\User Data\<Profile>\Extensions\…` |
+| Edge | `~/Library/Application Support/Microsoft Edge/<Profile>/Extensions/…` | `~/.config/microsoft-edge/<Profile>/Extensions/…` | `%LOCALAPPDATA%\Microsoft\Edge\User Data\<Profile>\Extensions\…` |
+| Brave | `~/Library/Application Support/BraveSoftware/Brave-Browser/<Profile>/Extensions/…` | `~/.config/BraveSoftware/Brave-Browser/<Profile>/Extensions/…` | `%LOCALAPPDATA%\BraveSoftware\Brave-Browser\User Data\<Profile>\Extensions\…` |
+
+`<Profile>` is `Default` or `Profile N`. Firefox stores extensions differently (a profile `extensions.json`, not this
+tree); list it separately if that profile is signed in to the agent site. VS Code's user MCP file, used by the same
+audit's client checks, is `~/Library/Application Support/Code/User/mcp.json` on macOS, `~/.config/Code/User/mcp.json`
+on Linux, and `%APPDATA%\Code\User\mcp.json` on Windows.
+
 ## Others worth a glob
 
 Windsurf (`.windsurfrules`, `.windsurf/rules/`, `~/.codeium/windsurf/mcp_config.json`), Cline / Roo (`.clinerules`,

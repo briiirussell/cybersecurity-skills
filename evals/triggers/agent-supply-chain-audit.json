@@ -8,7 +8,8 @@
     "review our AGENTS.md and .cursor/rules for hidden instructions",
     "do the hooks in my Claude settings.json do anything dangerous?",
     "check my hooks: a desktop app may have added a plugin and approved its own session-start hook",
-    "there was a fake Claude Code extension in the Cursor marketplace, can you audit my installed VS Code and Cursor extensions?"
+    "there was a fake Claude Code extension in the Cursor marketplace, can you audit my installed VS Code and Cursor extensions?",
+    "audit my IDE extensions, and which browser extensions can send tasks to the desktop agent from the agent's own website"
   ],
   "near_miss": [
     {

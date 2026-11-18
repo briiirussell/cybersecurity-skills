@@ -183,6 +183,7 @@ Required design rules:
 ### Step 7 — Hand-offs
 
 - **Alert looks real** → `incident-triage`. Pass the alert record, raw links, and the dedupe key.
+- **Agent session logs** (if you already collect them): prompts the operator did not type, a global package install, a new LaunchAgent or scheduled task, or a new `authorized_keys` line during a session nobody was at the keyboard for. There is no stable string to match, so this is not a starter detection and not an IOC grep. Hand the host to `incident-triage` (dev-tool compromise) and the exposure inventory to `agent-supply-chain-audit` WB1–WB4.
 - **Recurring false positive** → tune the threshold or add an expiring suppression; record why in the plan.
 - **Outgrowing this** (more than ~10 sources, >10K events/min, need for retention/search/correlation, or a compliance control) → `siem-detection`. The detection table ports to Sigma rules.
 - **Regulated environment or 24×7 coverage needed** → `soc-operations` (SIEM/MDR, staffed triage, documented runbooks).

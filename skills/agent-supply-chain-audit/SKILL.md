@@ -280,6 +280,40 @@ brew tap
 which brew
 ```
 
+### Web-to-agent bridges (WB1–WB4)
+
+Ask first. Nothing here starts the agent. This is an exposure to inventory and reduce, not a version to patch. Do not
+call the product vulnerable, and do not call the chain exploited. Say "exposure: a hijacked extension could drive the
+agent."
+
+Report, checked 2026-11-05. [Forever Security](https://forever.security/blog/thisbash-claude-dispatch-browser-extension-rce)
+(2026-11-04, researcher Gal Weizman, named ThisBash) and [The Register](https://www.theregister.com/research/2026/11/05/anthropic-wont-fix-a-claude-dispatch-flaw-that-could-let-attackers-execute-remote-commands-across-corporate-boundaries/5307684)
+(2026-11-05). A browser extension that can run on `claude.ai` could drive Claude Desktop's Dispatch feature: send
+prompts as if the user typed them, and operate an approval rendered on that same page. On one machine that is a
+browser-to-OS path. Across two machines on one account it is cross-machine. No CVE, no vendor advisory, no reported
+exploitation. The phone-to-desktop path is described as peer-to-peer, and the researcher found no flaw there. The
+claim that Claude Code Remote Control and Claude Cowork web sessions share the design is vendor-unconfirmed: Forever
+Security said a follow-up would cover it, and The Register does not show a proof of concept for those features.
+Dispatch retirement was announced for the end of October 2026. The Register says the support page still listed it on
+2026-10-30. Whether it is still offered after that date is unverified. Re-check when the follow-up is published.
+
+| ID | Check | Finding |
+|---|---|---|
+| **WB1** | A remote-control or web-session feature is on. Ask which of these they use: Claude Dispatch, Claude Code Remote Control, Claude Cowork sessions on the web, or any "send a task from my phone or browser to my desktop agent" feature. Read the app's settings for it. Names vary by version, so do not assume a toggle. | needs_validation, medium. High when the machine holds production or deploy credentials and WB2 also hits |
+| **WB2** | A browser extension that can run on the agent's web origin. List extensions in each browser profile signed in to `claude.ai`, `chatgpt.com`, `gemini.google.com`, or the equivalent. Flag `<all_urls>`, `*://*/*`, or an explicit match for that origin, together with `scripting`, `tabs`, or `webRequest`. Record id, publisher, last update, and install count. Paths are in [references/locations.md](references/locations.md). | medium. High with WB1. An unknown publisher, a recent ownership change, or an unexpected permission increase goes to `incident-triage` |
+| **WB3** | One agent account across personal and work machines. Ask whether the same account is signed in on a work or client laptop and on a personal browser. | medium. Recommend separate accounts, or turning WB1 off on the managed machine |
+| **WB4** | Approval that lives in a page. Note whether the prompt for running a command is rendered in a web page or app view that a script on that page could operate. | Hardening note. Consent shown inside an attacker-reachable surface does not prove the user agreed. Prefer an approval the requesting page cannot operate (the terminal, or an OS prompt) where the agent offers it |
+
+Chromium manifests on macOS (read-only, names that start with `__MSG_` need the locale file):
+
+```bash
+jq -r '[.name, (.permissions // [] | join(",")), (.host_permissions // [] | join(","))] | @tsv' \
+  "$HOME/Library/Application Support/Google/Chrome"/*/Extensions/*/*/manifest.json 2>/dev/null
+```
+
+Hardening, no product required: turn off remote-control features that are unused. Keep the browser profile signed in
+to the agent site free of "read all sites" extensions. Do not sign a personal agent account in on a managed laptop.
+
 ## Step 5 — Optional automated pass: SkillSpector
 
 [NVIDIA SkillSpector](https://github.com/NVIDIA/SkillSpector) (Apache-2.0) runs ~70 static checks plus optional
@@ -306,7 +340,7 @@ Anchors for this surface:
 |---|---|
 | Critical | Active item sends credentials, transcripts, or source to an external host; concealed directive that runs commands or disables approvals; a known-bad or code-prepended IDE extension on disk (EX1, EX4); an agent installer whose source cannot be shown (IN1), or a Homebrew remote that is not Homebrew/brew (IN2) |
 | High | Hook or bundled script with undeclared egress; project settings that bypass permissions or reroute model traffic; persistence into instruction files, settings, or shell init; a deploy token on the laptop that can ship to production (IN3) |
-| Medium | Unpinned MCP server or git-installed skill with broad tool access; an unreviewed agent extension on auto-update on a machine with production access (EX2); unscoped `Bash` + `WebFetch` pre-approval; tool description that steers the model toward another tool or extra data; an app-added session hook the user did not review (AP2, AP3). On a machine that holds production credentials or deploy keys, that medium escalates. Do not call the vendor malicious |
+| Medium | Unpinned MCP server or git-installed skill with broad tool access; an unreviewed agent extension on auto-update on a machine with production access (EX2); unscoped `Bash` + `WebFetch` pre-approval; tool description that steers the model toward another tool or extra data; an app-added session hook the user did not review (AP2, AP3). On a machine that holds production credentials or deploy keys, that medium escalates. Do not call the vendor malicious; a remote-control feature plus a browser extension that can run on the agent's site (WB1+WB2). When that machine holds production or deploy credentials, rate it high. Word it as an exposure: a hijacked extension could drive the agent |
 | Low | Unpinned item with narrow reach; over-broad trigger that shadows another skill |
 
 Not findings — **hardening notes**: no tool-definition snapshot, missing `permissions.deny` rules, a pinned tag rather
@@ -399,5 +433,6 @@ Write the machine-readable findings first, validate them, then render the markdo
 - Claude Code documentation — settings, hooks, permissions, MCP, plugins
 - Installers and interview-homework entry points (IN1–IN4). Binance's 2026-11-03 preliminary report, as carried by [PANews](https://www.panews.io/articles/01a1a1f3-f83c-72b0-9ff3-f09835ad5432) (a translation), [CoinDesk](https://www.coindesk.com/business/2026/11/03/binance-s-usd6-3-billion-hack-began-with-a-fake-job-interview-exchange-says), and [The Block](https://www.theblock.co/news/business/2026-11-03-binance-hack-incident-report-north-korea-fake-job-interview-ai-tool-432406). Reported, not re-verified against Binance's own copy of that report. Do not fill in the four items the report leaves out.
 - App-installed plugins (AP1–AP5), checked 2026-11-04: [postman-app-support#14370](https://github.com/postmanlabs/postman-app-support/issues/14370). One user's evidence, not reproduced on a clean Mac. No CVE. Do not call the vendor malicious.
+- Web-to-agent bridges (WB1–WB4), checked 2026-11-05: [Forever Security, ThisBash](https://forever.security/blog/thisbash-claude-dispatch-browser-extension-rce) (2026-11-04) and [The Register](https://www.theregister.com/research/2026/11/05/anthropic-wont-fix-a-claude-dispatch-flaw-that-could-let-attackers-execute-remote-commands-across-corporate-boundaries/5307684) (2026-11-05). No CVE. Remote Control and Cowork are vendor-unconfirmed.
 - [references/locations.md](references/locations.md), [references/content-checks.md](references/content-checks.md),
   [references/findings-format.md](references/findings-format.md), [references/severity-calibration.md](references/severity-calibration.md)
