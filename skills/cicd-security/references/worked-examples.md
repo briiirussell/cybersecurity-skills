@@ -145,3 +145,33 @@ How the hardening notes from the same review read (no records, no severity):
   `contents: write` explicitly. Add `permissions: {}` at the top. Effort: minutes.
 - `lint.yml` uses `some-org/setup-linter@v2` by tag in a `pull_request` job with a read-only token and no secrets.
   Pin to a SHA for consistency. Effort: minutes.
+
+## Named incident: openai/codex issue-labeler, 2026
+
+Not a `findings.json` record. The workflows belong to `openai/codex`, not to a repo this file invents.
+
+Depi Research Team reported the chain in a public Bugcrowd disclosure. The Defiant's coverage says OpenAI fixed it
+and that the disclosure does not report a malicious npm release reaching users. Both were read on 2026-11-15. No CVE
+is named in either. The researcher's weekly-download figure is not repeated here.
+
+What the disclosure reports, at the level this skill needs:
+
+1. Prompt injection in `issue-labeler.yml`. Issue text became command execution inside the Codex agent sandbox.
+   Any GitHub user could open the issue.
+2. A sandbox escape on the hosted runner leaked `ACTIONS_RUNTIME_TOKEN` (cache and artifact access) and the job's
+   `GITHUB_TOKEN`. Those credentials are on the runner. The agent's tool allowlist did not remove them. The escape
+   method is intentionally not written down here.
+3. Cache poisoning into `rust-ci.yml` (`contents: write`), and a planted workflow with `id-token: write`. The stated
+   impact was the ability to publish a malicious `@openai/codex` release.
+
+For a review this is one cross-workflow finding, not two. Class `agent-prompt-injection`. The propagation carrier is
+`actions-cache`: the cache the agent job can write and a release, publish, `contents: write`, or `id-token: write`
+workflow restores. Severity is critical when that second workflow exists, even if the agent job's own `permissions:`
+are read-only. Confidence stays `medium` on a static trace.
+
+Fix: run issue-triage agents in a separate repository, or with no cache steps. Do not restore caches in release or
+publish jobs, or key them so the untrusted job cannot write them. Keep `id-token: write` and publish credentials in
+an environment with required reviewers.
+
+Sources: [Bugcrowd disclosure](https://bugcrowd.com/disclosures/3c0e5972-74ad-46a3-ab56-169db3d4c66f/backdooring-the-next-release-of-codex-through-github-action-pipeline-exploit-chaining),
+[The Defiant](https://thedefiant.io/frontier/ai/researchers-say-codex-flaw-put-npm-releases-at-risk).

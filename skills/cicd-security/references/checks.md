@@ -210,12 +210,23 @@ grep -nE 'actions/cache(/save|/restore)?@|restore-keys:|cache:[[:space:]]*.?(npm
 Caches are scoped by branch, and a run can read caches from its own branch and the default branch. A
 `pull_request_target` run executes in the default branch's scope, so a cache it writes is visible to later default
 branch runs, including releases. Shapes that matter: cache writes in `pull_request_target`/`issue_comment` jobs that
-also run untrusted code; broad `restore-keys:` prefixes; keys derived from attacker text; a release job that restores
+also run untrusted code; an AI agent job triggered by issues, pull requests, or comments (it is an untrusted writer
+even when its `permissions:` are read-only, because the runner's `ACTIONS_RUNTIME_TOKEN` can reach the cache);
+broad `restore-keys:` prefixes; keys derived from attacker text; a release job that restores
 anything. Ultralytics (December 2024) was a `pull_request_target` injection that poisoned a cache a later release
-restored before publishing to PyPI.
+restored before publishing to PyPI. The openai/codex issue-labeler chain (November 2026) is the same class across
+workflows: see [ai-agents-in-ci.md](ai-agents-in-ci.md) and [worked-examples.md](worked-examples.md).
+
+```bash
+# Privileged workflows that restore caches
+rg -n -l 'contents:\s*write|id-token:\s*write|npm publish|cargo publish|twine upload' $WF \
+  | xargs rg -n 'actions/cache|cache:\s*(npm|pnpm|yarn|pip|cargo)|restore-keys'
+```
 
 **Fix:** release and publish jobs build without restoring caches (`setup-*` without `cache:`, no `actions/cache`), or
-from keys no untrusted run can write.
+from keys no untrusted run can write. An agent job that issues, pull requests, or comments can trigger is one of
+those writers: give it no cache steps, or run it in a separate repository. Keep `id-token: write` and publish
+credentials behind an environment with required reviewers.
 
 ## 9. artifact-trust
 

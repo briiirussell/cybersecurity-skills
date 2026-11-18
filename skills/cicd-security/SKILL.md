@@ -1,6 +1,6 @@
 ---
 name: cicd-security
-description: "Audit CI/CD pipelines, GitHub Actions first and GitLab CI and CircleCI briefly, for the paths that give an outsider code execution, secrets or a write token: pull_request_target and workflow_run running untrusted code, expression injection into run steps, missing or broad workflow permissions, third-party actions not pinned to a commit SHA, OIDC trust policies with wildcard subjects, self-hosted runners on public repos, secrets reaching forks, cache and artifact trust between workflows, and AI agents in CI that read issue or PR text while holding a write token. Runs zizmor and actionlint read-only and writes findings.json. Use when the user mentions 'pull_request_target,' 'pwn request,' 'workflow injection,' 'zizmor,' 'actionlint,' 'pin actions to SHA,' 'GITHUB_TOKEN permissions,' 'self-hosted runner,' 'claude-code-action,' 'AI agent in CI,' 'GitLab CI security,' 'CircleCI security,' 'is this workflow safe,' or needs to secure a build pipeline."
+description: "Audit CI/CD pipelines, GitHub Actions first and GitLab CI and CircleCI briefly, for the paths that give an outsider code execution, secrets or a write token: pull_request_target and workflow_run running untrusted code, expression injection into run steps, missing or broad workflow permissions, third-party actions not pinned to a commit SHA, OIDC trust policies with wildcard subjects, self-hosted runners on public repos, secrets reaching forks, cache and artifact trust between workflows, and AI agents in CI that read issue or PR text while holding a write token, sandbox or not. Runs zizmor and actionlint read-only and writes findings.json. Use when the user mentions 'pull_request_target,' 'pwn request,' 'workflow injection,' 'zizmor,' 'actionlint,' 'pin actions to SHA,' 'GITHUB_TOKEN permissions,' 'self-hosted runner,' 'ACTIONS_RUNTIME_TOKEN,' 'claude-code-action,' 'AI agent in CI,' 'GitLab CI security,' 'CircleCI security,' 'is this workflow safe,' or needs to secure a build pipeline."
 allowed-tools: Read, Grep, Glob, WebSearch, Bash(zizmor --offline .), Bash(zizmor --offline --format=json .), Bash(zizmor --offline --format=sarif .), Bash(actionlint), Bash(actionlint -oneline), Bash(actionlint -format '{{json .}}'), Bash(gh workflow list:*), Bash(gh workflow view:*), Bash(gh run list:*)
 ---
 
@@ -145,7 +145,9 @@ Each class below has its grep, the attacker-controlled contexts, safe shapes and
    `toJSON(secrets)`, and on private repos the "send secrets to fork PR workflows" setting.
 8. **Cache poisoning (`cache-poisoning`).** A cache an untrusted run can write and a release or secret-holding job
    restores: writes from `pull_request_target`, broad `restore-keys:`, keys built from branch names, `setup-*`
-   `cache:` in a release job. Ultralytics (December 2024) went through this into a PyPI publish.
+   `cache:` in a release job. An AI agent job triggered by issues, pull requests, or comments is an untrusted
+   cache writer, alongside `pull_request_target`. Ultralytics (December 2024) went through this into a PyPI publish.
+   The openai/codex issue-labeler chain (November 2026) is the cross-workflow form: see check 12.
 9. **Artifact trust (`artifact-trust`).** A `workflow_run` job that downloads a fork run's artifact and executes,
    unpacks into the workspace, deploys or publishes it, or trusts a value inside it (a PR number, a path) in a shell
    command.
@@ -161,7 +163,17 @@ Each class below has its grep, the attacker-controlled contexts, safe shapes and
     [references/ai-agents-in-ci.md](references/ai-agents-in-ci.md): **who can trigger it** (the action's
     write-access check, `allowed_non_write_users`, `allowed_bots`), **what it can do** (`claude_args --allowedTools`,
     sandbox mode, `Bash(*)`, job `permissions:`), and **where its output goes** (a comment, a commit, or a later
-    `run:` step that evaluates it). The model is not a security boundary; the token scope and the trigger gate are.
+    `run:` step that evaluates it). The model is not a security boundary, and neither is the sandbox. A hosted
+    runner also holds `ACTIONS_RUNTIME_TOKEN` (cache and artifact access) and the job's `GITHUB_TOKEN`, whatever
+    the agent's tool allowlist says. Rate the step by the runner.
+    **Critical** when a lower-trust actor can trigger that agent and any release, publish, `contents: write`, or
+    `id-token: write` workflow restores an Actions cache. Record one cross-workflow finding: class
+    `agent-prompt-injection`, propagation carrier `actions-cache` (the cache the agent job can write and the
+    privileged workflow restores). Fix: run issue-triage agents in a separate repository, or with no cache steps;
+    do not restore caches in release or publish jobs, or key them so the untrusted job cannot write them; keep
+    `id-token: write` and publish credentials in an environment with required reviewers. The greps are in
+    [references/checks.md](references/checks.md#8-cache-poisoning) and
+    [references/ai-agents-in-ci.md](references/ai-agents-in-ci.md).
 
 ## Step 5 — Platform facts
 
@@ -209,7 +221,9 @@ workflow, a tag-pinned third-party action in a job with a read-only token and no
 4. **Severity** follows [references/severity-calibration.md](references/severity-calibration.md), on `confirmed` only,
    and `overall` ≤ impact. Rate by what the job holds:
    - **Critical**: an outsider gets code execution with publish credentials, a cloud role with write access to
-     production, or a token that can push to a protected release branch.
+     production, or a token that can push to a protected release branch. Also critical: a lower-trust agent step
+     whose runner can write a cache that a release, publish, `contents: write`, or `id-token: write` workflow
+     restores, even when the agent job's own `permissions:` are read-only.
    - **High**: an outsider gets a repo write token or repository secrets.
    - **Medium**: an unpinned third-party action in a privileged job (likelihood depends on an upstream compromise), or
      a gate that only maintainers can reach.

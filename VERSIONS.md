@@ -9,7 +9,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | api-audit | 1.2.0 | 2026-11-18 |
 | breach-patterns | 1.1.0 | 2026-10-30 |
 | business-logic-testing | 1.1.0 | 2026-10-30 |
-| cicd-security | 1.0.0 | 2026-10-27 |
+| cicd-security | 1.1.0 | 2026-11-18 |
 | cloud-audit | 1.4.0 | 2026-11-18 |
 | container-audit | 1.4.0 | 2026-11-18 |
 | control-audit | 1.2.1 | 2026-10-30 |
@@ -48,6 +48,17 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.3.0 | 2026-11-18 |
 
 ## Recent Changes
+
+### 1.87.0 (2026-11-18)
+
+cicd-security rates an agent step by the credentials on the runner, not by the sandbox. cicd-security 1.1.0.
+
+**Added**
+- `agent-prompt-injection` is critical when a lower-trust actor can trigger the agent and any release, publish, `contents: write`, or `id-token: write` workflow restores an Actions cache. Record it once, with propagation carrier `actions-cache`. A read-only `permissions:` block does not clear it: the runner still holds `ACTIONS_RUNTIME_TOKEN`.
+- `cache-poisoning` lists an AI agent job triggered by issues, pull requests, or comments as an untrusted cache writer, next to `pull_request_target`.
+- A named incident, openai/codex issue-labeler (November 2026), in `references/worked-examples.md` and `references/ai-agents-in-ci.md`. Facts are as reported by Depi Research Team's Bugcrowd disclosure and The Defiant, read 2026-11-15. OpenAI fixed it. No malicious release is reported to have reached users. No CVE is named. The escape method is not reproduced, and the researcher's download figures are omitted.
+
+Proposed by @coreyhaines31 in #266.
 
 ### 1.86.0 (2026-11-18)
 
