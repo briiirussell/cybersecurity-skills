@@ -1,6 +1,6 @@
 # secrets-audit
 
-> Find leaked secrets in source code, Git history, build artifacts, and infrastructure — and audit the secrets-management posture preventing future leaks. Use when the user mentions 'secrets audit,' 'secret scanning,' 'leaked credentials,' 'API key in code,' 'gitleaks,' 'trufflehog,' 'betterleaks,' 'git history scan,' 'secrets management,' 'vault audit,' 'rotation policy,' 'AWS Secrets Manager,' 'HashiCorp Vault,' 'Doppler,' '1Password Secrets Automation,' 'sealed-secrets,' 'External Secrets Operator,' 'secrets in MCP config,' 'API key in Claude transcript,' 'is this key public,' 'hard spend cap,' 'OpenRouter key limit,' 'vendor-held secrets,' 'secrets a vendor stores,' 'which secrets did we give that vendor,' or needs to find or prevent credential exposure.
+> Find leaked secrets in source code, Git history, build artifacts, and infrastructure — and audit the secrets-management posture preventing future leaks. Use when the user mentions 'secrets audit,' 'secret scanning,' 'leaked credentials,' 'API key in code,' 'gitleaks,' 'trufflehog,' 'betterleaks,' 'git history scan,' 'secrets management,' 'vault audit,' 'rotation policy,' 'AWS Secrets Manager,' 'HashiCorp Vault,' 'Doppler,' '1Password Secrets Automation,' 'sealed-secrets,' 'External Secrets Operator,' 'secrets in MCP config,' 'API key in Claude transcript,' 'is this key public,' 'hard spend cap,' 'OpenRouter key limit,' 'vendor-held secrets,' 'secrets a vendor stores,' 'which secrets did we give that vendor,' 'allow rule,' 'settings.local.json,' or needs to find or prevent credential exposure.
 
 # Secrets Audit — Credential Exposure and Secrets-Management Review
 
@@ -152,7 +152,7 @@ up in plaintext files that are rarely gitignored deliberately and are often sync
 | `.mcp.json`, `~/.claude.json` (user and per-project `mcpServers`) | `env` and `headers` blocks with literal tokens |
 | `.cursor/mcp.json`, `~/.cursor/mcp.json`, `.vscode/mcp.json` | Same, for Cursor and VS Code / Copilot |
 | `~/Library/Application Support/Claude/claude_desktop_config.json` (Windows `%APPDATA%\Claude\`) | Claude Desktop MCP `env` blocks |
-| `.claude/settings.json`, `.claude/settings.local.json`, `~/.claude/settings.json` | `env` blocks; `apiKeyHelper` / `awsCredentialExport` commands that print a credential (and run a shell command — see `agent-supply-chain-audit`) |
+| `.claude/settings.json`, `.claude/settings.local.json`, `~/.claude/settings.json` | `env` blocks; `apiKeyHelper` / `awsCredentialExport` commands that print a credential (and run a shell command — see `agent-supply-chain-audit`); `permissions.allow` rules saved when someone picks "Yes, and don't ask again" |
 | `~/.codex/config.toml`, `~/.codex/auth.json` | `[mcp_servers.<name>.env]` tables; the Codex login / API key |
 | `~/.gemini/settings.json`, `.gemini/settings.json`, `.gemini/.env`, `~/.gemini/.env` | `mcpServers` `env`; Gemini API keys |
 | `~/.claude/projects/**/*.jsonl` (plus `~/.claude/history.jsonl`, shell snapshots, file history where present) | Session transcripts: every pasted key, every `cat .env`, every secret a tool printed |
@@ -169,6 +169,14 @@ rg -n '\[mcp_servers\.[^]]+\.env\]|^\s*env\s*=\s*\{' ~/.codex/config.toml   # th
 # Agent settings: env blocks and credential helpers
 rg -n '"(env|apiKeyHelper|awsCredentialExport|awsAuthRefresh|otelHeadersHelper)"\s*:' \
   .claude/settings.json .claude/settings.local.json ~/.claude/settings.json
+# Allow rules that carry an inline credential. Counts only — a match line would copy the secret into this session.
+rg -c -e 'Bash\([^)]*(://[^:/@ ]+:[^@ ]+@|Bearer |sk_live_|rk_live_|sk-ant-|ghp_|github_pat_|AKIA[A-Z0-9]{16}|PGPASSWORD=|--password[= ]|-p[^ ]{6,})' \
+  .claude/settings.local.json .claude/settings.json ~/.claude/settings.json 2>/dev/null
+# Tracked in this repo, or only ignored on this machine?
+git ls-files --error-unmatch .claude/settings.local.json 2>/dev/null && echo "TRACKED"
+git check-ignore -v .claude/settings.local.json
+grep -n 'settings.local.json' .gitignore || echo "not in project .gitignore"
+git log --all --oneline -- .claude/settings.local.json | head
 # Transcripts and logs: counts per file only — printing a match copies it into this session's transcript
 rg -c -e 'sk-ant-' -e 'sk_live_' -e 'rk_live_' -e 'ghp_' -e 'github_pat_' -e 'AKIA[A-Z0-9]{16}' -e 'xox[baprs]-' \
   -e 'AIza[A-Za-z0-9_-]{35}' -e '-----BEGIN [A-Z ]*PRIVATE KEY' -e 'service_role' \
@@ -181,6 +189,10 @@ git ls-files | rg '(^|/)(\.mcp\.json|mcp\.json|mcp_config\.json|settings\.local\
 
 For a key found in a transcript: rotate it (the transcript is a copy you can't recall from backups), then delete or scrub
 the session file. Shorten retention where the agent supports it (Claude Code `cleanupPeriodDays`).
+
+**Allow rules.** Claude Code writes the exact command into `.claude/settings.local.json` when someone picks "Yes, and don't ask again" ([permissions](https://code.claude.com/docs/en/permissions)). A password, token, or connection string typed in that command is then stored in `permissions.allow`. The file is not reliably ignored: Claude Code adds it to the user's global git excludes on one machine, not to the project's `.gitignore`, and a copy that is already tracked stays tracked. A teammate, a fresh clone, or a dotfiles sync can commit it. Generic scanners miss values that are database passwords inside connection strings or command arguments rather than well-known key prefixes. Apiiro reported on 2026-11-05 ([blog](https://apiiro.com/blog/coding-agents-leaking-secrets-github-dont-ask-again), via [The Hacker News](https://thehackernews.com/2026/11/claude-codes-dont-ask-again-file.html)) 104,185 public copies, 1,122 holding at least one secret, and, via [iTWire](https://itwire.com/business-it-news/security/claude-code-approval-files-found-exposing-company-secrets-on-github-says-apirro-researchers), that gitleaks and TruffleHog together missed 215 of those files. Those counts are Apiiro's, not re-counted here. Claude Code issues [#13106](https://github.com/anthropics/claude-code/issues/13106) and [#5544](https://github.com/anthropics/claude-code/issues/5544) were closed without a fix. There is no CVE and no patch, so this is a file to inventory, not a version to bump.
+
+Rate a live credential in a tracked or historically committed `settings.local.json` like any other committed secret ([references/severity-calibration.md](references/severity-calibration.md) section 6). A secret in an untracked copy covered only by a global exclude (`~/.config/git/ignore` or `core.excludesFile`, which `git check-ignore -v` names) is `needs_validation`: whether another clone or sync has the file is the blocker, and the check the owner runs is adding the path to the project `.gitignore`. If a real credential was saved in the file, rotate it, then remove it from the file and from history. The count from the command above is enough. Do not print the matching line into this session.
 
 ### Exfiltration collectors — egress indicators
 
@@ -242,7 +254,7 @@ When you find a leaked secret:
 
 - **No secrets in Git history** (run gitleaks --all)
 - **No `.env` committed** — `.gitignore` covers `.env*` (with care for `.env.example`)
-- **Agent configs in `.gitignore`, or `${ENV}` references only** — `.mcp.json`, `.cursor/mcp.json`, `.vscode/mcp.json`, `.claude/settings.local.json`, `.gemini/.env` are either untracked (`git check-ignore -v <file>`) or hold only variable references (`${VAR}` in Claude Code `.mcp.json`, `${env:VAR}` in Cursor, `${input:…}` prompts in VS Code); agent transcript retention is set and transcripts aren't in dotfile repos or unencrypted backups
+- **Agent configs in the project `.gitignore`, or `${ENV}` references only** — `.mcp.json`, `.cursor/mcp.json`, `.vscode/mcp.json`, `.claude/settings.local.json`, `.gemini/.env` are either untracked (`git check-ignore -v <file>`) or hold only variable references (`${VAR}` in Claude Code `.mcp.json`, `${env:VAR}` in Cursor, `${input:…}` prompts in VS Code). `.claude/settings.local.json` has to be in the **project** `.gitignore`. A hit only from `~/.config/git/ignore` or `core.excludesFile` does not protect other clones, and a file that is already tracked is not fixed by adding the ignore. Allow rules are patterns (`Bash(psql:*)`) with the credential in an env var or a secrets manager, never a literal value. If a secret was saved in an allow rule, rotate it, then remove it from the file and from history. Agent transcript retention is set, and transcripts are not in dotfile repos or unencrypted backups
 - **Secrets fetched at runtime, not embedded at build** — image rebuild is not required to rotate
 - **IAM scoped to the secret** — service A can read secret A, not secret B
 - **Rotation cadence** — defined per secret class (admin: 30d, service: 90d, customer-shared: per breach response)

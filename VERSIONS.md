@@ -30,13 +30,13 @@ Current versions of all skills. Agents can compare against local versions to che
 | owasp-audit | 1.9.0 | 2026-11-18 |
 | patch-sweep | 1.6.0 | 2026-11-18 |
 | pci-audit | 1.1.1 | 2026-10-27 |
-| personal-opsec | 1.3.3 | 2026-11-18 |
+| personal-opsec | 1.3.4 | 2026-11-18 |
 | privacy-engineering | 1.1.0 | 2026-10-27 |
 | prompt-injection | 1.2.1 | 2026-10-27 |
 | recon | 1.0.1 | 2026-10-26 |
 | red-team-engagement | 1.0.1 | 2026-10-26 |
 | scanner-pipeline | 1.1.0 | 2026-10-30 |
-| secrets-audit | 1.5.0 | 2026-11-18 |
+| secrets-audit | 1.6.0 | 2026-11-18 |
 | security-comms | 1.0.3 | 2026-10-26 |
 | security-start | 1.0.0 | 2026-10-27 |
 | siem-detection | 1.1.0 | 2026-11-18 |
@@ -48,6 +48,18 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.81.0 (2026-11-18)
+
+secrets-audit and personal-opsec: Claude Code "don't ask again" allow rules can store a secret in `.claude/settings.local.json`. secrets-audit 1.6.0, personal-opsec 1.3.4.
+
+**Added**
+- secrets-audit counts inline credentials in `permissions.allow` (connection strings, bearer tokens, known key prefixes, `PGPASSWORD`, `--password`) and checks whether `.claude/settings.local.json` is tracked, only covered by a global git exclude, or named in the project `.gitignore`. Counts only. Do not print the matching line.
+- A tracked or historically committed secret is rated like any other committed secret. An untracked copy covered only by global excludes is `needs_validation`, fixed by adding the path to the project `.gitignore`. If a real credential was saved there, rotate it, then remove it from the file and from history. Allow rules should be patterns such as `Bash(psql:*)`, with the secret in an env var or a secrets manager.
+- Apiiro's 2026-11-05 counts (104,185 public copies, 1,122 with a secret, 215 missed by gitleaks and TruffleHog together) are cited as reported, not re-counted. Claude Code issues #13106 and #5544 were closed without a fix. No CVE.
+- personal-opsec C3 asks whether Claude Code is current. v2.1.317 asks before putting the signed-in account email in the User-Agent. A fuller removal from model context was announced and was not verified shipped as of 2026-11-09.
+
+Proposed by @coreyhaines31 in #260.
 
 ### 1.80.0 (2026-11-18)
 
