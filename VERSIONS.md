@@ -15,7 +15,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | control-audit | 1.2.1 | 2026-10-30 |
 | crypto-audit | 1.1.2 | 2026-10-27 |
 | csf-mapping | 1.0.3 | 2026-10-27 |
-| dependency-audit | 1.7.0 | 2026-11-18 |
+| dependency-audit | 1.8.0 | 2026-11-18 |
 | disk-forensics | 1.0.2 | 2026-10-27 |
 | finding-triage | 1.4.0 | 2026-11-18 |
 | fuzzing-harness | 1.0.1 | 2026-10-27 |
@@ -48,6 +48,19 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.3.0 | 2026-11-18 |
 
 ## Recent Changes
+
+### 1.97.0 (2026-11-18)
+
+dependency-audit checks Python startup hooks and the shape of a release before a bump ships (Microsoft `agent-framework` PyPI compromise, 2026-11-17). dependency-audit 1.8.0.
+
+**Added**
+- dependency-audit `references/python-startup-hooks.md`, with a one-line pointer in Step 4. It finds `.pth` import lines, `sitecustomize.py` and `usercustomize.py` with `find`, not by starting the interpreter, since starting it runs the hooks. It lists the normal importers (editable installs, `distutils-precedence.pth`, coverage, a distro `sitecustomize.py`) and how to diff a bumped wheel's top-level entries. The grep matches what `site` actually executes: lines that start with `import` and a space or tab. Tested locally with python3 3.13 in a venv.
+- Release-shape checks for a Python bump, marked needs_validation: wheel-only when earlier releases shipped an sdist too, no matching upstream tag or release, new top-level `.pth` or `.py` files, and a meta-package out of step with its `-core` sibling.
+- Exposure window: floor-only ranges for packages that run code at install or start are noted, with hash-pinned lockfiles and a cooldown as the fix. A confirmed bad install means remove the hook and module, rebuild, pin, and rotate every credential that user, runner or container could read, not just upgrade.
+- Worked example: `agent-framework` 1.26.1 (20:35 UTC) and 1.26.2 (21:08 UTC), last safe 1.26.0, with the two `.pth` names, what was collected, and 1.26.2's GitHub Actions OIDC addition. Checked 2026-11-18 against Wiz, Socket, Aikido and the PyPI JSON API. Removal time is given as each vendor reported it (21:20 vs 21:30 UTC). Root cause is not confirmed. No CVE. Hashes and the webhook URL are left in the sources.
+- Two dependency-audit trigger prompts.
+
+Proposed by @coreyhaines31 in #299.
 
 ### 1.96.0 (2026-11-18)
 

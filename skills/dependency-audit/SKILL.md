@@ -253,6 +253,8 @@ Pinned: `some-mcp-server@1.4.2`, `tool==0.9.1`, `image@sha256:...`. Hand each un
 
 **Shipped bytecode:** `.pyc` files tracked in git or packaged without a matching `.py` can run code nobody reviewed. `git ls-files | grep -E '\.py[co]$|__pycache__/'`, plus the no-matching-source check in [references/source-redirection.md](references/source-redirection.md) §3.
 
+**Python startup hooks and release shape:** see [references/python-startup-hooks.md](references/python-startup-hooks.md) (`.pth`, `sitecustomize.py`, wheel-only or untagged bumps, floor-only ranges, and what to rotate after a bad install).
+
 **Typosquatting:**
 - Close misspellings or lookalike scopes (agent CLIs: source-redirection.md §2)
 - Recently published packages with very few downloads
