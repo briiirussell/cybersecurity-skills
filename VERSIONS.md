@@ -49,6 +49,13 @@ Current versions of all skills. Agents can compare against local versions to che
 
 ## Recent Changes
 
+### 1.99.1 (2026-11-18)
+
+evals/README: current trigger-eval results and misses. Docs only.
+
+**Fixed**
+- The results section quoted v1.69.0. It now gives v1.99.0's numbers (should-fire 276/288, 95.8%; top-3 99.3%; near-miss 224/225, 99.6%; most similar pair 0.34) and lists today's misses. New since v1.69.0: a pasted branch protection export going to cicd-security, "new admin user at 3am" going to log-watch, and the Better Auth reachability question going to vuln-research. Fixed since v1.69.0: the MOVEit/SolarWinds checklist prompt and the service-account-key near-miss.
+
 ### 1.99.0 (2026-11-18)
 
 patch-sweep adds a web server / reverse-proxy track: host packages, container images and Kubernetes ingress controllers, with nginx2root (nginx 1.31.9 / 1.30.7) as the worked example. patch-sweep 1.9.0.

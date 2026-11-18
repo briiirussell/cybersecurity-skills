@@ -33,23 +33,26 @@ What the proxy is good at: it's free, it runs on every PR, and it notices when t
 
 ### Results
 
-At v1.69.0 (42 skills): should-fire top-1 **219/229 (95.6%)**, top-3 226/229 (98.7%); near-miss **219/221 (99.1%)**. The most similar pair is `ai-risk-management` / `prompt-injection` at 0.40. (At v1.50.1 it was 93.4% and 98.2%; at v1.23.4, with 35 skills, 91.4% and 97.7%.)
+At v1.99.0 (42 skills): should-fire top-1 **276/288 (95.8%)**, top-3 286/288 (99.3%); near-miss **224/225 (99.6%)**. The most similar pair is `ai-risk-management` / `prompt-injection` at 0.34. (At v1.69.0 it was 95.6% and 99.1%; at v1.50.1, 93.4% and 98.2%; at v1.23.4, with 35 skills, 91.4% and 97.7%.)
 
 The misses worth knowing about, since they point at descriptions that could be sharper:
 
-- **Pasted code is the weakest group.** The Dockerfile goes to `secrets-audit` (it contains `AWS_SECRET_ACCESS_KEY`), and a balance-check race goes to `pci-audit` (it says `charge_card`). BM25 reads the paste's words, not what the user is asking for.
+- **Pasted code and config is the weakest group.** BM25 reads the paste's words, not what the user is asking for:
+  - The Dockerfile goes to `secrets-audit` (it contains `AWS_SECRET_ACCESS_KEY`).
+  - A balance-check race goes to `pci-audit` (it says `charge_card`).
+  - A branch protection export asking about SOC 2 CC8.1 goes to `cicd-security` instead of `control-audit`.
 - **DPIA prompts go to `threat-modeling`.** "Do a DPIA for the new feature that tracks user location" (should-fire) and "DPIA for the new feature" (near-miss) both land there instead of `privacy-engineering`.
 - **Near-synonyms in a neighbour's description:**
   - "Are the Supabase RLS policies on our tables actually enabled?" goes to `scanner-pipeline`, whose description names the Supabase RLS advisor, instead of `cloud-audit`.
   - "Tune this noisy alert" goes to `soc-operations` instead of `siem-detection`.
   - "HTB box at 10.10.11.5, start recon" goes to `web-pentest` instead of `recon`.
   - "Find vulnerabilities in my Flask app" goes to `finding-triage` instead of `owasp-audit`.
-  - "Walk me through what MOVEit and SolarWinds teach us" goes to `personal-opsec` instead of `breach-patterns`.
-  - "A service account key was found in the repo" (near-miss) ranks `secrets-audit` fourth.
+  - "Suspicious activity on a production box: someone created a new admin user at 3am" goes to `log-watch` instead of `incident-triage`.
+  - "npm audit shows better-auth and @better-auth/expo under 1.7.16. Is that Expo CVE actually reachable in this lockfile…?" goes to `vuln-research` instead of `dependency-audit`.
 - `security-comms` loses "help me justify the security budget to the CFO": no description says "budget" or "CFO".
 - `mobile-audit` loses the jailbreak prompt (see above).
 
-The `incident-triage`, `prompt-injection` and `fuzzing-harness` misses listed at v1.50.1 were fixed by the description edits in v1.52.1–v1.52.3.
+Two misses listed at v1.69.0 are fixed. The MOVEit and SolarWinds checklist prompt now goes to `breach-patterns` (description edit in v1.95.0), and the service-account-key near-miss no longer ranks `secrets-audit` above its owner. The `incident-triage`, `prompt-injection` and `fuzzing-harness` misses listed at v1.50.1 were fixed by the description edits in v1.52.1–v1.52.3.
 
 ## Plugin evals (on demand)
 
