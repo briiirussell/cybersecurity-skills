@@ -132,18 +132,83 @@ rg -n 'uses:\s*[^.\s#][^@\s]*@' $WF .github/actions | rg -v '@[0-9a-f]{40}(\s|$)
 rg -n 'uses:\s*docker://' $WF .github/actions | rg -v '@sha256:'
 # portable
 grep -rnE 'uses:[[:space:]]*[^.[:space:]#][^@[:space:]]*@' $WF .github/actions | grep -vE '@[0-9a-f]{40}([[:space:]]|$)'
+# only this path counts. A different name, a copy, or a symlink is not a lockfile.
+test -f .github/workflows/actions.lock && test ! -L .github/workflows/actions.lock && echo "lockfile present"
 ```
 
-Separate first-party (`actions/*`, `github/*`), the org's own actions, and third-party. A 40-hex SHA with a version
-comment (`@<sha> # v4.2.2`) is the target shape; Dependabot and Renovate keep it updated.
+Separate first-party (`actions/*`, `github/*`), the org's own actions, and third-party. Then subtract only the
+step-level `uses:` a valid lockfile actually pins. Do not run bare `gh actions-lock` during an audit: it writes
+`.github/workflows/actions.lock` and can rewrite `uses:` lines. When `gh` and the `gh-actions-lock` extension are
+available, `gh actions-lock --verify` checks the file without modifying it (it still prompts, because the same
+extension writes). Use `--verify-local` only when `gh actions-lock --help` lists it.
 
-**Finding when** a third-party tag or branch ref runs in a job that holds secrets, a write scope, OIDC, or publish
-rights. Rate likelihood on the upstream: a single-maintainer action with broad adoption is a known target
-(tj-actions/changed-files, CVE-2025-30066, March 2025). In a read-only job with no secrets it's a hardening note.
+**Target shape**, either one:
 
-Also check, with the online zizmor run: `impostor-commit` (the SHA exists only in a fork network, so it isn't the
-upstream's code), `ref-confusion` (a tag and branch share a name), `known-vulnerable-actions`, `archived-uses`. The
-repo or org can enforce SHA pinning in the allowed-actions policy (`sha_pinning_required`, since August 2025).
+- a 40-hex SHA in `uses:` with a version comment (`@<sha> # v4.2.2`), or
+- a tag or branch in `uses:` plus a valid lockfile entry for that onboarded workflow.
+
+Dependabot keeps SHA comments updated, and for an onboarded workflow it regenerates the matching lockfile entry in
+the same pull request (GitHub Changelog, 2026-10-28). Renovate does this only when the repo's Renovate config says
+so; confirm, don't assume. Do not edit `actions.lock` by hand. Review a lockfile diff the way you review any
+dependency bump: a changed `commit` is the code that will run, and a changed `owner_id` or `repo_id` means the
+repository behind that name is not the one that was locked.
+
+**What a valid lockfile covers.** Workflow dependency lockfiles went generally available on 2026-10-28 (GitHub
+Enterprise Cloud, including data residency, Team, and Free). The file is machine-generated. `workflows:` lists the
+onboarded workflow files and the action refs each one uses. `dependencies:` records, for each ref, `ref`, `commit`,
+`owner_id`, and `repo_id`. After onboarding, GitHub Actions runs that commit, and the commit must be reachable from
+the recorded branch or tag in the action's own repository. A commit that exists only in a fork, or that is no longer
+reachable from that ref, is rejected at run time.
+
+Subtract a step-level `uses:` from the unpinned count only when all of these hold:
+
+- `.github/workflows/actions.lock` is a readable regular file at that exact path;
+- the workflow path is a key under `workflows:`;
+- that workflow's list includes the same action ref;
+- `dependencies` has an entry for it whose `commit` is 40 hex digits.
+
+Credit nothing for a missing, unreadable, renamed, symlinked, or malformed file, or for an entry with no commit.
+Official tooling treats a broken lockfile as no coverage.
+
+Still uncovered when the lockfile is well formed:
+
+- **Reusable workflow calls** (`jobs.<job_id>.uses`). The caller's lockfile does not pin them. Pin the call with a
+  full commit SHA. A reusable workflow's own action dependencies are covered by the lockfile in the repository where
+  it is defined, not by the caller's. zizmor's `unpinned-uses` audit still flags these.
+- **Mutable tools in a `run:` step.** `gh extension install …` on a tag, or any other CLI fetched at a moving
+  version, is outside `actions.lock`. That includes the `gh-actions-lock` extension a verify job installs: pin that
+  fetch to a commit or an immutable release asset, not a floating tag.
+- **`docker://` images by tag.** Lockfiles cover actions, not container tags. Pin by digest. zizmor `unpinned-images`
+  still flags these.
+- **`uses: ./…`.** The extension does not follow a local path; it runs whatever the checkout contains. `uses: $/…`
+  runs this repository's action at the workflow's own commit and needs no lockfile entry. Composite `action.yml`
+  definitions are not locked on their own; zizmor still wants those third-party `uses:` lines hash-pinned.
+- **Anything that is not action code.** The lockfile does not control inputs, secrets, or the runner image, and it
+  does not say the locked dependency is safe. Review the locked commit the same way as a SHA pin before treating the
+  ref as acceptable.
+
+Record `zizmor --version`. v1.32.0 (2026-11-02) is the first release that reads workflow lockfiles, and that support
+is experimental (zizmor release notes and usage docs). An older zizmor run still flags locked tag refs as
+`unpinned-uses`. Do not raise `unpinned-action` from that hit alone when the entry above is valid. A SHA that exists
+only in a fork network (`impostor-commit`) is still not a pin; say so when the online run shows it, and leave
+reachability as `needs_validation` when you cannot check.
+
+**Finding when** an uncovered third-party tag or branch, an uncovered reusable-workflow call, or an unpinned
+`run:`-step tool runs in a job that holds secrets, a write scope, OIDC, or publish rights. Rate likelihood on the
+upstream: a single-maintainer action with broad adoption is a known target (tj-actions/changed-files,
+CVE-2025-30066, March 2025). In a read-only job with no secrets it is a hardening note.
+
+Also check, with the online zizmor run: `impostor-commit`, `ref-confusion` (a tag and branch share a name),
+`known-vulnerable-actions`, `archived-uses`.
+
+**Two policies, not one.** `sha_pinning_required` (allowed-actions policy, since August 2025) and **Require
+lockfile** (repository, organization, or enterprise) are independent. A lockfile satisfies the SHA-pinning policy
+for workflows onboarded to it, so tags may remain in the workflow file. Record which policy is on. Neither one is a
+judgment that the locked code is safe.
+
+**When the repo keeps a lockfile:** make `gh actions-lock --verify` a required check, and put
+`.github/workflows/actions.lock` in CODEOWNERS so a changed `commit`, `owner_id`, or `repo_id` gets a review. Pin
+the extension install itself. Review dependencies before locking them.
 
 ## 5. oidc-trust
 
@@ -321,7 +386,7 @@ zizmor result → class here. Every result still needs the trace.
 | `github-env` | `script-injection` |
 | `excessive-permissions`, `undocumented-permissions` | `excessive-permissions` (the second is hardening) |
 | `artipacked` | `excessive-permissions` (token on disk) or `artifact-trust` |
-| `unpinned-uses`, `unpinned-images`, `impostor-commit`, `ref-confusion`, `stale-action-refs`, `known-vulnerable-actions`, `archived-uses`, `typosquat-uses`, `ref-version-mismatch` | `unpinned-action` |
+| `unpinned-uses`, `unpinned-images`, `impostor-commit`, `ref-confusion`, `stale-action-refs`, `known-vulnerable-actions`, `archived-uses`, `typosquat-uses`, `ref-version-mismatch` | `unpinned-action`. From zizmor 1.32.0 a valid `actions.lock` entry can clear `unpinned-uses` for that step; reusable-workflow calls, composite `action.yml` definitions, and `docker://` tags stay flagged. Older zizmor ignores the lockfile |
 | `self-hosted-runner` (pedantic) | `self-hosted-runner` |
 | `secrets-inherit`, `overprovisioned-secrets`, `secrets-outside-env`, `unredacted-secrets` | `fork-secrets` |
 | `cache-poisoning` | `cache-poisoning` |
@@ -364,6 +429,7 @@ in the evidence description.
 | `${{ }}` in `if:` or passed via `env:` and used as `"$VAR"` | Not pasted into the script |
 | `${{ secrets.X }}` in `with:` | Not an injection; still count it in "secrets in scope" |
 | Third-party action pinned to a full SHA that exists in the upstream repo | Immutable |
+| Step-level `uses:` on a tag or branch, with that workflow onboarded in a valid `.github/workflows/actions.lock` entry that records a commit for the same ref | The lockfile is the pin. Still review the commit; still flag `impostor-commit`, reusable-workflow calls, `docker://` tags, and mutable `run:`-step installs |
 | `pull_request` (not `_target`) from forks on a public repo | No secrets, read-only token |
 | Agent action with the default write-access gate and no PR checkout at the root | Outsiders can't trigger it |
 
@@ -372,3 +438,5 @@ in the evidence description.
 GitHub Security Lab "Keeping your GitHub Actions and workflows secure" parts 1 and 2; GitHub Docs security hardening;
 zizmor audit documentation (MIT); Sentry `gha-security-review` (Apache-2.0) for the outsider threat model and
 safe-shape list. All paraphrased; greps written for this repo.
+
+Workflow lockfiles, read 2026-11-15: GitHub Changelog, [generally available 2026-10-28](https://github.blog/changelog/2026-10-28-github-actions-workflow-lockfiles-are-generally-available/); GitHub Docs, [Workflow dependency lockfiles](https://docs.github.com/en/actions/concepts/security/workflow-dependency-lockfiles), [Locking action dependencies](https://docs.github.com/en/actions/how-tos/secure-your-work/lock-workflow-dependencies), [Enforcing lockfiles](https://docs.github.com/en/actions/how-tos/administer/enforce-workflow-lockfiles) (Require lockfile is separate from SHA pinning; `gh actions-lock --verify` is the non-modifying check; CODEOWNERS on the lockfile). zizmor [v1.32.0](https://github.com/zizmorcore/zizmor/releases/tag/v1.32.0) (2026-11-02) and [usage: workflow lockfiles](https://docs.zizmor.sh/usage/) for the experimental support and the reusable-workflow, composite-action, and Docker-image gaps. Hugo van Kemenade, ["Lock your GitHub Actions"](https://hugovk.dev/blog/2026/lock-github-actions/) (2026-11-11), is a practical walkthrough of the same official feature, including the note that zizmor before v1.32.0 still says to hash-pin. No third-party scanner is treated as proof of coverage.

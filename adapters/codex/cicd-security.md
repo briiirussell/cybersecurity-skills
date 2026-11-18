@@ -1,6 +1,6 @@
 # cicd-security
 
-> Audit CI/CD pipelines, GitHub Actions first, GitLab CI and CircleCI briefly, for the paths that give an outsider code execution, secrets or a write token: pull_request_target and workflow_run running untrusted code, expression injection into run steps, missing or broad permissions, third-party actions not pinned to a SHA, OIDC trust policies with wildcard subjects, self-hosted runners on public repos, secrets reaching forks, cache and artifact trust between workflows, and AI agents in CI reading issue or PR text with a write token, sandbox or not. Runs zizmor and actionlint read-only, writes findings.json. Use when the user mentions 'pull_request_target,' 'pwn request,' 'workflow injection,' 'zizmor,' 'actionlint,' 'pin actions to SHA,' 'GITHUB_TOKEN permissions,' 'self-hosted runner,' 'ACTIONS_RUNTIME_TOKEN,' 'stolen write token,' 'bot bypasses branch protection,' 'claude-code-action,' 'AI agent in CI,' 'GitLab CI security,' 'CircleCI security,' 'is this workflow safe,' or needs to secure a build pipeline.
+> Audit CI/CD pipelines (GitHub Actions; GitLab CI and CircleCI briefly) for paths giving an outsider code execution, secrets or a write token: pull_request_target and workflow_run running untrusted code, expression injection, missing or broad permissions, third-party actions not pinned to a SHA or lockfile, OIDC trust with wildcard subjects, self-hosted runners on public repos, secrets reaching forks, cache and artifact trust, and AI agents in CI reading issue or PR text with a write token, sandbox or not. Runs zizmor and actionlint read-only, writes findings.json. Use when the user mentions 'pull_request_target,' 'pwn request,' 'workflow injection,' 'zizmor,' 'actionlint,' 'pin actions to SHA,' 'actions.lock,' 'workflow lockfile,' 'GITHUB_TOKEN permissions,' 'self-hosted runner,' 'ACTIONS_RUNTIME_TOKEN,' 'stolen write token,' 'bot bypasses branch protection,' 'claude-code-action,' 'AI agent in CI,' 'GitLab CI security,' 'CircleCI security,' 'is this workflow safe,' or needs to secure a build pipeline.
 
 # CI/CD Security — Workflows, Runners, Tokens and Agents in the Pipeline
 
@@ -11,8 +11,8 @@ what it runs or what it reads, and what does the job hold when they do?** The sa
 actor already holds a valid write token: a stolen maintainer or bot credential, or a GitHub App token acting as that
 user. The workflow files are fine until that token edits them.
 
-Cross-references: `dependency-audit` (packages, lockfiles, build context and release-artifact identity; this skill owns
-the workflow and runner side), `secrets-audit` (a secret that already reached a log, fork or artifact: rotation and
+Cross-references: `dependency-audit` (packages, package lockfiles, build context and release-artifact identity; this skill owns
+the workflow and runner side, including `.github/workflows/actions.lock`), `secrets-audit` (a secret that already reached a log, fork or artifact: rotation and
 history), `agent-supply-chain-audit` (skills, hooks and MCP servers on developer machines; this skill covers agents
 running inside CI), `prompt-injection` (LLM features in the user's own application), `iam-audit` (what the cloud role
 behind an OIDC trust policy can do), `cloud-audit` (repo security defaults and branch protection as part of a platform
@@ -29,7 +29,7 @@ finding), `incident-triage` (a stolen write token that already pushed: contain, 
 - zizmor or actionlint output that needs verdicts rather than a raw list
 - A stolen maintainer or bot token: what one push can reach, and whether bots can bypass branch protection
 
-**Not for:** vulnerable packages or a lockfile diff → `dependency-audit`; a leaked key that needs rotating →
+**Not for:** vulnerable packages or a package lockfile diff → `dependency-audit`; a leaked key that needs rotating →
 `secrets-audit`; a Claude skill or MCP server someone is about to install → `agent-supply-chain-audit`; prompt
 injection in the product's chatbot → `prompt-injection`; designing least-privilege cloud roles → `iam-audit`; setting
 up a weekly scanner workflow → `scanner-pipeline`; a confirmed CI-token compromise that needs containment, rotation,
@@ -60,6 +60,7 @@ Read every file that defines or feeds a pipeline, not just `.github/workflows/`:
 | Remote reusable workflows | job-level `uses: org/repo/.github/workflows/x.yml@ref`: read them too, one level deep |
 | Config the jobs execute or the agent loads | `Makefile`, `package.json` scripts, scripts under `.github/`, `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.mcp.json` |
 | Other CI | `.gitlab-ci.yml` and its `include:` files, `.circleci/config.yml`, `dependabot.yml` |
+| Workflow lockfile | `.github/workflows/actions.lock` only. A different name, a copy, or a symlink is not coverage |
 
 For each workflow, record: triggers (`on:`), top-level and job-level `permissions:`, each job's `runs-on`,
 `environment:`, `if:` gates, every `uses:` with its ref, the secrets and `id-token` it uses, and any AI agent step.
@@ -86,6 +87,9 @@ actionlint -format '{{json .}}'           # pre-approved; runs shellcheck on run
   (`impostor-commit`, `known-vulnerable-actions`, `ref-confusion`, `stale-action-refs`, `archived-uses`). For those,
   ask the user to run `GH_TOKEN=$(gh auth token) zizmor --format=json .` (it prompts, because it hands the API a
   token). `--persona=auditor` adds lower-confidence results; `--fix` rewrites files and is never part of the audit.
+  Record `zizmor --version`. v1.32.0 (2026-11-02) is the first release with workflow-lockfile support, and that
+  support is experimental: older runs still flag a locked tag as `unpinned-uses`. Do not raise `unpinned-action`
+  from that hit alone when the lockfile entry for that step-level `uses:` is valid.
 - **actionlint** catches syntax and type errors, script-injection shapes in `run:` and shellcheck problems in
   scripts. A workflow that doesn't parse can't be reasoned about; fix that first.
 - Map each tool result to a class with [references/checks.md](references/checks.md#zizmor-audit-map). Every result
@@ -131,11 +135,29 @@ Each class below has its grep, the attacker-controlled contexts, safe shapes and
    `write-all`, or write scopes on a job that runs untrusted input. A finding only when a lower-trust actor reaches a
    step that uses the extra scope; otherwise a hardening note. `persist-credentials` left on in a job that later
    uploads the workspace as an artifact is the same class.
-4. **Mutable action refs (`unpinned-action`).** Third-party `uses:` on a tag or branch instead of a full 40-character
-   SHA, `docker://` images by tag, reusable workflows on `@main`. A finding when the job holds secrets, a write token,
-   OIDC, or publish rights; tj-actions/changed-files (CVE-2025-30066) is the precedent for a tag re-pointed to code
-   that printed secrets into logs. `actions/*` and `github/*` on tags are lower risk; say what policy the repo
-   follows. A SHA that exists only in a fork's network (zizmor `impostor-commit`) is not a pin.
+4. **Mutable action refs (`unpinned-action`).** A third-party `uses:` on a tag or branch, a `docker://` image by tag,
+   or a reusable workflow on `@main`, in a job that holds secrets, a write token, OIDC, or publish rights.
+   tj-actions/changed-files (CVE-2025-30066) is the precedent for a tag re-pointed at code that printed secrets into
+   logs. `actions/*` and `github/*` on tags are lower risk; say what policy the repo follows.
+
+   A step-level `uses:` is pinned when the workflow has a full 40-character SHA, **or** when that workflow is listed
+   in a valid `.github/workflows/actions.lock` and the lockfile records a commit for that `uses:` (workflow dependency
+   lockfiles, generally available 2026-10-28). Do not raise `unpinned-action` on the tag in the YAML in that case, and
+   do not count it under "Third-party refs unpinned." A lockfile is not a verdict that the locked action is safe:
+   review the locked commit the same way as a SHA pin. A commit that exists only in a fork network (`impostor-commit`)
+   is still not a pin. GitHub also rejects, at run time, a locked commit that is not reachable from the recorded ref
+   in the action's own repository.
+
+   Credit nothing when the lockfile is missing, unreadable, a different name, a symlink, or malformed. Still uncovered,
+   even with a well-formed lockfile:
+   - a job-level reusable workflow call (`jobs.<job_id>.uses`). The caller's lockfile does not pin it. Pin the call
+     with a full commit SHA. That workflow's own action dependencies are locked only by the lockfile in the repository
+     where it is defined.
+   - a mutable tool a `run:` step installs (for example `gh extension install …` on a tag), including `gh-actions-lock`
+     itself. `actions.lock` does not cover that path.
+   - a `docker://` image by tag rather than digest. Lockfiles cover actions, not container tags.
+   - `uses: ./…`. The lockfile does not follow a local path; it runs whatever is checked out. `uses: $/…` is this
+     repo's action at the workflow's own commit and needs no lockfile entry.
 5. **OIDC trust (`oidc-trust`).** `id-token: write` plus a cloud trust policy that a lower-trust workflow can satisfy:
    AWS `token.actions.githubusercontent.com:sub` with `StringLike` on `repo:org/*` or `repo:org/repo:*`, GCP
    `attribute_condition` checking only `repository_owner`, Azure federated credentials whose subject is a pull request
@@ -200,7 +222,7 @@ the command that answers it. These are `gh api` reads, which prompt (the owner c
 ```bash
 gh api repos/OWNER/REPO --jq '{visibility, default_branch}'
 gh api repos/OWNER/REPO/actions/permissions/workflow          # default_workflow_permissions, can_approve_pull_request_reviews
-gh api repos/OWNER/REPO/actions/permissions                   # allowed_actions, sha_pinning_required
+gh api repos/OWNER/REPO/actions/permissions                   # allowed_actions, sha_pinning_required (not Require lockfile)
 gh api repos/OWNER/REPO/actions/runners --jq '.runners[] | {name, labels: [.labels[].name]}'
 gh api repos/OWNER/REPO/actions/oidc/customization/sub        # custom sub claim template, if any
 gh api repos/OWNER/REPO/environments --jq '.environments[] | {name, protection_rules}'
@@ -218,6 +240,12 @@ is not stated by any source. Record the list; do not treat a connected app as pr
 Fork-PR approval and private-repo fork settings, org runner groups, and cloud-side trust policies that aren't in this
 repo's IaC are the other usual blockers. [references/checks.md](references/checks.md#platform-facts) lists the
 commands, including `aws iam get-role` and `gcloud iam workload-identity-pools providers describe`.
+
+`sha_pinning_required` and the repository, organization, or enterprise **Require lockfile** policy are separate
+checks. A lockfile satisfies SHA pinning for workflows onboarded to it, so tags may remain in the YAML. Record which
+policy is on. Neither one says the locked commit is safe. During an audit, do not run bare `gh actions-lock`: it
+writes the lockfile and can rewrite `uses:` lines. `gh actions-lock --verify` only reads; it still prompts, because
+the same extension writes.
 
 ## Step 6 — Verify, then record
 
@@ -318,7 +346,7 @@ already say.
 - Confirmed: [N] (Critical [n] | High [n] | Medium [n] | Low [n])   Needs validation: [N]   Rejected: [N]
 
 ### Workflow inventory
-| Workflow | Triggers | Effective token scopes | Secrets / OIDC | Runner | Third-party refs unpinned | AI agent |
+| Workflow | Triggers | Effective token scopes | Secrets / OIDC | Runner | Third-party refs unpinned (omit lockfile-pinned step `uses:`) | AI agent |
 |---|---|---|---|---|---|---|
 
 ### Confirmed findings
@@ -359,8 +387,9 @@ already say.
 
 - GitHub Security Lab, "Keeping your GitHub Actions and workflows secure": [Part 1, preventing pwn requests](https://securitylab.github.com/resources/github-actions-preventing-pwn-requests/), [Part 2, untrusted input](https://securitylab.github.com/resources/github-actions-untrusted-input/)
 - GitHub Docs: [Security hardening for GitHub Actions](https://docs.github.com/en/actions/security-for-github-actions/security-guides/security-hardening-for-github-actions), [OIDC in AWS](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-aws)
-- GitHub Changelog: [pull_request_target and environment branch protection changes (2025-11-07, effective 2025-12-08)](https://github.blog/changelog/2025-11-07-actions-pull_request_target-and-environment-branch-protections-changes/), [blocking and SHA-pinning policy (2025-08-15)](https://github.blog/changelog/2025-08-15-github-actions-policy-now-supports-blocking-and-sha-pinning-actions/)
-- [zizmor](https://docs.zizmor.sh/) ([audits](https://docs.zizmor.sh/audits/), [usage](https://docs.zizmor.sh/usage/)), MIT; [actionlint](https://github.com/rhysd/actionlint/blob/main/docs/usage.md), MIT
+- GitHub Changelog: [pull_request_target and environment branch protection changes (2025-11-07, effective 2025-12-08)](https://github.blog/changelog/2025-11-07-actions-pull_request_target-and-environment-branch-protections-changes/), [blocking and SHA-pinning policy (2025-08-15)](https://github.blog/changelog/2025-08-15-github-actions-policy-now-supports-blocking-and-sha-pinning-actions/), [workflow dependency lockfiles generally available (2026-10-28)](https://github.blog/changelog/2026-10-28-github-actions-workflow-lockfiles-are-generally-available/)
+- GitHub Docs, workflow dependency lockfiles (read 2026-11-15): [concept](https://docs.github.com/en/actions/concepts/security/workflow-dependency-lockfiles), [locking dependencies](https://docs.github.com/en/actions/how-tos/secure-your-work/lock-workflow-dependencies), [enforcing lockfiles](https://docs.github.com/en/actions/how-tos/administer/enforce-workflow-lockfiles), [governing execution](https://docs.github.com/en/actions/how-tos/administer/control-workflow-execution)
+- [zizmor](https://docs.zizmor.sh/) ([audits](https://docs.zizmor.sh/audits/), [usage](https://docs.zizmor.sh/usage/), [v1.32.0 lockfile support](https://github.com/zizmorcore/zizmor/releases/tag/v1.32.0)), MIT; [actionlint](https://github.com/rhysd/actionlint/blob/main/docs/usage.md), MIT
 - [anthropics/claude-code-action security guide](https://github.com/anthropics/claude-code-action/blob/main/docs/security.md)
 - Trail of Bits, [agentic-actions-auditor](https://github.com/trailofbits/skills/tree/main/plugins/agentic-actions-auditor) (CC BY-SA 4.0): the trigger → agent input → capability framing for agents in CI. Paraphrased; no text copied
 - Sentry, [gha-security-review](https://github.com/getsentry/skills/tree/main/skills/gha-security-review) (Apache-2.0): the outsider threat model and safe-pattern list. Paraphrased; no text copied

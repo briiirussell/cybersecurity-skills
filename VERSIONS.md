@@ -9,7 +9,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | api-audit | 1.2.0 | 2026-11-18 |
 | breach-patterns | 1.1.0 | 2026-10-30 |
 | business-logic-testing | 1.1.0 | 2026-10-30 |
-| cicd-security | 1.2.0 | 2026-11-18 |
+| cicd-security | 1.3.0 | 2026-11-18 |
 | cloud-audit | 1.4.0 | 2026-11-18 |
 | container-audit | 1.4.0 | 2026-11-18 |
 | control-audit | 1.2.1 | 2026-10-30 |
@@ -48,6 +48,19 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.3.0 | 2026-11-18 |
 
 ## Recent Changes
+
+### 1.91.0 (2026-11-18)
+
+cicd-security treats a valid GitHub Actions workflow lockfile as a pin for the step-level `uses:` it covers, and states what a lockfile does not cover. cicd-security 1.3.0.
+
+**Added**
+- `unpinned-action`: a readable, well-formed `.github/workflows/actions.lock` entry that records a commit pins that step-level `uses:`. A missing, unreadable, renamed, symlinked, or malformed lockfile counts as no coverage. The inventory column omits lockfile-pinned refs.
+- Gaps that stay uncovered: job-level reusable workflow calls, mutable tools installed in a `run:` step (including `gh-actions-lock` itself), `docker://` tags, and `uses: ./…`. A lockfile is not a verdict that the locked commit is safe. `impostor-commit` is still not a pin.
+- `sha_pinning_required` and the Require lockfile policy are separate checks. A lockfile satisfies SHA pinning for onboarded workflows. Bare `gh actions-lock` is not an audit command; it writes the file. `gh actions-lock --verify` is the read.
+- zizmor v1.32.0 (2026-11-02) is the first release with experimental lockfile support. Older runs still flag locked tags. Record the version used.
+- Description trigger phrases: `actions.lock`, `workflow lockfile`, `gh actions-lock`.
+
+Facts checked against GitHub's changelog (2026-10-28) and lockfile docs on 2026-11-15, and against zizmor's v1.32.0 release notes. From #270.
 
 ### 1.90.0 (2026-11-18)
 

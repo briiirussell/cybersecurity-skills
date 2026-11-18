@@ -9,7 +9,8 @@
     "our AWS role trusts GitHub OIDC with repo:acme/* as the sub, and we use a self-hosted runner on a public repo, how bad is that?",
     "review our GitLab CI pipeline for security problems",
     "our issue-labeler runs codex in a read-only sandbox, but the release workflow restores the Actions cache. Does ACTIONS_RUNTIME_TOKEN make that critical?",
-    "a bot account can bypass branch protection and a stolen write token can push to any branch; what secrets and id-token can that one push reach?"
+    "a bot account can bypass branch protection and a stolen write token can push to any branch; what secrets and id-token can that one push reach?",
+    "our workflows still say uses: actions/checkout@v4 but we committed .github/workflows/actions.lock — does that count as pinned, and what does gh actions-lock not cover?"
   ],
   "near_miss": [
     {
