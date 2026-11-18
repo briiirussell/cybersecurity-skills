@@ -6,7 +6,9 @@
     "suspicious activity on a production box: someone created a new admin user at 3am",
     "help me contain this incident and preserve evidence",
     "extract IOCs from these alerts and tell me which notification clocks have started",
-    "incident triage: a developer ran a tampered installer, then a take-home repo from a fake interview. We've been compromised"
+    "incident triage: a developer ran a tampered installer, then a take-home repo from a fake interview. We've been compromised",
+    "vendor breach: the SaaS we use was breached and told us to rotate keys, our own code looks fine, what do we do first?",
+    "a vendor we use was breached, they told us to rotate keys, where do I start?"
   ],
   "near_miss": [
     {
@@ -28,6 +30,10 @@
     {
       "prompt": "proactive hunt for persistence that no alert has caught",
       "owner": "threat-hunting"
+    },
+    {
+      "prompt": "which vendor-held secrets did we give each SaaS, and has rotation been tested?",
+      "owner": "secrets-audit"
     }
   ]
 }

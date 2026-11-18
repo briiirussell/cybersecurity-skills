@@ -21,7 +21,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | fuzzing-harness | 1.0.1 | 2026-10-27 |
 | hipaa-audit | 1.1.1 | 2026-10-27 |
 | iam-audit | 1.2.0 | 2026-10-27 |
-| incident-triage | 1.3.0 | 2026-11-18 |
+| incident-triage | 1.4.0 | 2026-11-18 |
 | log-watch | 1.0.2 | 2026-10-30 |
 | malware-triage | 1.0.0 | 2026-10-27 |
 | mobile-audit | 1.1.1 | 2026-10-27 |
@@ -36,7 +36,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | recon | 1.0.1 | 2026-10-26 |
 | red-team-engagement | 1.0.1 | 2026-10-26 |
 | scanner-pipeline | 1.1.0 | 2026-10-30 |
-| secrets-audit | 1.4.0 | 2026-11-18 |
+| secrets-audit | 1.5.0 | 2026-11-18 |
 | security-comms | 1.0.3 | 2026-10-26 |
 | security-start | 1.0.0 | 2026-10-27 |
 | siem-detection | 1.0.5 | 2026-10-27 |
@@ -48,6 +48,20 @@ Current versions of all skills. Agents can compare against local versions to che
 | web-pentest | 1.2.1 | 2026-10-27 |
 
 ## Recent Changes
+
+### 1.73.0 (2026-11-18)
+
+incident-triage and secrets-audit: a playbook for when a vendor you use was breached. incident-triage 1.4.0, secrets-audit 1.5.0.
+
+**Added**
+- incident-triage `references/vendor-breach-notice.md`, linked from Step 1. For a SaaS or platform that says an attacker reached its systems, while your own code and machines may be fine. Inventory what you handed the vendor, rotate the highest-value keys at the issuer (new, then revoke old), check the issuer's logs, rotate on the first notice of unauthorized access to credentials, treat "revoked for you" as partial, verify any "rotate now" email against the vendor's status page, and log the clock for Step 6.
+- Dated rows for GitBook (2026-11-02), Northflank (2026-10-30), Bubble (2026-10-26), Allium (2026-10-25) and Warp (2026-10-23, disclosed 2026-10-26), each with what that vendor told customers. The "AI agents" attribution is marked vendor-reported, not confirmed. Warp's "rotate anything pasted into an agent session" advice is marked as coming from write-ups, not from Warp. No CVE is claimed.
+- secrets-audit: a vendor-held secrets inventory (class, issuer, rotation tested?) so that inventory step is a lookup. "Rotation tested?" ties to the existing "rotation never tested" finding.
+
+**Not in this change**
+- breach-patterns Pattern 12 (a developer platform's control plane holds your secrets) was left out. The issue marked it optional.
+
+Proposed by @coreyhaines31 in #251.
 
 ### 1.72.0 (2026-11-18)
 
