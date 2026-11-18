@@ -22,7 +22,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | hipaa-audit | 1.1.1 | 2026-10-27 |
 | iam-audit | 1.2.0 | 2026-10-27 |
 | incident-triage | 1.9.0 | 2026-11-18 |
-| log-watch | 1.0.3 | 2026-11-18 |
+| log-watch | 1.1.0 | 2026-11-18 |
 | malware-triage | 1.0.0 | 2026-10-27 |
 | mobile-audit | 1.1.1 | 2026-10-27 |
 | native-code-review | 1.0.1 | 2026-10-27 |
@@ -41,13 +41,24 @@ Current versions of all skills. Agents can compare against local versions to che
 | security-start | 1.0.0 | 2026-10-27 |
 | siem-detection | 1.1.0 | 2026-11-18 |
 | soc-operations | 1.0.4 | 2026-10-26 |
-| threat-hunting | 1.3.0 | 2026-11-18 |
+| threat-hunting | 1.4.0 | 2026-11-18 |
 | threat-modeling | 1.0.4 | 2026-10-26 |
 | variant-analysis | 1.0.0 | 2026-10-27 |
 | vuln-research | 1.0.4 | 2026-10-27 |
 | web-pentest | 1.3.0 | 2026-11-18 |
 
 ## Recent Changes
+
+### 1.92.0 (2026-11-18)
+
+threat-hunting and log-watch: hunt agent-speed AWS intrusions as a burst, not as single calls (AntiFox / ARTEX, November 2026). threat-hunting 1.4.0, log-watch 1.1.0.
+
+**Added**
+- threat-hunting: catalog section "Agent-speed cloud intrusions (AWS)". Denial bursts with the successes listed separately, one source using many identities, secret and storage pairs, EC2 role sessions used off-AWS, `FilterLogEvents` secret mining, anonymous S3 probing, public Cognito pools, and a scripting user agent from a new hosting ASN (never alone). A web-shell lead pulls the app's credentials and hunts them forward from the compromise time.
+- threat-hunting: perishable IOC appendix in `references/agent-speed-aws.md` (Arctic Wolf and Datadog, November 2026), marked as leads. Remediation points at `cloud-audit`, `iam-audit`, and `incident-triage` instead of copying their checks.
+- log-watch D11, opt-in: a principal's denial burst, or `GetSecretValue` / a decrypting `GetParameter` from a source IP or ASN not in that principal's baseline. The plan says to confirm `lookup-events` actually returns those reads (management events only, 90 days) before enabling it, and that S3 object reads will not be in that API.
+
+Proposed by @coreyhaines31 in #271.
 
 ### 1.91.0 (2026-11-18)
 

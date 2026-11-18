@@ -1,6 +1,6 @@
 # log-watch
 
-> Set up a scheduled agent that reads a small team's existing production logs, flags suspicious activity, and pages a human, without a SIEM or security staff. Use when the user mentions 'log watch,' 'watch my logs,' 'alert me if someone is attacking,' 'no SIEM,' 'poor man's SIEM,' 'agent reads CloudTrail,' 'cron job that checks logs,' 'page me on suspicious logins,' 'Vercel logs alerting,' 'Sentry security alerts,' 'Supabase auth logs,' 'Stripe dispute spike,' 'credential stuffing alert,' 'two-stage classifier,' 'Haiku then Sonnet,' 'log monitoring cost,' or has Vercel / Heroku / Render / Sentry / Postgres / Stripe / Cloudflare / CloudTrail / GitHub logs and wants to know when something bad happens.
+> Set up a scheduled agent that reads a small team's existing production logs, flags suspicious activity, and pages a human, without a SIEM or security staff. Use when the user mentions 'log watch,' 'watch my logs,' 'alert me if someone is attacking,' 'no SIEM,' 'poor man's SIEM,' 'agent reads CloudTrail,' 'cron job that checks logs,' 'page me on suspicious logins,' 'Vercel logs alerting,' 'Sentry security alerts,' 'Supabase auth logs,' 'Stripe dispute spike,' 'credential stuffing alert,' 'two-stage classifier,' 'Haiku then Sonnet,' 'log monitoring cost,' 'CloudTrail denial burst,' 'GetSecretValue from a new IP,' or has Vercel / Heroku / Render / Sentry / Postgres / Stripe / Cloudflare / CloudTrail / GitHub logs and wants to know when something bad happens.
 
 # Log Watch — Scheduled Agent Log Review and Paging for Teams Without a SIEM
 
@@ -43,7 +43,7 @@ Ask which of these exist, how long each retains data, and how to read it with a 
 | Supabase / Neon / Postgres auth tables | SQL as a read-only role | D1 credential stuffing, D2 role grants, D3 API keys, D6 export volume, D7 impossible travel | Failed logins are often *not* in the table — check what's actually recorded |
 | Stripe | Events API with a restricted key (Events: read) | D8 refund/dispute spikes, D3 (`api_key` changes are in the Dashboard, not Events) | Events API keeps ~30 days |
 | Cloudflare | Security Events, GraphQL Analytics API, Logpush (plan-dependent) | D4, D1 (by path), WAF hits | Field availability and retention vary by plan |
-| AWS CloudTrail | `aws cloudtrail lookup-events` with `cloudtrail:LookupEvents` only | D9 IAM changes, root logins, access-key creation | Management events only, 90 days, ~2 req/s; IAM/sign-in events land in `us-east-1` |
+| AWS CloudTrail | `aws cloudtrail lookup-events` with `cloudtrail:LookupEvents` only | D9 IAM changes, root logins, access-key creation; D11 enumeration burst or secret read (opt-in) | Management events only, 90 days, ~2 req/s; IAM/sign-in events land in `us-east-1`. Confirm a sample read event comes back before enabling D11 |
 | GitHub audit log | `gh api -X GET /orgs/ORG/audit-log` | D2 org/repo role grants, D3 PAT/deploy-key/webhook creation | REST audit-log API needs Enterprise Cloud; other plans: UI/export only |
 | Egress logs (DNS, proxy, VPC flow, Cloudflare Gateway) | Whatever stores them | D10 outbound to collector domains | Most PaaS teams have none; mark not available |
 
@@ -65,8 +65,11 @@ Starter thresholds are deliberately conservative. Run every detection in **shado
 | D8 | Stripe refund / dispute spike | `charge.refunded`, `refund.created`, `charge.dispute.created` | Refunds > 3× trailing 7-day hourly mean and ≥5; any dispute burst ≥3 in 24 h | med |
 | D9 | AWS IAM change / root login | CloudTrail `iam.amazonaws.com` non-read-only events; `ConsoleLogin` with `userIdentity.type = Root`; `CreateAccessKey`, `AttachUserPolicy`, `PutUserPolicy`, `CreateLoginProfile`, `StopLogging`, `DeleteTrail` | Root login: any → critical. `StopLogging`/`DeleteTrail`: any → critical. Other IAM writes: any outside deploy pipeline principal → high | high → crit |
 | D10 | Outbound to collector domains | DNS/proxy/egress logs | Any request to `webhook.site`, `*.requestbin.*`, `*.pipedream.net`, `*.ngrok.io`, `*.ngrok-free.app`, `discord.com/api/webhooks`, `api.telegram.org/bot`, interactsh/OAST domains, `*.burpcollaborator.net` from a server | high |
+| D11 | Cloud enumeration burst or secret read from a new source | CloudTrail `lookup-events` (opt-in) | One principal, ≥25 `AccessDenied` / `UnauthorizedOperation` across ≥3 services in 30 min, or any successful `GetSecretValue` / decrypting `GetParameter` from a source IP or ASN absent from that principal's baseline | med (burst) → high (new-source secret read, or a success inside the burst) |
 
 D10 matters because exfiltration from a compromised dependency or a prompt-injected agent usually goes to one of these. Only add it if egress logs exist; don't pretend.
+
+D11 is off until you have checked it in the target account. `lookup-events` returns management events only, for 90 days, at about 2 requests/s, one region at a time, and it cannot filter on `errorCode`. `GetSecretValue` is a Secrets Manager management event, so a sample lookup can show it. S3 object reads (`GetObject`, `ListObjects`) are data events and will not appear; a quiet lookup is not "no storage access." The account-wide denial burst is usually a `threat-hunting` job against a trail. On `lookup-events`, run D11 only for `GetSecretValue` / `GetParameter` and, if you already know the key, for that access key's errors. Queries, the baseline, and what to confirm before shadow mode: [references/detections.md](references/detections.md). Do not close a burst because most calls were denied — the successful calls in the window are the finding. The full hunt shape is `threat-hunting` (agent-speed cloud intrusions).
 
 ### Step 3 — Two-stage pipeline
 
@@ -144,6 +147,7 @@ State (one small table or object — the only thing the watcher writes):
 - **Re-page rules:** re-page only if severity rises, the count grows 10× since the last page, or 6 h pass with the alert still active. Auto-close after 2 quiet hours.
 - **Suppressions** always have an `expires` (max 90 days), a reason, and who added it. Expired suppressions are ignored and listed in the weekly digest. Only humans add suppressions — the model can *suggest* one in the digest.
 - **D0 — heartbeat.** If the watcher hasn't completed a run in 30 min, or a source returned zero rows when it normally doesn't, send a low-severity page. A silent watcher looks exactly like a quiet week.
+- **D11 baseline.** When D11 is on, state also keeps the source IPs and ASNs already seen per principal. A principal with no history stays in shadow. The first run must not page every normal secret read.
 
 ### Step 5 — Paging
 
@@ -244,7 +248,8 @@ Optional scaffold: a GitHub Actions workflow plus a single-file Python runner wi
 ## References
 
 - @astuyve on X (2026-10-26), quoted by @jessethanley: agent reading CloudTrail/SIEM every ~5 minutes with a cheap-classifier-then-strong-model pipeline (paraphrased)
-- AWS CloudTrail `lookup-events` CLI reference and CloudTrail event record contents
+- AWS CloudTrail `lookup-events` CLI reference and CloudTrail event record contents. `LookupEvents` returns management events only ([API reference](https://docs.aws.amazon.com/awscloudtrail/latest/APIReference/API_LookupEvents.html)); Secrets Manager logs `GetSecretValue` ([CloudTrail entries](https://docs.aws.amazon.com/secretsmanager/latest/userguide/cloudtrail_log_entries.html))
+- Arctic Wolf Labs AntiFox pack and Datadog's ARTEX article — the burst shape D11 is the small-team slice of. Hunt procedure and perishable IOCs: `threat-hunting`
 - GitHub REST API: organization audit log; GitHub Actions `schedule` event docs
 - Vercel CLI `logs` and Cron Jobs docs
 - Stripe API: List events; PagerDuty Events API v2; Pushover Message API

@@ -1,6 +1,6 @@
 ---
 name: threat-hunting
-description: "Conduct proactive, hypothesis-driven threat hunts — search SIEM / EDR / logs for adversaries who haven't tripped an alert yet. ATT&CK-driven, hypothesis-based methodology. Use when the user mentions 'threat hunting,' 'proactive hunt,' 'TaHiTI,' 'PEAK framework,' 'MITRE ATT&CK hunt,' 'hypothesis-driven hunt,' 'hunt hypothesis,' 'living off the land,' 'LOLBins,' 'beaconing,' 'lateral movement detection,' 'data staging,' 'persistence hunting,' 'agent-parented hunt,' 'coding agent parent process,' or wants to find threats that have evaded existing detections."
+description: "Conduct proactive, hypothesis-driven threat hunts — search SIEM / EDR / logs for adversaries who haven't tripped an alert yet. ATT&CK-driven, hypothesis-based methodology. Use when the user mentions 'threat hunting,' 'proactive hunt,' 'TaHiTI,' 'PEAK framework,' 'MITRE ATT&CK hunt,' 'hypothesis-driven hunt,' 'hunt hypothesis,' 'living off the land,' 'LOLBins,' 'beaconing,' 'lateral movement detection,' 'data staging,' 'persistence hunting,' 'agent-parented hunt,' 'coding agent parent process,' 'AccessDenied burst,' 'agent-speed cloud hunt,' or wants to find threats that have evaded existing detections."
 allowed-tools: Read, Grep, Glob, WebSearch
 ---
 
@@ -161,7 +161,7 @@ Without an EDR, on macOS: `log show --predicate 'process == "launchd"' --last 7d
 - **`net group "Domain Admins"`** or equivalent enumeration commands
 - **AD service ticket requests for high-value SPNs** (Kerberoasting prep) — EventCode 4769 with RC4 encryption
 - **`whoami /all`, `quser`, `nltest /domain_trusts`** — situational awareness commands run by service accounts (humans rarely run these)
-- **Cloud API listing — `ListBuckets`, `ListUsers`, `DescribeInstances` from unusual principals**
+- **Cloud API listing — `ListBuckets`, `ListUsers`, `DescribeInstances` from unusual principals.** A single odd call is the weak form of this. Hunt the burst in [Agent-speed cloud intrusions](#agent-speed-cloud-intrusions-aws)
 
 ### Lateral movement
 
@@ -185,6 +185,24 @@ Without an EDR, on macOS: `log show --predicate 'process == "launchd"' --last 7d
 - **IMDS access from unusual processes / containers** — anything reaching `169.254.169.254` that isn't the cloud SDK
 - **CloudTrail / Audit Log tampering attempts** — `StopLogging`, `DeleteTrail`, log-bucket access from non-logging principals
 - **Cross-region resource creation by single principal in short window** — pivot or coin-mining setup
+
+### Agent-speed cloud intrusions (AWS)
+
+Hunt the burst as one unit. A valid identity that issues hundreds of `List` / `Get` / `Describe` calls across unrelated services in about half an hour, mostly `AccessDenied` or `UnauthorizedOperation`, is the shape Arctic Wolf (AntiFox) and Datadog (ARTEX) published in November 2026. There is no CVE: the calls used stolen credentials, and AWS said its services operated as designed. Do not close the hunt because most requests were denied. List only the successful calls in that window. Those are the findings.
+
+- **Denial burst with embedded successes.** One identity or source IP, many `AccessDenied` / `UnauthorizedOperation` results across 5 or more unrelated services in under an hour. Then list only the successes in that window.
+- **One source, many identities.** One source IP using several access keys, IAM users, or assumed roles in a short window (a harvested set under test).
+- **Secret pairs.** `ListSecrets` then `GetSecretValue`, and `DescribeParameters` then `GetParameter` / `GetParameters` with decryption, from an identity or ASN not seen before for that principal.
+- **Storage pairs.** `GetCallerIdentity` then `ListBuckets` then `ListObjects` / `ListObjectVersions` then `HeadObject` / `GetObject`, then `CopyObject` / `DeleteObject`. Object reads need S3 data events on the sensitive buckets. Most small accounts do not have those on. If the trail cannot show object reads, say so; do not report "no storage access."
+- **Instance-role credentials used off-AWS.** An EC2 role session whose name is `i-*`, calling APIs from a non-AWS source IP.
+- **Log mining for secrets.** A burst of CloudWatch `FilterLogEvents`. Datadog saw a constant `limit` of 1000 and search terms such as `AKIA`, `password`, `mongo`, `s3://`, and `presigned`.
+- **Anonymous S3 probing first.** Reads whose `userIdentity.accountId` is `anonymous`, including a request for a placeholder object (`zzz_nonexistent_abc.txt`, `Notexist-xyz`) immediately before a burst of guesses.
+- **Public Cognito pools.** A burst of `SignUp` / `PreSignUp` trigger failures, then `CognitoIdentityCredentials` sessions trying `ListBuckets`, `ListSecrets`, `ListFunctions`, `DescribeLogGroups`.
+- **Scripting SDK from a new hosting ASN.** A Boto3/Botocore or curl user agent from a hosting provider never seen for that identity raises confidence. User agents are trivial to change. Never use one alone.
+
+**Web foothold to cloud.** When you find a web shell or an app compromise, pull the app's credentials (config files, env vars, SDK profiles, Secrets Manager references) and hunt each one in CloudTrail from the compromise time forward. Arctic Wolf saw cloud activity begin soon after config discovery.
+
+Dated indicators, and the remediation that already lives in `cloud-audit`, `iam-audit`, and `incident-triage`: [references/agent-speed-aws.md](references/agent-speed-aws.md). A small team without a SIEM pages a narrower form of the denial burst and the secret read with `log-watch` (D11).
 
 ### Identity-provider-specific
 
@@ -259,3 +277,5 @@ Without an EDR, on macOS: `log show --predicate 'process == "launchd"' --last 7d
 - Velociraptor community hunt content
 - [Elastic Security Labs, "Living off the coding agent"](https://www.elastic.co/security-labs/threat-command/coding-agent-launchagent-tunnel-detection) (2026-08-07) — tunnels, LaunchAgents, and the two-readings caveat
 - [Elastic Threat Command report, November 2026](https://www.elastic.co/pdf/elastic-threats-etc-elastic-security-threat-command-nov-2026.pdf) — Claude Code on Windows, ChatGPT desktop keychain dump, coding-agent cases on macOS
+- [Arctic Wolf Labs, AntiFox alert pack](https://github.com/rtkwlf/wolf-tools/tree/main/pack_alerts/202611-antifox-alibaba-hosted-platforms-facilitate-web-cloud-intrusions) (2026-11-10) — burst shape and embedded successes
+- [Datadog Security Labs, "On the hunt for ARTEX"](https://securitylabs.datadoghq.com/articles/artex-agentic-attacks-aws-environments/) (2026-11-09) — anonymous S3 reads, `FilterLogEvents`, Cognito, perishable IOCs in [references/agent-speed-aws.md](references/agent-speed-aws.md)

@@ -264,6 +264,31 @@ done
 
 Exclude the deploy pipeline's role ARN from "IAM write outside pipeline", but never from root-login or logging-tamper rules. Use `eventID` as part of the evidence link. At higher volume, an EventBridge rule on these event names is cheaper and faster than polling — mention it, but that's moving toward `siem-detection` / `cloud-audit` territory.
 
+## D11 — Cloud enumeration burst or secret read from a new source
+
+Opt-in. Leave it off until the sample below returns the fields you will group on (`userIdentity.arn`, `sourceIPAddress`, `errorCode`, `eventSource`, and for SSM `requestParameters.withDecryption`). Read-only policy: `cloudtrail:LookupEvents` on `*`, same limits as D9 (management events, 90 days, ~2 requests/s, one region, one lookup attribute per call). IAM and many sign-in events are in `us-east-1`; secret reads are regional — query each region the account uses.
+
+`GetSecretValue` is a Secrets Manager management event, so this call can see it. S3 `GetObject` / `ListObjects` are data events and will not come back. Say that gap in the plan. Do not treat an empty object-read lookup as a clean bill.
+
+```bash
+# Sample before you enable anything. Stop if the fields you need are missing.
+aws cloudtrail lookup-events --region "$REGION" \
+  --lookup-attributes AttributeKey=EventName,AttributeValue=GetSecretValue \
+  --start-time "$CHECKPOINT" --end-time "$NOW" --max-results 5 --output json \
+| jq -c '.Events[].CloudTrailEvent | fromjson
+         | {eventTime, eventName, error: .errorCode,
+            principal: .userIdentity.arn, ip: .sourceIPAddress, eventID}'
+```
+
+Repeat with `EventName` = `GetParameter` and `GetParameters`. A `GetSecretValue` success (`errorCode` null) is enough — that API has no decryption flag. For `GetParameter` / `GetParameters`, keep a success only when `requestParameters.withDecryption` is true, and only after a sample shows that field. Page when the source IP is not in the principal's baseline in watcher state. An ASN comparison is optional and comes from a lookup of that IP (MaxMind or the team's existing feed). CloudTrail does not include an ASN field. A principal with an empty baseline stays in shadow until one quiet week has filled it. The first observation of the app's normal secret read is not an alert.
+
+`lookup-events` has no `errorCode` attribute, so an account-wide denial burst (one principal, ≥25 `AccessDenied` or `UnauthorizedOperation` across ≥3 `eventSource` values in 30 minutes) means paging through events you cannot filter. Do not do that on a 5-minute cron. Two practical shapes:
+
+- You already know the access key or username (a web-shell lead, a key from `threat-hunting`). Look up `AccessKeyId` or `Username`, then count errors by `eventSource` in `jq`. The successes in that window are the finding. Do not close it because most calls were denied.
+- You don't. Leave the burst half of D11 off and point the team at `threat-hunting` against a trail, or at `siem-detection`. Keep only the secret-read half here.
+
+Starter threshold for the burst half, once a narrow lookup is possible: ≥25 errors, ≥3 services, 30 minutes. Tune it in shadow for 7–14 days. Severity: medium for errors only; high for a new-source secret read or any success inside the burst. Dedupe key: `D11:principal:<arn>` and `D11:key:<access-key-id-last-4>`.
+
 ## D10 — Outbound to collector domains
 
 Only if egress/DNS logs exist (Route 53 Resolver query logs, Cloudflare Gateway, a forward proxy, VPC flow logs + DNS).

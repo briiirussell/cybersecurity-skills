@@ -5,7 +5,8 @@
     "set up a cron job that checks CloudTrail and pages me on suspicious logins",
     "alert me if someone is credential stuffing our login",
     "cheap log monitoring for a three-person startup on Heroku and Sentry",
-    "watch my Supabase auth logs for anything weird"
+    "watch my Supabase auth logs for anything weird",
+    "we have no SIEM — page me if there's a CloudTrail denial burst or a GetSecretValue from a new IP"
   ],
   "near_miss": [
     {
