@@ -49,6 +49,13 @@ Current versions of all skills. Agents can compare against local versions to che
 
 ## Recent Changes
 
+### 1.99.2 (2026-11-18)
+
+README: mention HoneyWarden. Docs only.
+
+**Added**
+- A line under "Built by" pointing to [HoneyWarden](https://honeywarden.com), Bri's security startup for small SaaS teams, for readers who want these kinds of checks automated.
+
 ### 1.99.1 (2026-11-18)
 
 evals/README: current trigger-eval results and misses. Docs only.
