@@ -17,6 +17,8 @@ Skills are authored as Claude Code [`SKILL.md` files](https://code.claude.com/do
 
 Built by [Bri Russell](https://github.com/briiirussell). I run real audits with these skills, then bring the gaps I find back into the skill itself — so each version is a little less opinion and a little more evidence.
 
+Want this kind of checking to run on its own? [HoneyWarden](https://honeywarden.com), my security startup for small SaaS teams, automates the kinds of checks these skills walk an agent through. Paste a URL and get a free scan in under two minutes, with no account or access needed.
+
 **Contributions welcome!** Field feedback is the most valuable contribution — whether you're a security engineer who hit a gap during an audit, a developer whose AI agent missed something obvious, or a founder who used a skill and got an answer that wasn't quite right. [Open a PR](#contributing) or [open an issue](https://github.com/briiirussell/cybersecurity-skills/issues) — every level of expertise produces useful signal.
 
 ## Where to start
